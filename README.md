@@ -1,2 +1,76 @@
+
 # AsmVsZombies
-Windows 高精度代码注入式键控框架
+
+#####                                                                                                                                                                                                       --------windows
+
+High-precision PvZ TAS Frameworks
+
+高精度植物大战僵尸键控框架
+
+## 简介
+
+AvZ (Assembly vs. Zombies - windows )是一套使用 C++ 语言编写的高精度植物大战僵尸键控框架，理论由 yuchenxi0_0 提出，框架底层由 yuchenxi0_0 实现，和其他框架相似的接口由 vector-wlc 编写。
+
+AvZ 操作精度为理论上的100%绝对精准，使用这套框架将再也不用担心精度的问题，可在一定程度上减少录制视频次数，有效的完成视频制作。
+
+本项目编译器有两个选择，分别是 MinGW 和 MSVC，使用者可根据自身情况选择使用其中一个。
+
+## 原理
+
+在游戏主循环函数前面注入键控代码，使得键控脚本在每一帧都被调用，从而实现真正意义上100%精确的键控。
+
+## 对比
+
+从原理可以明显看出此套框架在理论实现上与传统框架截然不同，传统框架使用一个程序向 PvZ 窗口发送点击消息，而此套框架使用代码注入，直接入侵到程序内部，让游戏程序运行我们编写的脚本！其优缺点大致如下：
+
+> 缺点
+>
+> * 配置更加复杂 (MinGW--VSCode)    
+>
+>   软件体积更大 (MSVC--VS)
+>
+> * 复杂脚本编写工作量可能更大
+>
+> * 编写不慎可能会导致游戏崩溃
+
+> 优点
+>
+> * 精度极高
+> * 脚本出现错误时提示更加人性化
+> * 对硬件配置 (CPU) 的要求极低
+> * 对操作时间顺序不做严格要求
+
+## 使用
+
+#### MSVC Visual Studio 
+
+Visual Studio 使用方便，无需配置，简单粗暴，稳定可靠。但是其体积庞大，安装包大概 2-3 G。
+
+若您的电脑硬盘容量足够，请优先使用 VS
+
+**注意**  部分 win7 可能无法正常安装 Visual Studio
+
+#### MinGW Visual Studio Code
+
+MinGW + VSCode 体积小，灵活，编写代码体验更佳。但是其配置比较复杂，如果此前没有接触过编程，使用这套配置可能会很痛苦！如果感觉 VS 过于臃肿或硬盘空间捉鸡， MinGW VSCode 是您最佳的选择
+
+## 更新日志
+
+AvZ 2020_02_20
+
+* 增添了 openMultipleEffective，一次注入多次生效
+* 增加了 setTime insertOperation insertTimeOperation 等一系列方便对操作队列进行操作的函数
+* 增加了阻塞函数 WaitUntil，使得编写非定态脚本更加人性化
+* 优化了与操作对列有关的逻辑
+* 削弱了 vector-wlc 的头发
+
+AvZ 2020_03_16
+
+* 增添了 selectCards，选卡函数，请注意其与 CvZ 的使用区别
+* 增添了 setZombies setWaveZombies，设定刷怪函数，允许您对刷怪精确到以波为单位的控制
+* 带来了极致舒爽的录制视频体验
+* 增添了 plantPao (炮操作类成员)，种炮函数，自动更新炮的信息
+* 将 fixLastPao 重命名为 fixLatestPao  并修复了 fixLatestPao 的 BUG
+* 修复 updatePaoMessage 的 BUG （03-22）
+* 修复 selectCards 选择模仿者卡片引起的游戏崩溃问题--win7 (03-23)
+* 削弱了 vector-wlc 的头发
