@@ -54,15 +54,15 @@ Visual Studio 使用方便，无需配置，简单粗暴，稳定可靠。但是
 
 MinGW + VSCode 体积小，灵活，编写代码体验更佳。但是其配置比较复杂，如果此前没有接触过编程，使用这套配置可能会很痛苦！如果感觉 VS 过于臃肿或硬盘空间捉鸡， MinGW VSCode 是您最佳的选择
 
+## 问题（BUG）
+
+Windows 7 仍存在使用 selectCards 函数崩溃的问题
+
+## 致谢
+[yuchenxi2000/AssemblyVsZombies](https://github.com/yuchenxi2000/AssemblyVsZombies)<br>
+[lmintlcx/pvzscript](https://github.com/lmintlcx/pvzscripts)
+
 ## 更新日志
-
-AvZ 2020_02_20
-
-* 增添了 openMultipleEffective，一次注入多次生效
-* 增加了 setTime insertOperation insertTimeOperation 等一系列方便对操作队列进行操作的函数
-* 增加了阻塞函数 WaitUntil，使得编写非定态脚本更加人性化
-* 优化了与操作对列有关的逻辑
-* 削弱了 vector-wlc 的头发
 
 AvZ 2020_03_16
 
@@ -73,4 +73,12 @@ AvZ 2020_03_16
 * 将 fixLastPao 重命名为 fixLatestPao  并修复了 fixLatestPao 的 BUG
 * 修复 updatePaoMessage 的 BUG （03-22）
 * 修复 selectCards 选择模仿者卡片引起的游戏崩溃问题--win7 (03-23)
+* 削弱了 vector-wlc 的头发
+
+AvZ 2020_02_20
+
+* 增添了 openMultipleEffective，一次注入多次生效
+* 增加了 setTime insertOperation insertTimeOperation 等一系列方便对操作队列进行操作的函数
+* 增加了阻塞函数 WaitUntil，使得编写非定态脚本更加人性化
+* 优化了与操作对列有关的逻辑
 * 削弱了 vector-wlc 的头发
