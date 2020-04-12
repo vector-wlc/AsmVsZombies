@@ -70,8 +70,9 @@ Windows 7 仍存在使用 selectCards 函数崩溃的问题
 
 ## 更新日志
 
-AvZ 2020_04_10
+AvZ 2020_04_12
 
+* PaoOperator 类大更新，删除 tryPao 系列函数，增加按照时间顺序使用炮，详情请看 bilibili 视频教程
 * IceFiller 类增添成员函数 resetIceSeedList，允许对冰卡进行更加细致的控制
 * 当 PvZ 窗口不是顶层窗口时，KeyConnect 将无效
 
