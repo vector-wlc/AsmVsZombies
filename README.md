@@ -1,3 +1,9 @@
+<!--
+ * @coding: utf-8
+ * @Author: vector-wlc
+ * @Date: 2020-03-28 21:10:20
+ * @Description: 
+ -->
 
 # AsmVsZombies
 
@@ -63,6 +69,11 @@ Windows 7 仍存在使用 selectCards 函数崩溃的问题
 [lmintlcx/pvzscript](https://github.com/lmintlcx/pvzscripts)
 
 ## 更新日志
+
+AvZ 2020_04_10
+
+* IceFiller 类增添成员函数 resetIceSeedList，允许对冰卡进行更加细致的控制
+* 当 PvZ 窗口不是顶层窗口时，KeyConnect 将无效
 
 AvZ 2020_03_16
 

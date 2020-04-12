@@ -12,26 +12,29 @@
 AvZ::PaoOperator pao_col_in_5_and_7;
 AvZ::PaoOperator pao_col_in_1_and_3;
 
+#ifdef __AVZ_VERSION__
+#if __AVZ_VERSION__ == 200412
 //分别使用一门 1 3 列炮和一门 5 7 列炮
 //inline 是内联，对于短小的函数效率更高
 inline void MyRoofPao(float col_1_3, float col_5_7)
 {
-    pao_col_in_1_and_3.tryRoofPao(2, col_1_3);
-    pao_col_in_5_and_7.tryRoofPao(4, col_5_7);
+    pao_col_in_1_and_3.roofPao(2, col_1_3);
+    pao_col_in_5_and_7.roofPao(4, col_5_7);
 }
+#endif
+#endif
 
 void RECannon16()
 {
 #ifdef __AVZ_VERSION__
-#if __AVZ_VERSION__ >= 200316 // 这里使用预编译指令是来识别版本号的，使用者不需要声明这些！！！
+#if __AVZ_VERSION__ == 200410 // 这里使用预编译指令是来识别版本号的，使用者不需要声明这些！！！
 
     // OpenMultipleEffective();
     SetZombies({CG_3, TT_4, BC_12, XC_15, QQ_16, BJ_20, FT_21, TL_22, BY_23, HY_32, TT_18});
-    SetWaveZombies(1, {BY_23});
     SelectCards({"kfd", "hbg", "Mhbg", "hmg", "ytzd", "hblj", "hp", "ymts", "ymjnp", "gjg"});
     // 按下 Q 发射一枚炮
     KeyConnect('Q', [&]() {
-        pao_col_in_5_and_7.tryRoofPao(MouseRow(), MouseCol());
+        pao_col_in_5_and_7.roofPao(MouseRow(), MouseCol());
     });
 
     // 按下 W 种高坚果
@@ -46,8 +49,8 @@ void RECannon16()
     pao_col_in_5_and_7.resetPaoList({{1, 5}, {1, 7}, {2, 5}, {3, 5}, {3, 7}, {4, 5}, {5, 5}, {5, 7}});
 
     //解除炮序限制
-    pao_col_in_1_and_3.setLimitPaoSequence(false);
-    pao_col_in_5_and_7.setLimitPaoSequence(false);
+    pao_col_in_1_and_3.setSequentialMode(AvZ::PaoOperator::TIME);
+    pao_col_in_5_and_7.setSequentialMode(AvZ::PaoOperator::TIME);
 
     Card("hp", 2, 9);
 
@@ -120,7 +123,7 @@ void RECannon16()
     MyRoofPao(8.8, 8.8);
     AvZ::PaoOperator::fixLatestPao();
     SetTime(410 + 220 - 387);
-    pao_col_in_1_and_3.tryRoofPao(2, 8.45);
+    pao_col_in_1_and_3.roofPao(2, 8.45);
     SetTime(410 + 220 - 100);
     Card("ytzd", 4, 8);
     SetTime(1190 - 298);
@@ -130,7 +133,7 @@ void RECannon16()
 
     //############# wave 8 ##################
     SetTime(400 - 387, 8);
-    pao_col_in_5_and_7.tryRoofPao({{4, 9}, {2, 9}});
+    pao_col_in_5_and_7.roofPao({{4, 9}, {2, 9}});
     SetTime(495 - 387);
     MyRoofPao(8.9, 8.9);
     SetTime(601 + 36 - 387);
@@ -146,16 +149,16 @@ void RECannon16()
     SetTime(1290 - 387);
     MyRoofPao(8.8, 8.8);
     SetTime(2376 - 387);
-    pao_col_in_1_and_3.tryRoofPao({{2, 9}, {4, 9}});
+    pao_col_in_1_and_3.roofPao({{2, 9}, {4, 9}});
 
     //############# wave 10 ##################
     SetTime(223 - 387, 10);
     MyRoofPao(9, 9);
     AvZ::PaoOperator::fixLatestPao();
     SetTime(375 - 110 - 387);
-    pao_col_in_5_and_7.tryRoofPao({{2, 9}, {4, 9}});
+    pao_col_in_5_and_7.roofPao({{2, 9}, {4, 9}});
     SetTime(375 - 387);
-    pao_col_in_1_and_3.tryRoofPao(2, 8.8);
+    pao_col_in_1_and_3.roofPao(2, 8.8);
     SetTime(375 - 100);
     Card({{"hp", 4, 9}, {"ytzd", 4, 9}});
     Delay(130);
@@ -163,10 +166,10 @@ void RECannon16()
 
     //############# wave 11 ##################
     SetTime(385 - 387, 11);
-    pao_col_in_5_and_7.tryRoofPao({{2, 9}, {4, 9}});
+    pao_col_in_5_and_7.roofPao({{2, 9}, {4, 9}});
     SetTime(513 - 387);
 
-    pao_col_in_1_and_3.tryRoofPao({{4, 8.75}, {2, 8.75}});
+    pao_col_in_1_and_3.roofPao({{4, 8.75}, {2, 8.75}});
     SetTime(601 + 42 - 387);
     MyRoofPao(8.75, 8.75);
     SetTime(601 + 19 - 298);
@@ -225,11 +228,11 @@ void RECannon16()
 
     //############# wave 17 ##################
     SetTime(410 - 387, 17);
-    pao_col_in_1_and_3.tryRoofPao(2, 8.8);
+    pao_col_in_1_and_3.roofPao(2, 8.8);
     AvZ::PaoOperator::fixLatestPao();
-    pao_col_in_5_and_7.tryRoofPao(4, 8.8);
+    pao_col_in_5_and_7.roofPao(4, 8.8);
     SetTime(410 + 220 - 387);
-    pao_col_in_1_and_3.tryRoofPao(2, 8.45);
+    pao_col_in_1_and_3.roofPao(2, 8.45);
     SetTime(410 + 220 - 100);
     Card("ytzd", 4, 8);
     SetTime(1200 - 298);
@@ -268,6 +271,11 @@ void RECannon16()
     Delay(100);
     MyRoofPao(9, 9);
     MyRoofPao(9, 9);
+#else
+    AvZ::popErrorWindowNotInQueue("您的版本号与此脚本不对应！");
 #endif
+
+#else
+    AvZ::popErrorWindowNotInQueue("您的版本号与此脚本不对应！");
 #endif
 }

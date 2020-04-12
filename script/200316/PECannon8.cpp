@@ -10,7 +10,7 @@
 void PECannon8()
 {
 #ifdef __AVZ_VERSION__
-#if __AVZ_VERSION__ >= 200316 // 这里使用预编译指令是来识别版本号的，使用者不需要声明这些！！！
+#if __AVZ_VERSION__ == 200316 // 这里使用预编译指令是来识别版本号的，使用者不需要声明这些！！！
 
     OpenMultipleEffective();
     SetZombies({PJ_0, TT_4, WW_8, QS_11, BC_12, XC_15, KG_17, HT_14, FT_21, BY_23, HY_32});
@@ -33,6 +33,11 @@ void PECannon8()
         pao_operator.recoverPao({{2, 9}, {5, 9}, {2, 9}, {5, 9}});
     }
 
+#else
+    AvZ::popErrorWindowNotInQueue("您的版本号与此脚本不对应！");
 #endif
+
+#else
+    AvZ::popErrorWindowNotInQueue("您的版本号与此脚本不对应！");
 #endif
 }

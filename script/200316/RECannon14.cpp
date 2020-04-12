@@ -10,7 +10,7 @@
 void RECannon14()
 {
 #ifdef __AVZ_VERSION__
-#if __AVZ_VERSION__ >= 200316 // 这里使用预编译指令是来识别版本号的，使用者不需要声明这些！！！
+#if __AVZ_VERSION__ == 200316 // 这里使用预编译指令是来识别版本号的，使用者不需要声明这些！！！
 
     OpenMultipleEffective();
     SetZombies({PJ_0, CG_3, GL_7, BC_12, XC_15, QQ_16, TT_18, FT_21, TL_22, BY_23, HY_32});
@@ -184,6 +184,11 @@ void RECannon14()
             Shovel(2, 8);
         }
     }
+#else
+    AvZ::popErrorWindowNotInQueue("您的版本号与此脚本不对应！");
 #endif
+
+#else
+    AvZ::popErrorWindowNotInQueue("您的版本号与此脚本不对应！");
 #endif
 }

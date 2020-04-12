@@ -9,7 +9,7 @@ set(CMAKE_CXX_COMPILER "g++")
 # build libpvz.dll
 include_directories(./AvZ/src)
 aux_source_directory(./AvZ/src srcs)
-aux_source_directory(./script srcs)
+aux_source_directory(./script/200412 srcs)
 add_library(pvz SHARED ${srcs})
 
 # build injector.exe

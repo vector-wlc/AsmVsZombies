@@ -59,68 +59,57 @@ void AvZ::PaoOperator::initPaoMessage()
 
 AvZ::PaoOperator::PaoOperator()
 {
-	limit_pao_sequence = true;
+	sequential_mode = TIME;
 	next_pao = 0;
 }
 
 AvZ::PaoOperator::~PaoOperator()
 {
-	//清除所有有关于本对象的炮列表
-	for (const auto &vec_index : pao_list)
-	{
-		all_pao_vec[vec_index].is_in_list = false;
-		all_pao_vec[vec_index].is_in_sequence = false;
-	}
-}
-
-void AvZ::PaoOperator::setLimitPaoSequence(bool limit)
-{
-	insertOperation([=]() {
-		limit_pao_sequence = limit;
-		for (auto &vec_index : pao_list)
-		{
-			all_pao_vec[vec_index].is_in_sequence = limit;
-		}
-	});
 }
 
 void AvZ::PaoOperator::updatePaoMessage(const std::vector<Grid> &lst)
 {
 	insertOperation([=]() {
+		// 这里代码写的很垃圾 =_=
+		// 删掉场上不存在的炮
+		std::vector<Grid> all_pao_grid;
 		std::vector<int> cannon_index_vec;
-		getPlantIndexs(lst, YMJNP_47, cannon_index_vec);
-
-		Plant *cannon;
-		auto grid_it = lst.begin();
+		Grid grid;
+		for (const auto &pao_msg : all_pao_vec)
+		{
+			grid.row = pao_msg.row;
+			grid.col = pao_msg.col;
+			all_pao_grid.push_back(grid);
+		}
+		getPlantIndexs(all_pao_grid, YMJNP_47, cannon_index_vec);
 		auto cannon_index_it = cannon_index_vec.begin();
+
+		while (cannon_index_it != cannon_index_vec.end())
+		{
+			if ((*cannon_index_it) < 0)
+			{
+				delete_pao(cannon_index_it - cannon_index_vec.begin());
+			}
+			++cannon_index_it;
+		}
+
+		// 进行炮信息的更新
+		Plant *cannon;
+		getPlantIndexs(lst, YMJNP_47, cannon_index_vec);
+		auto grid_it = lst.begin();
+		cannon_index_it = cannon_index_vec.begin();
 		int plant_count_max = main_object->plantCountMax();
 		int cannon_status;
 		int now_time = main_object->gameClock();
 
-		// 将已经铲掉的炮删除掉
-		for (auto it = all_pao_vec.begin(); it != all_pao_vec.end(); ++it)
+		while (grid_it != lst.end())
 		{
-			cannon = main_object->plantArray() + it->index;
-			if (cannon->isCrushed() ||
-				cannon->isDisappeared() ||
-				cannon->type() != YMJNP_47 ||
-				cannon->row() + 1 != it->row ||
-				cannon->col() + 1 != it->col)
-			{
-				delete_pao(it);
-			}
-		}
-
-		do
-		{
+			auto all_pao_it = FindInAllRange(all_pao_vec, *grid_it);
 			if ((*cannon_index_it) >= 0) // 炮存在
 			{
 				PaoInfo pao_info;
-				auto all_pao_it = FindInAllRange(all_pao_vec, *grid_it);
 				if (all_pao_it != all_pao_vec.end())
 				{
-					pao_info.is_in_list = all_pao_it->is_in_list;
-					pao_info.is_in_sequence = all_pao_it->is_in_sequence;
 					delete_pao(all_pao_it);
 				}
 
@@ -142,7 +131,7 @@ void AvZ::PaoOperator::updatePaoMessage(const std::vector<Grid> &lst)
 
 			++grid_it;
 			++cannon_index_it;
-		} while (grid_it != lst.end());
+		}
 	});
 }
 
@@ -151,15 +140,6 @@ void AvZ::PaoOperator::resetPaoList(const std::vector<Grid> &lst)
 {
 	insertOperation([=]() {
 		next_pao = 0;
-		//清除所有有关于本对象的炮列表
-		for (const auto &vec_index : pao_list)
-		{
-			if (vec_index < all_pao_vec.size())
-			{
-				all_pao_vec[vec_index].is_in_list = false;
-				all_pao_vec[vec_index].is_in_sequence = false;
-			}
-		}
 
 		//重置炮列表
 		pao_list.clear();
@@ -172,15 +152,6 @@ void AvZ::PaoOperator::resetPaoList(const std::vector<Grid> &lst)
 				popErrorWindowNotInQueue("resetPaoList : 请检查 (#, #) 是否为炮", pao_grid.row, pao_grid.col);
 				return;
 			}
-			//如果此炮在其它炮列表中
-			if (it->is_in_list)
-			{
-				popErrorWindowNotInQueue("resetPaoList : (#, #) 在其它炮列表中", pao_grid.row, pao_grid.col);
-				return;
-			}
-			it->is_in_list = true;
-			it->is_in_sequence = limit_pao_sequence;
-
 			pao_list.push_back(it - all_pao_vec.begin());
 		}
 	});
@@ -218,23 +189,35 @@ void AvZ::PaoOperator::setNextPao(int row, int col)
 }
 
 //对炮进行一些检查
-void AvZ::PaoOperator::pao_examine(int vec_index, int drop_row, float drop_col)
+bool AvZ::PaoOperator::pao_examine(int vec_index, int drop_row, float drop_col)
 {
+	if (!is_exist(vec_index))
+	{
+		popErrorWindowNotInQueue("pao_examine : 位于 (#, #) 的炮已失效！",
+								 all_pao_vec[vec_index].row,
+								 all_pao_vec[vec_index].col);
+		return false;
+	}
 	int now_time = main_object->gameClock();
-	auto cannon = main_object->plantArray();
-	cannon += all_pao_vec[vec_index].index;
+	auto cannon = main_object->plantArray() + all_pao_vec[vec_index].index;
 	if (cannon->state() != 37)
 	{
 		if (all_pao_vec[vec_index].recover_time > now_time)
 		{
-			popErrorWindowNotInQueue("pao_examine : 位于 (#, #) 的炮还有 #cs 恢复", all_pao_vec[vec_index].row, all_pao_vec[vec_index].col, all_pao_vec[vec_index].recover_time - now_time);
+			popErrorWindowNotInQueue("pao_examine : 位于 (#, #) 的炮还有 #cs 恢复",
+									 all_pao_vec[vec_index].row,
+									 all_pao_vec[vec_index].col,
+									 all_pao_vec[vec_index].recover_time - now_time);
 		}
 		else
 		{
-			popErrorWindowNotInQueue("pao_examine : 位于 (#, #) 的炮未恢复，若您手动发射了该炮，请及时调用 updatePaoMessage 以更新炮的信息", all_pao_vec[vec_index].row, all_pao_vec[vec_index].col);
+			popErrorWindowNotInQueue("pao_examine : 位于 (#, #) 的炮未恢复，若您手动发射了该炮，请及时调用 updatePaoMessage 以更新炮的信息",
+									 all_pao_vec[vec_index].row, all_pao_vec[vec_index].col);
 		}
-		return;
+		return false;
 	}
+
+	return true;
 }
 
 void AvZ::PaoOperator::base_fire_pao(int vec_index, int drop_row, float drop_col)
@@ -266,7 +249,10 @@ void AvZ::PaoOperator::rawPao(int pao_row, int pao_col, int drop_row, float drop
 			return;
 		}
 		int vec_index = it - all_pao_vec.begin();
-		pao_examine(vec_index, drop_row, drop_col);
+		if (!pao_examine(vec_index, drop_row, drop_col))
+		{
+			return;
+		}
 		base_fire_pao(vec_index, drop_row, drop_col);
 	});
 }
@@ -323,6 +309,20 @@ void AvZ::PaoOperator::plantPao(int row, int col)
 	});
 }
 
+void AvZ::PaoOperator::shovelPao(int row, int col)
+{
+	insertOperation([=]() {
+		Grid grid = {row, col};
+		auto it = FindInAllRange(all_pao_vec, grid);
+		if (it == all_pao_vec.end())
+		{
+			popErrorWindowNotInQueue("请检查 (#, #) 是否为炮", it->row, it->col);
+		}
+		delete_pao(it);
+		shovelNotInQueue(row, col);
+	});
+}
+
 void AvZ::PaoOperator::fixLatestPao()
 {
 	insertOperation([=]() {
@@ -343,22 +343,46 @@ void AvZ::PaoOperator::fixLatestPao()
 	});
 }
 
+// 找到恢复时间最早的炮
+int AvZ::PaoOperator::find_min_recover_time_pao()
+{
+	// 寻找第一个未被铲的炮
+	auto vec_index_it = pao_list.begin();
+	while (!is_exist(*vec_index_it))
+	{
+		++vec_index_it;
+	}
+
+	// 寻找 cd 最小的炮
+	auto min_time_it = vec_index_it;
+	do
+	{
+		if (is_exist(*vec_index_it) &&														  // is_exist?
+			all_pao_vec[*min_time_it].recover_time > all_pao_vec[*vec_index_it].recover_time) // is_recoverd?
+		{
+			min_time_it = vec_index_it;
+		}
+		++vec_index_it;
+	} while (vec_index_it != pao_list.end());
+
+	return *min_time_it;
+}
+
 //发炮函数：单发
 void AvZ::PaoOperator::pao(int row, float col)
 {
 	insertOperation([=]() {
-		if (!limit_pao_sequence)
-		{
-			popErrorWindowNotInQueue("pao : 解除炮序限制，Pao系列函数不可使用！");
-			return;
-		}
 		if (pao_list.size() == 0)
 		{
 			popErrorWindowNotInQueue("pao : 您尚未为此炮列表分配炮");
 			return;
 		}
-		pao_examine(pao_list[next_pao], row, col);
-		base_fire_pao(pao_list[next_pao], row, col);
+		int vec_index = get_next_pao();
+		if (!pao_examine(vec_index, row, col))
+		{
+			return;
+		}
+		base_fire_pao(vec_index, row, col);
 		skip_pao(1);
 	});
 }
@@ -372,58 +396,28 @@ void AvZ::PaoOperator::pao(const std::vector<Crood> &lst)
 	}
 }
 
-void AvZ::PaoOperator::tryPao(int row, float col)
-{
-	insertOperation([=]() {
-		if (limit_pao_sequence)
-		{
-			popErrorWindowNotInQueue("tryPao : 由于炮序限制，tryPao系列函数不可使用！");
-			return;
-		}
-		int now_time = main_object->gameClock();
-		auto cannon = main_object->plantArray();
-
-		//寻找符合条件的炮
-		for (const auto &vec_index : pao_list)
-		{
-			if (!is_exist(vec_index))
-				continue;
-			cannon = main_object->plantArray();
-			cannon += all_pao_vec[vec_index].index;
-			//如果炮可用
-			if (cannon->state() == 37)
-			{
-				base_fire_pao(vec_index, row, col);
-				return;
-			}
-		}
-	});
-}
-
-void AvZ::PaoOperator::tryPao(const std::vector<Crood> &lst)
-{
-	for (const auto &each : lst)
-	{
-		tryPao(each.row, each.col);
-	}
-}
-
 void AvZ::PaoOperator::delay_fire_pao(int vec_index, int delay_time, int row, float col)
 {
 	all_pao_vec[vec_index].recover_time = delay_time + main_object->gameClock() + 3475;
-	update_lastest_pao_msg(main_object->gameClock() + delay_time, vec_index);
 	if (delay_time <= 0)
 	{
-		pao_examine(vec_index, row, col);
+		if (!pao_examine(vec_index, row, col))
+		{
+			return;
+		}
 		base_fire_pao(vec_index, row, col);
 	}
 	else
 	{
+		update_lastest_pao_msg(main_object->gameClock() + delay_time, vec_index);
 		// 将操作动态插入消息队列
 		time_wave = nowTimeWave();
 		time_wave.time += delay_time;
 		insertOperation([=]() {
-			pao_examine(vec_index, row, col);
+			if (!pao_examine(vec_index, row, col))
+			{
+				return;
+			}
 			base_fire_pao(vec_index, row, col);
 		});
 	}
@@ -432,17 +426,12 @@ void AvZ::PaoOperator::delay_fire_pao(int vec_index, int delay_time, int row, fl
 void AvZ::PaoOperator::recoverPao(int row, float col)
 {
 	insertOperation([=]() {
-		if (!limit_pao_sequence)
-		{
-			popErrorWindowNotInQueue("recoverPao : 解除炮序限制，Pao系列函数不可用！");
-			return;
-		}
 		if (pao_list.size() == 0)
 		{
 			popErrorWindowNotInQueue("recoverPao : 您尚未为此炮列表分配炮");
 			return;
 		}
-		int vec_index = pao_list[next_pao];
+		int vec_index = get_next_pao();
 		int delay_time = all_pao_vec[vec_index].recover_time - main_object->gameClock();
 		if (delay_time < 0)
 		{
@@ -477,11 +466,6 @@ int AvZ::PaoOperator::get_roof_fly_time(int pao_col, float drop_col)
 void AvZ::PaoOperator::roofPao(int row, float col)
 {
 	insertOperation([=]() {
-		if (!limit_pao_sequence)
-		{
-			popErrorWindowNotInQueue("roofPao : 解除炮序限制，Pao系列函数不可使用！");
-			return;
-		}
 		if (main_object->scene() != 4 && main_object->scene() != 5)
 		{
 			popErrorWindowNotInQueue("roofPao : RoofPao函数只适用于 RE 与 ME ");
@@ -493,19 +477,19 @@ void AvZ::PaoOperator::roofPao(int row, float col)
 			return;
 		}
 
-		int vec_index = pao_list[next_pao];
+		int vec_index = get_next_pao();
 		int delay_time = 387 - get_roof_fly_time(all_pao_vec[vec_index].col, col);
 		int fire_time = delay_time + main_object->gameClock();
 		//如果炮可用
 		if (all_pao_vec[vec_index].recover_time <= fire_time)
 		{
 			delay_fire_pao(vec_index, delay_time, row, col);
+			skip_pao(1);
 		}
 		else
 		{
 			popErrorWindowNotInQueue("roofPao : 位于 (#, #) 的炮还有 #cs 恢复", all_pao_vec[vec_index].row, all_pao_vec[vec_index].col, all_pao_vec[vec_index].recover_time - fire_time);
 		}
-		skip_pao(1);
 	});
 }
 
@@ -514,48 +498,6 @@ void AvZ::PaoOperator::roofPao(const std::vector<Crood> &lst)
 	for (const auto &each : lst)
 	{
 		roofPao(each.row, each.col);
-	}
-}
-
-void AvZ::PaoOperator::tryRoofPao(int row, float col)
-{
-	insertOperation([=]() {
-		if (limit_pao_sequence)
-		{
-			popErrorWindowNotInQueue("tryRoofPao : 由于炮序限制，tryPao系列函数不可使用！");
-			return;
-		}
-		if (main_object->scene() != 4 && main_object->scene() != 5)
-		{
-			popErrorWindowNotInQueue("tryRoofPao : RoofPao函数只适用于 RE 与 ME ");
-			return;
-		}
-		int fire_time;
-		int now_time = main_object->gameClock();
-		int delay_time;
-		//寻找符合条件的炮
-		for (const auto &vec_index : pao_list)
-		{
-			if (!is_exist(vec_index))
-				continue;
-
-			delay_time = 387 - get_roof_fly_time(all_pao_vec[vec_index].col, col);
-			fire_time = delay_time + now_time;
-			//如果炮可用
-			if (all_pao_vec[vec_index].recover_time <= fire_time)
-			{
-				delay_fire_pao(vec_index, delay_time, row, col);
-				return;
-			}
-		}
-	});
-}
-
-void AvZ::PaoOperator::tryRoofPao(const std::vector<Crood> &lst)
-{
-	for (const auto &each : lst)
-	{
-		tryRoofPao(each.row, each.col);
 	}
 }
 
@@ -586,50 +528,5 @@ void AvZ::PaoOperator::rawRoofPao(const std::vector<PaoDrop> &lst)
 	for (const auto &each : lst)
 	{
 		rawRoofPao(each.pao_row, each.pao_col, each.drop_row, each.drop_col);
-	}
-}
-
-void AvZ::PaoOperator::tryRecoverPao(int row, float col)
-{
-	insertOperation([=]() {
-		if (limit_pao_sequence)
-		{
-			popErrorWindowNotInQueue("tryRecoverPao : 由于炮序限制，tryPao系列函数不可使用！");
-			return;
-		}
-
-		// 寻找第一个未被铲的炮
-		auto vec_index_it = pao_list.begin();
-		while (!is_exist(*vec_index_it))
-		{
-			++vec_index_it;
-		}
-
-		// 寻找 cd 最小的炮
-		auto min_time_it_it = vec_index_it;
-		do
-		{
-			if (!is_exist(*vec_index_it) &&															 // is_shoveled?
-				all_pao_vec[*min_time_it_it].recover_time > all_pao_vec[*vec_index_it].recover_time) // is_recoverd?
-			{
-				min_time_it_it = vec_index_it;
-			}
-			++vec_index_it;
-		} while (vec_index_it != pao_list.end());
-
-		int delay_time = all_pao_vec[*min_time_it_it].recover_time - main_object->gameClock();
-		if (delay_time < 0)
-		{
-			delay_time = 0;
-		}
-		delay_fire_pao(*min_time_it_it, delay_time, row, col);
-	});
-}
-
-void AvZ::PaoOperator::tryRecoverPao(const std::vector<Crood> &lst)
-{
-	for (const auto &grid : lst)
-	{
-		tryRecoverPao(grid.row, grid.col);
 	}
 }

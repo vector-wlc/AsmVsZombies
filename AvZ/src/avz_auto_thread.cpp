@@ -26,8 +26,6 @@ void AvZ::VThread::pushFunc(const std::function<void()> &run)
 void AvZ::ItemCollector::run()
 {
 	if (main_object->gameClock() % time_interval != 0 ||
-		pvz_base->gameUi() != 3 ||
-		main_object->gamePaused() ||
 		main_object->mouseAttribution()->type() != 0)
 	{
 		return;
@@ -63,6 +61,22 @@ void AvZ::ItemCollector::run()
 //  IceFiller
 ////////////////////////////////////////
 
+void AvZ::IceFiller::resetIceSeedList(const std::vector<int> &lst)
+{
+	insertOperation([=]() {
+		ice_seed_index_vec.clear();
+		for (const auto &ice_index : lst)
+		{
+			auto seed_memory = main_object->seedArray() + ice_index - 1;
+			if (seed_memory->type() != HBG_14 || seed_memory->imitatorType() != HBG_14)
+			{
+				popErrorWindowNotInQueue("请检查第 # 张卡片是否为冰卡", ice_index);
+			}
+			ice_seed_index_vec.push_back(ice_index - 1);
+		}
+	});
+}
+
 void AvZ::IceFiller::start(const std::vector<Grid> &lst)
 {
 	insertOperation([=]() {
@@ -91,11 +105,6 @@ void AvZ::IceFiller::start(const std::vector<Grid> &lst)
 
 void AvZ::IceFiller::run()
 {
-	if (pvz_base->gameUi() != 3 && main_object->gamePaused())
-	{
-		return;
-	}
-
 	if (is_paused)
 	{
 		return;
@@ -271,11 +280,6 @@ void AvZ::PlantFixer::start(int _plant_type, const std::vector<Grid> &lst, int _
 
 void AvZ::PlantFixer::run()
 {
-	if (pvz_base->gameUi() != 3 && main_object->gamePaused())
-	{
-		return;
-	}
-
 	if (is_paused)
 	{
 		return;
@@ -287,7 +291,7 @@ void AvZ::PlantFixer::run()
 	static std::vector<int> plant_index_vec;
 	static Grid need_plant_grid; //记录要使用植物的格子
 	static int min_hp;			 //记录要使用植物的格子
-	static bool is_seed_used;	//种子是否被使用
+	static bool is_seed_used;	 //种子是否被使用
 	static decltype(seed_index_vec.begin()) usable_seed_index_it;
 	static decltype(plant_index_vec.begin()) plant_index_it;
 	static decltype(grid_lst.begin()) grid_it;
@@ -396,7 +400,8 @@ void AvZ::KeyConnector::add(char key, std::function<void()> operate)
 		pushFunc([=]() {
 			for (const auto &key_operation : key_operation_vec)
 			{
-				if ((GetAsyncKeyState(key_operation.first) & 0x8001) == 0x8001)
+				if ((GetAsyncKeyState(key_operation.first) & 0x8001) == 0x8001 &&
+					GetForegroundWindow() == pvz_hwnd) // 检测 pvz 是否为顶层窗口
 				{
 					setTime(nowTimeWave());
 					key_operation.second();

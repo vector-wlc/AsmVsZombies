@@ -10,8 +10,8 @@
 
 #pragma once
 
-// AvZ 版本号 当前版本 20_03_16
-#define __AVZ_VERSION__ 200316
+// AvZ 版本号 当前版本 20_04_12
+#define __AVZ_VERSION__ 200412
 
 #include "pvzfunc.h"
 #include <map>
@@ -384,7 +384,7 @@ public:
 	static void clickSeed(int seed_index) { click_scene(main_object, 50 + 50 * seed_index, 70, 1); }
 
 	// Not In Queue
-	//右键安全点击
+	// 右键安全点击
 	static void safeClick() { click_scene(main_object, 1, 1, -1); }
 
 	// Not In Queue
@@ -566,6 +566,13 @@ public:
 
 	public:
 		// In Queue
+		//重置冰卡
+		//使用示例
+		//resetIceSeedList({1}) ------ 只使用第一张卡片
+		//resetIceSeedList({1, 4}) ----- 使用第一、四张卡片
+		void resetIceSeedList(const std::vector<int> &lst);
+
+		// In Queue
 		//重置存冰位置
 		//使用示例：
 		//resetFillList({{3,4},{5,6}})-----将存冰位置重置为{3，4}，{5，6}
@@ -676,13 +683,11 @@ public:
 		//记录炮的信息
 		struct PaoInfo
 		{
-			int row;					 //所在行
-			int col;					 //所在列
-			int recover_time;			 //恢复时间
-			int index;					 //炮的对象序列
-			int vec_index;				 //炮所在 vector 的索引
-			bool is_in_list = false;	 //记录是否在炮列表内
-			bool is_in_sequence = false; //记录是否被炮序限制
+			int row;		  //所在行
+			int col;		  //所在列
+			int recover_time; //恢复时间
+			int index;		  //炮的对象序列
+			int vec_index;	  //炮所在 vector 的索引
 			friend bool operator==(const PaoInfo &pi1, const PaoInfo &pi2)
 			{
 				return pi1.row == pi2.row && pi1.col == pi2.col;
@@ -735,12 +740,19 @@ public:
 			bool is_writable = true;
 		};
 
+		// 选用顺序控制模式
+		enum SequentialMode
+		{
+			SPACE,
+			TIME
+		};
+
 	private:
 		static int next_vec_index;
 		static std::vector<PaoInfo> all_pao_vec; //所有炮的信息
 		std::vector<int> pao_list;				 //炮列表，记录炮的信息
 		int next_pao;							 //记录当前即将发射的下一门炮
-		bool limit_pao_sequence = true;			 //是否限制炮序
+		int sequential_mode = true;				 //顺序模式
 		static LastestPaoMsg lastest_pao_msg;	 //最近一颗发炮的信息
 		static VThread vthread;
 		static RoofFlyTime fly_time_data[8];
@@ -749,11 +761,18 @@ public:
 		//删除一门炮
 		static void delete_pao(std::vector<PaoInfo>::iterator &it)
 		{
-			std::swap(next_vec_index, it->vec_index);
+			// 炮不能重复删掉
+			if (is_exist(it))
+			{
+				std::swap(next_vec_index, it->vec_index);
+			}
 		}
 		static void delete_pao(int index)
 		{
-			std::swap(next_vec_index, all_pao_vec[index].vec_index);
+			if (is_exist(index))
+			{
+				std::swap(next_vec_index, all_pao_vec[index].vec_index);
+			}
 		}
 		//炮是否存在
 		static bool is_exist(std::vector<PaoInfo>::iterator &it)
@@ -764,19 +783,19 @@ public:
 		{
 			return index == all_pao_vec[index].vec_index;
 		}
-		//禁用 = 运算符
+		// 禁用 = 运算符
 		void operator=(PaoOperator) {}
-		//对炮进行一些检查
-		static void pao_examine(int vec_index, int drop_row, float drop_col);
-		//检查落点
+		// 对炮进行一些检查
+		static bool pao_examine(int vec_index, int drop_row, float drop_col);
+		// 检查落点
 		static bool is_drop_conflict(int pao_row, int pao_col, int drop_row, float drop_col);
-		//基础发炮函数
+		// 基础发炮函数
 		static void base_fire_pao(int vec_index, int drop_row, float drop_col);
-		//获取屋顶炮飞行时间
+		// 获取屋顶炮飞行时间
 		static int get_roof_fly_time(int pao_col, float drop_col);
-		//延迟发炮
+		// 延迟发炮
 		static void delay_fire_pao(int vec_index, int delay_time, int row, float col);
-		//更新最近发炮的信息
+		// 更新最近发炮的信息
 		static void update_lastest_pao_msg(int fire_time, int index)
 		{
 			if (lastest_pao_msg.is_writable)
@@ -785,10 +804,18 @@ public:
 				lastest_pao_msg.vec_index = index;
 			}
 		}
-		//跳过一定数量的炮
+		// 跳过一定数量的炮
 		void skip_pao(int x)
 		{
 			next_pao = (next_pao + x) % pao_list.size();
+		}
+		// 找到恢复时间最早的炮
+		int find_min_recover_time_pao();
+
+		// 给出下一门要发射的炮
+		int get_next_pao()
+		{
+			return sequential_mode == TIME ? find_min_recover_time_pao() : pao_list[next_pao];
 		}
 
 	public:
@@ -819,26 +846,32 @@ public:
 		static void rawRoofPao(const std::vector<PaoDrop> &lst);
 
 		// In Queue
-		//发炮函数：用户自定义位置发射
-		//注意：尽量不要使用此函数操作位于有炮序炮列表中的炮，因为使用此函数后自动识别的炮序与 resetPaolist 更新的炮序将无效！
-		//使用示例：
-		//rawPao(1,2,2,9)-----------------------将位置为（1，2）的炮发射到（2，9）
-		//rawPao({{1, 2, 2, 9}, {1, 3, 5, 9}})-------将位置为（1，2）的炮发射到（2，9），将位置为（1，3）的炮发射到（5，9）
+		// 发炮函数：用户自定义位置发射
+		// 注意：尽量不要使用此函数操作位于有炮序炮列表中的炮，因为使用此函数后自动识别的炮序与 resetPaolist 更新的炮序将无效！
+		// 使用示例：
+		// rawPao(1,2,2,9)-----------------------将位置为（1，2）的炮发射到（2，9）
+		// rawPao({{1, 2, 2, 9}, {1, 3, 5, 9}})-------将位置为（1，2）的炮发射到（2，9），将位置为（1，3）的炮发射到（5，9）
 		static void rawPao(int pao_row, int pao_col, int drop_row, float drop_col);
 
 		// In Queue
-		//发炮函数：用户自定义位置发射
-		//注意：尽量不要使用此函数操作位于有炮序炮列表中的炮，因为使用此函数后自动识别的炮序与 resetPaolist 更新的炮序将无效！
-		//使用示例：
-		//rawPao(1,2,2,9)-----------------------将位置为（1，2）的炮发射到（2，9）
-		//rawPao({{1, 2, 2, 9}, {1, 3, 5, 9}})-------将位置为（1，2）的炮发射到（2，9），将位置为（1，3）的炮发射到（5，9）
+		// 发炮函数：用户自定义位置发射
+		// 注意：尽量不要使用此函数操作位于有炮序炮列表中的炮，因为使用此函数后自动识别的炮序与 resetPaolist 更新的炮序将无效！
+		// 使用示例：
+		// rawPao(1,2,2,9)-----------------------将位置为（1，2）的炮发射到（2，9）
+		// rawPao({{1, 2, 2, 9}, {1, 3, 5, 9}})-------将位置为（1，2）的炮发射到（2，9），将位置为（1，3）的炮发射到（5，9）
 		static void rawPao(const std::vector<PaoDrop> &lst);
 
 		// In Queue
-		//种植炮函数
-		//使用示例
-		//plantPao(3, 4)------在三行四列位置种炮
+		// 种植炮函数
+		// 使用示例
+		// plantPao(3, 4)------在三行四列位置种炮
 		static void plantPao(int row, int col);
+
+		// In Queue
+		// 种植炮函数
+		// 使用示例
+		// shovelPao(3, 4)------铲掉三行四列位置的炮
+		static void shovelPao(int row, int col);
 
 		// In Queue
 		// 立即修补上一枚已经发射的炮
@@ -847,36 +880,34 @@ public:
 		PaoOperator();
 		~PaoOperator();
 
-		//////////////////////////////////////////// 模式设定成员
+		// In Queue
+		void setSequentialMode(int _sequential_mode)
+		{
+			insertOperation([=]() {
+				sequential_mode = _sequential_mode;
+			});
+		}
 
 		// In Queue
-		//设置炮序限制 参数为 false 则解除炮序限制，true 则增加炮序限制
-		//解除此限制后 fixPao 可铲种炮列表内的炮，tryPao 系列可使用， Pao 系列不可使用
-		//增加此限制后 fixPao 不可铲种炮列表内的炮，tryPao 系列不可使用， Pao 系列可使用
-		void setLimitPaoSequence(bool limit);
-
-		/////////////////////////////////////////// 下面是关于限制炮序的相关成员
-
-		// In Queue
-		//设置即将发射的下一门炮
-		//此函数只有在限制炮序的时候才可调用
-		//使用示例：
-		//setNextPao(10)------将炮列表中第十门炮设置为下一门即将发射的炮
-		//setNextPao(2, 8)------将炮列表中位于 (2, 8) 的炮设置为下一门即将发射的炮
+		// 设置即将发射的下一门炮
+		// 此函数只有在限制炮序的时候才可调用
+		// 使用示例：
+		// setNextPao(10)------将炮列表中第十门炮设置为下一门即将发射的炮
+		// setNextPao(2, 8)------将炮列表中位于 (2, 8) 的炮设置为下一门即将发射的炮
 		void setNextPao(int next_pao);
 
 		// In Queue
-		//设置即将发射的下一门炮
-		//此函数只有在限制炮序的时候才可调用
-		//使用示例：
-		//setNextPao(10)------将炮列表中第十门炮设置为下一门即将发射的炮
-		//setNextPao(2, 8)------将炮列表中位于 (2, 8) 的炮设置为下一门即将发射的炮
+		// 设置即将发射的下一门炮
+		// 此函数只有在限制炮序的时候才可调用
+		// 使用示例：
+		// setNextPao(10)------将炮列表中第十门炮设置为下一门即将发射的炮
+		// setNextPao(2, 8)------将炮列表中位于 (2, 8) 的炮设置为下一门即将发射的炮
 		void setNextPao(int row, int col);
 
 		// In Queue
-		//跳炮函数
-		//使用示例：
-		//skipao(2)---跳过按照顺序即将要发射的2门炮
+		// 跳炮函数
+		// 使用示例：
+		// skipao(2)---跳过按照顺序即将要发射的2门炮
 		void skipPao(int x)
 		{
 			insertOperation([=]() {
@@ -885,99 +916,55 @@ public:
 		}
 
 		// In Queue
-		//发炮函数
-		//使用示例：
-		//pao(2,9)----------------炮击二行，九列
-		//pao({ {2,9},{5,9} })-----炮击二行，九列，五行，九列
+		// 发炮函数
+		// 使用示例：
+		// pao(2,9)----------------炮击二行，九列
+		// pao({ {2,9},{5,9} })-----炮击二行，九列，五行，九列
 		void pao(int row, float col);
 
 		// In Queue
-		//发炮函数
-		//使用示例：
-		//pao(2,9)----------------炮击二行，九列
-		//pao({ {2,9},{5,9} })-----炮击二行，九列，五行，九列
+		// 发炮函数
+		// 使用示例：
+		// pao(2,9)----------------炮击二行，九列
+		// pao({ {2,9},{5,9} })-----炮击二行，九列，五行，九列
 		void pao(const std::vector<Crood> &lst);
 
 		// In Queue
-		//发炮函数 炮CD恢复自动发炮
-		//使用示例：
-		//recoverPao(2,9)----------------炮击二行，九列
-		//recoverPao({ {2,9},{5,9} })-----炮击二行，九列，五行，九列
+		// 发炮函数 炮CD恢复自动发炮
+		// 使用示例：
+		// recoverPao(2,9)----------------炮击二行，九列
+		// recoverPao({ {2,9},{5,9} })-----炮击二行，九列，五行，九列
 		void recoverPao(int row, float col);
 
 		// In Queue
-		//发炮函数 炮CD恢复自动发炮
-		//使用示例：
-		//recoverPao(2,9)----------------炮击二行，九列
-		//recoverPao({ {2,9},{5,9} })-----炮击二行，九列，五行，九列
+		// 发炮函数 炮CD恢复自动发炮
+		// 使用示例：
+		// recoverPao(2,9)----------------炮击二行，九列
+		// recoverPao({ {2,9},{5,9} })-----炮击二行，九列，五行，九列
 		void recoverPao(const std::vector<Crood> &lst);
 
 		// In Queue
-		//屋顶修正飞行时间发炮. 此函数开销较大不适合精确键控.
-		//此函数只适用于RE与ME 修正时间：387cs
-		//使用示例：
-		//roofPao(3,7)---------------------修正飞行时间后炮击3行7列
-		//roofPao({ {2,9},{5,9} })---------修正飞行时间后炮击2行9列,5行9列
+		// 屋顶修正飞行时间发炮. 此函数开销较大不适合精确键控.
+		// 此函数只适用于RE与ME 修正时间：387cs
+		// 使用示例：
+		// roofPao(3,7)---------------------修正飞行时间后炮击3行7列
+		// roofPao({ {2,9},{5,9} })---------修正飞行时间后炮击2行9列,5行9列
 		void roofPao(int row, float col);
 
 		// In Queue
-		//屋顶修正飞行时间发炮. 此函数开销较大不适合精确键控.
-		//此函数只适用于RE与ME 修正时间：387cs
-		//使用示例：
-		//roofPao(3,7)---------------------修正飞行时间后炮击3行7列
-		//roofPao({ {2,9},{5,9} })---------修正飞行时间后炮击2行9列,5行9列
+		// 屋顶修正飞行时间发炮. 此函数开销较大不适合精确键控.
+		// 此函数只适用于RE与ME 修正时间：387cs
+		// 使用示例：
+		// roofPao(3,7)---------------------修正飞行时间后炮击3行7列
+		// roofPao({ {2,9},{5,9} })---------修正飞行时间后炮击2行9列,5行9列
 		void roofPao(const std::vector<Crood> &lst);
-
-		//////////////////////////////////////// 下面是不限制炮序能够使用的成员
-
-		// In Queue
-		//自动找炮函数
-		//使用示例
-		//tryPao(2,9)----------------在炮列表中找到可用的炮后，炮击二行，九列
-		//tryPao({{2, 9}, {5, 9}})-----在炮列表中找到可用的炮后，炮击二行，九列，五行，九列
-		void tryPao(int row, float col);
-
-		// In Queue
-		//自动找炮函数
-		//使用示例
-		//tryPao(2,9)----------------在炮列表中找到可用的炮后，炮击二行，九列
-		//tryPao({{2, 9}, {5, 9}})-----在炮列表中找到可用的炮后，炮击二行，九列，五行，九列
-		void tryPao(const std::vector<Crood> &lst);
-
-		// In Queue
-		//自动找炮函数
-		//使用示例
-		//tryRoofPao(2,9)----------------在炮列表中找到可用的炮后，炮击二行，九列
-		//tryRoofPao({{2, 9},{5, 9}})-----在炮列表中找到可用的炮后，炮击二行，九列，五行，九列
-		void tryRoofPao(int row, float col);
-
-		// In Queue
-		//自动找炮函数
-		//使用示例
-		//tryRoofPao(2,9)----------------在炮列表中找到可用的炮后，炮击二行，九列
-		//tryRoofPao({{2, 9},{5, 9}})-----在炮列表中找到可用的炮后，炮击二行，九列，五行，九列
-		void tryRoofPao(const std::vector<Crood> &lst);
-
-		// In Queue
-		//发炮函数 炮CD恢复自动尝试发炮
-		//使用示例：
-		//tryRecoverPao(2,9)----------------炮击二行，九列
-		//tryRecoverPao({ {2,9},{5,9} })-----炮击二行，九列，五行，九列
-		void tryRecoverPao(int row, float col);
-
-		// In Queue
-		//发炮函数 炮CD恢复自动尝试发炮
-		//使用示例：
-		//tryRecoverPao(2,9)----------------炮击二行，九列
-		//tryRecoverPao({ {2,9},{5,9} })-----炮击二行，九列，五行，九列
-		void tryRecoverPao(const std::vector<Crood> &lst);
 
 		////////////////////////////////// 下面是不受模式限制使用的成员
 
 		// In Queue
-		//重置炮列表
-		//使用示例:
-		//resetPaoList({{3, 1},{4, 1},{3, 3},{4, 3}})-------经典四炮
+		// 重置炮列表
+		// 使用示例:
+		// resetPaoList({{3, 1},{4, 1},{3, 3},{4, 3}})-------经典四炮
 		void resetPaoList(const std::vector<Grid> &lst);
 	};
 };

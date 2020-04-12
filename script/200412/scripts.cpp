@@ -17,5 +17,5 @@ void RECannon14();
 void Script()
 {
     // Write your script here!
-    PECannon4();
+    PECannon14();
 }
