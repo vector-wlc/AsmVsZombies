@@ -74,7 +74,8 @@ void AvZ::IceFiller::resetIceSeedList(const std::vector<int> &lst)
 			}
 			ice_seed_index_vec.push_back(ice_index - 1);
 		}
-	});
+	},
+					"resetIceSeedList");
 }
 
 void AvZ::IceFiller::start(const std::vector<Grid> &lst)
@@ -100,7 +101,8 @@ void AvZ::IceFiller::start(const std::vector<Grid> &lst)
 		coffee_seed_index = getSeedIndex(KFD_35);
 		fill_ice_grid_vec = lst;
 		pushFunc([=]() { run(); });
-	});
+	},
+					"startFillIce");
 }
 
 void AvZ::IceFiller::run()
@@ -168,14 +170,15 @@ void AvZ::IceFiller::coffee()
 			--fill_grid_it;
 			clickGrid(fill_grid_it->row, fill_grid_it->col);
 		} while (fill_grid_it != fill_ice_grid_vec.begin());
-	});
+	},
+					"coffee");
 }
 
 /////////////////////////////////////////////////
 //    PlantFixer
 /////////////////////////////////////////////////
 
-void AvZ::PlantFixer::autoGetFixList()
+void AvZ::PlantFixer::auto_get_fix_list()
 {
 	grid_lst.clear();
 	auto plant = main_object->plantArray();
@@ -190,6 +193,14 @@ void AvZ::PlantFixer::autoGetFixList()
 			grid_lst.push_back(grid);
 		}
 	}
+}
+
+void AvZ::PlantFixer::autoGetFixList()
+{
+	insertOperation([=]() {
+		auto_get_fix_list();
+	},
+					"autoGetFixList");
 }
 
 bool AvZ::PlantFixer::use_seed_(int seed_index, int row, float col, bool is_need_shovel)
@@ -268,14 +279,15 @@ void AvZ::PlantFixer::start(int _plant_type, const std::vector<Grid> &lst, int _
 		//如果没有给出列表信息
 		if (lst.size() == 0)
 		{
-			autoGetFixList();
+			auto_get_fix_list();
 		}
 		else
 		{
 			grid_lst = lst;
 		}
 		pushFunc([=]() { run(); });
-	});
+	},
+					"startFixPlant");
 }
 
 void AvZ::PlantFixer::run()
@@ -403,7 +415,7 @@ void AvZ::KeyConnector::add(char key, std::function<void()> operate)
 				if ((GetAsyncKeyState(key_operation.first) & 0x8001) == 0x8001 &&
 					GetForegroundWindow() == pvz_hwnd) // 检测 pvz 是否为顶层窗口
 				{
-					setTime(nowTimeWave());
+					setTime(nowTime(time_wave.wave));
 					key_operation.second();
 					return;
 				}

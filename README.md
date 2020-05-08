@@ -70,11 +70,21 @@ Windows 7 仍存在使用 selectCards 函数崩溃的问题
 
 ## 更新日志
 
+AvZ 2020_05_08
+
+* 操作队列大更新, 使用 20 条队列并行读取操作, 即不用考虑跨波操作时间先后顺序问题
+* 新增调试函数 showQueue, 作用为显示操作对列中为未被执行的内容
+* 删除 nowTimeWave, 新增 nowTime, 具体使用方法见使用说明
+* PaoOperator : 删除反人类的炮的信息更新机制，手动发炮、铲种炮不再需要更新炮的信息, 如果在炮列表内使用了位移铲种, 需要手动更新炮列表
+* 修正了 Card 名称中模仿寒冰射手 "vhbss" 的拼写错误 --> "Mhbss"
+* 削弱了 vector-wlc 的头发
+
 AvZ 2020_04_12
 
 * PaoOperator 类大更新，删除 tryPao 系列函数，增加按照时间顺序使用炮，详情请看 bilibili 视频教程
 * IceFiller 类增添成员函数 resetIceSeedList，允许对冰卡进行更加细致的控制
 * 当 PvZ 窗口不是顶层窗口时，KeyConnect 将无效
+* 削弱了 vector-wlc 的头发
 
 AvZ 2020_03_16
 

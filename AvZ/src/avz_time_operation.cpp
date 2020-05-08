@@ -8,107 +8,116 @@
 
 #include "avz.h"
 
+// 此函数每帧都需调用一次
 void AvZ::update_refresh_time()
 {
-	static int wave = 0;
-	if (wave != operation_queue.begin()->first.wave)
+	int wave = main_object->wave();
+	if (wave == 20)
 	{
-		wave = operation_queue.begin()->first.wave;
-		if (wave == main_object->wave()) // 已刷新
+		return;
+	}
+	if (operation_queue_vec[wave].refresh_time != -1 // 已经读取过的不再读取
+		&& wave != 0								 // wave 1 需要不断读取
+	)
+	{
+		return; // 已经读取到了的刷新时间点不再读取
+	}
+	int flag_countdown = (wave + 1 == 1 ? 0xFFFF : 200); // 读取刷新倒计时标志时间
+	if (wave + 1 == 10 || wave + 1 == 20)
+	{
+		// 大波
+		if (main_object->refreshCountdown() <= 4)
 		{
-			zombie_refresh.time = main_object->gameClock() - main_object->initialCountdown() + main_object->refreshCountdown();
-			zombie_refresh.wave = wave;
+			operation_queue_vec[wave].refresh_time = main_object->hugewaveCountdown() + main_object->gameClock();
 		}
-		else if (wave - 1 == main_object->wave()) // 未刷新
+	}
+	else
+	{
+		if (main_object->refreshCountdown() <= flag_countdown)
 		{
-			int prejudge_std_time = (wave == 1 ? 600 : 200);
-			if (wave == 10 || wave == 20) //大波
-			{
-				if (main_object->refreshCountdown() > 4)
-				{
-					--wave;
-					return;
-				}
-				zombie_refresh.time = main_object->hugewaveCountdown() + main_object->gameClock();
-				zombie_refresh.wave = wave;
-			}
-			else if (main_object->refreshCountdown() <= prejudge_std_time) //普通波
-			{
-				zombie_refresh.time = main_object->refreshCountdown() + main_object->gameClock();
-				zombie_refresh.wave = wave;
-			}
-			else
-			{
-				--wave;
-				return;
-			}
-		}
-		else
-		{
-			--wave;
-			return;
+			operation_queue_vec[wave].refresh_time = main_object->refreshCountdown() + main_object->gameClock();
 		}
 	}
 }
 
-bool AvZ::is_time_arrived()
+void AvZ::insertOperation(const std::function<void()> &operation, const std::string &description)
 {
-	update_refresh_time();
-	const auto &operation = operation_queue.begin()->first;
-	if (zombie_refresh.wave == operation.wave)
-	{
-		int now_time = main_object->gameClock() - zombie_refresh.time;
-		if (now_time >= operation.time)
-		{
-			if (now_time > operation.time && operation.time != -600)
-			{
-				popErrorWindowNotInQueue("您设定的时间已过去，现在的时间已到 : #，点击确定按照当前时间执行接下来的操作", now_time);
-			}
-			return true;
-		}
-	}
-	// 如果现在的波数已经大于设定的波数 + 2，直接放行
-	return main_object->wave() > operation.wave + 2;
-}
-
-void AvZ::insertOperation(const std::function<void()> &operation)
-{
-	auto it = operation_queue.find(time_wave);
+	Operation operate = {operation, description};
+	auto &operation_queue = operation_queue_vec[time_wave.wave - 1].queue; // 取出相应波数的队列
+	auto it = operation_queue.find(time_wave.time);
 	if (it == operation_queue.end())
 	{
-		std::pair<TimeWave, std::vector<std::function<void()>>> to;
-		to.first = time_wave;
-		to.second.push_back(operation);
+		std::pair<int, std::vector<Operation>> to;
+		to.first = time_wave.time;
+		to.second.push_back(operate);
 		operation_queue.insert(to);
 	}
 	else
 	{
-		it->second.push_back(operation);
+		it->second.push_back(operate);
 	}
 }
 
 void AvZ::waitUntil(const TimeWave &_time_wave)
 {
-	TimeWave now_time;
 	while (pvz_base->gameUi() == 3)
 	{
-		now_time = nowTimeWave();
-		if (_time_wave.time - 2 <= now_time.time && _time_wave.wave == now_time.wave)
+		exit_sleep(1);
+		if (operation_queue_vec[_time_wave.wave - 1].refresh_time == -1) // 当前波的刷新时间未读出
+		{
+			continue;
+		}
+		if (_time_wave.time - 2 <= nowTime(_time_wave.wave))
 		{
 			break;
 		}
-		exit_sleep(1);
 	}
 	setTime(_time_wave);
+}
+
+void AvZ::showQueue(std::initializer_list<int> lst)
+{
+	insertOperation([=]() {
+		std::stringstream ss;
+		for (const auto &wave : lst)
+		{
+			if (wave < 1 || wave > 20)
+			{
+				continue;
+			}
+			ss << "---------------------------"
+			   << " wave : " << wave << " ---------------------------";
+			if (!operation_queue_vec[wave - 1].queue.empty())
+			{
+				for (const auto &each : operation_queue_vec[wave - 1].queue)
+				{
+					ss << "\n\t" << each.first;
+					for (const auto &operation : each.second)
+					{
+						ss << " " << operation.description;
+					}
+				}
+			}
+			else
+			{
+				ss << "\n\tnone";
+			}
+
+			ss << "\n";
+		}
+
+		popErrorWindowNotInQueue(ss.str());
+	},
+					"showQueue");
 }
 
 void AvZ::loadScript(const std::function<void()> func)
 {
 	is_loaded = true;
 	init_address();
+	operation_queue_vec.resize(20);
 	setTime(-600, 1);
 	item_collector.start();
-	pao_operator.initPaoMessage();
 	func();
 
 	while (pvz_base->gameUi() != 1)
@@ -124,7 +133,7 @@ void AvZ::loadScript(const std::function<void()> func)
 		*thread_info.id_ptr = -1;
 	}
 	exit_sleep(20);
-	operation_queue.clear(); // 清除一切操作
+	operation_queue_vec.clear(); // 清除一切操作
 	thread_vec.clear();
 	key_connector.clear();
 	while (!stoped_thread_id_stack.empty())
@@ -156,16 +165,29 @@ void AvZ::run(MainObject *level)
 		}
 	}
 
-	if (!operation_queue.empty())
+	update_refresh_time();
+
+	// 对 20 个队列进行遍历
+	// 最大比较次数 20 * 3 = 60 次
+	// 卧槽，感觉好亏，不过游戏应该不会卡顿
+	for (int wave = 0; wave < 20; ++wave)
 	{
-		if (is_time_arrived())
+		if (operation_queue_vec[wave].refresh_time == -1 ||
+			operation_queue_vec[wave].queue.empty() ||
+			!operation_queue_vec[wave].is_time_arrived())
 		{
-			auto it = operation_queue.begin();
-			for (const auto &operation : it->second)
-			{
-				operation();
-			}
-			operation_queue.erase(it);
+			// 波次没有到达或队列为空或时间没有到达，跳过
+			continue;
 		}
+
+		auto it = operation_queue_vec[wave].queue.begin();
+		time_wave.wave = wave + 1;
+		time_wave.time = it->first;
+		// 此处使用范围 for 由于迭代器更新的原因会出问题
+		for (int i = 0; i < it->second.size(); ++i)
+		{
+			it->second[i].operation();
+		}
+		operation_queue_vec[wave].queue.erase(it);
 	}
 }

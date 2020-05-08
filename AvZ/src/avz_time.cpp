@@ -21,5 +21,6 @@ void AvZ::ice3(int time)
 				return;
 			}
 		}
-	});
+	},
+					"ice3");
 }

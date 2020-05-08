@@ -2,20 +2,23 @@
 
 #include <cstdint>
 
-struct PvZ;			   // 游戏主体
-struct MainObject;	   // 主要对象
-struct Plant;		   // 植物
-struct Zombie;		   // 僵尸
-struct Seed;		   // 种子（卡片）
-struct Item;		   // 收集物
-struct MouseWindow;	   // 鼠标窗口
-struct TopMouseWindow; // 顶层鼠标窗口
-struct LetsRockBtn;	   // lets_rock 按钮
-struct SelectCardUi_m; // 选卡界面_在 main_object
-struct SelectCardUi_p; // 选卡界面_在 pvz_base
-struct Mouse;		   // 鼠标
-struct MouseExtra;	   // 鼠标额外属性
-struct Text;		   //文字属性
+struct PvZ;				// 游戏主体
+struct MainObject;		// 主要对象
+struct Plant;			// 植物
+struct Zombie;			// 僵尸
+struct Seed;			// 种子（卡片）
+struct Item;			// 收集物
+struct MouseWindow;		// 鼠标窗口
+struct TopMouseWindow;	// 顶层鼠标窗口
+struct LetsRockBtn;		// lets_rock 按钮
+struct SelectCardUi_m;	// 选卡界面_在 main_object
+struct SelectCardUi_p;	// 选卡界面_在 pvz_base
+struct Mouse;			// 鼠标
+struct MouseExtra;		// 鼠标额外属性
+struct Text;			// 文字属性
+struct AnimationMain;	// 动画主要对象
+struct AnimationOffset; // 动画地址偏移
+struct Animation;		// 动画
 
 struct PvZ
 {
@@ -32,6 +35,11 @@ struct PvZ
 	SelectCardUi_p *selectCardUi_p()
 	{
 		return *(SelectCardUi_p **)((unsigned char *)this + 0x774);
+	}
+
+	AnimationMain *animationMain()
+	{
+		return *(AnimationMain **)((unsigned char *)this + 0x820);
 	}
 
 	int &gameUi()
@@ -198,6 +206,11 @@ struct Plant
 	{
 		return (int &)((unsigned char *)this)[0x28];
 	}
+	//返回植物的状态
+	//35：空炮
+	//36：正在装填
+	//37：准备就绪
+	//38：正在发射
 	int &state()
 	{
 		return (int &)((unsigned char *)this)[0x3c];
@@ -246,15 +259,20 @@ struct Plant
 	{
 		return (bool &)((unsigned char *)this)[0x143];
 	}
+	// 动作编号
+	uint16_t &animationCode()
+	{
+		return (uint16_t &)((unsigned char *)this)[0x94];
+	}
 };
 
 struct Zombie
 {
 	unsigned char data[0x15c];
 
-	bool isExist()
+	uint16_t isExist()
 	{
-		return (short)((unsigned char *)this)[0x15a];
+		return (uint16_t)((unsigned char *)this)[0x15a];
 	}
 	int &row()
 	{
@@ -273,7 +291,7 @@ struct Zombie
 
 	int &type()
 	{
-		return (int &)((unsigned char *)this)[0x30];
+		return (int &)((unsigned char *)this)[0x24];
 	}
 
 	int &hp()
@@ -426,6 +444,33 @@ struct Item
 	float &ordinate()
 	{
 		return (float &)((unsigned char *)this)[0x28];
+	}
+};
+
+struct AnimationMain
+{
+	AnimationOffset *animationOffset()
+	{
+		return *(AnimationOffset **)((unsigned char *)this + 0x8);
+	}
+};
+
+struct AnimationOffset
+{
+	Animation *animationArray()
+	{
+		return *(Animation **)((unsigned char *)this + 0x0);
+	}
+};
+
+struct Animation
+{
+	unsigned char data[0xa0];
+
+	// 动画循环率
+	float &circulationRate()
+	{
+		return (float &)((unsigned char *)this)[0x4];
 	}
 };
 

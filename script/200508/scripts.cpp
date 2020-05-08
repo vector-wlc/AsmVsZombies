@@ -16,6 +16,5 @@ void RECannon14();
 // The codes written in this function will be loaded into the message queue
 void Script()
 {
-    // Write your script here!
-    PECannon14();
+    RECannon16();
 }

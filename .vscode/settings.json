@@ -54,6 +54,7 @@
         "locale": "cpp",
         "queue": "cpp",
         "stack": "cpp",
-        "thread": "cpp"
+        "thread": "cpp",
+        "set": "cpp"
     }
 }

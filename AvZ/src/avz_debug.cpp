@@ -8,7 +8,7 @@
 #include <string>
 #include "avz.h"
 
-void AvZ::UTF8ToGBK(std::string &strUTF8)
+void AvZ::utf8_to_gbk(std::string &strUTF8)
 {
     int len = MultiByteToWideChar(CP_UTF8, 0, strUTF8.c_str(), -1, NULL, 0);
     wchar_t *wszGBK = new wchar_t[len + 1];

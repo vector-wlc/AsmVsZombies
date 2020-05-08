@@ -45,7 +45,8 @@ void AvZ::deal_wrong_click()
 	auto zombie_memory = main_object->zombieArray();
 	for (int index = 0; index < z_cnt_max; ++index, ++zombie_memory)
 	{
-		if (zombie_memory->abscissa() < 930 &&
+		if (zombie_memory->abscissa() > 800 &&
+			zombie_memory->abscissa() < 930 &&
 			zombie_memory->ordinate() > 370)
 		{
 			zombie_memory->abscissa() = 930;
@@ -237,7 +238,8 @@ void AvZ::card(int seed_index, int row, float col)
 {
 	insertOperation([=]() {
 		cardNotInQueue(seed_index, row, col);
-	});
+	},
+					"card");
 }
 
 void AvZ::card(const std::vector<CardIndex> &lst)
@@ -247,7 +249,8 @@ void AvZ::card(const std::vector<CardIndex> &lst)
 		{
 			cardNotInQueue(each.seed_index, each.row, each.col);
 		}
-	});
+	},
+					"card");
 }
 
 void AvZ::card(const std::string &seed_name, int row, float col)
@@ -259,7 +262,8 @@ void AvZ::card(const std::string &seed_name, int row, float col)
 			return;
 		}
 		cardNotInQueue(seed_index + 1, row, col);
-	});
+	},
+					"card");
 }
 
 void AvZ::card(const std::vector<CardName> &lst)
@@ -274,14 +278,16 @@ void AvZ::card(const std::vector<CardName> &lst)
 			}
 			cardNotInQueue(seed_index + 1, each.row, each.col);
 		}
-	});
+	},
+					"card");
 }
 
 void AvZ::card(int seed_index, const std::vector<Crood> &lst)
 {
 	insertOperation([=]() {
 		cardNotInQueue(seed_index, lst);
-	});
+	},
+					"card");
 }
 
 void AvZ::card(const std::string &seed_name, const std::vector<Crood> &lst)
@@ -293,5 +299,6 @@ void AvZ::card(const std::string &seed_name, const std::vector<Crood> &lst)
 			return;
 		}
 		cardNotInQueue(seed_index + 1, lst);
-	});
+	},
+					"card");
 }

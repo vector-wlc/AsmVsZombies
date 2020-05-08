@@ -10,10 +10,9 @@
 
 #pragma once
 
-// AvZ 版本号 当前版本 20_04_12
-#define __AVZ_VERSION__ 200412
+// AvZ 版本号 当前版本 20_05_18
+#define __AVZ_VERSION__ 200508
 
-#include "pvzfunc.h"
 #include <map>
 #include <vector>
 #include <functional>
@@ -22,9 +21,9 @@
 #include <sstream>
 #include <algorithm>
 #include <stack>
-#include <condition_variable>
-#include <mutex>
 #include <thread>
+#include <set>
+#include "pvzfunc.h"
 #include "scripts.h"
 
 #define FindInAllRange(container, goal) std::find(container.begin(), container.end(), goal)
@@ -43,7 +42,7 @@ private:
 	static PvZ *pvz_base;
 	static MainObject *main_object;
 
-	//读取内存函数
+	// 读取内存函数
 	template <typename T, typename... Args>
 	static T read_memory(Args... args)
 	{
@@ -58,7 +57,7 @@ private:
 		return result;
 	}
 
-	//改写内存函数
+	// 改写内存函数
 	template <typename T, typename... Args>
 	static void write_memory(T value, Args... args)
 	{
@@ -76,33 +75,39 @@ private:
 	// time operation queue
 
 	// 该部分将使用者写的操作按照时间先后顺序录入消息队列，旧接口得以实现
+	// 使用 20 条操作队列，每一条操作队列储存一波的操作
+	// 需要每帧进行僵尸刷新时间的读取，普通波 <= 200，wave1 : <=600   wave10||20: 750
+	// 当队列记录的刷新时间点为 -1 时，continue
 public:
 	struct TimeWave
 	{
 		int time;
 		int wave;
-		friend bool operator<(const TimeWave &tq1, const TimeWave &tq2)
+	};
+
+	struct Operation
+	{
+		std::function<void()> operation;
+		std::string description;
+	};
+
+	struct OperationQueue
+	{
+		int refresh_time = -1;
+		std::map<int, std::vector<Operation>> queue;
+		bool is_time_arrived()
 		{
-			if (tq1.wave == tq2.wave)
-			{
-				return tq1.time < tq2.time;
-			}
-			return tq1.wave < tq2.wave;
-		}
-		friend bool operator==(const TimeWave &tq1, const TimeWave &tq2)
-		{
-			return tq1.time == tq2.time && tq1.wave == tq2.wave;
+			return queue.begin()->first == main_object->gameClock() - refresh_time;
 		}
 	};
 
 private:
-	static std::map<TimeWave, std::vector<std::function<void()>>> operation_queue; // 操作队列
-	static TimeWave time_wave;													   // 操作
+	static std::vector<OperationQueue> operation_queue_vec;
+	static TimeWave time_wave;
 	static bool is_loaded;
 	static bool is_multiple_effective;
 	static bool is_exited;
 	static void update_refresh_time();
-	static bool is_time_arrived();
 
 // 随时检测线程退出
 #define exit_sleep(ms)     \
@@ -130,6 +135,7 @@ public:
 	{
 		time_wave = _time_wave;
 	}
+
 	// 设定操作时间点
 	// 使用示例：
 	// setTime(-95, 1)------ 将操作时间点设为第一波僵尸刷新前 95cs
@@ -139,28 +145,49 @@ public:
 		time_wave.time = time;
 		time_wave.wave = wave;
 	}
+
 	// 设定操作时间点
 	static void setTime(int time)
 	{
 		time_wave.time = time;
 	}
 
+	// 延迟一定时间
+	// 注意由于操作队列的优势，此函数支持负值
+	// 使用示例：
+	// delay(298) ------ 延迟 298cs
+	// delay(-298) ------ 提前 298cs
+	static void delay(int time)
+	{
+		time_wave.time += time;
+	}
+
 	// 将操作插入操作队列中
-	static void insertOperation(const std::function<void()> &operation);
-	static void insertTimeOperation(const TimeWave &time_wave, const std::function<void()> &operation)
+	static void insertOperation(const std::function<void()> &operation, const std::string &description = "unknown");
+	static void insertTimeOperation(const TimeWave &time_wave, const std::function<void()> &operation, const std::string &description = "unknown")
 	{
 		setTime(time_wave);
-		insertOperation(operation);
+		insertOperation(operation, description);
 	}
-	static void insertTimeOperation(int time, int wave, const std::function<void()> &operation)
+	static void insertTimeOperation(int time, int wave, const std::function<void()> &operation, const std::string &description = "unknown")
 	{
 		setTime(time, wave);
-		insertOperation(operation);
+		insertOperation(operation, description);
 	}
-	// 得到当前时间
-	static TimeWave nowTimeWave()
+
+	// 得到当前时间，读取失败返回 -1
+	// 注意得到的是以参数波刷新时间点为基准的相对时间
+	// 使用示例：
+	// nowTime(1) -------- 得到以第一波刷新时间点为基准的当前时间
+	// nowTime(2) -------- 得到以第二波刷新时间点为基准的当前时间
+	static int nowTime(int wave)
 	{
-		return {main_object->gameClock() - zombie_refresh.time, zombie_refresh.wave};
+		if (operation_queue_vec[wave - 1].refresh_time == -1)
+		{
+			popErrorWindowNotInQueue("第 # 波刷新时间未知", wave);
+			return -1;
+		}
+		return main_object->gameClock() - operation_queue_vec[wave - 1].refresh_time;
 	}
 
 	// 阻塞运行直到达到目标时间点
@@ -174,9 +201,15 @@ public:
 		waitUntil({time, wave});
 	}
 
+	// In Queue
+	// 调试功能：显示操作队列中当前时刻及以后操作
+	// 使用示例
+	// showQueue({1, 2, 3}) ----- 显示第 1 2 3 波中未被执行的操作
+	static void showQueue(std::initializer_list<int> lst);
+
 	// debug
 private:
-	static void UTF8ToGBK(std::string &strUTF8);
+	static void utf8_to_gbk(std::string &strUTF8);
 
 	template <typename T>
 	static void string_convert(std::string &content, T t)
@@ -185,6 +218,7 @@ private:
 		conversion << t;
 		content.replace(content.find_first_of('#'), 1, conversion.str());
 	}
+
 	// 该部分为调试功能部分，使用下面两个接口可以对脚本进行调试
 public:
 	// Not In Queue
@@ -194,12 +228,11 @@ public:
 	static void popErrorWindowNotInQueue(const std::string &content, Args... args)
 	{
 		std::string _content = "wave : # -- time : # \n\n" + content;
-		auto it = operation_queue.begin();
-		string_convert(_content, it->first.wave);
-		string_convert(_content, it->first.time);
+		string_convert(_content, time_wave.wave);
+		string_convert(_content, time_wave.time);
 		std::initializer_list<int>{(string_convert(_content, args), 0)...};
 
-		UTF8ToGBK(_content);
+		utf8_to_gbk(_content);
 
 		MessageBoxA(NULL, _content.c_str(), "Error", 0);
 	};
@@ -267,58 +300,59 @@ public:
 	}
 
 	// Not In Queue
-	//返回鼠标所在行
+	// 返回鼠标所在行
 	static int mouseRow()
 	{
 		return main_object->mouseExtraAttribution()->row() + 1;
 	}
 
 	// Not In Queue
-	//返回鼠标所在列
+	// 返回鼠标所在列
 	static float mouseCol()
 	{
 		return float(main_object->mouseAttribution()->abscissa() + 25) / 80;
 	}
 
 	// Not In Queue
-	//获取指定类型植物的卡槽对象序列 植物类型与图鉴顺序相同，从0开始
-	//返回的卡片对象序列范围：[0,9]
-	//GetSeedIndex(16)------------获得荷叶的卡槽对象序列
-	//GetSeedIndex(16, true)-------获得模仿者荷叶的卡槽对象序列
+	// 获取指定类型植物的卡槽对象序列 植物类型与图鉴顺序相同，从0开始
+	// 返回的卡片对象序列范围：[0,9]
+	// getSeedIndex(16)------------获得荷叶的卡槽对象序列
+	// getSeedIndex(16, true)-------获得模仿者荷叶的卡槽对象序列
 	static int getSeedIndex(int type, bool imtator = false);
 
 	// Not In Queue
-	//得到指定位置和类型的植物对象序列
-	//当参数type为默认值-1时该函数无视南瓜花盆荷叶
-	//使用示例：
-	//GetPlantIndex(3, 4)------如果三行四列有除南瓜花盆荷叶之外的植物时，返回该植物的对象序列，否则返回-1
-	//GetPlantIndex(3, 4, 47)---如果三行四列有春哥，返回其对象序列，如果有其他植物，返回-2，否则返回-1
+	// 得到指定位置和类型的植物对象序列
+	// 当参数type为默认值-1时该函数无视南瓜花盆荷叶
+	// 使用示例：
+	// getPlantIndex(3, 4)------如果三行四列有除南瓜花盆荷叶之外的植物时，返回该植物的对象序列，否则返回-1
+	// getPlantIndex(3, 4, 47)---如果三行四列有春哥，返回其对象序列，如果有其他植物，返回-2，否则返回-1
 	static int getPlantIndex(int row, int col, int type = -1);
 
 	// Not In Queue
-	//得到一组指定位置的植物的对象序列
-	//参数1：填写一组指定位置
-	//参数2：填写指定类型
-	//参数3：得到对象序列，此函数按照位置的顺序填写对象序列
-	//注意：如果没有植物填写-1，如果有植物但是不是指定类型，会填写-2
+	// 得到一组指定位置的植物的对象序列
+	// 参数1：填写一组指定位置
+	// 参数2：填写指定类型
+	// 参数3：得到对象序列，此函数按照位置的顺序填写对象序列
+	// 注意：如果没有植物填写-1，如果有植物但是不是指定类型，会填写-2
 	static void getPlantIndexs(const std::vector<Grid> &lst_in_, int type, std::vector<int> &indexs_out_);
 
 	// Not In Queue
-	//检查僵尸是否存在
-	//使用示例
-	//isZombieExist()-------检查场上是否存在僵尸
-	//isZombieExist(23)-------检查场上是否存在巨人僵尸
-	//isZombieExist(-1,4)-----检查第四行是否有僵尸存在
-	//isZombieExist(23,4)-----检查第四行是否有巨人僵尸存在
+	// 检查僵尸是否存在
+	// 使用示例
+	// isZombieExist()-------检查场上是否存在僵尸
+	// isZombieExist(23)-------检查场上是否存在巨人僵尸
+	// isZombieExist(-1,4)-----检查第四行是否有僵尸存在
+	// isZombieExist(23,4)-----检查第四行是否有巨人僵尸存在
 	static bool isZombieExist(int type = -1, int row = -1);
 
 	// In Queue
-	//启动女仆秘籍
+	// 启动女仆秘籍
 	static void startMaidCheats()
 	{
 		insertOperation([=]() {
 			write_memory<byte>(0x71, 0x52DFE8);
-		});
+		},
+						"startMaidCheats");
 	}
 
 	// In Queue
@@ -327,45 +361,38 @@ public:
 	{
 		insertOperation([=]() {
 			write_memory<byte>(0x7F, 0x52DFE8);
-		});
+		},
+						"stopMaidCheats");
 	}
 
 	// Not In Queue
-	//设置出怪 此函数不管填不填蹦极都会在 wave 10 20 刷蹦极！！！！！！！！！！！！
-	//参数命名规则：前面两个字母与 PvZ Tools 出怪类型名称拼音首字母一致，后面接下划线和类型代号
-	//例如 铁桶命名为 TT_4
-	//使用示例：
-	//AvZ::setZombies({CG_3, TT_4, BC_12, XC_15, QQ_16, FT_21, TL_22, BY_23, HY_32, TT_18});
-	//设置出怪类型为：撑杆 铁桶 冰车 小丑 气球 扶梯 投篮 白眼 红眼 跳跳
-	//AvZ::setZombies({TT_4, BC_12, BC_12});
-	//设置出怪类型为：铁桶 冰车 并且两种僵尸的比例为 1：2
+	// 设置出怪 此函数不管填不填蹦极都会在 wave 10 20 刷蹦极！！！！！！！！！！！！
+	// 参数命名规则：前面两个字母与 PvZ Tools 出怪类型名称拼音首字母一致，后面接下划线和类型代号
+	// 详情见 pvzstruct.h 页尾
+	// 例如 铁桶命名为 TT_4
+	// 使用示例：
+	// AvZ::setZombies({CG_3, TT_4, BC_12, XC_15, QQ_16, FT_21, TL_22, BY_23, HY_32, TT_18});
+	// 设置出怪类型为：撑杆 铁桶 冰车 小丑 气球 扶梯 投篮 白眼 红眼 跳跳
+	// AvZ::setZombies({TT_4, BC_12, BC_12});
+	// 设置出怪类型为：铁桶 冰车 并且两种僵尸的比例为 1：2
 	static void setZombies(std::initializer_list<int> zombie_type);
 
 	// Not In Queue
-	//设置特定波出怪 此函数不管填不填蹦极都会在 wave 10 20 刷蹦极！！！！！！！！！！！！
-	//参数命名规则：前面两个字母与 PvZ Tools 出怪类型名称拼音首字母一致，后面接下划线和类型代号
-	//例如 铁桶命名为 TT_4
-	//使用示例：
-	//AvZ::setZombies(1, {CG_3, TT_4, BC_12, XC_15, QQ_16, FT_21, TL_22, BY_23, HY_32, TT_18});
-	//设置第一波出怪类型为：撑杆 铁桶 冰车 小丑 气球 扶梯 投篮 白眼 红眼 跳跳
-	//AvZ::setZombies(1, {TT_4, BC_12, BC_12});
-	//设置第一波出怪类型为：铁桶 冰车 并且两种僵尸的比例为 1：2
+	// 设置特定波出怪 此函数不管填不填蹦极都会在 wave 10 20 刷蹦极！！！！！！！！！！！！
+	// 参数命名规则：前面两个字母与 PvZ Tools 出怪类型名称拼音首字母一致，后面接下划线和类型代号
+	// 详情见 pvzstruct.h 页尾
+	// 例如 铁桶命名为 TT_4
+	// 使用示例：
+	// AvZ::setZombies(1, {CG_3, TT_4, BC_12, XC_15, QQ_16, FT_21, TL_22, BY_23, HY_32, TT_18});
+	// 设置第一波出怪类型为：撑杆 铁桶 冰车 小丑 气球 扶梯 投篮 白眼 红眼 跳跳
+	// AvZ::setZombies(1, {TT_4, BC_12, BC_12});
+	// 设置第一波出怪类型为：铁桶 冰车 并且两种僵尸的比例为 1：2
 	static void setWaveZombies(int wave, std::initializer_list<int> zombie_type);
 
-	// time api
-private:
-	static TimeWave zombie_refresh;
-
-public:
-	static void delay(int time)
-	{
-		time_wave.time += time;
-	}
-
 	// In Queue
-	//冰三函数
-	//使用示例：
-	//Ice3(298) --------- 修正冰三时间点至当前时刻的 298cs 后
+	// 冰三函数
+	// 使用示例：
+	// Ice3(298) --------- 修正冰三时间点至当前时刻的 298cs 后
 	static void ice3(int time);
 
 	// click api
@@ -395,16 +422,17 @@ public:
 	static void shovelNotInQueue(int row, float col, bool pumpkin = false);
 
 	// In Queue
-	//铲除植物函数
-	//使用示例：
-	//Shovel(4, 6)--------铲除4行6列的植物,如果植物有南瓜保护默认铲除被保护植物
-	//Shovel(4, 6, true)---铲除4行6列的植物,如果植物有南瓜保护铲除南瓜
-	//Shovel({{3, 6},{4, 6}})------铲除3行6列，4行6列的植物
+	// 铲除植物函数
+	// 使用示例：
+	// shovel(4, 6)--------铲除4行6列的植物,如果植物有南瓜保护默认铲除被保护植物
+	// shovel(4, 6, true)---铲除4行6列的植物,如果植物有南瓜保护铲除南瓜
+	// shovel({{3, 6},{4, 6}})------铲除3行6列，4行6列的植物
 	static void shovel(int row, float col, bool pumpkin = false)
 	{
 		insertOperation([=]() {
 			shovelNotInQueue(row, col, pumpkin);
-		});
+		},
+						"shovel");
 	}
 	// In Queue
 	static void shovel(const std::vector<Crood> &lst)
@@ -414,7 +442,8 @@ public:
 			{
 				shovelNotInQueue(crood.row, crood.col);
 			}
-		});
+		},
+						"shovel");
 	}
 
 	// card api
@@ -422,9 +451,9 @@ private:
 	static bool is_get_seed_index;
 	static std::string seed_name_list[11][8];
 	static std::map<std::string, int> seed_name_to_index_map;
-	//为卡片名称变量获取卡片对象序列
+	// 为卡片名称变量获取卡片对象序列
 	static int get_seed_index_for_seed_name(const std::string &seed_name);
-	//防误触
+	// 防误触
 	static void deal_wrong_click();
 	static void choose_card(int row, int col);
 	static void click_btn(int x, int y, int t_ms = 0);
@@ -444,27 +473,30 @@ public:
 		float col;
 	};
 
-	// 选择一堆卡片 Not In Queue
-	// 请注意与 CvZ 书写形式的不同！！！！！！
+	// Not In Queue
+	// 选择一堆卡片
+	// 卡片名称为拼音首字母，具体参考 https://pvz.lmintlcx.com/cvz/  页尾的命名
+	// 请注意与 CppVsZombies 书写形式的不同！！！！！！
+	// 使用此函数概率导致 PvZ 程序崩溃，尚未修复！！！
 	// 使用示例：
 	// AvZ::selectCards({"hbg", "Mhbg", "kfd", "hmg", "hy", "wg", "ytzd", "syc", "ngt", "xpg"});
 	///////////////////// 寒冰菇 模仿寒冰菇 咖啡豆 毁灭菇  荷叶   倭瓜  樱桃炸弹  三叶草  南瓜头  小喷菇
 	static void selectCards(const std::vector<std::string> &lst);
 
-	//用卡函数 Not In Queue
-	//使用示例：
-	//cardNotInQueue(1, 2, 3)---------选取第1张卡片，放在2行,3列
-	//cardNotInQueue(1, {{2, 3}, {3, 4}})--------选取第1张卡片，优先放在2行,3列，其次放在3行,4列
+	// 用卡函数 Not In Queue
+	// 使用示例：
+	// cardNotInQueue(1, 2, 3)---------选取第1张卡片，放在2行,3列
+	// cardNotInQueue(1, {{2, 3}, {3, 4}})--------选取第1张卡片，优先放在2行,3列，其次放在3行,4列
 	static void cardNotInQueue(int seed_index, int row, float col);
 	static void cardNotInQueue(int seed_index, const std::vector<Crood> &lst);
 
-	//用卡函数 In Queue
-	//使用示例：
-	//card(1, 2, 3)---------选取第1张卡片，放在2行,3列
-	//card({{1, 2, 3}, {2, 3, 4}})------选取第1张卡片，放在2行,3列，选取第2张卡片，放在3行,4列
-	//card(1, {{2, 3}, {3, 4}})--------选取第1张卡片，优先放在2行,3列，其次放在3行,4列
-	//以下用卡片名称使用 card,卡片名称为拼音首字母，具体参考pvz_data.h的命名
-	//card({{"ytzd", 2, 3}, {"Mhblj", 3, 4}})---------选取樱桃卡片，放在2行,3列，选取辣椒卡片，放在3行,4列
+	// 用卡函数 In Queue
+	// 使用示例：
+	// card(1, 2, 3)---------选取第1张卡片，放在2行,3列
+	// card({{1, 2, 3}, {2, 3, 4}})------选取第1张卡片，放在2行,3列，选取第2张卡片，放在3行,4列
+	// card(1, {{2, 3}, {3, 4}})--------选取第1张卡片，优先放在2行,3列，其次放在3行,4列
+	// 以下用卡片名称使用 card,卡片名称为拼音首字母，具体参考 https://pvz.lmintlcx.com/cvz/  页尾的命名
+	// card({{"ytzd", 2, 3}, {"Mhblj", 3, 4}})---------选取樱桃卡片，放在2行,3列，选取辣椒卡片，放在3行,4列
 	static void card(const std::vector<CardIndex> &lst);
 	static void card(const std::vector<CardName> &lst);
 	static void card(int seed_index, int row, float col);
@@ -509,7 +541,8 @@ public:
 			insertOperation([=]() {
 				stoped_thread_id_stack.push(thread_id);
 				thread_id = -1;
-			});
+			},
+							"stop");
 		}
 
 		// In Queue
@@ -517,14 +550,16 @@ public:
 		{
 			insertOperation([=]() {
 				is_paused = true;
-			});
+			},
+							"pause");
 		}
 		// In Queue
 		void goOn()
 		{
 			insertOperation([=]() {
 				is_paused = false;
-			});
+			},
+							"goOn");
 		}
 	};
 
@@ -545,14 +580,16 @@ public:
 				}
 				is_paused = false;
 				pushFunc([=]() { run(); });
-			});
+			},
+							"startCollect");
 		}
 		// In Queue
 		void setInterval(int _time_interval)
 		{
 			insertOperation([=]() {
 				this->time_interval = _time_interval;
-			});
+			},
+							"setInterval");
 		}
 	};
 
@@ -566,33 +603,34 @@ public:
 
 	public:
 		// In Queue
-		//重置冰卡
-		//使用示例
-		//resetIceSeedList({1}) ------ 只使用第一张卡片
-		//resetIceSeedList({1, 4}) ----- 使用第一、四张卡片
+		// 重置冰卡
+		// 使用示例
+		// resetIceSeedList({1}) ------ 只使用第一张卡片
+		// resetIceSeedList({1, 4}) ----- 使用第一、四张卡片
 		void resetIceSeedList(const std::vector<int> &lst);
 
 		// In Queue
-		//重置存冰位置
-		//使用示例：
-		//resetFillList({{3,4},{5,6}})-----将存冰位置重置为{3，4}，{5，6}
+		// 重置存冰位置
+		// 使用示例：
+		// resetFillList({{3,4},{5,6}})-----将存冰位置重置为{3，4}，{5，6}
 		void resetFillList(const std::vector<Grid> &lst)
 		{
 			insertOperation([=]() {
 				this->fill_ice_grid_vec = lst;
-			});
+			},
+							"resetFillList");
 		}
 
 		// In Queue
-		//线程开始工作
-		//使用示例：
-		//start({{3,4},{5,6}})-----在{3，4}，{5，6}位置存冰
+		// 线程开始工作
+		// 使用示例：
+		// start({{3,4},{5,6}})-----在{3，4}，{5，6}位置存冰
 		void start(const std::vector<Grid> &lst);
 
 		// In Queue
-		//使用咖啡豆函数
-		//使用示例：
-		//coffee()-----自动使用优先级低的存冰位
+		// 使用咖啡豆函数
+		// 使用示例：
+		// coffee()-----自动使用优先级低的存冰位
 		void coffee();
 	};
 
@@ -610,51 +648,55 @@ public:
 		void get_seed_list();
 		void run();
 		bool use_seed_(int seed_index, int row, float col, bool is_need_shovel);
+		void auto_get_fix_list();
 
 	public:
 		// In Queue
-		//重置植物修补位置
-		//使用示例：
-		//resetFixList({{2, 3},{3, 4}})-------位置被重置为{2，3}，{3，4}
+		// 重置植物修补位置
+		// 使用示例：
+		// resetFixList({{2, 3},{3, 4}})-------位置被重置为{2，3}，{3，4}
 		void resetFixList(const std::vector<Grid> &lst)
 		{
 			insertOperation([=]() {
 				grid_lst = lst;
-			});
+			},
+							"resetFixList");
 		}
 		// In Queue
-		//自动得到修补的位置列表
+		// 自动得到修补的位置列表
 		void autoGetFixList();
 
 		// In Queue
-		//线程开始工作，此函数开销较大，不建议多次调用
-		//第一个参数为植物类型
-		//第二个参数不填默认全场
-		//第三个参数不填默认植物血量为150以下时修补
-		//使用示例：
-		//start(23)-------修补全场的高坚果
-		//start(30,{{1,3},{2,3}})-----修补位置为{1，3}，{2，3}位置的南瓜头
-		//start(3,{{1,3},{2,3}},300)------修补位置为{1，3}，{2，3}位置的坚果，血量降至300开始修补
+		// 线程开始工作，此函数开销较大，不建议多次调用
+		// 第一个参数为植物类型
+		// 第二个参数不填默认全场
+		// 第三个参数不填默认植物血量为150以下时修补
+		// 使用示例：
+		// start(23)-------修补全场的高坚果
+		// start(30,{{1,3},{2,3}})-----修补位置为{1，3}，{2，3}位置的南瓜头
+		// start(3,{{1,3},{2,3}},300)------修补位置为{1，3}，{2，3}位置的坚果，血量降至300开始修补
 		void start(int _plant_type, const std::vector<Grid> &lst = {}, int _fix_hp = 150);
 
 		// In Queue
-		//重置修补血量
-		//使用示例：
-		//resetFixHp(200)------将修补触发血量改为200
+		// 重置修补血量
+		// 使用示例：
+		// resetFixHp(200)------将修补触发血量改为200
 		void resetFixHp(int _fix_hp)
 		{
 			insertOperation([=]() {
 				fix_hp = _fix_hp;
-			});
+			},
+							"resetFixHp");
 		}
 
 		// In Queue
-		//是否使用咖啡豆
+		// 是否使用咖啡豆
 		void isUseCoffee(bool _is_use_coffee)
 		{
 			insertOperation([=]() {
 				is_use_coffee = _is_use_coffee;
-			});
+			},
+							"isUseCoffee");
 		}
 	};
 
@@ -680,35 +722,7 @@ public:
 	class PaoOperator
 	{
 	public:
-		//记录炮的信息
-		struct PaoInfo
-		{
-			int row;		  //所在行
-			int col;		  //所在列
-			int recover_time; //恢复时间
-			int index;		  //炮的对象序列
-			int vec_index;	  //炮所在 vector 的索引
-			friend bool operator==(const PaoInfo &pi1, const PaoInfo &pi2)
-			{
-				return pi1.row == pi2.row && pi1.col == pi2.col;
-			}
-
-			friend bool operator==(const PaoInfo &pi1, const Grid &pi2)
-			{
-				return pi1.row == pi2.row && pi1.col == pi2.col;
-			}
-
-			friend bool operator<(const PaoInfo &pi1, const PaoInfo &pi2)
-			{
-				if (pi1.row == pi2.row)
-				{
-					return pi1.col < pi2.col;
-				}
-				return pi1.row < pi2.row;
-			}
-		};
-
-		//用于RAWPAO函数
+		// 用于RAWPAO函数
 		struct PaoDrop
 		{
 			int pao_row;
@@ -717,7 +731,7 @@ public:
 			float drop_col;
 		};
 
-		//记录炮的位置和落点的位置及炮弹飞行时间
+		// 记录炮的位置和落点的位置及炮弹飞行时间
 		struct RoofPaoDrop
 		{
 			int vec_index;
@@ -726,11 +740,11 @@ public:
 			int fire_time;
 		};
 
-		//屋顶炮飞行时间辅助数据
+		// 屋顶炮飞行时间辅助数据
 		struct RoofFlyTime
 		{
-			int min_drop_x;	  //记录该列炮最小飞行时间对应的最小的横坐标
-			int min_fly_time; //记录最小的飞行时间
+			int min_drop_x;	  // 记录该列炮最小飞行时间对应的最小的横坐标
+			int min_fly_time; // 记录最小的飞行时间
 		};
 
 		struct LastestPaoMsg
@@ -748,55 +762,36 @@ public:
 		};
 
 	private:
-		static int next_vec_index;
-		static std::vector<PaoInfo> all_pao_vec; //所有炮的信息
-		std::vector<int> pao_list;				 //炮列表，记录炮的信息
-		int next_pao;							 //记录当前即将发射的下一门炮
-		int sequential_mode = true;				 //顺序模式
-		static LastestPaoMsg lastest_pao_msg;	 //最近一颗发炮的信息
+		static std::set<Grid> lock_pao_set; // 锁定的炮
+		std::vector<int> pao_index_vec;		// 炮的内存位置
+		std::vector<Grid> pao_grid_vec;		// 炮列表，记录炮的信息
+		int next_pao;						// 记录当前即将发射的下一门炮
+		int sequential_mode = true;			// 顺序模式
+		LastestPaoMsg lastest_pao_msg;		// 最近一颗发炮的信息
 		static VThread vthread;
 		static RoofFlyTime fly_time_data[8];
-		//录入新的一门炮
-		static void new_pao(PaoInfo &np);
-		//删除一门炮
-		static void delete_pao(std::vector<PaoInfo>::iterator &it)
-		{
-			// 炮不能重复删掉
-			if (is_exist(it))
-			{
-				std::swap(next_vec_index, it->vec_index);
-			}
-		}
-		static void delete_pao(int index)
-		{
-			if (is_exist(index))
-			{
-				std::swap(next_vec_index, all_pao_vec[index].vec_index);
-			}
-		}
-		//炮是否存在
-		static bool is_exist(std::vector<PaoInfo>::iterator &it)
-		{
-			return (it - all_pao_vec.begin()) == it->vec_index;
-		}
-		static bool is_exist(int index)
-		{
-			return index == all_pao_vec[index].vec_index;
-		}
-		// 禁用 = 运算符
-		void operator=(PaoOperator) {}
-		// 对炮进行一些检查
-		static bool pao_examine(int vec_index, int drop_row, float drop_col);
-		// 检查落点
-		static bool is_drop_conflict(int pao_row, int pao_col, int drop_row, float drop_col);
+		// 得到炮的恢复时间
+		static int get_recover_time(int index);
 		// 基础发炮函数
-		static void base_fire_pao(int vec_index, int drop_row, float drop_col);
+		static void base_fire_pao(int pao_row, int pao_col, float drop_row, float drop_col);
 		// 获取屋顶炮飞行时间
 		static int get_roof_fly_time(int pao_col, float drop_col);
 		// 延迟发炮
-		static void delay_fire_pao(int vec_index, int delay_time, int row, float col);
+		static void delay_fire_pao(int delay_time, int pao_row, int pao_col, int row, float col);
+		// 禁用 = 运算符
+		void operator=(PaoOperator) {}
+
+		// 得到炮列表中的炮恢复时间
+		// return -1 :  can't find pao index
+		int get_recover_time_vec();
+
+		// 更新下一门要发射的炮
+		// 返回 >=0 下一门炮可用
+		// 返回 -1 下一门炮不可用
+		int update_next_pao(int delay_time = 0, bool is_recover_pao = false);
+
 		// 更新最近发炮的信息
-		static void update_lastest_pao_msg(int fire_time, int index)
+		void update_lastest_pao_msg(int fire_time, int index)
 		{
 			if (lastest_pao_msg.is_writable)
 			{
@@ -807,42 +802,24 @@ public:
 		// 跳过一定数量的炮
 		void skip_pao(int x)
 		{
-			next_pao = (next_pao + x) % pao_list.size();
-		}
-		// 找到恢复时间最早的炮
-		int find_min_recover_time_pao();
-
-		// 给出下一门要发射的炮
-		int get_next_pao()
-		{
-			return sequential_mode == TIME ? find_min_recover_time_pao() : pao_list[next_pao];
+			next_pao = (next_pao + x) % pao_grid_vec.size();
 		}
 
 	public:
-		// 炮信息初始化
-		static void initPaoMessage();
-
 		// In Queue
-		// 更新炮的信息
-		// 炮的信息对于 roofPao 系列函数十分重要！
+		// 发炮函数：用户自定义位置发射，屋顶修正飞行时间发炮.
+		// 注意：尽量不要使用此函数操作位于炮列表中的炮，因为使用此函数后自动识别的炮序与UpdatePaolist更新的炮序将无效！
 		// 使用示例：
-		// updatePaoMessage({{2, 3}, {3, 4}}) ------- 更新 {2, 3}, {3, 4} 位置炮的信息
-		static void updatePaoMessage(const std::vector<Grid> &lst);
-
-		// In Queue
-		//发炮函数：用户自定义位置发射，屋顶修正飞行时间发炮.
-		//注意：尽量不要使用此函数操作位于炮列表中的炮，因为使用此函数后自动识别的炮序与UpdatePaolist更新的炮序将无效！
-		//使用示例：
-		//rawRoofPao(1,2,2,9)-----------------------将位置为（1，2）的炮发射到（2，9）
-		//rawRoofPao({ {1,2,2,9},{1,3,5,9}})-------将位置为（1，2）的炮发射到（2，9），将位置为（1，3）的炮发射到（5，9）
+		// rawRoofPao(1,2,2,9)-----------------------将位置为（1，2）的炮发射到（2，9）
+		// rawRoofPao({ {1,2,2,9},{1,3,5,9}})-------将位置为（1，2）的炮发射到（2，9），将位置为（1，3）的炮发射到（5，9）
 		static void rawRoofPao(int pao_row, int pao_col, int drop_row, float drop_col);
 
 		// In Queue
-		//发炮函数：用户自定义位置发射，屋顶修正飞行时间发炮.
-		//注意：尽量不要使用此函数操作位于炮列表中的炮，因为使用此函数后自动识别的炮序与UpdatePaolist更新的炮序将无效！
-		//使用示例：
-		//rawRoofPao(1,2,2,9)-----------------------将位置为（1，2）的炮发射到（2，9）
-		//rawRoofPao({ {1,2,2,9},{1,3,5,9}})-------将位置为（1，2）的炮发射到（2，9），将位置为（1，3）的炮发射到（5，9）
+		// 发炮函数：用户自定义位置发射，屋顶修正飞行时间发炮.
+		// 注意：尽量不要使用此函数操作位于炮列表中的炮，因为使用此函数后自动识别的炮序与UpdatePaolist更新的炮序将无效！
+		// 使用示例：
+		// rawRoofPao(1,2,2,9)-----------------------将位置为（1，2）的炮发射到（2，9）
+		// rawRoofPao({ {1,2,2,9},{1,3,5,9}})-------将位置为（1，2）的炮发射到（2，9），将位置为（1，3）的炮发射到（5，9）
 		static void rawRoofPao(const std::vector<PaoDrop> &lst);
 
 		// In Queue
@@ -867,25 +844,23 @@ public:
 		// plantPao(3, 4)------在三行四列位置种炮
 		static void plantPao(int row, int col);
 
-		// In Queue
-		// 种植炮函数
-		// 使用示例
-		// shovelPao(3, 4)------铲掉三行四列位置的炮
-		static void shovelPao(int row, int col);
+		PaoOperator();
 
 		// In Queue
 		// 立即修补上一枚已经发射的炮
-		static void fixLatestPao();
-
-		PaoOperator();
-		~PaoOperator();
+		void fixLatestPao();
 
 		// In Queue
+		// 设置炮序模式
+		// 使用示例：
+		// setSequentialMode(AvZ::PaoOperator::TIME) ---- 设置时间使用模式
+		// setSequentialMode(AvZ::PaoOperator::SPACE) ---- 设置空间使用模式
 		void setSequentialMode(int _sequential_mode)
 		{
 			insertOperation([=]() {
 				sequential_mode = _sequential_mode;
-			});
+			},
+							"setSequentialMode");
 		}
 
 		// In Queue
@@ -907,12 +882,13 @@ public:
 		// In Queue
 		// 跳炮函数
 		// 使用示例：
-		// skipao(2)---跳过按照顺序即将要发射的2门炮
+		// skipPao(2)---跳过按照顺序即将要发射的2门炮
 		void skipPao(int x)
 		{
 			insertOperation([=]() {
-				next_pao = (next_pao + x) % pao_list.size();
-			});
+				next_pao = (next_pao + x) % pao_grid_vec.size();
+			},
+							"skipPao");
 		}
 
 		// In Queue
@@ -991,10 +967,11 @@ extern AvZ::KeyConnector key_connector;
 #define InsertOperation AvZ::insertOperation
 #define InsertTimeOperation AvZ::insertTimeOperation
 #define WaitUntil AvZ::waitUntil
-#define NowTimeWave AvZ::nowTimeWave
+#define NowTime AvZ::nowTime
 #define StartMaidCheats AvZ::startMaidCheats
 #define StopMaidCheats AvZ::stopMaidCheats
 #define SelectCards AvZ::selectCards
 #define SetZombies AvZ::setZombies
 #define SetWaveZombies AvZ::setWaveZombies
 #define OpenMultipleEffective AvZ::openMultipleEffective
+#define ShowQueue AvZ::showQueue
