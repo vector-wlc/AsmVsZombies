@@ -75,7 +75,7 @@ void AvZ::waitUntil(const TimeWave &_time_wave)
 	setTime(_time_wave);
 }
 
-void AvZ::showQueue(std::initializer_list<int> lst)
+void AvZ::showQueue(const std::vector<int> &lst)
 {
 	insertOperation([=]() {
 		std::stringstream ss;

@@ -205,7 +205,7 @@ public:
 	// 调试功能：显示操作队列中当前时刻及以后操作
 	// 使用示例
 	// showQueue({1, 2, 3}) ----- 显示第 1 2 3 波中未被执行的操作
-	static void showQueue(std::initializer_list<int> lst);
+	static void showQueue(const std::vector<int> &lst);
 
 	// debug
 private:
