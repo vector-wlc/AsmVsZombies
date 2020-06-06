@@ -61,17 +61,24 @@ void AvZ::PaoOperator::base_fire_pao(int pao_row, int pao_col, float drop_row, f
 
 void AvZ::PaoOperator::delay_fire_pao(int delay_time, int pao_row, int pao_col, int row, float col)
 {
-	Grid grid = {pao_row, pao_col};
-	lock_pao_set.insert(grid);
-	// 将操作动态插入消息队列
-	setTime(nowTime(time_wave.wave) + delay_time);
-	insertOperation([=]() {
+	if (delay_time != 0)
+	{
+		// 将操作动态插入消息队列
+		Grid grid = {pao_row, pao_col};
+		lock_pao_set.insert(grid);
+		setTime(nowTime(time_wave.wave) + delay_time);
+		insertOperation([=]() {
+			base_fire_pao(pao_row, pao_col, row, col);
+			lock_pao_set.erase(grid);
+		});
+	}
+	else
+	{
 		base_fire_pao(pao_row, pao_col, row, col);
-		lock_pao_set.erase(grid);
-	});
+	}
 }
 
-//用户自定义炮位置发炮：单发
+// 用户自定义炮位置发炮：单发
 void AvZ::PaoOperator::rawPao(int pao_row, int pao_col, int drop_row, float drop_col)
 {
 	insertOperation([=]() {

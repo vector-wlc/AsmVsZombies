@@ -124,9 +124,15 @@ void AvZ::loadScript(const std::function<void()> func)
 	{
 		exit_sleep(1);
 	}
+	// 如果是多次生效则继续录入操作
+	// 如果不是将退出
 	if (is_multiple_effective)
 	{
 		is_loaded = false;
+	}
+	else
+	{
+		is_exited = true;
 	}
 	for (auto &thread_info : thread_vec) // 停止一切线程
 	{
@@ -144,6 +150,10 @@ void AvZ::loadScript(const std::function<void()> func)
 
 void AvZ::run(MainObject *level)
 {
+	if (is_exited)
+	{
+		return;
+	}
 	main_object = level;
 
 	if (!is_loaded)
