@@ -43,6 +43,11 @@ void AvZ::update_refresh_time()
 void AvZ::insertOperation(const std::function<void()> &operation, const std::string &description)
 {
 	Operation operate = {operation, description};
+	if (time_wave.wave < 1 || time_wave.wave > 20)
+	{
+		popErrorWindowNotInQueue("您填写的 wave 参数为 # , 已超出 [1, 20] 的范围", time_wave.wave);
+		return;
+	}
 	auto &operation_queue = operation_queue_vec[time_wave.wave - 1].queue; // 取出相应波数的队列
 	auto it = operation_queue.find(time_wave.time);
 	if (it == operation_queue.end())
