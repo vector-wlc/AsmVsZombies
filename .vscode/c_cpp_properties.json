@@ -3,8 +3,7 @@
         {
             "name": "Windows",
             "includePath": [
-                "${workspaceRoot}/AvZ/src",
-                "${workspaceRoot}/AvZ/injector/inc"
+                "${workspaceRoot}\\inc"
             ],
             "cStandard": "c11",
             "cppStandard": "c++17",

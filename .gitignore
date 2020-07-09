@@ -1,2 +1,6 @@
 
 build
+release/ahpha
+script/test
+bin/libavz.dll
+/*.cpp
