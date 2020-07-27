@@ -16,3 +16,5 @@
 void click_scene(MainObject *level, int x, int y, int key);
 
 void click(MouseWindow *mw, int x, int y, int key);
+
+void show_str(const char *str);

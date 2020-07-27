@@ -18,6 +18,7 @@ void AvZ::update_refresh_time()
 		{
 			ele.refresh_time = -1;
 		}
+		return;
 	}
 
 	int wave = main_object->wave();
@@ -29,21 +30,33 @@ void AvZ::update_refresh_time()
 		return;
 	}
 
-	// 没有设定波长，读取游戏内的天然数据
-	int flag_countdown = (wave + 1 == 1 ? 0xFFFF : 200); // 读取刷新倒计时标志时间
-	if (wave + 1 == 10 || wave + 1 == 20)
+	if (wave == 0)
 	{
-		// 大波
-		if (main_object->refreshCountdown() <= 4)
-		{
-			operation_queue_it->refresh_time = main_object->hugewaveCountdown() + main_object->gameClock();
-		}
+		operation_queue_it->refresh_time = main_object->refreshCountdown() + main_object->gameClock();
 	}
 	else
 	{
-		if (main_object->refreshCountdown() <= flag_countdown)
+		if (wave + 1 == 10 || wave + 1 == 20)
 		{
+			// 大波
+			if (main_object->refreshCountdown() <= 4)
+			{
+				operation_queue_it->refresh_time = main_object->hugewaveCountdown() + main_object->gameClock();
+			}
+		}
+		else if (main_object->refreshCountdown() <= 200)
+		{
+			// 普通波
 			operation_queue_it->refresh_time = main_object->refreshCountdown() + main_object->gameClock();
+		}
+
+		// 在 wave != 0 时，可以由初始刷新倒计时得到当前已刷出波数的刷新时间点
+		--operation_queue_it;
+		if (operation_queue_it->refresh_time == -1)
+		{
+			operation_queue_it->refresh_time = main_object->gameClock() -
+											   (main_object->initialCountdown() -
+												main_object->refreshCountdown());
 		}
 	}
 }
@@ -62,8 +75,8 @@ void AvZ::insertOperation(const std::function<void()> &operation, const std::str
 
 	if (time_wave_insert.wave < 1 || time_wave_insert.wave > 20)
 	{
-		popErrorWindowNotInQueue("您填写的 wave 参数为 # , 已超出 [1, 20] 的范围",
-								 time_wave_insert.wave);
+		showErrorNotInQueue("您填写的 wave 参数为 # , 已超出 [1, 20] 的范围",
+							time_wave_insert.wave);
 		return;
 	}
 
@@ -71,9 +84,9 @@ void AvZ::insertOperation(const std::function<void()> &operation, const std::str
 		time_wave_insert.time < -200 &&
 		operation_queue_vec[time_wave_insert.wave - 2].wave_length == -1)
 	{
-		popErrorWindowNotInQueue("第 # 波设定的时间为 #, 在前一波未设定波长的情况下, time 参数不允许小于 -200",
-								 time_wave_insert.wave,
-								 time_wave_insert.time);
+		showErrorNotInQueue("第 # 波设定的时间为 #, 在前一波未设定波长的情况下, time 参数不允许小于 -200",
+							time_wave_insert.wave,
+							time_wave_insert.time);
 		return;
 	}
 
@@ -94,34 +107,35 @@ void AvZ::insertOperation(const std::function<void()> &operation, const std::str
 
 void AvZ::waitUntil(const TimeWave &_time_wave)
 {
-	if (is_exited)
+	if (is_exited ||
+		pvz_base->gameUi() == 1)
 	{
 		return;
 	}
+
+	block_var = true; // 唤醒游戏主循环
 	setTime(_time_wave);
-	if (time_wave_run.time == time_wave_insert.time &&
-		time_wave_run.wave == time_wave_insert.wave)
-	{
-		return;
-	}
+	insertOperation([=]() {
+		block_var = false; // 唤醒 Script 线程
+		while (!block_var) // 阻塞游戏主循环
+		{
+			exit_sleep(1);
+			if (pvz_base->gameUi() == 1)
+			{
+				// 游戏到主界面无条件退出
+				return;
+			}
+		}
+	});
 
-	while ((pvz_base->gameUi() == 3 &&
-			main_object->text()->disappearCountdown() == 1001) ||
-		   pvz_base->gameUi() == 2)
+	while (block_var) // 阻塞 Script 线程
 	{
 		exit_sleep(1);
-	}
-
-	while (pvz_base->gameUi() == 3 &&
-		   (operation_queue_vec[_time_wave.wave - 1].refresh_time == -1 ||
-			_time_wave.time - 2 > nowTime(_time_wave.wave)))
-	{
-		exit_sleep(1);
-	}
-
-	while (pvz_base->gameUi() == 3 &&
-		   _time_wave.time > nowTime(_time_wave.wave))
-	{
+		if (pvz_base->gameUi() == 1)
+		{
+			// 游戏到主界面无条件退出
+			return;
+		}
 	}
 }
 
@@ -156,71 +170,27 @@ void AvZ::showQueue(const std::vector<int> &lst)
 			ss << "\n";
 		}
 
-		popErrorWindowNotInQueue(ss.str());
+		showErrorNotInQueue(ss.str());
 	},
 					"showQueue");
 }
 
-void AvZ::setWavelength(const std::vector<AvZ::WaveTime> &lst)
-{
-	auto temp = time_wave_insert;
-	for (const auto &ele : lst)
-	{
-		if (ele.wave < 1 || RangeIn(ele.wave, {9, 19, 20}) || ele.wave > 20)
-		{
-			popErrorWindowNotInQueue("setWavelength : 您当前设定的 wave 参数为 #, 超出有效范围",
-									 ele.wave);
-			continue;
-		}
-
-		if (ele.time < 601 || ele.time > 2500)
-		{
-			popErrorWindowNotInQueue("setWavelength : 您当前设定第 # 波 的 time 参数为 #, 超出有效范围",
-									 ele.wave, ele.time);
-			continue;
-		}
-
-		operation_queue_vec[ele.wave - 1].wave_length = ele.time;
-
-		setTime(100, ele.wave);
-		insertOperation([=]() {
-			main_object->zombieRefreshHp() = 0;
-			main_object->refreshCountdown() = ele.time - 100;
-
-			if (wavelength_it - operation_queue_vec.begin() < ele.wave)
-			{
-				wavelength_it = operation_queue_vec.begin() + ele.wave - 1;
-			}
-
-			// 设定刷新时间点
-			for (; wavelength_it != operation_queue_vec.end() - 1; ++wavelength_it)
-			{
-				if (wavelength_it->refresh_time == -1 || wavelength_it->wave_length == -1)
-				{
-					break;
-				}
-				(wavelength_it + 1)->refresh_time = wavelength_it->refresh_time + wavelength_it->wave_length;
-			}
-		},
-						"writeWavelength");
-	}
-
-	setTime(temp);
-}
-
 void AvZ::loadScript(const std::function<void()> func)
 {
-	is_loaded = true;
 	init_address();
 	operation_queue_vec.resize(20);
 	time_wave_run.wave = 0;
 	wavelength_it = operation_queue_vec.begin();
 	setInsertOperation(false);
 	item_collector.start();
+	AvZ::MaidCheats::stop();
 	setInsertOperation(true);
 	setTime(-600, 1);
+	is_loaded = true;
 	func();
+	block_var = true; // 唤醒游戏主循环
 
+	// 等待游戏结束
 	while (pvz_base->gameUi() != 1)
 	{
 		exit_sleep(1);
@@ -239,6 +209,7 @@ void AvZ::loadScript(const std::function<void()> func)
 	{
 		*thread_info.id_ptr = -1;
 	}
+	SetWindowTextA(pvz_hwnd, "Plants vs. Zombies");
 	exit_sleep(20);
 	operation_queue_vec.clear(); // 清除一切操作
 	thread_vec.clear();
@@ -254,7 +225,7 @@ void AvZ::openMultipleEffective(char close_key)
 	is_multiple_effective = true;
 	key_connector.add(close_key, []() {
 		is_multiple_effective = false;
-		popErrorWindowNotInQueue("已关闭多次生效");
+		showErrorNotInQueue("已关闭多次生效");
 	});
 }
 
@@ -270,7 +241,10 @@ void AvZ::run(MainObject *level, std::function<void()> Script)
 	{
 		std::thread task(AvZ::loadScript, Script);
 		task.detach();
-		exit_sleep(10);
+		while (!is_loaded)
+		{
+			exit_sleep(1);
+		}
 	}
 
 	if (main_object->wave() != 20)
@@ -280,6 +254,12 @@ void AvZ::run(MainObject *level, std::function<void()> Script)
 
 	if (pvz_base->gameUi() != 3 ||
 		pvz_base->mouseWindow()->topWindow())
+	{
+		return;
+	}
+
+	if (main_object->selectCardUi_m()->orizontalScreenOffset() != 0 &&
+		main_object->selectCardUi_m()->orizontalScreenOffset() != 7830)
 	{
 		return;
 	}

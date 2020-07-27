@@ -91,7 +91,7 @@ void AvZ::selectCards(const std::vector<std::string> &lst)
 
 	if (pvz_base->mouseWindow()->isInWindow())
 	{
-		popErrorWindowNotInQueue("检测到您的鼠标在游戏窗口内，这种行为可能会导致选卡失败，选卡时请尽量将鼠标移到窗口外");
+		showErrorNotInQueue("检测到您的鼠标在游戏窗口内，这种行为可能会导致选卡失败，选卡时请尽量将鼠标移到窗口外");
 	}
 	deal_wrong_click();
 
@@ -149,14 +149,14 @@ void AvZ::cardNotInQueue(int seed_index, int row, float col)
 {
 	if (seed_index > 10 || seed_index < 1)
 	{
-		popErrorWindowNotInQueue("Card : 您填写的参数 # 已溢出，请检查卡片名字是否错写为单引号", seed_index);
+		showErrorNotInQueue("Card : 您填写的参数 # 已溢出，请检查卡片名字是否错写为单引号", seed_index);
 		return;
 	}
 
 	auto seed = main_object->seedArray() + seed_index - 1;
 	if (!seed->isUsable())
 	{
-		popErrorWindowNotInQueue("Card : 第 # 张卡片还有 #cs 才能使用", seed_index, seed->initialCd() - seed->cd() + 1); // PvZ计算问题导致+1
+		showErrorNotInQueue("Card : 第 # 张卡片还有 #cs 才能使用", seed_index, seed->initialCd() - seed->cd() + 1); // PvZ计算问题导致+1
 		return;
 	}
 	safeClick();
@@ -169,14 +169,14 @@ void AvZ::cardNotInQueue(int seed_index, const std::vector<Crood> &lst)
 {
 	if (seed_index > 10 || seed_index < 1)
 	{
-		popErrorWindowNotInQueue("Card : 您填写的参数 # 已溢出，请检查卡片名字是否错写为单引号", seed_index);
+		showErrorNotInQueue("Card : 您填写的参数 # 已溢出，请检查卡片名字是否错写为单引号", seed_index);
 		return;
 	}
 
 	auto seed = main_object->seedArray() + seed_index - 1;
 	if (!seed->isUsable())
 	{
-		popErrorWindowNotInQueue("Card : 第 # 张卡片还有 #cs 才能使用", seed_index, seed->initialCd() - seed->cd() + 1); // PvZ计算问题导致+1
+		showErrorNotInQueue("Card : 第 # 张卡片还有 #cs 才能使用", seed_index, seed->initialCd() - seed->cd() + 1); // PvZ计算问题导致+1
 		return;
 	}
 	safeClick();
@@ -225,7 +225,7 @@ int AvZ::get_seed_index_for_seed_name(const std::string &seed_name)
 	auto it = seed_name_to_index_map.find(seed_name);
 	if (it == seed_name_to_index_map.end())
 	{
-		popErrorWindowNotInQueue("卡片名称'#'未被录入 AvZ ,或者您没有选择该卡片", seed_name.c_str());
+		showErrorNotInQueue("卡片名称'#'未被录入 AvZ ,或者您没有选择该卡片", seed_name.c_str());
 		return -1;
 	}
 	else

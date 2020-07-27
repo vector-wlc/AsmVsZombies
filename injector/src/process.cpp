@@ -57,6 +57,11 @@ void Process::ManageDLL()
 		return;
 	}
 
+	if (!DeleteFileW(L"libavz.dll"))
+	{
+		DeleteFileW(L"bin\\libavz.dll");
+	}
+
 	if (!InjectDLL(libavz_path_name))
 	{
 		MessageBoxW(NULL, L"libavz.dll 注入失败，请重新运行尝试", L"Error", MB_ICONERROR);

@@ -34,6 +34,8 @@ bool AvZ::is_loaded = false;
 bool AvZ::is_multiple_effective = false;
 bool AvZ::is_exited = false;
 bool AvZ::is_insert_operation = true;
+bool AvZ::block_var = false;
+int AvZ::error_mode = AvZ::POP_WINDOW;
 std::vector<AvZ::OperationQueue>::iterator AvZ::wavelength_it;
 HWND AvZ::pvz_hwnd;
 HANDLE AvZ::pvz_handle = nullptr;

@@ -70,7 +70,7 @@ void AvZ::IceFiller::resetIceSeedList(const std::vector<int> &lst)
 			auto seed_memory = main_object->seedArray() + ice_index - 1;
 			if (seed_memory->type() != HBG_14 || seed_memory->imitatorType() != HBG_14)
 			{
-				popErrorWindowNotInQueue("请检查第 # 张卡片是否为冰卡", ice_index);
+				showErrorNotInQueue("请检查第 # 张卡片是否为冰卡", ice_index);
 			}
 			ice_seed_index_vec.push_back(ice_index - 1);
 		}
@@ -158,24 +158,34 @@ void AvZ::IceFiller::coffee()
 	insertOperation([=]() {
 		if (coffee_seed_index == -1)
 		{
-			popErrorWindowNotInQueue("你没有选择咖啡豆卡片!");
+			showErrorNotInQueue("你没有选择咖啡豆卡片!");
 			return;
 		}
 
 		if (fill_ice_grid_vec.empty())
 		{
-			popErrorWindowNotInQueue("你还未为自动存冰对象初始化存冰列表");
+			showErrorNotInQueue("你还未为自动存冰对象初始化存冰列表");
 			return;
 		}
+		std::vector<int> ice_plant_index_vec;
+		getPlantIndexs(fill_ice_grid_vec, HBG_14, ice_plant_index_vec);
 
-		safeClick();
-		clickSeed(coffee_seed_index + 1);
 		auto fill_grid_it = fill_ice_grid_vec.end();
 		do
 		{
 			--fill_grid_it;
-			clickGrid(fill_grid_it->row, fill_grid_it->col);
+			if (ice_plant_index_vec[fill_grid_it - fill_ice_grid_vec.begin()] > -1)
+			{
+				safeClick();
+				cardNotInQueue(coffee_seed_index + 1,
+							   fill_grid_it->row,
+							   fill_grid_it->col);
+				safeClick();
+				return;
+			}
 		} while (fill_grid_it != fill_ice_grid_vec.begin());
+
+		showErrorNotInQueue("coffee : 未找到可用的存冰");
 	},
 					"coffee");
 }
@@ -209,37 +219,17 @@ void AvZ::PlantFixer::autoGetFixList()
 					"autoGetFixList");
 }
 
-bool AvZ::PlantFixer::use_seed_(int seed_index, int row, float col, bool is_need_shovel)
+void AvZ::PlantFixer::use_seed_(int seed_index, int row, float col, bool is_need_shovel)
 {
-	if (is_use_coffee)
-	{
-		if (coffee_seed_index == -1)
-		{
-			return false;
-		}
-		auto coffee_seed = main_object->seedArray();
-		if (!coffee_seed->isUsable())
-		{
-			return false;
-		}
-	}
 	if (is_need_shovel)
 	{
-		if (plant_type == NGT_30)
-		{
-			AvZ::shovelNotInQueue(row, col, true);
-		}
-		else
-		{
-			AvZ::shovelNotInQueue(row, col);
-		}
+		AvZ::shovelNotInQueue(row, col, plant_type == NGT_30);
 	}
 	cardNotInQueue(seed_index + 1, row, col);
 	if (is_use_coffee)
 	{
 		cardNotInQueue(coffee_seed_index + 1, row, col);
 	}
-	return true;
 }
 
 void AvZ::PlantFixer::get_seed_list()
@@ -259,7 +249,7 @@ void AvZ::PlantFixer::get_seed_list()
 	}
 	if (seed_index_vec.size() == 0)
 	{
-		popErrorWindowNotInQueue("您没有选择修补该植物的卡片！");
+		showErrorNotInQueue("您没有选择修补该植物的卡片！");
 	}
 	leaf_seed_index = getSeedIndex(HY_16);
 	coffee_seed_index = getSeedIndex(KFD_35);
@@ -275,7 +265,7 @@ void AvZ::PlantFixer::start(int _plant_type, const std::vector<Grid> &lst, int _
 		is_paused = false;
 		if (_plant_type >= JQSS_40)
 		{
-			popErrorWindowNotInQueue("修补植物类仅支持绿卡");
+			showErrorNotInQueue("修补植物类仅支持绿卡");
 			return;
 		}
 
@@ -321,6 +311,19 @@ void AvZ::PlantFixer::run()
 		return;
 	}
 
+	if (is_use_coffee)
+	{
+		if (coffee_seed_index == -1)
+		{
+			return;
+		}
+		auto coffee_seed = main_object->seedArray() + coffee_seed_index;
+		if (!coffee_seed->isUsable())
+		{
+			return;
+		}
+	}
+
 	do
 	{
 		seed_memory = main_object->seedArray();
@@ -334,8 +337,9 @@ void AvZ::PlantFixer::run()
 
 	// 没找到可用的卡片
 	if (usable_seed_index_it == seed_index_vec.end())
+	{
 		return;
-
+	}
 	getPlantIndexs(grid_lst, plant_type, plant_index_vec);
 
 	is_seed_used = false;
@@ -367,7 +371,8 @@ void AvZ::PlantFixer::run()
 					cardNotInQueue(leaf_seed_index + 1, grid_it->row, grid_it->col);
 				}
 			}
-			is_seed_used = use_seed_((*usable_seed_index_it), grid_it->row, grid_it->col, false);
+			use_seed_((*usable_seed_index_it), grid_it->row, grid_it->col, false);
+			is_seed_used = true;
 			break;
 		}
 		else
@@ -406,7 +411,7 @@ void AvZ::KeyConnector::add(char key, std::function<void()> operate)
 	{
 		if (key_operation.first == key)
 		{
-			popErrorWindowNotInQueue("按键 # 绑定了多个操作", key);
+			showErrorNotInQueue("按键 # 绑定了多个操作", key);
 			return;
 		}
 	}

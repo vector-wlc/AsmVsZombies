@@ -78,19 +78,25 @@ void AvZ::getPlantIndexs(const std::vector<Grid> &lst_in_, int type, std::vector
 		grid.row = plant->row() + 1;
 		grid.col = plant->col() + 1;
 
-		auto it = FindInAllRange(lst_in_, grid);
-		if (it == lst_in_.end())
+		auto it_vec = FindSameEle<Grid>(lst_in_, grid);
+		if (it_vec.empty())
 		{
 			continue;
 		}
 		if (plant->type() == type)
 		{
-			indexs_out_[it - lst_in_.begin()] = index;
+			for (const auto &ele : it_vec)
+			{
+				indexs_out_[ele - lst_in_.begin()] = index;
+			}
 		}
 		else if (type != 16 && type != 30 && type != 33 &&
 				 plant->type() != 16 && plant->type() != 30 && plant->type() != 33)
 		{
-			indexs_out_[it - lst_in_.begin()] = -2;
+			for (const auto &ele : it_vec)
+			{
+				indexs_out_[ele - lst_in_.begin()] = -2;
+			}
 		}
 	}
 }
@@ -210,4 +216,62 @@ void AvZ::setWaveZombies(int wave, std::initializer_list<int> zombie_type)
 	{
 		(*(main_object->zombieList() + index)) = BJ_20;
 	}
+}
+
+void AvZ::setWavelength(const std::vector<AvZ::WaveTime> &lst)
+{
+	auto temp = time_wave_insert;
+	for (const auto &ele : lst)
+	{
+		if (ele.wave < 1 || RangeIn(ele.wave, {9, 19, 20}) || ele.wave > 20)
+		{
+			showErrorNotInQueue("setWavelength : 您当前设定的 wave 参数为 #, 超出有效范围",
+								ele.wave);
+			continue;
+		}
+
+		if (ele.time < 601 || ele.time > 2500)
+		{
+			showErrorNotInQueue("setWavelength : 您当前设定第 # 波 的 time 参数为 #, 超出有效范围",
+								ele.wave, ele.time);
+			continue;
+		}
+
+		operation_queue_vec[ele.wave - 1].wave_length = ele.time;
+
+		setTime(1, ele.wave);
+		insertOperation([=]() {
+			main_object->zombieRefreshHp() = 0;
+			int now_time = main_object->gameClock() - operation_queue_vec[ele.wave - 1].refresh_time;
+			int countdown = ele.time - now_time;
+			if (countdown < 0)
+			{
+				showErrorNotInQueue("您在第 # 波设定的波长为 #，但是当前时刻点为 #，已超出可设定的时间范围，波长设定失败！",
+									ele.wave,
+									ele.time,
+									now_time);
+				return;
+			}
+			main_object->refreshCountdown() = countdown;
+			main_object->initialCountdown() = ele.time;
+
+			if (wavelength_it - operation_queue_vec.begin() < ele.wave)
+			{
+				wavelength_it = operation_queue_vec.begin() + ele.wave - 1;
+			}
+
+			// 设定刷新时间点
+			for (; wavelength_it != operation_queue_vec.end() - 1; ++wavelength_it)
+			{
+				if (wavelength_it->refresh_time == -1 || wavelength_it->wave_length == -1)
+				{
+					break;
+				}
+				(wavelength_it + 1)->refresh_time = wavelength_it->refresh_time + wavelength_it->wave_length;
+			}
+		},
+						"writeWavelength");
+	}
+
+	setTime(temp);
 }
