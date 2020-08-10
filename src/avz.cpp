@@ -41,7 +41,6 @@ HWND AvZ::pvz_hwnd;
 HANDLE AvZ::pvz_handle = nullptr;
 PvZ *AvZ::pvz_base;
 MainObject *AvZ::main_object;
-bool AvZ::is_get_seed_index = false;
 std::string AvZ::seed_name_list[11][8] =
 	{
 		//豌豆射手，向日葵，樱桃炸弹，坚果，土豆地雷，寒冰射手，大嘴花，双重射手
@@ -70,10 +69,19 @@ std::string AvZ::seed_name_list[11][8] =
 		{"Mjxcts", "Mhp", "Mymts", "Mkfd", "Mds", "Myzbhs", "Mjzh", "Mxgts"}};
 
 std::map<std::string, int> AvZ::seed_name_to_index_map;
+std::vector<AvZ::Grid> AvZ::select_card_vec;
 std::vector<AvZ::ThreadInfo> AvZ::thread_vec;
 std::stack<int> AvZ::stoped_thread_id_stack;
 AvZ::PaoOperator::RoofFlyTime AvZ::PaoOperator::fly_time_data[8] = {
-	{515, 359}, {499, 362}, {515, 364}, {499, 367}, {515, 369}, {499, 372}, {511, 373}, {511, 373}};
+	{515, 359},
+	{499, 362},
+	{515, 364},
+	{499, 367},
+	{515, 369},
+	{499, 372},
+	{511, 373},
+	{511, 373},
+};
 AvZ::TickRunner AvZ::PaoOperator::tick_runner;
 std::set<AvZ::Grid> AvZ::PaoOperator::lock_pao_set; // 锁定的炮
 

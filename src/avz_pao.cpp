@@ -309,7 +309,7 @@ int AvZ::PaoOperator::get_recover_time_vec()
 	return time;
 }
 
-int AvZ::PaoOperator::update_next_pao(int delay_time, bool is_recover_pao)
+int AvZ::PaoOperator::update_next_pao(int delay_time, bool is_delay_pao)
 {
 	int recover_time = 0xFFFF;
 
@@ -354,7 +354,7 @@ int AvZ::PaoOperator::update_next_pao(int delay_time, bool is_recover_pao)
 	// 以上的判断条件已经解决炮是否存在以及炮当前时刻是否能用的问题
 	// 如果炮当前时刻不能使用但是为 recoverPao 时则不会报错，
 	// 并返回恢复时间
-	if (is_recover_pao)
+	if (is_delay_pao)
 	{
 		return recover_time;
 	}
@@ -440,11 +440,20 @@ void AvZ::PaoOperator::roofPao(int row, float col)
 			return;
 		}
 
+		// 寻找恢复时间最少的炮
+		int min_delay_time = update_next_pao(0, true);
 		int delay_time = 387 - get_roof_fly_time(pao_grid_vec[next_pao].col, col);
-		if (update_next_pao(delay_time) == -1)
+		if (min_delay_time > delay_time)
 		{
-			return;
+			std::string error_str = (sequential_mode == TIME ? "TIME 模式 : 未找到能够发射的炮，" : "SPACE 模式 : ");
+			error_str += "位于 (#, #) 的第 # 门炮还有 #cs 恢复";
+			showErrorNotInQueue(error_str,
+								pao_grid_vec[next_pao].row,
+								pao_grid_vec[next_pao].col,
+								next_pao + 1,
+								min_delay_time - delay_time);
 		}
+
 		delay_fire_pao(delay_time, pao_grid_vec[next_pao].row, pao_grid_vec[next_pao].col, row, col);
 		update_lastest_pao_msg(main_object->gameClock() + delay_time, next_pao);
 		skip_pao(1);

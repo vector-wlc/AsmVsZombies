@@ -7,18 +7,18 @@
 
 #include "libavz.h"
 
-void AvZ::choose_card(int row, int col)
+bool AvZ::choose_card(int row, int col)
 {
 	int yp, xp;
 	if (row > 6) // 模仿者卡片
 	{
 		row -= 6;
-		do
+
+		click_btn(490, 550);
+		if (!read_memory<int>(0x6A9EC0, 0x320, 0x94))
 		{
-			click_btn(490, 550, 1);
-			exit_sleep(100);
-		} while (!read_memory<int>(0x6A9EC0, 0x320, 0x94));
-		exit_sleep(100);
+			return false;
+		}
 		yp = 160;
 		xp = 215;
 	}
@@ -30,12 +30,12 @@ void AvZ::choose_card(int row, int col)
 	yp += (row - 1) * 70;
 	xp += (col - 1) * 50;
 	click(pvz_base->mouseWindow(), xp, yp, 1);
+	return true;
 }
 
-void AvZ::click_btn(int x, int y, int t_ms)
+void AvZ::click_btn(int x, int y)
 {
 	PostMessage(pvz_hwnd, WM_LBUTTONDOWN, 0, (y & 0xFFFF) << 16 | (x & 0xFFFF));
-	exit_sleep(t_ms);
 	PostMessage(pvz_hwnd, WM_LBUTTONUP, 0, (y & 0xFFFF) << 16 | (x & 0xFFFF));
 }
 
@@ -54,95 +54,97 @@ void AvZ::deal_wrong_click()
 	}
 }
 
-void AvZ::lets_rock()
+void AvZ::select_cards()
 {
-	exit_sleep(90);
-	// click 这里会出现比较玄学的按下去抬不上来的现象，所以就用 PostMessage 了。
-	click_btn(234, 565, 75);
+	static auto it = select_card_vec.begin();
 
-	exit_sleep(250);
-	//出现警告框时
-	while (pvz_base->mouseWindow()->topWindow())
+	if (main_object->text()->disappearCountdown() ||
+		main_object->selectCardUi_m()->orizontalScreenOffset() != 4250)
 	{
-		click_btn(320, 400, 75);
-		exit_sleep(150);
+		it = select_card_vec.begin();
+		return;
+	}
+
+	static bool is_examine = false;
+
+	deal_wrong_click();
+
+	if (main_object->globalClock() % 17 != 0)
+	{
+		return; // 检测间隔为 17cs
+	}
+
+	if (!is_examine && pvz_base->mouseWindow()->isInWindow())
+	{
+		is_examine = true;
+		showErrorNotInQueue("检测到您的鼠标在游戏窗口内，这种行为可能会导致选卡失败，选卡时请尽量将鼠标移到窗口外");
+		return;
+	}
+
+	if (it != select_card_vec.end())
+	{
+		if (choose_card(it->row, it->col))
+		{
+			++it;
+		}
+		return;
+	}
+
+	if (pvz_base->selectCardUi_p()->letsRockBtn()->isUnusable())
+	{
+		static int cnt = 0;
+		++cnt;
+		click(pvz_base->mouseWindow(), 100, 50, 1);
+		if (cnt == 10)
+		{
+			cnt = 0;
+			it = select_card_vec.begin();
+		}
+
+		return;
+	}
+
+	// click 这里会出现比较玄学的按下去抬不上来的现象，所以就用 PostMessage 了。
+	click_btn(234, 565);
+
+	//出现警告框时
+	if (pvz_base->mouseWindow()->topWindow())
+	{
+		click_btn(320, 400);
+		return;
 	}
 }
 
 void AvZ::selectCards(const std::vector<std::string> &lst)
 {
-	// 等待 "Survival Endless" 消失
-	while (main_object->text()->disappearCountdown())
-	{
-		exit_sleep(1);
-	}
-
-	if (pvz_base->gameUi() != 2)
-	{
-		return;
-	}
-
-	while (main_object->selectCardUi_m()->orizontalScreenOffset() != 4250)
-	{
-		exit_sleep(1);
-	}
-
-	exit_sleep(50);
-
-	if (pvz_base->mouseWindow()->isInWindow())
-	{
-		showErrorNotInQueue("检测到您的鼠标在游戏窗口内，这种行为可能会导致选卡失败，选卡时请尽量将鼠标移到窗口外");
-	}
-	deal_wrong_click();
-
 	bool is_find;
 	int col;
-	while (true)
-	{
-		for (const auto &seed_name : lst)
-		{
-			is_find = false;
-			for (int row = 0; row < 11; ++row)
-			{
-				for (col = 0; col < 8; ++col)
-				{
-					if (seed_name == seed_name_list[row][col])
-					{
-						is_find = true;
-						++row;
-						++col;
-						break;
-					}
-				}
 
-				if (is_find)
+	select_card_vec.clear();
+	for (const auto &seed_name : lst)
+	{
+		is_find = false;
+		for (int row = 0; row < 11; ++row)
+		{
+			for (col = 0; col < 8; ++col)
+			{
+				if (seed_name == seed_name_list[row][col])
 				{
-					if (pvz_base->gameUi() != 2 || pvz_base->mouseWindow()->topWindow())
-					{
-						return;
-					}
-					choose_card(row, col);
-					exit_sleep(80);
+					is_find = true;
+					++row;
+					++col;
 					break;
 				}
 			}
-		}
 
-		if (pvz_base->selectCardUi_p()->letsRockBtn()->isUnusable())
-		{
-			for (int i = 0; i < 10; ++i)
+			if (is_find)
 			{
-				click(pvz_base->mouseWindow(), 100, 50, 1);
-				exit_sleep(30);
+				Grid grid = {row, col};
+				select_card_vec.push_back(grid);
+				break;
 			}
 		}
-		else
-		{
-			break;
-		}
 	}
-
-	lets_rock();
 }
 
 void AvZ::cardNotInQueue(int seed_index, int row, float col)
@@ -190,7 +192,7 @@ void AvZ::cardNotInQueue(int seed_index, const std::vector<Crood> &lst)
 
 int AvZ::get_seed_index_for_seed_name(const std::string &seed_name)
 {
-	if (!is_get_seed_index)
+	if (seed_name_to_index_map.empty())
 	{
 		auto seed = main_object->seedArray();
 		if (pvz_base->gameUi() == 3)
@@ -215,11 +217,6 @@ int AvZ::get_seed_index_for_seed_name(const std::string &seed_name)
 				}
 				seed_name_to_index_map.insert(seed_info);
 			}
-			is_get_seed_index = true;
-		}
-		else
-		{
-			is_get_seed_index = false;
 		}
 	}
 	auto it = seed_name_to_index_map.find(seed_name);

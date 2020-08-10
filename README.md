@@ -56,13 +56,23 @@ AvZ 操作精度为理论上的100%绝对精准，使用这套框架将再也不
 
 ## 问题（BUG）
 
-Windows 7 仍存在使用 selectCards 函数崩溃的问题
+部分 Windows 7 仍存在使用 selectCards 函数崩溃的问题
 
 ## 致谢
 [yuchenxi2000/AssemblyVsZombies](https://github.com/yuchenxi2000/AssemblyVsZombies)<br>
 [lmintlcx/pvzscript](https://github.com/lmintlcx/pvzscripts)
 
 ## 更新日志
+
+AvZ 2020_08_10 
+
+* 新增 AvZ::setGameSpeed 函数，可以设定游戏的运行速度
+* 修复部分 Windows 7 存在的选卡函数崩溃问题
+* 修复 SetZombies 函数杀死战斗界面僵尸的问题
+* 修复 FE 场景下脚本注入后无反应的问题
+* 修复 roofPao 的飞行时间修正错误问题
+* 将 popErrorWindow 函数名更改为 showError
+* 削弱了 vector-wlc 的头发
 
 AvZ 2020_07_27 (2020_07_10 的优化版，因此框架代码中的版本号没有改变)
 
@@ -72,6 +82,7 @@ AvZ 2020_07_27 (2020_07_10 的优化版，因此框架代码中的版本号没�
 * 修复了非第一波进入游戏的 BUG，调试脚本的时间占用将会变得更少
 * 修复了不立即使用 fixLatestPao 会报错误的 BUG 
 * 改进了注入程序的运行逻辑，减少不必要的注入错误
+* 削弱了 vector-wlc 的头发
 
 **AvZ 2020_07_10**
 * 放弃对于 Visual Studio 的支持，提供新的无需配置的 AvZ [VSCode](https://code.visualstudio.com/) 环境包

@@ -46,6 +46,11 @@ struct PvZ
 	{
 		return (int &)((uint8_t *)this)[0x7fc];
 	}
+
+	int &tickMs()
+	{
+		return (int &)((uint8_t *)this)[0x454];
+	}
 };
 
 struct MainObject
@@ -132,6 +137,10 @@ struct MainObject
 	int &gameClock()
 	{
 		return (int &)((uint8_t *)this)[0x5568];
+	}
+	int &globalClock()
+	{
+		return (int &)((uint8_t *)this)[0x556c];
 	}
 	int &refreshCountdown()
 	{

@@ -11,16 +11,6 @@
 // 此函数每帧都需调用一次
 void AvZ::update_refresh_time()
 {
-	// 防止错误读取僵尸刷新时间点
-	if (pvz_base->gameUi() == 2)
-	{
-		for (auto &ele : operation_queue_vec)
-		{
-			ele.refresh_time = -1;
-		}
-		return;
-	}
-
 	int wave = main_object->wave();
 
 	auto operation_queue_it = operation_queue_vec.begin() + wave;
@@ -184,6 +174,7 @@ void AvZ::loadScript(const std::function<void()> func)
 	setInsertOperation(false);
 	item_collector.start();
 	AvZ::MaidCheats::stop();
+	pvz_base->tickMs() = 10;
 	setInsertOperation(true);
 	setTime(-600, 1);
 	is_loaded = true;
@@ -210,10 +201,12 @@ void AvZ::loadScript(const std::function<void()> func)
 		*thread_info.id_ptr = -1;
 	}
 	SetWindowTextA(pvz_hwnd, "Plants vs. Zombies");
+	pvz_base->tickMs() = 10;
 	exit_sleep(20);
 	operation_queue_vec.clear(); // 清除一切操作
 	thread_vec.clear();
 	key_connector.clear();
+	seed_name_to_index_map.clear();
 	while (!stoped_thread_id_stack.empty())
 	{
 		stoped_thread_id_stack.pop();
@@ -245,23 +238,42 @@ void AvZ::run(MainObject *level, std::function<void()> Script)
 		{
 			exit_sleep(1);
 		}
+
+		// 假进入战斗界面直接返回
+		if (pvz_base->gameUi() == 3 && main_object->text()->disappearCountdown())
+		{
+			return;
+		}
 	}
 
-	if (main_object->wave() != 20)
+	if (pvz_base->gameUi() == 2 && !select_card_vec.empty())
 	{
-		update_refresh_time();
+		select_cards();
 	}
 
 	if (pvz_base->gameUi() != 3 ||
 		pvz_base->mouseWindow()->topWindow())
 	{
+		seed_name_to_index_map.clear();
 		return;
 	}
 
+	// 假进入战斗界面直接返回
 	if (main_object->selectCardUi_m()->orizontalScreenOffset() != 0 &&
-		main_object->selectCardUi_m()->orizontalScreenOffset() != 7830)
+		main_object->selectCardUi_m()->orizontalScreenOffset() != 7830 &&
+		main_object->selectCardUi_m()->orizontalScreenOffset() != 9780)
 	{
 		return;
+	}
+
+	if (!select_card_vec.empty())
+	{
+		select_card_vec.clear();
+	}
+
+	if (main_object->wave() != 20)
+	{
+		update_refresh_time();
 	}
 
 	for (const auto &thread_info : thread_vec)

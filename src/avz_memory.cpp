@@ -136,8 +136,11 @@ void AvZ::update_zombies_preview()
 	auto zombie_memory = main_object->zombieArray();
 	for (int i = 0; i < main_object->zombieTotal(); ++i, ++zombie_memory)
 	{
-		zombie_memory->isDisappeared() = true;
-		zombie_memory->state() = 3;
+		if (zombie_memory->abscissa() > 800)
+		{
+			zombie_memory->isDisappeared() = true;
+			zombie_memory->state() = 3;
+		}
 	}
 	// 重新生成僵尸
 	main_object->selectCardUi_m()->isCreatZombie() = false;
@@ -274,4 +277,16 @@ void AvZ::setWavelength(const std::vector<AvZ::WaveTime> &lst)
 	}
 
 	setTime(temp);
+}
+
+void AvZ::setGameSpeed(float x)
+{
+	if (x < 0.05 || x > 10)
+	{
+		showErrorNotInQueue("setGameSpeed : 倍速设置失败，倍速设置的合法范围为 [0.05, 10]");
+		return;
+	}
+	int ms = int(10 / x + 0.5);
+
+	pvz_base->tickMs() = ms;
 }

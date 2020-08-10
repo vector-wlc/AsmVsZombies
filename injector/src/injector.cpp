@@ -13,7 +13,9 @@ using namespace std;
 int main()
 {
     Process process;
-    process.OpenByWindow(L"MainWindow", L"Plants vs. Zombies");
-    process.ManageDLL();
+    if (process.OpenByWindow(L"MainWindow", L"Plants vs. Zombies"))
+    {
+        process.ManageDLL();
+    }
     return 0;
 }

@@ -12,8 +12,8 @@
 #ifndef __LIBAVZ_H__
 #define __LIBAVZ_H__
 
-// AvZ 版本号 当前版本 20_07_10
-#define __AVZ_VERSION__ 200710
+// AvZ 版本号 当前版本 20_08_10
+#define __AVZ_VERSION__ 200810
 
 #include <map>
 #include <cstdlib>
@@ -26,6 +26,7 @@
 #include <stack>
 #include <thread>
 #include <set>
+#include <initializer_list>
 #include "pvzfunc.h"
 
 #define FindInAllRange(container, goal) std::find(container.begin(), container.end(), goal)
@@ -543,6 +544,14 @@ public:
 	// Ice3(298) --------- 修正冰三时间点至当前时刻的 298cs 后
 	static void ice3(int time);
 
+	// *** Not In Queue
+	// 设置游戏倍速
+	// *** 注意：倍速设置的范围为 [0.05, 10]
+	// *** 使用示例
+	// AvZ::setGameSpeed(5) ---- 将游戏速度设置为 5 倍速
+	// AvZ::setGameSpeed(0.1) --- 将游戏速度设置为 0.1 倍速
+	static void setGameSpeed(float x);
+
 	// click api
 public:
 	struct ShovelCrood
@@ -603,16 +612,17 @@ public:
 
 	// card api
 private:
-	static bool is_get_seed_index;
 	static std::string seed_name_list[11][8];
 	static std::map<std::string, int> seed_name_to_index_map;
+	static std::vector<Grid> select_card_vec;
 	// 为卡片名称变量获取卡片对象序列
 	static int get_seed_index_for_seed_name(const std::string &seed_name);
 	// 防误触
 	static void deal_wrong_click();
-	static void choose_card(int row, int col);
-	static void click_btn(int x, int y, int t_ms = 0);
+	static bool choose_card(int row, int col);
+	static void click_btn(int x, int y);
 	static void lets_rock();
+	static void select_cards();
 
 public:
 	struct CardIndex
@@ -945,7 +955,7 @@ public:
 		// 更新下一门要发射的炮
 		// 返回 >=0 下一门炮可用且意义为该门炮剩余的恢复时间
 		// 返回 -1 下一门炮不可用
-		int update_next_pao(int delay_time = 0, bool is_recover_pao = false);
+		int update_next_pao(int delay_time = 0, bool is_delay_pao = false);
 
 		// 更新最近发炮的信息
 		void update_lastest_pao_msg(int fire_time, int index)

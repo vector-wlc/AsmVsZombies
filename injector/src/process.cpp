@@ -33,6 +33,12 @@ bool Process::OpenByWindow(const wchar_t *class_name, const wchar_t *window_name
 		handle = OpenProcess(PROCESS_ALL_ACCESS, false, pid);
 	}
 
+	if (ReadMemory<uint32_t>(0x4140c5) != 0x0019b337)
+	{
+		MessageBoxW(NULL, L"您使用的游戏版本不是英文原版，请到下载安装包的链接下载 AvZ 所支持的英文原版", L"Error", MB_ICONERROR);
+		return false;
+	}
+
 	auto address = ReadMemory<uintptr_t>(0x6a9ec0);
 	auto game_ui = ReadMemory<int>(address + 0x7fc);
 	while (game_ui == 2 || game_ui == 3)
@@ -53,7 +59,7 @@ void Process::ManageDLL()
 	if (!CopyFileW(L"libavz.dll", libavz_path_name, false) &&
 		!CopyFileW(L"bin\\libavz.dll", libavz_path_name, false))
 	{
-		MessageBoxW(NULL, L"libavz.dll 复制失败，请检查 injector.exe 路径下是否有文件 libavz.dll，并重新运行尝试", L"Error", MB_ICONERROR);
+		MessageBoxW(NULL, L"libavz.dll 复制失败，请检查 injector.exe 路径下是否有文件 libavz.dll，此类错误是由于编译器没有生成 libavz.dll 导致，即根本原因是脚本语法出错，请到 VSCode 的右下拉动窗口中的 \"终端(terminal)\" 项查看编译器提示的语法错误，如果不知道如何查看错误请查看 AvZ 视频教程中的 \"VSCode 配置\" 分 P", L"Error", MB_ICONERROR);
 		return;
 	}
 
