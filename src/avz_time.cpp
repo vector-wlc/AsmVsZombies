@@ -16,7 +16,7 @@ void AvZ::ice3(int time)
 		for (int index = 0; index < main_object->plantCountMax(); ++index, ++ice_plant)
 		{
 			if (!ice_plant->isDisappeared() && !ice_plant->isCrushed() &&
-				ice_plant->type() == HBG_14 && ice_plant->state() == 2)
+				ice_plant->type() == ICE_SHROOM && ice_plant->state() == 2)
 			{
 				ice_plant->explodeCountdown() = 96;
 				return;

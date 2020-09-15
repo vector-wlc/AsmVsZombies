@@ -68,7 +68,7 @@ void AvZ::IceFiller::resetIceSeedList(const std::vector<int> &lst)
 		for (const auto &ice_index : lst)
 		{
 			auto seed_memory = main_object->seedArray() + ice_index - 1;
-			if (seed_memory->type() != HBG_14 || seed_memory->imitatorType() != HBG_14)
+			if (seed_memory->type() != ICE_SHROOM || seed_memory->imitatorType() != ICE_SHROOM)
 			{
 				showErrorNotInQueue("请检查第 # 张卡片是否为冰卡", ice_index);
 			}
@@ -88,17 +88,17 @@ void AvZ::IceFiller::start(const std::vector<Grid> &lst)
 		}
 		is_paused = false;
 		int ice_seed_index;
-		ice_seed_index = getSeedIndex(HBG_14);
+		ice_seed_index = getSeedIndex(ICE_SHROOM);
 		if (ice_seed_index != -1)
 		{
 			ice_seed_index_vec.push_back(ice_seed_index);
 		}
-		ice_seed_index = getSeedIndex(HBG_14, true);
+		ice_seed_index = getSeedIndex(ICE_SHROOM, true);
 		if (ice_seed_index != -1)
 		{
 			ice_seed_index_vec.push_back(ice_seed_index);
 		}
-		coffee_seed_index = getSeedIndex(KFD_35);
+		coffee_seed_index = getSeedIndex(COFFEE_BEAN);
 		fill_ice_grid_vec = lst;
 		pushFunc([=]() { run(); });
 	},
@@ -134,7 +134,7 @@ void AvZ::IceFiller::run()
 		}
 		if (!is_get_indexs)
 		{
-			getPlantIndexs(fill_ice_grid_vec, HBG_14, ice_plant_index_vec);
+			getPlantIndexs(fill_ice_grid_vec, ICE_SHROOM, ice_plant_index_vec);
 			ice_plant_index_it = ice_plant_index_vec.begin();
 			is_get_indexs = true;
 		}
@@ -144,6 +144,26 @@ void AvZ::IceFiller::run()
 		{
 			if ((*ice_plant_index_it) == -1)
 			{
+				//如果为池塘场景而且在水路
+				if ((main_object->scene() == 2 || main_object->scene() == 3) &&
+					(fill_ice_grid_it->row == 3 || fill_ice_grid_it->row == 4))
+				{
+					//如果不存在荷叶
+					if (getPlantIndex(fill_ice_grid_it->row, fill_ice_grid_it->col, LILY_PAD) == -1)
+					{
+						continue;
+					}
+				}
+
+				// 如果是天台场景
+				if (main_object->scene() == 4 || main_object->scene() == 5)
+				{
+					if (getPlantIndex(fill_ice_grid_it->row, fill_ice_grid_it->col, FLOWER_POT) == -1)
+					{
+						continue;
+					}
+				}
+
 				AvZ::cardNotInQueue(*ice_seed_index_it + 1, fill_ice_grid_it->row, fill_ice_grid_it->col);
 				++fill_ice_grid_it;
 				++ice_plant_index_it;
@@ -168,7 +188,7 @@ void AvZ::IceFiller::coffee()
 			return;
 		}
 		std::vector<int> ice_plant_index_vec;
-		getPlantIndexs(fill_ice_grid_vec, HBG_14, ice_plant_index_vec);
+		getPlantIndexs(fill_ice_grid_vec, ICE_SHROOM, ice_plant_index_vec);
 
 		auto fill_grid_it = fill_ice_grid_vec.end();
 		do
@@ -223,7 +243,7 @@ void AvZ::PlantFixer::use_seed_(int seed_index, int row, float col, bool is_need
 {
 	if (is_need_shovel)
 	{
-		AvZ::shovelNotInQueue(row, col, plant_type == NGT_30);
+		AvZ::shovelNotInQueue(row, col, plant_type == PUMPKIN);
 	}
 	cardNotInQueue(seed_index + 1, row, col);
 	if (is_use_coffee)
@@ -251,23 +271,29 @@ void AvZ::PlantFixer::get_seed_list()
 	{
 		showErrorNotInQueue("您没有选择修补该植物的卡片！");
 	}
-	leaf_seed_index = getSeedIndex(HY_16);
-	coffee_seed_index = getSeedIndex(KFD_35);
+	coffee_seed_index = getSeedIndex(COFFEE_BEAN);
 }
 
 void AvZ::PlantFixer::start(int _plant_type, const std::vector<Grid> &lst, int _fix_hp)
 {
+	if (_plant_type == COFFEE_BEAN)
+	{
+		showErrorNotInQueue("PlantFixer 不支持修补咖啡豆");
+		return;
+	}
+
+	if (_plant_type >= GATLING_PEA)
+	{
+		showErrorNotInQueue("修补植物类仅支持绿卡");
+		return;
+	}
+
 	insertOperation([=]() {
 		if (!thread_examine())
 		{
 			return;
 		}
 		is_paused = false;
-		if (_plant_type >= JQSS_40)
-		{
-			showErrorNotInQueue("修补植物类仅支持绿卡");
-			return;
-		}
 
 		plant_type = _plant_type;
 		fix_hp = _fix_hp;
@@ -294,7 +320,6 @@ void AvZ::PlantFixer::run()
 	}
 
 	static Seed *seed_memory;
-	static Seed *leaf_seed_memory = main_object->seedArray() + leaf_seed_index;
 	static Plant *plant;
 	static std::vector<int> plant_index_vec;
 	static Grid need_plant_grid; //记录要使用植物的格子
@@ -361,16 +386,23 @@ void AvZ::PlantFixer::run()
 			//如果为池塘场景而且在水路
 			if ((main_object->scene() == 2 || main_object->scene() == 3) &&
 				(grid_it->row == 3 || grid_it->row == 4))
-			{ //如果不存在荷叶
-				if (getPlantIndex(grid_it->row, grid_it->col, 16) == -1)
+			{
+				//如果不存在荷叶
+				if (getPlantIndex(grid_it->row, grid_it->col, LILY_PAD) == -1 && plant_type != LILY_PAD)
 				{
-					//如果荷叶卡片没有恢复
-					if (leaf_seed_index == -1 || !leaf_seed_memory->isUsable())
-						continue;
-
-					cardNotInQueue(leaf_seed_index + 1, grid_it->row, grid_it->col);
+					continue;
 				}
 			}
+
+			// 如果是天台场景
+			if (main_object->scene() == 4 || main_object->scene() == 5)
+			{
+				if (getPlantIndex(grid_it->row, grid_it->col, FLOWER_POT) == -1 && plant_type != FLOWER_POT)
+				{
+					continue;
+				}
+			}
+
 			use_seed_((*usable_seed_index_it), grid_it->row, grid_it->col, false);
 			is_seed_used = true;
 			break;

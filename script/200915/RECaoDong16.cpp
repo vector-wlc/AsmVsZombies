@@ -13,7 +13,7 @@ AvZ::PaoOperator pao_col_in_5_and_7;
 AvZ::PaoOperator pao_col_in_1_and_3;
 
 #ifdef __AVZ_VERSION__
-#if __AVZ_VERSION__ == 200810
+#if __AVZ_VERSION__ == 200915
 
 //分别使用一门 1 3 列炮和一门 5 7 列炮
 //inline 是内联，对于短小的函数效率更高
@@ -28,11 +28,11 @@ inline void MyRoofPao(float col_1_3, float col_5_7)
 void Script()
 {
 #ifdef __AVZ_VERSION__
-#if __AVZ_VERSION__ == 200810 // 这里使用预编译指令是来识别版本号的，使用者不需要声明这些！！！
+#if __AVZ_VERSION__ == 200915 // 这里使用预编译指令是来识别版本号的，使用者不需要声明这些！！！
 
     OpenMultipleEffective();
     SetZombies({CG_3, TT_4, BC_12, XC_15, QQ_16, BJ_20, FT_21, TL_22, BY_23, HY_32, TT_18});
-    SelectCards({"kfd", "hbg", "Mhbg", "hmg", "ytzd", "hblj", "hp", "ymts", "ymjnp", "gjg"});
+    SelectCards({COFFEE_BEAN, ICE_SHROOM, M_ICE_SHROOM, DOOM_SHROOM, CHERRY_BOMB, JALAPENO, FLOWER_POT, KERNEL_PULT, COB_CANNON, TALL_NUT});
     // 按下 Q 发射一枚炮
     KeyConnect('Q', [&]() {
         pao_col_in_5_and_7.roofPao(MouseRow(), MouseCol());
@@ -42,14 +42,14 @@ void Script()
     KeyConnect('W', [&]() {
         auto mouse_row = MouseRow();
         auto mouse_col = MouseCol();
-        Card({{"hp", mouse_row, mouse_col}, {"gjg", mouse_row, mouse_col}});
+        Card({{FLOWER_POT, mouse_row, mouse_col}, {TALL_NUT, mouse_row, mouse_col}});
     });
 
     // 调整炮列表
     pao_col_in_1_and_3.resetPaoList({{1, 1}, {1, 3}, {2, 1}, {3, 1}, {3, 3}, {4, 1}, {5, 1}, {5, 3}});
     pao_col_in_5_and_7.resetPaoList({{1, 5}, {1, 7}, {2, 5}, {3, 5}, {3, 7}, {4, 5}, {5, 5}, {5, 7}});
 
-    Card("hp", 2, 9);
+    Card(FLOWER_POT, 2, 9);
 
     // 启用存冰线程
     ice_filler.start({{2, 3}, {4, 3}, {2, 8}, {4, 8}});
@@ -60,19 +60,19 @@ void Script()
     SetTime(330 - 387);
     MyRoofPao(8.8, 7.7);
     SetTime(223 - 100);
-    Card("ytzd", 2, 9);
+    Card(CHERRY_BOMB, 2, 9);
     SetTime(361 - 100);
-    Card("hblj", 2, 9);
+    Card(JALAPENO, 2, 9);
 
     // ############# wave 2 ##################
     SetTime(250 - 387, 2);
     MyRoofPao(9, 9);
     SetTime(250 - 298);
-    Card({{"hmg", 2, 9}, {"kfd", 2, 9}});
+    Card({{DOOM_SHROOM, 2, 9}, {COFFEE_BEAN, 2, 9}});
     SetTime(361 - 387);
     MyRoofPao(8.8, 8.8);
     SetTime(0);
-    Card("hp", 5, 9);
+    Card(FLOWER_POT, 5, 9);
     Delay(2);
     Shovel(5, 9);
 
@@ -122,9 +122,9 @@ void Script()
     SetTime(410 + 220 - 387);
     pao_col_in_1_and_3.roofPao(2, 8.45);
     SetTime(410 + 220 - 100);
-    Card("ytzd", 4, 8);
+    Card(CHERRY_BOMB, 4, 8);
     SetTime(1190 - 298);
-    Card({{"hp", 3, 9}, {"hmg", 3, 9}, {"kfd", 3, 9}});
+    Card({{FLOWER_POT, 3, 9}, {DOOM_SHROOM, 3, 9}, {COFFEE_BEAN, 3, 9}});
     SetTime(1190 + 220 - 387);
     MyRoofPao(7.7, 7.7);
 
@@ -157,7 +157,7 @@ void Script()
     SetTime(375 - 387);
     pao_col_in_1_and_3.roofPao(2, 8.8);
     SetTime(375 - 100);
-    Card({{"hp", 4, 9}, {"ytzd", 4, 9}});
+    Card({{FLOWER_POT, 4, 9}, {CHERRY_BOMB, 4, 9}});
     Delay(130);
     Shovel(4, 9);
 
@@ -230,9 +230,9 @@ void Script()
     SetTime(410 + 220 - 387);
     pao_col_in_1_and_3.roofPao(2, 8.45);
     SetTime(410 + 220 - 100);
-    Card("ytzd", 4, 8);
+    Card(CHERRY_BOMB, 4, 8);
     SetTime(1200 - 298);
-    Card({{"hp", 4, 9}, {"hmg", 4, 9}, {"kfd", 4, 9}});
+    Card({{FLOWER_POT, 4, 9}, {DOOM_SHROOM, 4, 9}, {COFFEE_BEAN, 4, 9}});
     SetTime(1200 + 220 - 387);
     MyRoofPao(7.7, 7.7);
 
@@ -240,7 +240,7 @@ void Script()
     SetTime(400 - 387, 18);
     MyRoofPao(9, 9);
     SetTime(400 - 100 + 110);
-    Card({{"hp", 3, 9}, {"hblj", 3, 9}});
+    Card({{FLOWER_POT, 3, 9}, {JALAPENO, 3, 9}});
     SetTime(400 - 100 + 110 + 130);
     Shovel(3, 9);
     SetTime(495 - 387);

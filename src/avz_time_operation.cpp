@@ -104,6 +104,9 @@ void AvZ::waitUntil(const TimeWave &_time_wave)
 	}
 
 	block_var = true; // 唤醒游戏主循环
+
+	auto _is_insert_operation = is_insert_operation;
+	InsertGuard insert_guard(true);
 	setTime(_time_wave);
 	insertOperation([=]() {
 		block_var = false; // 唤醒 Script 线程

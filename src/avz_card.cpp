@@ -14,7 +14,7 @@ bool AvZ::choose_card(int row, int col)
 	{
 		row -= 6;
 
-		click_btn(490, 550);
+		click(pvz_base->mouseWindow(), 490, 550, 1);
 		if (!read_memory<int>(0x6A9EC0, 0x320, 0x94))
 		{
 			return false;
@@ -115,35 +115,23 @@ void AvZ::select_cards()
 	}
 }
 
-void AvZ::selectCards(const std::vector<std::string> &lst)
+void AvZ::selectCards(const std::vector<int> &lst)
 {
 	bool is_find;
-	int col;
+	Grid grid;
 
 	select_card_vec.clear();
-	for (const auto &seed_name : lst)
+	for (const auto &plant_type : lst)
 	{
-		is_find = false;
-		for (int row = 0; row < 11; ++row)
+		if (plant_type > 87)
 		{
-			for (col = 0; col < 8; ++col)
-			{
-				if (seed_name == seed_name_list[row][col])
-				{
-					is_find = true;
-					++row;
-					++col;
-					break;
-				}
-			}
-
-			if (is_find)
-			{
-				Grid grid = {row, col};
-				select_card_vec.push_back(grid);
-				break;
-			}
+			showErrorNotInQueue("您选择的代号为 # 的植物在 PvZ 中不存在", plant_type);
+			return;
 		}
+		grid.row = plant_type / 8 + 1;
+		grid.col = plant_type % 8 + 1;
+
+		select_card_vec.push_back(grid);
 	}
 }
 
@@ -171,7 +159,7 @@ void AvZ::cardNotInQueue(int seed_index, const std::vector<Crood> &lst)
 {
 	if (seed_index > 10 || seed_index < 1)
 	{
-		showErrorNotInQueue("Card : 您填写的参数 # 已溢出，请检查卡片名字是否错写为单引号", seed_index);
+		showErrorNotInQueue("Card : 您填写的参数 # 已溢出", seed_index);
 		return;
 	}
 
@@ -190,7 +178,7 @@ void AvZ::cardNotInQueue(int seed_index, const std::vector<Crood> &lst)
 	safeClick();
 }
 
-int AvZ::get_seed_index_for_seed_name(const std::string &seed_name)
+int AvZ::get_seed_index_for_seed_name(PlantType plant_type)
 {
 	if (seed_name_to_index_map.empty())
 	{
@@ -199,7 +187,7 @@ int AvZ::get_seed_index_for_seed_name(const std::string &seed_name)
 		{
 			int seed_counts = seed->count();
 			int seed_type;
-			std::pair<std::string, int> seed_info;
+			std::pair<int, int> seed_info;
 			for (int i = 0; i < seed_counts; ++i, ++seed)
 			{
 				seed_type = seed->type();
@@ -207,22 +195,22 @@ int AvZ::get_seed_index_for_seed_name(const std::string &seed_name)
 				if (seed_type == 48)
 				{
 					seed_type = seed->imitatorType();
-					seed_info.first = seed_name_list[seed_type / 8 + 6][seed_type % 8];
+					seed_info.first = seed_type + 48;
 					seed_info.second = i;
 				}
 				else //if(seed_info != 48)
 				{
-					seed_info.first = seed_name_list[seed_type / 8][seed_type % 8];
+					seed_info.first = seed_type;
 					seed_info.second = i;
 				}
 				seed_name_to_index_map.insert(seed_info);
 			}
 		}
 	}
-	auto it = seed_name_to_index_map.find(seed_name);
+	auto it = seed_name_to_index_map.find(plant_type);
 	if (it == seed_name_to_index_map.end())
 	{
-		showErrorNotInQueue("卡片名称'#'未被录入 AvZ ,或者您没有选择该卡片", seed_name.c_str());
+		showErrorNotInQueue("你没有选择卡片代号为 # 的植物", plant_type);
 		return -1;
 	}
 	else
@@ -239,21 +227,10 @@ void AvZ::card(int seed_index, int row, float col)
 					"card");
 }
 
-void AvZ::card(const std::vector<CardIndex> &lst)
+void AvZ::card(PlantType plant_type, int row, float col)
 {
 	insertOperation([=]() {
-		for (const auto &each : lst)
-		{
-			cardNotInQueue(each.seed_index, each.row, each.col);
-		}
-	},
-					"card");
-}
-
-void AvZ::card(const std::string &seed_name, int row, float col)
-{
-	insertOperation([=]() {
-		int seed_index = get_seed_index_for_seed_name(seed_name);
+		int seed_index = get_seed_index_for_seed_name(plant_type);
 		if (seed_index == -1)
 		{
 			return;
@@ -268,7 +245,7 @@ void AvZ::card(const std::vector<CardName> &lst)
 	insertOperation([=]() {
 		for (const auto &each : lst)
 		{
-			int seed_index = get_seed_index_for_seed_name(each.seed_name);
+			int seed_index = get_seed_index_for_seed_name(each.plant_type);
 			if (seed_index == -1)
 			{
 				return;
@@ -287,10 +264,10 @@ void AvZ::card(int seed_index, const std::vector<Crood> &lst)
 					"card");
 }
 
-void AvZ::card(const std::string &seed_name, const std::vector<Crood> &lst)
+void AvZ::card(PlantType plant_type, const std::vector<Crood> &lst)
 {
 	insertOperation([=]() {
-		int seed_index = get_seed_index_for_seed_name(seed_name);
+		int seed_index = get_seed_index_for_seed_name(plant_type);
 		if (seed_index == -1)
 		{
 			return;

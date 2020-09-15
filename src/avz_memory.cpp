@@ -223,7 +223,9 @@ void AvZ::setWaveZombies(int wave, std::initializer_list<int> zombie_type)
 
 void AvZ::setWavelength(const std::vector<AvZ::WaveTime> &lst)
 {
+	// 需要恢复的状态
 	auto temp = time_wave_insert;
+
 	for (const auto &ele : lst)
 	{
 		if (ele.wave < 1 || RangeIn(ele.wave, {9, 19, 20}) || ele.wave > 20)
@@ -242,6 +244,7 @@ void AvZ::setWavelength(const std::vector<AvZ::WaveTime> &lst)
 
 		operation_queue_vec[ele.wave - 1].wave_length = ele.time;
 
+		InsertGuard insert_guard(true);
 		setTime(1, ele.wave);
 		insertOperation([=]() {
 			main_object->zombieRefreshHp() = 0;

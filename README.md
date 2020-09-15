@@ -64,6 +64,17 @@ AvZ 操作精度为理论上的100%绝对精准，使用这套框架将再也不
 
 ## 更新日志
 
+AvZ 2020_09_15
+
+* 更新了专用于 AvZ 使用的工具软件 AvZTools，如果电脑无法使用 VSCode，可以尝试使用这款工具，下载地址： [https://wwe.lanzous.com/b015az7nc](https://wwe.lanzous.com/b015az7nc) (a0a3)
+* 改善 SelectCards 函数实现方法，崩溃率可能更低
+* 修复 阻塞函数 WaitUntil 的若干 BUG
+* 将用卡函数的参数为拼音字符串改为英文枚举，命名与英文原版一致
+* 用卡函数删除了根据卡槽位置用卡的多张使用形式
+* 修复 showError 导致游戏崩溃的 BUG
+* 修补植物类，自动存冰类在没有花盆荷叶的情况下不会种植植物
+* 削弱了 vector-wlc 的头发
+
 AvZ 2020_08_10 
 
 * 新增 AvZ::setGameSpeed 函数，可以设定游戏的运行速度

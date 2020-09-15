@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <Windows.h>
 
 struct PvZ;				// 游戏主体
 struct MainObject;		// 主要对象
@@ -22,6 +23,10 @@ struct Animation;		// 动画
 
 struct PvZ
 {
+private:
+	void operator=(PvZ) {}
+
+public:
 	MainObject *mainObject()
 	{
 		return *(MainObject **)((uint8_t *)this + 0x768);
@@ -55,6 +60,10 @@ struct PvZ
 
 struct MainObject
 {
+private:
+	void operator=(MainObject) {}
+
+public:
 	Zombie *zombieArray()
 	{
 		return *(Zombie **)((uint8_t *)this + 0x90);
@@ -192,6 +201,10 @@ struct MainObject
 
 struct Plant
 {
+private:
+	void operator=(Plant) {}
+
+public:
 	uint8_t data[0x14c];
 
 	int &xi()
@@ -281,6 +294,10 @@ struct Plant
 
 struct Zombie
 {
+private:
+	void operator=(Zombie) {}
+
+public:
 	uint8_t data[0x15c];
 
 	uint16_t isExist()
@@ -402,6 +419,10 @@ struct Zombie
 
 struct Seed
 {
+private:
+	void operator=(Seed) {}
+
+public:
 	uint8_t data[0x50];
 
 	int &count()
@@ -437,6 +458,10 @@ struct Seed
 
 struct Item
 {
+private:
+	void operator=(Item) {}
+
+public:
 	uint8_t data[0xd8];
 
 	bool &isDisappeared()
@@ -462,6 +487,10 @@ struct Item
 
 struct AnimationMain
 {
+private:
+	void operator=(AnimationMain) {}
+
+public:
 	AnimationOffset *animationOffset()
 	{
 		return *(AnimationOffset **)((uint8_t *)this + 0x8);
@@ -470,6 +499,10 @@ struct AnimationMain
 
 struct AnimationOffset
 {
+private:
+	void operator=(AnimationOffset) {}
+
+public:
 	Animation *animationArray()
 	{
 		return *(Animation **)((uint8_t *)this + 0x0);
@@ -478,6 +511,10 @@ struct AnimationOffset
 
 struct Animation
 {
+private:
+	void operator=(Animation) {}
+
+public:
 	uint8_t data[0xa0];
 
 	// 动画循环率
@@ -489,10 +526,18 @@ struct Animation
 
 struct TopMouseWindow
 {
+private:
+	void operator=(TopMouseWindow) {}
+
+public:
 };
 
 struct MouseWindow
 {
+private:
+	void operator=(MouseWindow) {}
+
+public:
 	TopMouseWindow *topWindow()
 	{
 		return *(TopMouseWindow **)((uint8_t *)this + 0x94);
@@ -506,6 +551,10 @@ struct MouseWindow
 
 struct SelectCardUi_m
 {
+private:
+	void operator=(SelectCardUi_m) {}
+
+public:
 	int &orizontalScreenOffset()
 	{
 		return (int &)((uint8_t *)this)[0x8];
@@ -519,6 +568,10 @@ struct SelectCardUi_m
 
 struct SelectCardUi_p
 {
+private:
+	void operator=(SelectCardUi_p) {}
+
+public:
 	LetsRockBtn *letsRockBtn()
 	{
 		return *(LetsRockBtn **)((uint8_t *)this + 0x88);
@@ -527,6 +580,10 @@ struct SelectCardUi_p
 
 struct LetsRockBtn
 {
+private:
+	void operator=(LetsRockBtn) {}
+
+public:
 	bool &isUnusable()
 	{
 		return (bool &)((uint8_t *)this)[0x1a];
@@ -535,6 +592,10 @@ struct LetsRockBtn
 
 struct Mouse
 {
+private:
+	void operator=(Mouse) {}
+
+public:
 	// 鼠标上物品的类型
 	int &type()
 	{
@@ -549,6 +610,10 @@ struct Mouse
 
 struct MouseExtra
 {
+private:
+	void operator=(MouseExtra) {}
+
+public:
 	int &row()
 	{
 		return (int &)((uint8_t *)this)[0x28];
@@ -557,6 +622,10 @@ struct MouseExtra
 
 struct Text
 {
+private:
+	void operator=(Text) {}
+
+public:
 	int &disappearCountdown()
 	{
 		return (int &)((uint8_t *)this)[0x88];
@@ -566,83 +635,247 @@ struct Text
 // 植物类型
 enum PlantType
 {
-	WDSS_0,	  // 豌豆射手
-	XRK_1,	  // 向日葵
-	YTZD_2,	  // 樱桃炸弹
-	JG_3,	  // 坚果
-	TDDL_4,	  // 土豆地雷
-	HBSS_5,	  // 寒冰射手
-	DZH_6,	  // 大嘴花
-	SCSS_7,	  // 双重射手
-	XPG_8,	  // 小喷菇
-	YGG_9,	  // 阳光菇
-	DPG_10,	  // 大喷菇
-	MBTSZ_11, // 墓碑吞噬者
-	MHG_12,	  // 魅惑菇
-	DXG_13,	  // 胆小菇
-	HBG_14,	  // 寒冰菇
-	HMG_15,	  // 毁灭菇
-	HY_16,	  // 荷叶
-	WG_17,	  // 倭瓜
-	SFSS_18,  // 三发射手
-	CRHZ_19,  // 缠绕海藻
-	HBLJ_20,  // 火爆辣椒
-	DC_21,	  // 地刺
-	HJSZ_22,  // 火炬树桩
-	GJG_23,	  // 高坚果
-	SBG_24,	  // 水兵菇
-	LDH_25,	  // 路灯花
-	XRZ_26,	  // 仙人掌
-	SYC_27,	  // 三叶草
-	LJSS_28,  // 裂荚射手
-	YT_29,	  // 杨桃
-	NGT_30,	  // 南瓜头
-	CLG_31,	  // 磁力菇
-	JXCTS_32, // 卷心菜投手
-	HP_33,	  // 花盆
-	YMTS_34,  // 玉米投手
-	KFD_35,	  // 咖啡豆
-	DS_36,	  // 大蒜
-	YZBHS_37, // 叶子保护伞
-	JZH_38,	  // 金盏花
-	XGTS_39,  // 西瓜投手
-	JQSS_40,  // 机枪射手
-	SZXRK_41, // 双子向日葵
-	YYG_42,	  // 忧郁菇
-	XP_43,	  // 香蒲
-	BXGTS_44, // 冰西瓜投手
-	XJC_45,	  // 吸金磁
-	DCW_46,	  // 地刺王
-	YMJNP_47  // 玉米加农炮
+	PEASHOOTER = 0, // 豌豆射手
+	SUNFLOWER,		// 向日葵
+	CHERRY_BOMB,	// 樱桃炸弹
+	WALL_NUT,		// 坚果
+	POTATO_MINE,	// 土豆地雷
+	SNOW_PEA,		// 寒冰射手
+	CHOMPER,		// 大嘴花
+	REPEATER,		// 双重射手
+	PUFF_SHROOM,	// 小喷菇
+	SUN_SHROOM,		// 阳光菇
+	FUME_SHROOM,	// 大喷菇
+	GRAVE_BUSTER,	// 墓碑吞噬者
+	HYPNO_SHROOM,	// 魅惑菇
+	SCAREDY_SHROOM, // 胆小菇
+	ICE_SHROOM,		// 寒冰菇
+	DOOM_SHROOM,	// 毁灭菇
+	LILY_PAD,		// 荷叶
+	SQUASH,			// 倭瓜
+	THREEPEATER,	// 三发射手
+	TANGLE_KELP,	// 缠绕海藻
+	JALAPENO,		// 火爆辣椒
+	SPIKEWEED,		// 地刺
+	TORCHWOOD,		// 火炬树桩
+	TALL_NUT,		// 高坚果
+	SEA_SHROOM,		// 水兵菇
+	PLANTERN,		// 路灯花
+	CACTUS,			// 仙人掌
+	BLOVER,			// 三叶草
+	SPLIT_PEA,		// 裂荚射手
+	STARFRUIT,		// 杨桃
+	PUMPKIN,		// 南瓜头
+	MAGNET_SHROOM,	// 磁力菇
+	CABBAGE_PULT,	// 卷心菜投手
+	FLOWER_POT,		// 花盆
+	KERNEL_PULT,	// 玉米投手
+	COFFEE_BEAN,	// 咖啡豆
+	GARLIC,			// 大蒜
+	UMBRELLA_LEAF,	// 叶子保护伞
+	MARIGOLD,		// 金盏花
+	MELON_PULT,		// 西瓜投手
+	GATLING_PEA,	// 机枪射手
+	TWIN_SUNFLOWER, // 双子向日葵
+	GLOOM_SHROOM,	// 忧郁菇
+	CATTAIL,		// 香蒲
+	WINTER_MELON,	// 冰西瓜投手
+	GOLD_MAGNET,	// 吸金磁
+	SPIKEROCK,		// 地刺王
+	COB_CANNON,		// 玉米加农炮
+
+	// 模仿者命名 + M
+	M_PEASHOOTER,	  // 豌豆射手
+	M_SUNFLOWER,	  // 向日葵
+	M_CHERRY_BOMB,	  // 樱桃炸弹
+	M_WALL_NUT,		  // 坚果
+	M_POTATO_MINE,	  // 土豆地雷
+	M_SNOW_PEA,		  // 寒冰射手
+	M_CHOMPER,		  // 大嘴花
+	M_REPEATER,		  // 双重射手
+	M_PUFF_SHROOM,	  // 小喷菇
+	M_SUN_SHROOM,	  // 阳光菇
+	M_FUME_SHROOM,	  // 大喷菇
+	M_GRAVE_BUSTER,	  // 墓碑吞噬者
+	M_HYPNO_SHROOM,	  // 魅惑菇
+	M_SCAREDY_SHROOM, // 胆小菇
+	M_ICE_SHROOM,	  // 寒冰菇
+	M_DOOM_SHROOM,	  // 毁灭菇
+	M_LILY_PAD,		  // 荷叶
+	M_SQUASH,		  // 倭瓜
+	M_THREEPEATER,	  // 三发射手
+	M_TANGLE_KELP,	  // 缠绕海藻
+	M_JALAPENO,		  // 火爆辣椒
+	M_SPIKEWEED,	  // 地刺
+	M_TORCHWOOD,	  // 火炬树桩
+	M_TALL_NUT,		  // 高坚果
+	M_SEA_SHROOM,	  // 水兵菇
+	M_PLANTERN,		  // 路灯花
+	M_CACTUS,		  // 仙人掌
+	M_BLOVER,		  // 三叶草
+	M_SPLIT_PEA,	  // 裂荚射手
+	M_STARFRUIT,	  // 杨桃
+	M_PUMPKIN,		  // 南瓜头
+	M_MAGNET_SHROOM,  // 磁力菇
+	M_CABBAGE_PULT,	  // 卷心菜投手
+	M_FLOWER_POT,	  // 花盆
+	M_KERNEL_PULT,	  // 玉米投手
+	M_COFFEE_BEAN,	  // 咖啡豆
+	M_GARLIC,		  // 大蒜
+	M_UMBRELLA_LEAF,  // 叶子保护伞
+	M_MARIGOLD,		  // 金盏花
+	M_MELON_PULT,	  // 西瓜投手
 };
+
+// 兼容旧版的拼音
+
+#define WDSS_0 PEASHOOTER		// 豌豆射手
+#define XRK_1 SUNFLOWER			// 向日葵
+#define YTZD_2 CHERRY_BOMB		// 樱桃炸弹
+#define JG_3 WALL_NUT			// 坚果
+#define TDDL_4 POTATO_MINE		// 土豆地雷
+#define HBSS_5 SNOW_PEA			// 寒冰射手
+#define DZH_6 CHOMPER			// 大嘴花
+#define SCSS_7 REPEATER			// 双重射手
+#define XPG_8 PUFF_SHROOM		// 小喷菇
+#define YGG_9 SUN_SHROOM		// 阳光菇
+#define DPG_10 FUME_SHROOM		// 大喷菇
+#define MBTSZ_11 GRAVE_BUSTER	// 墓碑吞噬者
+#define MHG_12 HYPNO_SHROOM		// 魅惑菇
+#define DXG_13 SCAREDY_SHROOM	// 胆小菇
+#define HBG_14 ICE_SHROOM		// 寒冰菇
+#define HMG_15 DOOM_SHROOM		// 毁灭菇
+#define HY_16 LILY_PAD			// 荷叶
+#define WG_17 SQUASH			// 倭瓜
+#define SFSS_18 THREEPEATER		// 三发射手
+#define CRHZ_19 TANGLE_KELP		// 缠绕海藻
+#define HBLJ_20 JALAPENO		// 火爆辣椒
+#define DC_21 SPIKEWEED			// 地刺
+#define HJSZ_22 TORCHWOOD		// 火炬树桩
+#define GJG_23 TALL_NUT			// 高坚果
+#define SBG_24 SEA_SHROOM		// 水兵菇
+#define LDH_25 PLANTERN			// 路灯花
+#define XRZ_26 CACTUS			// 仙人掌
+#define SYC_27 BLOVER			// 三叶草
+#define LJSS_28 SPLIT_PEA		// 裂荚射手
+#define YT_29 STARFRUIT			// 杨桃
+#define NGT_30 PUMPKIN			// 南瓜头
+#define CLG_31 MAGNET_SHROOM	// 磁力菇
+#define JXCTS_32 CABBAGE_PULT	// 卷心菜投手
+#define HP_33 FLOWER_POT		// 花盆
+#define YMTS_34 KERNEL_PULT		// 玉米投手
+#define KFD_35 COFFEE_BEAN		// 咖啡豆
+#define DS_36 GARLIC			// 大蒜
+#define YZBHS_37 UMBRELLA_LEAF	// 叶子保护伞
+#define JZH_38 MARIGOLD			// 金盏花
+#define XGTS_39 MELON_PULT		// 西瓜投手
+#define JQSS_40 GATLING_PEA		// 机枪射手
+#define SZXRK_41 TWIN_SUNFLOWER // 双子向日葵
+#define YYG_42 GLOOM_SHROOM		// 忧郁菇
+#define XP_43 CATTAIL			// 香蒲
+#define BXGTS_44 WINTER_MELON	// 冰西瓜投手
+#define XJC_45 GOLD_MAGNET		// 吸金磁
+#define DCW_46 SPIKEROCK		// 地刺王
+#define YMJNP_47 COB_CANNON		// 玉米加农炮
+
+// 模仿者植物
+
+#define M_WDSS_0 M_PEASHOOTER	   // 豌豆射手
+#define M_XRK_1 M_SUNFLOWER		   // 向日葵
+#define M_YTZD_2 M_CHERRY_BOMB	   // 樱桃炸弹
+#define M_JG_3 M_WALL_NUT		   // 坚果
+#define M_TDDL_4 M_POTATO_MINE	   // 土豆地雷
+#define M_HBSS_5 M_SNOW_PEA		   // 寒冰射手
+#define M_DZH_6 M_CHOMPER		   // 大嘴花
+#define M_SCSS_7 M_REPEATER		   // 双重射手
+#define M_XPG_8 M_PUFF_SHROOM	   // 小喷菇
+#define M_YGG_9 M_SUN_SHROOM	   // 阳光菇
+#define M_DPG_10 M_FUME_SHROOM	   // 大喷菇
+#define M_MBTSZ_11 M_GRAVE_BUSTER  // 墓碑吞噬者
+#define M_MHG_12 M_HYPNO_SHROOM	   // 魅惑菇
+#define M_DXG_13 M_SCAREDY_SHROOM  // 胆小菇
+#define M_HBG_14 M_ICE_SHROOM	   // 寒冰菇
+#define M_HMG_15 M_DOOM_SHROOM	   // 毁灭菇
+#define M_HY_16 M_LILY_PAD		   // 荷叶
+#define M_WG_17 M_SQUASH		   // 倭瓜
+#define M_SFSS_18 M_THREEPEATER	   // 三发射手
+#define M_CRHZ_19 M_TANGLE_KELP	   // 缠绕海藻
+#define M_HBLJ_20 M_JALAPENO	   // 火爆辣椒
+#define M_DC_21 M_SPIKEWEED		   // 地刺
+#define M_HJSZ_22 M_TORCHWOOD	   // 火炬树桩
+#define M_GJG_23 M_TALL_NUT		   // 高坚果
+#define M_SBG_24 M_SEA_SHROOM	   // 水兵菇
+#define M_LDH_25 M_PLANTERN		   // 路灯花
+#define M_XRZ_26 M_CACTUS		   // 仙人掌
+#define M_SYC_27 M_BLOVER		   // 三叶草
+#define M_LJSS_28 M_SPLIT_PEA	   // 裂荚射手
+#define M_YT_29 M_STARFRUIT		   // 杨桃
+#define M_NGT_30 M_PUMPKIN		   // 南瓜头
+#define M_CLG_31 M_MAGNET_SHROOM   // 磁力菇
+#define M_JXCTS_32 M_CABBAGE_PULT  // 卷心菜投手
+#define M_HP_33 M_FLOWER_POT	   // 花盆
+#define M_YMTS_34 M_KERNEL_PULT	   // 玉米投手
+#define M_KFD_35 M_COFFEE_BEAN	   // 咖啡豆
+#define M_DS_36 M_GARLIC		   // 大蒜
+#define M_YZBHS_37 M_UMBRELLA_LEAF // 叶子保护伞
+#define M_JZH_38 M_MARIGOLD		   // 金盏花
+#define M_XGTS_39 M_MELON_PULT	   // 西瓜投手
 
 enum ZombieType
 {
-	PJ_0 = 0,  // 普僵
-	QZ_1,	   // 旗帜
-	LZ_2,	   // 路障
-	CG_3,	   // 撑杆
-	TT_4,	   // 铁桶
-	DB_5,	   // 读报
-	TM_6,	   // 铁门
-	GL_7,	   // 橄榄
-	WW_8,	   // 舞王
-	BW_9,	   // 伴舞
-	YZ_10,	   // 鸭子
-	QS_11,	   // 潜水
-	BC_12,	   // 冰车
-	XQ_13,	   // 雪橇
-	HT_14,	   // 海豚
-	XC_15,	   // 小丑
-	QQ_16,	   // 气球
-	KG_17,	   // 矿工
-	TT_18,	   // 跳跳
-	XR_19,	   // 雪人
-	BJ_20,	   // 蹦极
-	FT_21,	   // 扶梯
-	TL_22,	   // 投篮
-	BY_23,	   // 白眼
-	XG_24,	   // 小鬼
-	JB_25,	   // 僵博
-	HY_32 = 32 // 红眼
+	ZOMBIE = 0,				// 普僵
+	FLAG_ZOMBIE,			// 旗帜
+	CONEHEAD_ZOMBIE,		// 路障
+	POLE_VAULTING_ZOMBIE,	// 撑杆
+	BUCKETHEAD_ZOMBIE,		// 铁桶
+	NEWSPAPER_ZOMBIE,		// 读报
+	SCREEN_DOOR_ZOMBIE,		// 铁门
+	FOOTBALL_ZOMBIE,		// 橄榄
+	DANCING_ZOMBIE,			// 舞王
+	BACKUP_DANCER,			// 伴舞
+	DUCKY_TUBE_ZOMBIE,		// 鸭子
+	SNORKEL_ZOMBIE,			// 潜水
+	ZOMBONI,				// 冰车
+	ZOMBIE_BOBSLED_TEAM,	// 雪橇
+	DOLPHIN_RIDER_ZOMBIE,	// 海豚
+	JACK_IN_THE_BOX_ZOMBIE, // 小丑
+	BALLOON_ZOMBIE,			// 气球
+	DIGGER_ZOMBIE,			// 矿工
+	POGO_ZOMBIE,			// 跳跳
+	ZOMBIE_YETI,			// 雪人
+	BUNGEE_ZOMBIE,			// 蹦极
+	LADDER_ZOMBIE,			// 扶梯
+	CATAPULT_ZOMBIE,		// 投篮
+	GARGANTUAR,				// 白眼
+	IMP,					// 小鬼
+	DR_ZOMBOSS,				// 僵博
+	GIGA_GARGANTUAR = 32	// 红眼
 };
+
+#define PJ_0 ZOMBIE					 // 普僵
+#define QZ_1 FLAG_ZOMBIE			 // 旗帜
+#define LZ_2 CONEHEAD_ZOMBIE		 // 路障
+#define CG_3 POLE_VAULTING_ZOMBIE	 // 撑杆
+#define TT_4 BUCKETHEAD_ZOMBIE		 // 铁桶
+#define DB_5 NEWSPAPER_ZOMBIE		 // 读报
+#define TM_6 SCREEN_DOOR_ZOMBIE		 // 铁门
+#define GL_7 FOOTBALL_ZOMBIE		 // 橄榄
+#define WW_8 DANCING_ZOMBIE			 // 舞王
+#define BW_9 BACKUP_DANCER			 // 伴舞
+#define YZ_10 DUCKY_TUBE_ZOMBIE		 // 鸭子
+#define QS_11 SNORKEL_ZOMBIE		 // 潜水
+#define BC_12 ZOMBONI				 // 冰车
+#define XQ_13 ZOMBIE_BOBSLED_TEAM	 // 雪橇
+#define HT_14 DOLPHIN_RIDER_ZOMBIE	 // 海豚
+#define XC_15 JACK_IN_THE_BOX_ZOMBIE // 小丑
+#define QQ_16 BALLOON_ZOMBIE		 // 气球
+#define KG_17 DIGGER_ZOMBIE			 // 矿工
+#define TT_18 POGO_ZOMBIE			 // 跳跳
+#define XR_19 ZOMBIE_YETI			 // 雪人
+#define BJ_20 BUNGEE_ZOMBIE			 // 蹦极
+#define FT_21 LADDER_ZOMBIE			 // 扶梯
+#define TL_22 CATAPULT_ZOMBIE		 // 投篮
+#define BY_23 GARGANTUAR			 // 白眼
+#define XG_24 IMP					 // 小鬼
+#define JB_25 DR_ZOMBOSS			 // 僵博
+#define HY_32 GIGA_GARGANTUAR		 // 红眼

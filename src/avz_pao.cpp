@@ -11,7 +11,7 @@
 int AvZ::PaoOperator::get_recover_time(int index)
 {
 	auto cannon = main_object->plantArray() + index;
-	if (cannon->isDisappeared() || cannon->type() != YMJNP_47)
+	if (cannon->isDisappeared() || cannon->type() != COB_CANNON)
 	{
 		return -1;
 	}
@@ -66,6 +66,7 @@ void AvZ::PaoOperator::delay_fire_pao(int delay_time, int pao_row, int pao_col, 
 		// 将操作动态插入消息队列
 		Grid grid = {pao_row, pao_col};
 		lock_pao_set.insert(grid);
+		InsertGuard insert_guard(true);
 		setTime(nowTime(time_wave_run.wave) + delay_time,
 				time_wave_run.wave);
 		insertOperation([=]() {
@@ -84,7 +85,7 @@ void AvZ::PaoOperator::delay_fire_pao(int delay_time, int pao_row, int pao_col, 
 void AvZ::PaoOperator::rawPao(int pao_row, int pao_col, int drop_row, float drop_col)
 {
 	insertOperation([=]() {
-		int index = getPlantIndex(pao_row, pao_col, YMJNP_47);
+		int index = getPlantIndex(pao_row, pao_col, COB_CANNON);
 		if (index < 0)
 		{
 			showErrorNotInQueue("请检查 (#, #) 是否为炮", pao_row, pao_col);
@@ -122,7 +123,7 @@ void AvZ::PaoOperator::rawRoofPao(int pao_row, int pao_col, int drop_row, float 
 			showErrorNotInQueue("rawRoofPao : RawRoofPao函数只适用于RE与ME");
 			return;
 		}
-		int index = getPlantIndex(pao_row, pao_col, YMJNP_47);
+		int index = getPlantIndex(pao_row, pao_col, COB_CANNON);
 		if (index < 0)
 		{
 			showErrorNotInQueue("请检查 (#, #) 是否为炮", pao_row, pao_col);
@@ -157,8 +158,8 @@ void AvZ::PaoOperator::plantPao(int row, int col)
 {
 	insertOperation([=]() {
 		tick_runner.pushFunc([=]() {
-			static int ymjnp_seed_index = getSeedIndex(YMJNP_47);
-			static int ymts_seed_index = getSeedIndex(YMTS_34);
+			static int ymjnp_seed_index = getSeedIndex(COB_CANNON);
+			static int ymts_seed_index = getSeedIndex(KERNEL_PULT);
 			static Seed *seed_memory;
 
 			if (ymjnp_seed_index == -1 || ymts_seed_index == -1)
@@ -168,7 +169,7 @@ void AvZ::PaoOperator::plantPao(int row, int col)
 
 			for (int t_col = col; t_col < col + 2; ++t_col)
 			{
-				if (getPlantIndex(row, t_col, YMTS_34) != -1)
+				if (getPlantIndex(row, t_col, KERNEL_PULT) != -1)
 				{
 					continue;
 				}
@@ -189,9 +190,8 @@ void AvZ::PaoOperator::plantPao(int row, int col)
 			}
 
 			cardNotInQueue(ymjnp_seed_index + 1, row, col);
-			setInsertOperation(false);
+			InsertGuard insert_guard(false);
 			tick_runner.stop();
-			setInsertOperation(true);
 		});
 	},
 					"plantPao");
@@ -211,7 +211,7 @@ void AvZ::PaoOperator::resetPaoList(const std::vector<Grid> &lst)
 
 		//重置炮列表
 		pao_grid_vec = lst;
-		getPlantIndexs(pao_grid_vec, YMJNP_47, pao_index_vec);
+		getPlantIndexs(pao_grid_vec, COB_CANNON, pao_index_vec);
 		auto pao_index_it = pao_index_vec.begin();
 		auto pao_grid_it = pao_grid_vec.begin();
 		while (pao_index_it != pao_index_vec.end())
@@ -279,7 +279,8 @@ void AvZ::PaoOperator::fixLatestPao()
 			delay_time = 0;
 		}
 		int time = nowTime(time_wave_run.wave) + delay_time;
-		SetTime(time, time_wave_run.wave);
+		InsertGuard insert_guard(true);
+		setTime(time, time_wave_run.wave);
 		insertOperation([=]() {
 			lastest_pao_msg.is_writable = true; // 解锁信息
 			shovelNotInQueue(pao_grid_vec[lastest_pao_msg.vec_index].row, pao_grid_vec[lastest_pao_msg.vec_index].col);
@@ -294,7 +295,7 @@ int AvZ::PaoOperator::get_recover_time_vec()
 	int time = get_recover_time(pao_index_vec[next_pao]);
 	if (time == -1)
 	{
-		int index = getPlantIndex(pao_grid_vec[next_pao].row, pao_grid_vec[next_pao].col, YMJNP_47);
+		int index = getPlantIndex(pao_grid_vec[next_pao].row, pao_grid_vec[next_pao].col, COB_CANNON);
 		if (index < 0) // 找不到本来位置的炮
 		{
 			showErrorNotInQueue("请检查位于 (#, #) 的第 # 门炮是否存在",

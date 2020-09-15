@@ -12,8 +12,8 @@
 #ifndef __LIBAVZ_H__
 #define __LIBAVZ_H__
 
-// AvZ 版本号 当前版本 20_08_10
-#define __AVZ_VERSION__ 200810
+// AvZ 版本号 当前版本 20_09_15
+#define __AVZ_VERSION__ 200915
 
 #include <map>
 #include <cstdlib>
@@ -180,8 +180,7 @@ private:
 	} while (false)
 
 public:
-	static void
-	loadScript(const std::function<void()> func);
+	static void loadScript(const std::function<void()> func);
 	static void run(MainObject *, std::function<void()> Script);
 	static void exit()
 	{
@@ -201,7 +200,14 @@ public:
 	// 设定操作时间点
 	static void setTime(const TimeWave &_time_wave)
 	{
-		time_wave_insert = _time_wave;
+		if (is_insert_operation)
+		{
+			time_wave_insert = _time_wave;
+		}
+		else
+		{
+			showErrorNotInQueue("当前操作队列模式为直接运行不插入，因此 setTime 函数无效");
+		}
 	}
 
 	// 设定操作时间点
@@ -210,14 +216,28 @@ public:
 	// setTime(-95)--------- 将操作时间点设为僵尸刷新前 95cs, 波数由上一个最近确定的波数决定
 	static void setTime(int time, int wave)
 	{
-		time_wave_insert.time = time;
-		time_wave_insert.wave = wave;
+		if (is_insert_operation)
+		{
+			time_wave_insert.time = time;
+			time_wave_insert.wave = wave;
+		}
+		else
+		{
+			showErrorNotInQueue("当前操作队列模式为直接运行不插入，因此 setTime 函数无效");
+		}
 	}
 
 	// 设定操作时间点
 	static void setTime(int time)
 	{
-		time_wave_insert.time = time;
+		if (is_insert_operation)
+		{
+			time_wave_insert.time = time;
+		}
+		else
+		{
+			showErrorNotInQueue("当前操作队列模式为直接运行不插入，因此 setTime 函数无效");
+		}
 	}
 
 	// 延迟一定时间
@@ -227,7 +247,14 @@ public:
 	// delay(-298) ------ 提前 298cs
 	static void delay(int time)
 	{
-		time_wave_insert.time += time;
+		if (is_insert_operation)
+		{
+			time_wave_insert.time += time;
+		}
+		else
+		{
+			showErrorNotInQueue("当前操作队列模式为直接运行不插入，因此 delay 函数无效");
+		}
 	}
 
 	// 阻塞运行直到达到目标时间点
@@ -266,11 +293,31 @@ public:
 		insertOperation(operation, description);
 	}
 
+	// 确保当前操作是否被插入操作队列
+	class InsertGuard
+	{
+	private:
+		bool _is_insert_operation;
+
+	public:
+		InsertGuard(bool is_insert)
+		{
+			_is_insert_operation = is_insert_operation;
+			is_insert_operation = is_insert;
+		}
+
+		~InsertGuard()
+		{
+			is_insert_operation = _is_insert_operation;
+		}
+	};
+
 	// 设置 insertOperation 属性函数
 	// *** 使用示例：
 	// AvZ::setInsertOperation(false) ---- insertOperation 将不会把操作插入操作队列中
 	// AvZ::setInsertOperation(true) ---- insertOperation 将会把操作插入操作队列中
-	static void setInsertOperation(bool _is_insert_operation = true)
+	static void
+	setInsertOperation(bool _is_insert_operation = true)
 	{
 		is_insert_operation = _is_insert_operation;
 	}
@@ -321,6 +368,11 @@ public:
 	template <typename... Args>
 	static void showErrorNotInQueue(const std::string &content = "", Args... args)
 	{
+		if (pvz_base->gameUi() != 3 && pvz_base->gameUi() != 2)
+		{
+			return;
+		}
+
 		if (error_mode == NONE)
 		{
 			return;
@@ -516,25 +568,53 @@ public:
 
 	// *** Not In Queue
 	// 设置出怪 此函数不管填不填蹦极都会在 wave 10 20 刷蹦极！！！！！！！！！！！！
-	// 参数命名规则：前面两个字母与 PvZ Tools 出怪类型名称拼音首字母一致，后面接下划线和类型代号
-	// 详情见 pvzstruct.h 页尾
-	// 例如 铁桶命名为 TT_4
+	// 参数命名规则：与英文原版图鉴名称一致
 	// *** 使用示例：
-	// AvZ::setZombies({CG_3, TT_4, BC_12, XC_15, QQ_16, FT_21, TL_22, BY_23, HY_32, TT_18});
+	// AvZ::setZombies({
+	//     POLE_VAULTING_ZOMBIE,   // 撑杆
+	//     BUCKETHEAD_ZOMBIE,      // 铁桶
+	//     ZOMBONI,                // 冰车
+	//     JACK_IN_THE_BOX_ZOMBIE, // 小丑
+	//     BALLOON_ZOMBIE,         // 气球
+	//     LADDER_ZOMBIE,          // 梯子
+	//     CATAPULT_ZOMBIE,        // 投篮
+	//     GARGANTUAR,             // 巨人
+	//     GIGA_GARGANTUAR,        // 红眼巨人
+	//     POGO_ZOMBIE,            // 跳跳
+	// });
 	// 设置出怪类型为：撑杆 铁桶 冰车 小丑 气球 扶梯 投篮 白眼 红眼 跳跳
-	// AvZ::setZombies({TT_4, BC_12, BC_12});
+	//
+	// AvZ::setZombies({
+	// 	   BUCKETHEAD_ZOMBIE,
+	//     ZOMBONI,
+	//     ZOMBONI,
+	// });
 	// 设置出怪类型为：铁桶 冰车 并且两种僵尸的比例为 1：2
 	static void setZombies(std::initializer_list<int> zombie_type);
 
 	// *** Not In Queue
 	// 设置特定波出怪 此函数不管填不填蹦极都会在 wave 10 20 刷蹦极！！！！！！！！！！！！
-	// 参数命名规则：前面两个字母与 PvZ Tools 出怪类型名称拼音首字母一致，后面接下划线和类型代号
-	// 详情见 pvzstruct.h 页尾
-	// 例如 铁桶命名为 TT_4
+	// 参数命名规则：与英文原版图鉴名称一致
 	// *** 使用示例：
-	// AvZ::setZombies(1, {CG_3, TT_4, BC_12, XC_15, QQ_16, FT_21, TL_22, BY_23, HY_32, TT_18});
+	// AvZ::setWaveZombies(1, {
+	//     POLE_VAULTING_ZOMBIE,   // 撑杆
+	//     BUCKETHEAD_ZOMBIE,      // 铁桶
+	//     ZOMBONI,                // 冰车
+	//     JACK_IN_THE_BOX_ZOMBIE, // 小丑
+	//     BALLOON_ZOMBIE,         // 气球
+	//     LADDER_ZOMBIE,          // 梯子
+	//     CATAPULT_ZOMBIE,        // 投篮
+	//     GARGANTUAR,             // 巨人
+	//     GIGA_GARGANTUAR,        // 红眼巨人
+	//     POGO_ZOMBIE,            // 跳跳
+	// });
 	// 设置第一波出怪类型为：撑杆 铁桶 冰车 小丑 气球 扶梯 投篮 白眼 红眼 跳跳
-	// AvZ::setZombies(1, {TT_4, BC_12, BC_12});
+	//
+	// AvZ::setWaveZombies(1, {
+	// 	   BUCKETHEAD_ZOMBIE,
+	//     ZOMBONI,
+	//     ZOMBONI,
+	// });
 	// 设置第一波出怪类型为：铁桶 冰车 并且两种僵尸的比例为 1：2
 	static void setWaveZombies(int wave, std::initializer_list<int> zombie_type);
 
@@ -612,11 +692,10 @@ public:
 
 	// card api
 private:
-	static std::string seed_name_list[11][8];
-	static std::map<std::string, int> seed_name_to_index_map;
+	static std::map<int, int> seed_name_to_index_map;
 	static std::vector<Grid> select_card_vec;
 	// 为卡片名称变量获取卡片对象序列
-	static int get_seed_index_for_seed_name(const std::string &seed_name);
+	static int get_seed_index_for_seed_name(PlantType plant_type);
 	// 防误触
 	static void deal_wrong_click();
 	static bool choose_card(int row, int col);
@@ -633,20 +712,29 @@ public:
 	};
 	struct CardName
 	{
-		std::string seed_name;
+		PlantType plant_type;
 		int row;
 		float col;
 	};
 
 	// *** Not In Queue
 	// 选择一堆卡片
-	// 卡片名称为拼音首字母，具体参考 https://pvz.lmintlcx.com/cvz/  页尾的命名
-	// 请注意与 CppVsZombies 书写形式的不同！！！！！！
+	// ***注意：卡片名称与英文原版图鉴一致
 	// 使用此函数概率导致 PvZ 程序崩溃，尚未修复！！！
 	// *** 使用示例：
-	// AvZ::selectCards({"hbg", "Mhbg", "kfd", "hmg", "hy", "wg", "ytzd", "syc", "ngt", "xpg"});
-	///////////////////// 寒冰菇 模仿寒冰菇 咖啡豆 毁灭菇  荷叶   倭瓜  樱桃炸弹  三叶草  南瓜头  小喷菇
-	static void selectCards(const std::vector<std::string> &lst);
+	// SelectCards({
+	//     ICE_SHROOM,   // 寒冰菇
+	//     M_ICE_SHROOM, // 模仿寒冰菇
+	//     COFFEE_BEAN,  // 咖啡豆
+	//     DOOM_SHROOM,  // 毁灭菇
+	//     LILY_PAD,     // 荷叶
+	//     SQUASH,       // 倭瓜
+	//     CHERRY_BOMB,  // 樱桃炸弹
+	//     BLOVER,       // 三叶草
+	//     PUMPKIN,      // 南瓜头
+	//     PUFF_SHROOM,  // 小喷菇
+	// });
+	static void selectCards(const std::vector<int> &lst);
 
 	// 用卡函数 Not In Queue
 	// *** 使用示例：
@@ -657,18 +745,17 @@ public:
 
 	// *** In Queue
 	// 用卡函数
+	// *** 注意：card 将不再支持根据卡槽位置用卡的多张调用形式
 	// *** 使用示例：
 	// card(1, 2, 3)---------选取第1张卡片，放在2行,3列
-	// card({{1, 2, 3}, {2, 3, 4}})------选取第1张卡片，放在2行,3列，选取第2张卡片，放在3行,4列
 	// card(1, {{2, 3}, {3, 4}})--------选取第1张卡片，优先放在2行,3列，其次放在3行,4列
-	// 以下用卡片名称使用 card,卡片名称为拼音首字母，具体参考 https://pvz.lmintlcx.com/cvz/  页尾的命名
-	// card({{"ytzd", 2, 3}, {"Mhblj", 3, 4}})---------选取樱桃卡片，放在2行,3列，选取辣椒卡片，放在3行,4列
-	static void card(const std::vector<CardIndex> &lst);
+	// 以下用卡片名称使用 card,卡片名称为拼音首字母，具体参考图鉴
+	// card({{CHERRY_BOMB, 2, 3}, {JALAPENO, 3, 4}})---------选取樱桃卡片，放在2行,3列，选取辣椒卡片，放在3行,4列
 	static void card(const std::vector<CardName> &lst);
 	static void card(int seed_index, int row, float col);
 	static void card(int seed_index, const std::vector<Crood> &lst);
-	static void card(const std::string &seed_name, int row, float col);
-	static void card(const std::string &seed_name, const std::vector<Crood> &lst);
+	static void card(PlantType plant_type, int row, float col);
+	static void card(PlantType plant_type, const std::vector<Crood> &lst);
 
 	// thread
 	// 使用 TickRunner 达到伪线程的效果
@@ -810,7 +897,6 @@ public:
 		int plant_type;
 		int fix_hp = 0;
 		int coffee_seed_index;
-		int leaf_seed_index;
 		std::vector<int> seed_index_vec;
 		std::vector<Grid> grid_lst;
 		void get_seed_list();
