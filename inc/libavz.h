@@ -156,7 +156,7 @@ private:
 	static TimeWave time_wave_insert;						// 插入操作时间记录
 	static TimeWave time_wave_run;							// 运行操作时间记录
 	static bool is_loaded;
-	static bool is_multiple_effective;
+	static int effective_mode;
 	static bool is_exited;
 	static bool is_insert_operation;
 	static bool block_var; // 全局阻塞变量 true : 阻塞 script 线程 false : 阻塞游戏循环
@@ -188,6 +188,12 @@ public:
 		is_exited = true;
 	}
 
+	enum EffectiveMode
+	{
+		MAIN_UI = 0,
+		MAIN_UI_OR_FIGHT_UI,
+	};
+
 	// *** Not In Queue
 	// 使用此函数可使脚本一次注入多次运行
 	// 适用于脚本完全无误后录制视频使用
@@ -195,7 +201,9 @@ public:
 	// *** 使用示例
 	// AvZ::openMultipleEffective() -------- 脚本多次生效，默认按下 C 键取消此效果
 	// AvZ::openMultipleEffective('Q')-------  脚本多次生效，按下 Q 键取消此效果
-	static void openMultipleEffective(char close_key = 'C');
+	// AvZ::openMultipleEffective('Q', AvZ::MAIN_UI_OR_FIGTH_UI)-------  脚本多次生效，按下 Q 键取消此效果，多次生效效果在主界面和选卡界面都会生效
+	// 	// AvZ::openMultipleEffective('Q', AvZ::MAIN_UI)-------  脚本多次生效，按下 Q 键取消此效果，多次生效效果仅在主界面生效
+	static void openMultipleEffective(char close_key = 'C', int _effective_mode = MAIN_UI);
 
 	// 设定操作时间点
 	static void setTime(const TimeWave &_time_wave)
@@ -316,8 +324,7 @@ public:
 	// *** 使用示例：
 	// AvZ::setInsertOperation(false) ---- insertOperation 将不会把操作插入操作队列中
 	// AvZ::setInsertOperation(true) ---- insertOperation 将会把操作插入操作队列中
-	static void
-	setInsertOperation(bool _is_insert_operation = true)
+	static void setInsertOperation(bool _is_insert_operation = true)
 	{
 		is_insert_operation = _is_insert_operation;
 	}
@@ -590,7 +597,7 @@ public:
 	//     ZOMBONI,
 	// });
 	// 设置出怪类型为：铁桶 冰车 并且两种僵尸的比例为 1：2
-	static void setZombies(std::initializer_list<int> zombie_type);
+	static void setZombies(const std::vector<int> &zombie_type);
 
 	// *** Not In Queue
 	// 设置特定波出怪 此函数不管填不填蹦极都会在 wave 10 20 刷蹦极！！！！！！！！！！！！
@@ -616,7 +623,7 @@ public:
 	//     ZOMBONI,
 	// });
 	// 设置第一波出怪类型为：铁桶 冰车 并且两种僵尸的比例为 1：2
-	static void setWaveZombies(int wave, std::initializer_list<int> zombie_type);
+	static void setWaveZombies(int wave, const std::vector<int> &zombie_type);
 
 	// *** In Queue
 	// 冰三函数
@@ -766,14 +773,14 @@ private:
 		int *id_ptr;
 	};
 	static std::vector<ThreadInfo> thread_vec;
-	static std::stack<int> stoped_thread_id_stack;
+	static std::stack<int> stopped_thread_id_stack;
 
 public:
 	// CLASS TickRunner
 	// 使用此类使得操作每帧都运行
 	class TickRunner
 	{
-	protected:
+	private:
 		int thread_id = -1;
 		bool is_paused = false;
 		bool thread_examine() // 线程出现异常返回 false
@@ -787,6 +794,21 @@ public:
 		}
 
 	public:
+		enum ThreadStatus
+		{
+			STOPPED = 0,
+			PAUSED,
+			RUNNING
+		};
+
+		// *** Not In Queue
+		// 得到线程的状态
+		// *** 返回值：
+		// 停止状态：return STOPPED
+		// 暂停状态：return PAUSED
+		// 运行状态：return RUNNING
+		ThreadStatus getStatus() const;
+
 		// *** Not In Queue
 		void pushFunc(const std::function<void()> &run);
 
@@ -794,7 +816,7 @@ public:
 		void stop()
 		{
 			insertOperation([=]() {
-				stoped_thread_id_stack.push(thread_id);
+				stopped_thread_id_stack.push(thread_id);
 				thread_id = -1;
 			},
 							"stop");
@@ -829,11 +851,6 @@ public:
 		void start()
 		{
 			insertOperation([=]() {
-				if (!thread_examine())
-				{
-					return;
-				}
-				is_paused = false;
 				pushFunc([=]() { run(); });
 			},
 							"startCollect");

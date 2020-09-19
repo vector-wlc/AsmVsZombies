@@ -6,8 +6,8 @@
                 "${workspaceRoot}\\inc"
             ],
             "cStandard": "c11",
-            "cppStandard": "c++17",
-            "configurationProvider": "vector-of-bool.cmake-tools"
+            "cppStandard": "c++17"
+            // "configurationProvider": "vector-of-bool.cmake-tools"
         }
     ],
     "version": 4

@@ -349,6 +349,13 @@ public:
 		return (int &)((uint8_t *)this)[0x28];
 	}
 
+	// 返回选卡界面僵尸站立状态
+	// 为-2/-3时静止,-4时向上(对于选卡界面的僵尸)
+	int &standState()
+	{
+		return (int &)((uint8_t *)this)[0x6c];
+	}
+
 	bool isDead()
 	{
 		return state() == 1;

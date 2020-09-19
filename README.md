@@ -66,6 +66,9 @@ AvZ 操作精度为理论上的100%绝对精准，使用这套框架将再也不
 
 AvZ 2020_09_15
 
+* AvZ::openMultipleEffective 添加了第二个参数，可以选择多次生效的模式，对挂机更加友好(09-19)
+* 修复了 选卡函数，设置僵尸函数 对选卡界面外僵尸的不友好问题(09-19)
+* 修复操作队列错误识别游戏时钟问题(09-19)
 * 更新了专用于 AvZ 使用的工具软件 AvZTools，如果电脑无法使用 VSCode，可以尝试使用这款工具，下载地址： [https://wwe.lanzous.com/b015az7nc](https://wwe.lanzous.com/b015az7nc) (a0a3)
 * 改善 SelectCards 函数实现方法，崩溃率可能更低
 * 修复 阻塞函数 WaitUntil 的若干 BUG

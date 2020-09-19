@@ -29,7 +29,7 @@ std::vector<AvZ::OperationQueue> AvZ::operation_queue_vec;
 AvZ::TimeWave AvZ::time_wave_insert;
 AvZ::TimeWave AvZ::time_wave_run;
 bool AvZ::is_loaded = false;
-bool AvZ::is_multiple_effective = false;
+int AvZ::effective_mode = -1;
 bool AvZ::is_exited = false;
 bool AvZ::is_insert_operation = true;
 bool AvZ::block_var = false;
@@ -43,7 +43,7 @@ MainObject *AvZ::main_object;
 std::map<int, int> AvZ::seed_name_to_index_map;
 std::vector<AvZ::Grid> AvZ::select_card_vec;
 std::vector<AvZ::ThreadInfo> AvZ::thread_vec;
-std::stack<int> AvZ::stoped_thread_id_stack;
+std::stack<int> AvZ::stopped_thread_id_stack;
 AvZ::PaoOperator::RoofFlyTime AvZ::PaoOperator::fly_time_data[8] = {
 	{515, 359},
 	{499, 362},

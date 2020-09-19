@@ -184,43 +184,55 @@ void AvZ::loadScript(const std::function<void()> func)
 	func();
 	block_var = true; // 唤醒游戏主循环
 
+	// 等待游戏进入战斗界面
+	while (pvz_base->gameUi() != 3)
+	{
+		if (pvz_base->gameUi() == 1)
+		{
+			break;
+		}
+		exit_sleep(1);
+	}
+
 	// 等待游戏结束
-	while (pvz_base->gameUi() != 1)
+	while (pvz_base->gameUi() == 3)
 	{
 		exit_sleep(1);
 	}
-	// 如果是多次生效则继续录入操作
-	// 如果不是将退出
-	if (is_multiple_effective)
+
+	if (effective_mode != MAIN_UI_OR_FIGHT_UI)
 	{
-		is_loaded = false;
+		// 如果战斗界面不允许重新注入则等待回主界面
+		while (pvz_base->gameUi() != 1)
+		{
+			exit_sleep(1);
+		}
 	}
-	else
+
+	// 停止一切线程
+	for (const auto &ele : thread_vec)
 	{
-		is_exited = true;
+		*ele.id_ptr = -1;
 	}
-	for (auto &thread_info : thread_vec) // 停止一切线程
-	{
-		*thread_info.id_ptr = -1;
-	}
+
 	SetWindowTextA(pvz_hwnd, "Plants vs. Zombies");
 	pvz_base->tickMs() = 10;
-	exit_sleep(20);
 	operation_queue_vec.clear(); // 清除一切操作
 	thread_vec.clear();
 	key_connector.clear();
 	seed_name_to_index_map.clear();
-	while (!stoped_thread_id_stack.empty())
+	while (!stopped_thread_id_stack.empty())
 	{
-		stoped_thread_id_stack.pop();
+		stopped_thread_id_stack.pop();
 	}
+	is_loaded = !(effective_mode >= 0);
 }
 
-void AvZ::openMultipleEffective(char close_key)
+void AvZ::openMultipleEffective(char close_key, int _effective_mode)
 {
-	is_multiple_effective = true;
+	effective_mode = _effective_mode;
 	key_connector.add(close_key, []() {
-		is_multiple_effective = false;
+		effective_mode = -1;
 		showErrorNotInQueue("已关闭多次生效");
 	});
 }
@@ -262,9 +274,11 @@ void AvZ::run(MainObject *level, std::function<void()> Script)
 	}
 
 	// 假进入战斗界面直接返回
-	if (main_object->selectCardUi_m()->orizontalScreenOffset() != 0 &&
-		main_object->selectCardUi_m()->orizontalScreenOffset() != 7830 &&
-		main_object->selectCardUi_m()->orizontalScreenOffset() != 9780)
+	if ((main_object->selectCardUi_m()->orizontalScreenOffset() != 0 &&
+		 main_object->selectCardUi_m()->orizontalScreenOffset() != 7830 &&
+		 main_object->selectCardUi_m()->orizontalScreenOffset() != 9780) ||
+		main_object->text()->disappearCountdown() == 1001 ||
+		main_object->text()->disappearCountdown() == 1000)
 	{
 		return;
 	}

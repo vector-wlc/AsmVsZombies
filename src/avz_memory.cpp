@@ -136,7 +136,9 @@ void AvZ::update_zombies_preview()
 	auto zombie_memory = main_object->zombieArray();
 	for (int i = 0; i < main_object->zombieTotal(); ++i, ++zombie_memory)
 	{
-		if (zombie_memory->abscissa() > 800)
+		if (zombie_memory->standState() == -2 ||
+			zombie_memory->standState() == -3 ||
+			zombie_memory->standState() == -4)
 		{
 			zombie_memory->isDisappeared() = true;
 			zombie_memory->state() = 3;
@@ -146,7 +148,7 @@ void AvZ::update_zombies_preview()
 	main_object->selectCardUi_m()->isCreatZombie() = false;
 }
 
-void AvZ::setZombies(std::initializer_list<int> zombie_type)
+void AvZ::setZombies(const std::vector<int> &zombie_type)
 {
 	while (main_object->text()->disappearCountdown())
 	{
@@ -186,7 +188,7 @@ void AvZ::setZombies(std::initializer_list<int> zombie_type)
 	}
 }
 
-void AvZ::setWaveZombies(int wave, std::initializer_list<int> zombie_type)
+void AvZ::setWaveZombies(int wave, const std::vector<int> &zombie_type)
 {
 	while (main_object->text()->disappearCountdown())
 	{

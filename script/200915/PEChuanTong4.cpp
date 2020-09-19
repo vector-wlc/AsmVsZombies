@@ -39,7 +39,7 @@ AvZ::TickRunner clover_user; // 使用三叶草
 AvZ::TickRunner squash_user; // 使用倭瓜
 
 // 使用三叶草
-void Use_Clover();
+void UseClover();
 
 // 应对波数主要逻辑函数
 void DealWave(int wave);
@@ -58,10 +58,11 @@ void Script()
 #ifdef __AVZ_VERSION__
 #if __AVZ_VERSION__ == 200915
 
-    OpenMultipleEffective();
-    SetZombies({CG_3, TT_4, BC_12, XC_15, QQ_16, FT_21, TL_22, BY_23, HY_32, TT_18});
+    OpenMultipleEffective('Q', AvZ::MAIN_UI_OR_FIGHT_UI);
+    SetZombies({CG_3, TT_4, BC_12, XC_15, QQ_16, FT_21, TL_22, BY_23, HY_32, TT_18, WW_8});
     SelectCards({ICE_SHROOM, M_ICE_SHROOM, COFFEE_BEAN, SQUASH, CHERRY_BOMB, JALAPENO, PUMPKIN, BLOVER, SCAREDY_SHROOM, PUFF_SHROOM});
-    clover_user.pushFunc(Use_Clover);
+    AvZ::MaidCheats::dancing();
+    clover_user.pushFunc(UseClover);
     squash_user.pushFunc(UseSquash);
 
     SetTime(-600, 1);
@@ -106,9 +107,9 @@ void Script()
 }
 
 #ifdef __AVZ_VERSION__
-#if __AVZ_VERSION__ == 200810
+#if __AVZ_VERSION__ == 200915
 
-void Use_Clover()
+void UseClover()
 {
     auto _clover = AvZ::mainObject()->seedArray() + _CLOVER; // 首先取出三叶草信息内存块
     auto zombie = AvZ::mainObject()->zombieArray();          // 再取出僵尸的内存块
@@ -221,10 +222,12 @@ void UseSquash()
 // 是否还有炮
 bool IsHaveCannon()
 {
-    std::vector<AvZ::Grid> cannon_grids = {{3, 1},
-                                           {4, 1},
-                                           {3, 3},
-                                           {4, 3}};
+    std::vector<AvZ::Grid> cannon_grids = {
+        {3, 1},
+        {4, 1},
+        {3, 3},
+        {4, 3},
+    };
     std::vector<int> cannon_indexs;
     AvZ::getPlantIndexs(cannon_grids, YMJNP_47, cannon_indexs);
 

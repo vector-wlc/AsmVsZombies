@@ -45,7 +45,10 @@ void AvZ::deal_wrong_click()
 	auto zombie_memory = main_object->zombieArray();
 	for (int index = 0; index < z_cnt_max; ++index, ++zombie_memory)
 	{
-		if (zombie_memory->abscissa() > 800 &&
+		if ((zombie_memory->standState() == -2 ||
+			 zombie_memory->standState() == -3 ||
+			 zombie_memory->standState() == -4) &&
+			zombie_memory->abscissa() > 800 &&
 			zombie_memory->abscissa() < 930 &&
 			zombie_memory->ordinate() > 370)
 		{

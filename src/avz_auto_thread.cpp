@@ -7,19 +7,53 @@
 
 #include "libavz.h"
 
-void AvZ::TickRunner::pushFunc(const std::function<void()> &run)
+// *** Not In Queue
+// 通过得到线程的状态
+// *** 返回值：
+// 停止状态：return STOPED
+// 暂停状态：return PAUSED
+// 运行状态：return RUNNING
+AvZ::TickRunner::ThreadStatus AvZ::TickRunner::getStatus() const
 {
+	if (thread_id < 0)
+	{
+		return STOPPED;
+	}
+
+	if (is_paused)
+	{
+		return PAUSED;
+	}
+
+	return RUNNING;
+}
+
+void AvZ::TickRunner::pushFunc(const std::function<void()> &_run)
+{
+	if (!thread_examine())
+	{
+		return;
+	}
+	is_paused = false;
+	auto run = [=]() {
+		if (is_paused)
+		{
+			return;
+		}
+
+		_run();
+	};
 	//如果没有找到停下来的线程则创建新线程
-	if (stoped_thread_id_stack.empty())
+	if (stopped_thread_id_stack.empty())
 	{
 		thread_vec.push_back({run, &thread_id});
 		thread_id = thread_vec.size() - 1;
 	}
 	else
 	{
-		thread_id = stoped_thread_id_stack.top();
+		thread_id = stopped_thread_id_stack.top();
 		thread_vec[thread_id] = {run, &thread_id};
-		stoped_thread_id_stack.pop();
+		stopped_thread_id_stack.pop();
 	}
 }
 
@@ -27,11 +61,6 @@ void AvZ::ItemCollector::run()
 {
 	if (main_object->gameClock() % time_interval != 0 ||
 		main_object->mouseAttribution()->type() != 0)
-	{
-		return;
-	}
-
-	if (is_paused)
 	{
 		return;
 	}
@@ -82,11 +111,6 @@ void AvZ::IceFiller::start(const std::vector<Grid> &lst)
 {
 	insertOperation([=]() {
 		ice_seed_index_vec.clear();
-		if (!thread_examine())
-		{
-			return;
-		}
-		is_paused = false;
 		int ice_seed_index;
 		ice_seed_index = getSeedIndex(ICE_SHROOM);
 		if (ice_seed_index != -1)
@@ -107,11 +131,6 @@ void AvZ::IceFiller::start(const std::vector<Grid> &lst)
 
 void AvZ::IceFiller::run()
 {
-	if (is_paused)
-	{
-		return;
-	}
-
 	static auto plant = main_object->plantArray();
 	static auto seed = main_object->seedArray();
 	static std::vector<int> ice_plant_index_vec;
@@ -289,12 +308,6 @@ void AvZ::PlantFixer::start(int _plant_type, const std::vector<Grid> &lst, int _
 	}
 
 	insertOperation([=]() {
-		if (!thread_examine())
-		{
-			return;
-		}
-		is_paused = false;
-
 		plant_type = _plant_type;
 		fix_hp = _fix_hp;
 		get_seed_list();
@@ -314,11 +327,6 @@ void AvZ::PlantFixer::start(int _plant_type, const std::vector<Grid> &lst, int _
 
 void AvZ::PlantFixer::run()
 {
-	if (is_paused)
-	{
-		return;
-	}
-
 	static Seed *seed_memory;
 	static Plant *plant;
 	static std::vector<int> plant_index_vec;
@@ -450,7 +458,7 @@ void AvZ::KeyConnector::add(char key, std::function<void()> operate)
 
 	key_operation_vec.push_back(std::pair<char, std::function<void()>>(key, operate));
 
-	if (thread_id < 0)
+	if (getStatus() == STOPPED)
 	{
 		pushFunc([=]() {
 			for (const auto &key_operation : key_operation_vec)
@@ -458,9 +466,8 @@ void AvZ::KeyConnector::add(char key, std::function<void()> operate)
 				if ((GetAsyncKeyState(key_operation.first) & 0x8001) == 0x8001 &&
 					GetForegroundWindow() == pvz_hwnd) // 检测 pvz 是否为顶层窗口
 				{
-					setInsertOperation(false);
+					InsertGuard insert_guard(false);
 					key_operation.second();
-					setInsertOperation(true);
 					return;
 				}
 			}
