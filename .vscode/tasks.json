@@ -19,7 +19,7 @@
                 "${workspaceRoot}\\bin\\libavz.dll"
             ],
             "options": {
-                "cwd": "G:\\setup\\MinGW\\bin"
+                "cwd": "E:\\setup\\MinGW\\bin"
             }
         }
     ],

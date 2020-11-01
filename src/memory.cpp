@@ -5,42 +5,36 @@
  * @Description: memory
  */
 
-#include <iostream>
 #include "memory.h"
 
-Memory::Memory()
-{
+#include <iostream>
+
+Memory::Memory() {
     handle = nullptr;
 }
 
-Memory::~Memory()
-{
+Memory::~Memory() {
     if (IsValid())
         CloseHandle(handle);
 }
 
-bool Memory::OpenSelf()
-{
+bool Memory::OpenSelf() {
     handle = GetCurrentProcess();
     return true;
 }
 
-PVOID Memory::Alloc(DWORD len)
-{
+PVOID Memory::Alloc(DWORD len) {
     return VirtualAlloc(0, len, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 }
 
-BOOL Memory::Free(PVOID addr)
-{
+BOOL Memory::Free(PVOID addr) {
     return VirtualFree(addr, 0, MEM_RELEASE);
 }
 
-BOOL Memory::Write(uintptr_t addr, size_t len, uint8_t *data)
-{
+BOOL Memory::Write(uintptr_t addr, size_t len, uint8_t *data) {
     return WriteProcessMemory(handle, (void *)addr, data, len, nullptr);
 }
 
-bool Memory::IsValid()
-{
+bool Memory::IsValid() {
     return handle != 0;
 }

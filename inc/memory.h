@@ -6,17 +6,17 @@
 
 #pragma once
 
-#include <iostream>
-#include <sstream>
-#include <iomanip>
-#include <string>
-#include <functional>
-#include <initializer_list>
-#include <array>
-#include <cassert>
-
 #include <Windows.h>
 #include <tlhelp32.h>
+
+#include <array>
+#include <cassert>
+#include <functional>
+#include <initializer_list>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
 
 class Memory
 {

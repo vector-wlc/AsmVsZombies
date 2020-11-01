@@ -14,7 +14,7 @@ AvZ 操作精度为理论上的100%绝对精准，使用这套框架将再也不
 
 本项目使用 [VSCode](https://code.visualstudio.com/) + MinGW 进行代码编辑、编译和注入。 
 
-~~本项目编译器有两个选择，分别是 MinGW 和 MSVC，使用者可根据自身情况选择使用其中一个。~~
+<!-- ~~本项目编译器有两个选择，分别是 MinGW 和 MSVC，使用者可根据自身情况选择使用其中一个。~~ -->
 
 ## 原理
 
@@ -26,8 +26,8 @@ AvZ 操作精度为理论上的100%绝对精准，使用这套框架将再也不
 
 > 缺点 
 >
-> * ~~软件体积更大 (MSVC--VS)~~
-> * ~~复杂脚本编写工作量可能更大~~
+<!-- > * ~~软件体积更大 (MSVC--VS)~~
+> * ~~复杂脚本编写工作量可能更大~~ -->
 > * 编写不慎可能会导致游戏崩溃
 
 > 优点
@@ -45,24 +45,37 @@ AvZ 操作精度为理论上的100%绝对精准，使用这套框架将再也不
 在 [https://wwe.lanzous.com/b015az8yj](https://wwe.lanzous.com/b015az8yj) (37zu) 下载相应版本包，
 进行更新或退回，注意在 2020_07_10 之后的版本包将只支持新的 [VSCode](https://code.visualstudio.com/) 环境包
 
-#### ~~MSVC Visual Studio~~
+<!-- #### ~~MSVC Visual Studio~~
 
 ~~Visual Studio 使用方便，无需配置，简单粗暴，稳定可靠。但是其体积庞大，安装包大概 2-3 G。~~
 
 ~~若您的电脑硬盘容量足够，请优先使用 VS~~
 
-**~~注意~~**  ~~部分 win7 可能无法正常安装 Visual Studio~~
+**~~注意~~**  ~~部分 win7 可能无法正常安装 Visual Studio~~ -->
 
 
-## 问题（BUG）
+<!-- ## 问题（BUG）
 
-部分 Windows 7 仍存在使用 selectCards 函数崩溃的问题
+部分 Windows 7 仍存在使用 selectCards 函数崩溃的问题 -->
 
 ## 致谢
 [yuchenxi2000/AssemblyVsZombies](https://github.com/yuchenxi2000/AssemblyVsZombies)<br>
-[lmintlcx/pvzscript](https://github.com/lmintlcx/pvzscripts)
+[lmintlcx/pvzscript](https://github.com/lmintlcx/pvzscripts)<br>
+[失控的指令(bilibili)](https://space.bilibili.com/147204150/)<br>
+[Power_tile(bilibili)](https://space.bilibili.com/367385512)
 
 ## 更新日志
+
+AvZ 2020_11_01
+
+* AvZ 由 class -> namesapce
+* 加入一系列安全检测，游戏崩溃概率变低
+* 加入条件操作，操作队列非定态支持增强
+* 修正单词拼写错误：indexs->indices
+* PaoOperator 新增了自动填充炮列表函数 ： autoGetPaoList
+* PaoOperator 使用 调用 PvZ 内置函数发炮 的方法实现发炮，理论上解决炮发不出去的问题
+* SelectCards 使用 调用 PvZ 内置函数 的方法进入战斗界面，理论上解决选卡函数带来的崩溃问题 
+* 修复了 clickGrid 天台场景有点击误差的 BUG
 
 AvZ 2020_09_15
 
