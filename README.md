@@ -66,6 +66,12 @@ AvZ 操作精度为理论上的100%绝对精准，使用这套框架将再也不
 
 ## 更新日志
 
+AvZ 2020_12_26
+
+* ShowError : 移除显示在 PvZ 窗口，新增显示在控制台
+* 新增 SetDelayTime，对 KeyConnect 时延操作加强
+* 没有削弱 vector-wlc 的头发
+
 AvZ 2020_11_01
 
 * AvZ 由 class -> namesapce

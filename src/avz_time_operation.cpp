@@ -29,16 +29,16 @@ namespace AvZ
     extern std::stack<int> __stopped_thread_id_stack;
     extern std::map<int, int> __seed_name_to_index_map;
     extern std::vector<Grid> __select_card_vec;
-
-    std::vector<OperationQueue> __operation_queue_vec;
-    TimeWave __time_wave_insert;
-    TimeWave __time_wave_run;
-    bool is_loaded = false;
-    int effective_mode = -1;
-    bool is_exited = false;
-    bool is_insert_operation = true;
-    bool block_var = false;
-    std::vector<OperationQueue>::iterator __wavelength_it;
+    extern std::vector<OperationQueue> __operation_queue_vec;
+    extern TimeWave __time_wave_insert;
+    extern TimeWave __time_wave_run;
+    extern bool __is_loaded;
+    extern int __effective_mode;
+    extern bool __is_exited;
+    extern bool __is_insert_operation;
+    extern bool __block_var;
+    extern std::vector<OperationQueue>::iterator __wavelength_it;
+    extern std::function<void()> __script_exit_deal;
 
     // 此函数每帧都需调用一次
     void update_refresh_time()
@@ -86,8 +86,8 @@ namespace AvZ
     {
         extern HWND __pvz_hwnd;
         SetWindowTextA(__pvz_hwnd, "Plants vs. Zombies");
-        extern bool is_exited;
-        is_exited = true;
+        extern bool __is_exited;
+        __is_exited = true;
     }
 
     void InsertOperation(const std::function<void()> &operation, const std::string &description)
@@ -98,7 +98,7 @@ namespace AvZ
             return;
         }
 
-        if (!is_insert_operation ||
+        if (!__is_insert_operation ||
             (__time_wave_insert.time == __time_wave_run.time &&
              __time_wave_insert.wave == __time_wave_run.wave))
         {
@@ -156,16 +156,16 @@ namespace AvZ
     // SetInsertOperation(true) ---- insertOperation 将会把操作插入操作队列中
     void SetInsertOperation(bool _is_insert_operation)
     {
-        extern bool is_insert_operation;
-        is_insert_operation = _is_insert_operation;
+        extern bool __is_insert_operation;
+        __is_insert_operation = _is_insert_operation;
     }
 
     bool WaitUntil(const TimeWave &_time_wave)
     {
         extern PvZ *__pvz_base;
-        block_var = true;
+        __block_var = true;
 
-        if (is_exited)
+        if (__is_exited)
         {
             return false;
         }
@@ -174,12 +174,12 @@ namespace AvZ
             InsertGuard insert_guard(true);
             SetTime(_time_wave);
             InsertOperation([=]() {
-                block_var = false; // 唤醒 Script 线程
-                Sleep(10);         // 停滞一帧
+                __block_var = false; // 唤醒 Script 线程
+                Sleep(10);           // 停滞一帧
             });
         }
 
-        while (block_var)
+        while (__block_var)
         {
             // 阻塞 Script 线程
             Sleep(1);
@@ -265,6 +265,11 @@ namespace AvZ
                         "showQueue");
     }
 
+    void ScriptExitDeal(const std::function<void()> &func)
+    {
+        __script_exit_deal = func;
+    }
+
     void LoadScript(const std::function<void()> func)
     {
         void InitAddress();
@@ -278,7 +283,7 @@ namespace AvZ
         __pvz_base->tickMs() = 10;
         SetInsertOperation(true);
         SetTime(-600, 1);
-        is_loaded = true;
+        __is_loaded = true;
         func();
 
         // 等待游戏进入战斗界面
@@ -297,7 +302,7 @@ namespace AvZ
             exit_sleep(1);
         }
 
-        if (effective_mode != MAIN_UI_OR_FIGHT_UI)
+        if (__effective_mode != MAIN_UI_OR_FIGHT_UI)
         {
             // 如果战斗界面不允许重新注入则等待回主界面
             while (__pvz_base->gameUi() != 1)
@@ -312,6 +317,10 @@ namespace AvZ
             *ele.id_ptr = -1;
         }
 
+        // 释放资源
+        __script_exit_deal();
+        fclose(stdout);
+        FreeConsole();
         extern HWND __pvz_hwnd;
         SetWindowTextA(__pvz_hwnd, "Plants vs. Zombies");
         __pvz_base->tickMs() = 10;
@@ -319,25 +328,26 @@ namespace AvZ
         __thread_vec.clear();
         key_connector.clear();
         __seed_name_to_index_map.clear();
+
         while (!__stopped_thread_id_stack.empty())
         {
             __stopped_thread_id_stack.pop();
         }
-        is_loaded = !(effective_mode >= 0);
+        __is_loaded = !(__effective_mode >= 0);
     }
 
     void OpenMultipleEffective(char close_key, int _effective_mode)
     {
-        effective_mode = _effective_mode;
+        __effective_mode = _effective_mode;
         key_connector.add(close_key, []() {
-            effective_mode = -1;
+            __effective_mode = -1;
             ShowErrorNotInQueue("已关闭多次生效");
         });
     }
 
     void SetTime(const TimeWave &_time_wave)
     {
-        if (is_insert_operation)
+        if (__is_insert_operation)
         {
             __time_wave_insert = _time_wave;
         }
@@ -353,7 +363,7 @@ namespace AvZ
     // setTime(-95)--------- 将操作时间点设为僵尸刷新前 95cs, 波数由上一个最近确定的波数决定
     void SetTime(int time, int wave)
     {
-        if (is_insert_operation)
+        if (__is_insert_operation)
         {
             __time_wave_insert.time = time;
             __time_wave_insert.wave = wave;
@@ -367,7 +377,7 @@ namespace AvZ
     // 设定操作时间点
     void SetTime(int time)
     {
-        if (is_insert_operation)
+        if (__is_insert_operation)
         {
             __time_wave_insert.time = time;
         }
@@ -385,6 +395,13 @@ namespace AvZ
         SetTime(time, wave);
     }
 
+    // 设定延迟时间
+    void SetDelayTime(int time)
+    {
+        SetNowTime();
+        Delay(time);
+    }
+
     // 延迟一定时间
     // *** 注意由于操作队列的优势，此函数支持负值
     // *** 使用示例：
@@ -392,7 +409,7 @@ namespace AvZ
     // delay(-298) ------ 提前 298cs
     void Delay(int time)
     {
-        if (is_insert_operation)
+        if (__is_insert_operation)
         {
             __time_wave_insert.time += time;
         }
@@ -406,17 +423,17 @@ namespace AvZ
     {
         extern MainObject *__main_object;
         extern PvZ *__pvz_base;
-        if (is_exited)
+        if (__is_exited)
         {
             return;
         }
         __main_object = level;
 
-        if (!is_loaded)
+        if (!__is_loaded)
         {
             std::thread task(LoadScript, Script);
             task.detach();
-            while (!is_loaded)
+            while (!__is_loaded)
             {
                 exit_sleep(10);
             }

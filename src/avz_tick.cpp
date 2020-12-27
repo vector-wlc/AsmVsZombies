@@ -12,8 +12,8 @@
 
 namespace AvZ
 {
-    std::vector<ThreadInfo> __thread_vec;
-    std::stack<int> __stopped_thread_id_stack;
+    extern std::vector<ThreadInfo> __thread_vec;
+    extern std::stack<int> __stopped_thread_id_stack;
 
     extern MainObject *__main_object;
     extern PvZ *__pvz_base;

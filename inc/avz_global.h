@@ -12,6 +12,8 @@
 #include <algorithm>
 #include <initializer_list>
 #include <vector>
+#include <set>
+#include <cstdlib>
 
 #include "pvzstruct.h"
 
@@ -95,8 +97,8 @@ namespace AvZ
         int _ms = ms;                                             \
         do                                                        \
         {                                                         \
-            extern bool is_exited;                                \
-            if (is_exited)                                        \
+            extern bool __is_exited;                              \
+            if (__is_exited)                                      \
             {                                                     \
                 extern HWND __pvz_hwnd;                           \
                 SetWindowTextA(__pvz_hwnd, "Plants vs. Zombies"); \

@@ -1,7 +1,13 @@
+/*
+ * @Coding: utf-8
+ * @Author: vector-wlc
+ * @Date: 2020-10-30 21:03:04
+ * @Description: 
+ */
 #ifndef __LIBAVZ_H__
 #define __LIBAVZ_H__
 
-#define __AVZ_VERSION__ 201101
+#define __AVZ_VERSION__ 201226
 
 #include "memory.h"
 #include "pvzfunc.h"

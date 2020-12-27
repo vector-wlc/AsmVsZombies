@@ -13,9 +13,8 @@
 
 namespace AvZ
 {
-    std::map<int, int> __seed_name_to_index_map;
-    std::vector<Grid> __select_card_vec;
-
+    extern std::map<int, int> __seed_name_to_index_map;
+    extern std::vector<Grid> __select_card_vec;
     extern PvZ *__pvz_base;
     extern MainObject *__main_object;
     extern HWND __pvz_hwnd;

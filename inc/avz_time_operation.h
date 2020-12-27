@@ -129,6 +129,9 @@ namespace AvZ
     // 设定时间为当前时间
     void SetNowTime();
 
+    // 设定延迟时间
+    void SetDelayTime(int time);
+
     // 阻塞运行直到达到目标时间点
     // 使用方法与 setTime 相同
     // *** return : 阻塞是否正常结束
@@ -163,15 +166,15 @@ namespace AvZ
     public:
         InsertGuard(bool is_insert)
         {
-            extern bool is_insert_operation;
-            _is_insert_operation = is_insert_operation;
-            is_insert_operation = is_insert;
+            extern bool __is_insert_operation;
+            _is_insert_operation = __is_insert_operation;
+            __is_insert_operation = is_insert;
         }
 
         ~InsertGuard()
         {
-            extern bool is_insert_operation;
-            is_insert_operation = _is_insert_operation;
+            extern bool __is_insert_operation;
+            __is_insert_operation = _is_insert_operation;
         }
     };
 
@@ -186,6 +189,10 @@ namespace AvZ
     // *** 使用示例
     // ShowQueue({1, 2, 3}) ----- 显示第 1 2 3 波中未被执行的操作
     void ShowQueue(const std::vector<int> &lst);
+
+    // *** Not In Queue
+    // 脚本退出时用户的自定义处理，主要用于释放内存资源
+    void ScriptExitDeal(const std::function<void()> &func);
 
 } // namespace AvZ
 #endif
