@@ -116,6 +116,7 @@ namespace AvZ
                                     pao_row,
                                     pao_col,
                                     recover_time);
+                return;
             }
             base_fire_pao(index, drop_row, drop_col);
         },
@@ -433,7 +434,7 @@ namespace AvZ
     }
 
     //发炮函数：多发
-    void PaoOperator::pao(const std::vector<Crood> &lst)
+    void PaoOperator::pao(const std::vector<Position> &lst)
     {
         for (const auto &each : lst)
         {
@@ -461,7 +462,7 @@ namespace AvZ
                         "recoverPao");
     }
 
-    void PaoOperator::recoverPao(const std::vector<Crood> &lst)
+    void PaoOperator::recoverPao(const std::vector<Position> &lst)
     {
         for (const auto &each : lst)
         {
@@ -495,6 +496,7 @@ namespace AvZ
                                     pao_grid_vec[next_pao].col,
                                     next_pao + 1,
                                     min_delay_time - delay_time);
+                return;
             }
 
             delay_fire_pao(delay_time, pao_index_vec[next_pao], row, col);
@@ -504,7 +506,7 @@ namespace AvZ
                         "roofPao");
     }
 
-    void PaoOperator::roofPao(const std::vector<Crood> &lst)
+    void PaoOperator::roofPao(const std::vector<Position> &lst)
     {
         for (const auto &each : lst)
         {

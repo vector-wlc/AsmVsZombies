@@ -29,19 +29,20 @@ namespace AvZ
     extern std::stack<int> __stopped_thread_id_stack;
     extern std::map<int, int> __seed_name_to_index_map;
     extern std::vector<Grid> __select_card_vec;
-
-    std::vector<OperationQueue> __operation_queue_vec;
-    TimeWave __time_wave_insert;
-    TimeWave __time_wave_run;
-    bool is_loaded = false;
-    int effective_mode = -1;
-    bool is_exited = false;
-    bool is_insert_operation = true;
-    bool block_var = false;
-    std::vector<OperationQueue>::iterator __wavelength_it;
+    extern std::vector<OperationQueue> __operation_queue_vec;
+    extern TimeWave __time_wave_insert;
+    extern TimeWave __time_wave_run;
+    extern TimeWave __time_wave_start;
+    extern bool __is_loaded;
+    extern int __effective_mode;
+    extern bool __is_exited;
+    extern bool __is_insert_operation;
+    extern bool __block_var;
+    extern std::vector<OperationQueue>::iterator __wavelength_it;
+    extern std::function<void()> __script_exit_deal;
 
     // 此函数每帧都需调用一次
-    void update_refresh_time()
+    void UpdateRefreshTime()
     {
         extern MainObject *__main_object;
         int wave = __main_object->wave();
@@ -59,7 +60,7 @@ namespace AvZ
         }
         else
         {
-            if (wave + 1 == 10 || wave + 1 == 20)
+            if ((wave + 1) % 10 == 0)
             {
                 // 大波
                 if (__main_object->refreshCountdown() <= 4)
@@ -85,20 +86,22 @@ namespace AvZ
     void __Exit()
     {
         extern HWND __pvz_hwnd;
-        SetWindowTextA(__pvz_hwnd, "Plants vs. Zombies");
-        extern bool is_exited;
-        is_exited = true;
+        SetWindowText(__pvz_hwnd, TEXT("Plants vs. Zombies"));
+        extern bool __is_exited;
+        __is_exited = true;
     }
 
     void InsertOperation(const std::function<void()> &operation, const std::string &description)
     {
         extern PvZ *__pvz_base;
-        if (__pvz_base->gameUi() == 1)
+        if (__pvz_base->gameUi() == 1 ||
+            (__time_wave_start.wave >= __time_wave_insert.wave &&
+             __time_wave_start.time > __time_wave_insert.time))
         {
             return;
         }
 
-        if (!is_insert_operation ||
+        if (!__is_insert_operation ||
             (__time_wave_insert.time == __time_wave_run.time &&
              __time_wave_insert.wave == __time_wave_run.wave))
         {
@@ -106,14 +109,15 @@ namespace AvZ
             return;
         }
 
-        if (__time_wave_insert.wave < 1 || __time_wave_insert.wave > 20)
+        if (__time_wave_insert.wave < 1 || __time_wave_insert.wave > __main_object->totalWave())
         {
-            ShowErrorNotInQueue("您填写的 wave 参数为 # , 已超出 [1, 20] 的范围",
-                                __time_wave_insert.wave);
+            ShowErrorNotInQueue("您填写的 wave 参数为 # , 已超出 [1, #] 的范围",
+                                __time_wave_insert.wave,
+                                __main_object->totalWave());
             return;
         }
 
-        if (!RangeIn(__time_wave_insert.wave, {1, 10, 20}) &&
+        if ((__time_wave_insert.wave != 1 || __time_wave_insert.wave % 10 != 0) &&
             __time_wave_insert.time < -200 &&
             __operation_queue_vec[__time_wave_insert.wave - 2].wave_length == -1)
         {
@@ -156,16 +160,16 @@ namespace AvZ
     // SetInsertOperation(true) ---- insertOperation 将会把操作插入操作队列中
     void SetInsertOperation(bool _is_insert_operation)
     {
-        extern bool is_insert_operation;
-        is_insert_operation = _is_insert_operation;
+        extern bool __is_insert_operation;
+        __is_insert_operation = _is_insert_operation;
     }
 
     bool WaitUntil(const TimeWave &_time_wave)
     {
         extern PvZ *__pvz_base;
-        block_var = true;
+        __block_var = true;
 
-        if (is_exited)
+        if (__is_exited)
         {
             return false;
         }
@@ -174,12 +178,12 @@ namespace AvZ
             InsertGuard insert_guard(true);
             SetTime(_time_wave);
             InsertOperation([=]() {
-                block_var = false; // 唤醒 Script 线程
-                Sleep(10);         // 停滞一帧
+                __block_var = false; // 唤醒 Script 线程
+                Sleep(10);           // 停滞一帧
             });
         }
 
-        while (block_var)
+        while (__block_var)
         {
             // 阻塞 Script 线程
             Sleep(1);
@@ -235,7 +239,7 @@ namespace AvZ
             std::stringstream ss;
             for (const auto &wave : lst)
             {
-                if (wave < 1 || wave > 20)
+                if (wave < 1 || wave > __main_object->totalWave())
                 {
                     continue;
                 }
@@ -265,11 +269,14 @@ namespace AvZ
                         "showQueue");
     }
 
+    void ScriptExitDeal(const std::function<void()> &func)
+    {
+        __script_exit_deal = func;
+    }
+
     void LoadScript(const std::function<void()> func)
     {
-        void InitAddress();
-        InitAddress();
-        __operation_queue_vec.resize(20);
+        __operation_queue_vec.resize(__main_object->totalWave());
         __time_wave_run.wave = 0;
         __wavelength_it = __operation_queue_vec.begin();
         SetInsertOperation(false);
@@ -277,8 +284,23 @@ namespace AvZ
         MaidCheats::stop();
         __pvz_base->tickMs() = 10;
         SetInsertOperation(true);
-        SetTime(-600, 1);
-        is_loaded = true;
+
+        // 将默认时间设置为刚一进战斗界面的时间
+        if (__pvz_base->gameUi() == 3)
+        {
+            UpdateRefreshTime();
+            auto waves = GetRefreshedWave();
+            __time_wave_start.wave = *waves.begin();
+            __time_wave_start.time = NowTime(__time_wave_start.wave);
+        }
+        else
+        {
+            __time_wave_start.wave = 1;
+            __time_wave_start.time = -600;
+        }
+        SetTime(__time_wave_start);
+
+        __is_loaded = true;
         func();
 
         // 等待游戏进入战斗界面
@@ -288,21 +310,21 @@ namespace AvZ
             {
                 break;
             }
-            exit_sleep(1);
+            ExitSleep(1);
         }
 
         // 等待游戏结束
         while (__pvz_base->gameUi() == 3)
         {
-            exit_sleep(1);
+            ExitSleep(1);
         }
 
-        if (effective_mode != MAIN_UI_OR_FIGHT_UI)
+        if (__effective_mode != MAIN_UI_OR_FIGHT_UI)
         {
             // 如果战斗界面不允许重新注入则等待回主界面
             while (__pvz_base->gameUi() != 1)
             {
-                exit_sleep(1);
+                ExitSleep(1);
             }
         }
 
@@ -312,6 +334,10 @@ namespace AvZ
             *ele.id_ptr = -1;
         }
 
+        // 释放资源
+        __script_exit_deal();
+        fclose(stdout);
+        FreeConsole();
         extern HWND __pvz_hwnd;
         SetWindowTextA(__pvz_hwnd, "Plants vs. Zombies");
         __pvz_base->tickMs() = 10;
@@ -319,25 +345,26 @@ namespace AvZ
         __thread_vec.clear();
         key_connector.clear();
         __seed_name_to_index_map.clear();
+
         while (!__stopped_thread_id_stack.empty())
         {
             __stopped_thread_id_stack.pop();
         }
-        is_loaded = !(effective_mode >= 0);
+        __is_loaded = !(__effective_mode >= 0);
     }
 
     void OpenMultipleEffective(char close_key, int _effective_mode)
     {
-        effective_mode = _effective_mode;
+        __effective_mode = _effective_mode;
         key_connector.add(close_key, []() {
-            effective_mode = -1;
+            __effective_mode = -1;
             ShowErrorNotInQueue("已关闭多次生效");
         });
     }
 
     void SetTime(const TimeWave &_time_wave)
     {
-        if (is_insert_operation)
+        if (__is_insert_operation)
         {
             __time_wave_insert = _time_wave;
         }
@@ -353,7 +380,7 @@ namespace AvZ
     // setTime(-95)--------- 将操作时间点设为僵尸刷新前 95cs, 波数由上一个最近确定的波数决定
     void SetTime(int time, int wave)
     {
-        if (is_insert_operation)
+        if (__is_insert_operation)
         {
             __time_wave_insert.time = time;
             __time_wave_insert.wave = wave;
@@ -367,7 +394,7 @@ namespace AvZ
     // 设定操作时间点
     void SetTime(int time)
     {
-        if (is_insert_operation)
+        if (__is_insert_operation)
         {
             __time_wave_insert.time = time;
         }
@@ -380,9 +407,21 @@ namespace AvZ
     void SetNowTime()
     {
         auto waves = GetRefreshedWave();
+        if (waves.size() == 0)
+        {
+            ShowErrorNotInQueue("SetNowTime : 未检测到当前时间，请在游戏进入战斗界面之后再调用此函数");
+            return;
+        }
         int wave = waves[waves.size() - 1];
         int time = NowTime(wave);
         SetTime(time, wave);
+    }
+
+    // 设定延迟时间
+    void SetDelayTime(int time)
+    {
+        SetNowTime();
+        Delay(time);
     }
 
     // 延迟一定时间
@@ -392,7 +431,7 @@ namespace AvZ
     // delay(-298) ------ 提前 298cs
     void Delay(int time)
     {
-        if (is_insert_operation)
+        if (__is_insert_operation)
         {
             __time_wave_insert.time += time;
         }
@@ -406,32 +445,35 @@ namespace AvZ
     {
         extern MainObject *__main_object;
         extern PvZ *__pvz_base;
-        if (is_exited)
+        if (__is_exited)
         {
             return;
         }
         __main_object = level;
 
-        if (!is_loaded)
+        if (!__is_loaded)
         {
-            std::thread task(LoadScript, Script);
-            task.detach();
-            while (!is_loaded)
-            {
-                exit_sleep(10);
-            }
-
+            void InitAddress();
+            InitAddress();
             // 假进入战斗界面直接返回
-            if (__pvz_base->gameUi() == 3 && __main_object->text()->disappearCountdown())
+            if (__pvz_base->gameUi() == 3 &&
+                (__main_object->text()->disappearCountdown() == 1001 ||
+                 __main_object->text()->disappearCountdown() == 1000))
             {
                 return;
+            }
+            std::thread task(LoadScript, Script);
+            task.detach();
+            while (!__is_loaded)
+            {
+                ExitSleep(10);
             }
         }
 
         if (__pvz_base->gameUi() == 2 && !__select_card_vec.empty())
         {
-            void select_cards();
-            select_cards();
+            void ChooseCards();
+            ChooseCards();
         }
 
         if (__pvz_base->gameUi() != 3 || __pvz_base->mouseWindow()->topWindow())
@@ -455,9 +497,9 @@ namespace AvZ
             __select_card_vec.clear();
         }
 
-        if (__main_object->wave() != 20)
+        if (__main_object->wave() != __main_object->totalWave())
         {
-            update_refresh_time();
+            UpdateRefreshTime();
         }
 
         for (const auto &thread_info : __thread_vec)
@@ -468,10 +510,10 @@ namespace AvZ
             }
         }
 
-        // 对 20 个队列进行遍历
-        // 最大比较次数 20 * 3 = 60 次
+        // 对 __main_object->totalWave 个队列进行遍历
+        // 最大比较次数 __main_object->totalWave * 3 = 60 次
         // 卧槽，感觉好亏，不过游戏应该不会卡顿
-        for (int wave = 0; wave < 20; ++wave)
+        for (int wave = 0; wave < __main_object->totalWave(); ++wave)
         {
             if (__operation_queue_vec[wave].refresh_time == -1 ||
                 __operation_queue_vec[wave].queue.empty() ||
@@ -516,6 +558,12 @@ namespace AvZ
         });
 
         SetTime(temp);
+    }
+
+    void SetScriptStartTime(int time, int wave)
+    {
+        __time_wave_start.time = time;
+        __time_wave_start.wave = wave;
     }
 
 } // namespace AvZ

@@ -171,10 +171,10 @@ namespace AvZ
     void SetWaveZombies(int wave, const std::vector<int> &zombie_type);
 
     // *** In Queue
-    // 冰三函数
+    // 卡片精准生效
     // *** 使用示例：
-    // Ice3(298) --------- 修正冰三时间点至当前时刻的 298cs 后
-    void Ice3(int time);
+    // SetPlantActiveTime(ICE_SHROOM, 298) --------- 修正寒冰菇生效时间点至当前时刻的 298cs 后
+    void SetPlantActiveTime(PlantType plant_type, int delay_time);
 
     // *** Not In Queue
     // 设置游戏倍速

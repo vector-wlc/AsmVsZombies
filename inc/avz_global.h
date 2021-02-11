@@ -12,6 +12,8 @@
 #include <algorithm>
 #include <initializer_list>
 #include <vector>
+#include <set>
+#include <cstdlib>
 
 #include "pvzstruct.h"
 
@@ -89,14 +91,14 @@ namespace AvZ
     }
 
 // 随时检测线程退出
-#define exit_sleep(ms)                                            \
+#define ExitSleep(ms)                                             \
     do                                                            \
     {                                                             \
         int _ms = ms;                                             \
         do                                                        \
         {                                                         \
-            extern bool is_exited;                                \
-            if (is_exited)                                        \
+            extern bool __is_exited;                              \
+            if (__is_exited)                                      \
             {                                                     \
                 extern HWND __pvz_hwnd;                           \
                 SetWindowTextA(__pvz_hwnd, "Plants vs. Zombies"); \
@@ -126,7 +128,7 @@ namespace AvZ
         }
     };
 
-    struct Crood
+    struct Position
     {
         int row;
         float col;

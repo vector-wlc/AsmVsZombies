@@ -10,6 +10,7 @@
 #include <string>
 #include <sstream>
 #include <functional>
+#include <cstdio>
 
 #include "avz_global.h"
 #include "pvzstruct.h"
@@ -28,7 +29,7 @@ namespace AvZ
     enum ErrorMode
     {
         POP_WINDOW,
-        PVZ_TITLE,
+        CONSOLE,
         NONE
     };
 
@@ -36,7 +37,7 @@ namespace AvZ
     // 设置错误提示方式
     // *** 使用示例：
     // SetErrorMode(AvZ::POP_WINDOW)----- 报错将会有弹窗弹出
-    // SetErrorMode(AvZ::PVZ_TITLE)----- 报错将会显示在 PvZ 窗口标题
+    // SetErrorMode(AvZ::CONSOLE)----- 报错将会显示在 PvZ 窗口标题
     // SetErrorMode(AvZ::NONE)----- 取消报错功能
     void SetErrorMode(ErrorMode _error_mode);
 
@@ -73,16 +74,17 @@ namespace AvZ
 
         std::initializer_list<int>{(string_convert(_content, args), 0)...};
 
-        void utf8_to_gbk(std::string & strUTF8);
-        utf8_to_gbk(_content);
+        void Utf8ToGbk(std::string & strUTF8);
+        Utf8ToGbk(_content);
         if (__error_mode == POP_WINDOW)
         {
             MessageBoxA(NULL, _content.c_str(), "Error", 0);
         }
-
-        if (__error_mode == PVZ_TITLE)
+        else if (__error_mode == CONSOLE)
         {
-            SetWindowTextA(__pvz_hwnd, _content.c_str());
+
+            std::printf(_content.c_str());
+            // WriteConsole(hOutput, _content.c_str(), _content.size(), NULL, NULL); //向控制台窗口写入信息
         }
     };
 

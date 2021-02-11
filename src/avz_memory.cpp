@@ -167,23 +167,24 @@ namespace AvZ
         return false;
     }
 
-    void Ice3(int time)
+    void SetPlantActiveTime(PlantType plant_type, int delay_time)
     {
         extern TimeWave __time_wave_insert;
         auto temp = __time_wave_insert;
-        Delay(time - 95);
+        Delay(delay_time - 95);
         InsertOperation([=]() {
-            auto ice_plant = __main_object->plantArray();
-            for (int index = 0; index < __main_object->plantCountMax(); ++index, ++ice_plant)
+            // 这里不做植物类型检测
+            auto plant = __main_object->plantArray();
+            for (int index = 0; index < __main_object->plantCountMax(); ++index, ++plant)
             {
-                if (!ice_plant->isDisappeared() && !ice_plant->isCrushed() && ice_plant->type() == ICE_SHROOM && ice_plant->state() == 2)
+                if (!plant->isDisappeared() && !plant->isCrushed() && plant->type() == plant_type && plant->state() == 2)
                 {
-                    ice_plant->explodeCountdown() = 96;
+                    plant->explodeCountdown() = 96;
                     return;
                 }
             }
         },
-                        "ice3");
+                        "SetSeedActiveTime");
         SetTime(temp);
     }
 
@@ -207,7 +208,7 @@ namespace AvZ
     {
         while (__main_object->text()->disappearCountdown())
         {
-            exit_sleep(1);
+            ExitSleep(1);
         }
         std::vector<int> zombie_type_vec;
 
@@ -247,7 +248,7 @@ namespace AvZ
     {
         while (__main_object->text()->disappearCountdown())
         {
-            exit_sleep(1);
+            ExitSleep(1);
         }
         std::vector<int> zombie_type_vec;
 

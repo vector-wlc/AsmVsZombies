@@ -53,7 +53,7 @@ namespace AvZ
     // Shovel(4, 6)--------铲除4行6列的植物,如果植物有南瓜保护默认铲除被保护植物
     // Shovel(4, 6, true)---铲除4行6列的植物,如果植物有南瓜保护铲除南瓜
     // Shovel({{3, 6},{4, 6}})------铲除3行6列，4行6列的植物
-    void Shovel(const std::vector<ShovelCrood> &lst)
+    void Shovel(const std::vector<ShovelPosition> &lst)
     {
         InsertOperation([=]() {
             for (const auto &crood : lst)
@@ -78,9 +78,13 @@ namespace AvZ
         {
             int t_col = static_cast<int>(col + 0.5);
             if (t_col > 5)
-                y = 45 + 85 * row;
+            {
+                y = 35 + 85 * row;
+            }
             else
-                y = 45 + 85 * row + (120 - 20 * t_col);
+            {
+                y = 35 + 85 * row + (120 - 20 * t_col);
+            }
         }
         else
         {

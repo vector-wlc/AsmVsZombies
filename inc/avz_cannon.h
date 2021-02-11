@@ -196,7 +196,7 @@ namespace AvZ
         // *** 使用示例：
         // pao(2,9)----------------炮击二行，九列
         // pao({ {2,9},{5,9} })-----炮击二行，九列，五行，九列
-        void pao(const std::vector<Crood> &lst);
+        void pao(const std::vector<Position> &lst);
 
         // *** In Queue
         // 发炮函数 炮CD恢复自动发炮
@@ -210,7 +210,7 @@ namespace AvZ
         // *** 使用示例：
         // recoverPao(2,9)----------------炮击二行，九列
         // recoverPao({ {2,9},{5,9} })-----炮击二行，九列，五行，九列
-        void recoverPao(const std::vector<Crood> &lst);
+        void recoverPao(const std::vector<Position> &lst);
 
         // *** In Queue
         // 屋顶修正飞行时间发炮. 此函数开销较大不适合精确键控.
@@ -226,7 +226,7 @@ namespace AvZ
         // *** 使用示例：
         // roofPao(3,7)---------------------修正飞行时间后炮击3行7列
         // roofPao({ {2,9},{5,9} })---------修正飞行时间后炮击2行9列,5行9列
-        void roofPao(const std::vector<Crood> &lst);
+        void roofPao(const std::vector<Position> &lst);
 
         // *** In Queue
         // 重置炮列表

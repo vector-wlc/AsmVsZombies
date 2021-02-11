@@ -47,6 +47,7 @@
 #define setWaveLength SetWavelength
 #define setZombies SetZombies
 #define setWaveZombies SetWaveZombies
+#define Ice3(delay_time) SetPlantActiveTime(ICE_SHROOM, delay_time)
 #define ice3 Ice3
 #define setGameSpeed SetGameSpeed
 

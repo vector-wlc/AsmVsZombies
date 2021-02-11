@@ -12,7 +12,7 @@
 
 namespace AvZ
 {
-    struct ShovelCrood
+    struct ShovelPosition
     {
         int row;
         float col;
@@ -56,7 +56,7 @@ namespace AvZ
     // Shovel(4, 6)--------铲除4行6列的植物,如果植物有南瓜保护默认铲除被保护植物
     // Shovel(4, 6, true)---铲除4行6列的植物,如果植物有南瓜保护铲除南瓜
     // Shovel({{3, 6},{4, 6}})------铲除3行6列，4行6列的植物
-    void Shovel(const std::vector<ShovelCrood> &lst);
+    void Shovel(const std::vector<ShovelPosition> &lst);
 
 } // namespace AvZ
 #endif

@@ -14,8 +14,6 @@ AvZ 操作精度为理论上的100%绝对精准，使用这套框架将再也不
 
 本项目使用 [VSCode](https://code.visualstudio.com/) + MinGW 进行代码编辑、编译和注入。 
 
-<!-- ~~本项目编译器有两个选择，分别是 MinGW 和 MSVC，使用者可根据自身情况选择使用其中一个。~~ -->
-
 ## 原理
 
 在游戏主循环函数前面注入键控代码，使得键控脚本在每一帧都被调用，从而实现真正意义上100%精确的键控。
@@ -26,8 +24,6 @@ AvZ 操作精度为理论上的100%绝对精准，使用这套框架将再也不
 
 > 缺点 
 >
-<!-- > * ~~软件体积更大 (MSVC--VS)~~
-> * ~~复杂脚本编写工作量可能更大~~ -->
 > * 编写不慎可能会导致游戏崩溃
 
 > 优点
@@ -45,19 +41,6 @@ AvZ 操作精度为理论上的100%绝对精准，使用这套框架将再也不
 在 [https://wwe.lanzous.com/b015az8yj](https://wwe.lanzous.com/b015az8yj) (37zu) 下载相应版本包，
 进行更新或退回，注意在 2020_07_10 之后的版本包将只支持新的 [VSCode](https://code.visualstudio.com/) 环境包
 
-<!-- #### ~~MSVC Visual Studio~~
-
-~~Visual Studio 使用方便，无需配置，简单粗暴，稳定可靠。但是其体积庞大，安装包大概 2-3 G。~~
-
-~~若您的电脑硬盘容量足够，请优先使用 VS~~
-
-**~~注意~~**  ~~部分 win7 可能无法正常安装 Visual Studio~~ -->
-
-
-<!-- ## 问题（BUG）
-
-部分 Windows 7 仍存在使用 selectCards 函数崩溃的问题 -->
-
 ## 致谢
 [yuchenxi2000/AssemblyVsZombies](https://github.com/yuchenxi2000/AssemblyVsZombies)<br>
 [lmintlcx/pvzscript](https://github.com/lmintlcx/pvzscripts)<br>
@@ -65,6 +48,22 @@ AvZ 操作精度为理论上的100%绝对精准，使用这套框架将再也不
 [Power_tile(bilibili)](https://space.bilibili.com/367385512)
 
 ## 更新日志
+
+AvZ 2021_02_11
+
+* 开放得到卡片索引接口 GetCardIndex
+* 新增设置脚本开始时间函数 SetScriptStartTime
+* 脚本默认时间设定为进入战斗界面的时间
+* Ice3 函数升级为 SetPlantActiveTime，并且 Ice3 函数以宏的形式提供
+* 修正 GridToCoordinate 的坐标计算问题
+* STRUCT Crood 更名为 Position
+
+AvZ 2020_12_26
+
+* 新增 SetDelayTime，可更方便的用于键盘绑定函数中
+* SetErrorMode 中的参数由 AvZ::PVZ_TITLE 变为 AvZ::CONSOLE，即错误提示转换为控制台显示
+* 新增 ScriptExitDeal 脚本退出处理函数，方便动态内存管理
+* 没有削弱 vector-wlc 的头发
 
 AvZ 2020_11_01
 

@@ -47,12 +47,20 @@ namespace AvZ
     // });
     void SelectCards(const std::vector<int> &lst);
 
-    // 用卡函数 Not In Queue
+    // *** Not In Queue
+    // 根据卡片名称得到卡片索引
+    // *** 注意：卡片索引从 0 开始
+    // *** 使用示例：
+    // GetCardIndex(ICE_SHROOM) ---- 得到寒冰菇的卡片索引
+    int GetCardIndex(PlantType plant_type);
+
+    // *** Not In Queue
+    // 用卡函数
     // *** 使用示例：
     // CardNotInQueue(1, 2, 3)---------选取第1张卡片，放在2行,3列
     // CardNotInQueue(1, {{2, 3}, {3, 4}})--------选取第1张卡片，优先放在2行,3列，其次放在3行,4列
     void CardNotInQueue(int seed_index, int row, float col);
-    void CardNotInQueue(int seed_index, const std::vector<Crood> &lst);
+    void CardNotInQueue(int seed_index, const std::vector<Position> &lst);
 
     // *** In Queue
     // 用卡函数
@@ -64,9 +72,9 @@ namespace AvZ
     // Card({{CHERRY_BOMB, 2, 3}, {JALAPENO, 3, 4}})---------选取樱桃卡片，放在2行,3列，选取辣椒卡片，放在3行,4列
     void Card(const std::vector<CardName> &lst);
     void Card(int seed_index, int row, float col);
-    void Card(int seed_index, const std::vector<Crood> &lst);
+    void Card(int seed_index, const std::vector<Position> &lst);
     void Card(PlantType plant_type, int row, float col);
-    void Card(PlantType plant_type, const std::vector<Crood> &lst);
+    void Card(PlantType plant_type, const std::vector<Position> &lst);
 
 } // namespace AvZ
 #endif

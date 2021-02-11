@@ -13,14 +13,13 @@
 
 namespace AvZ
 {
-    std::map<int, int> __seed_name_to_index_map;
-    std::vector<Grid> __select_card_vec;
-
+    extern std::map<int, int> __seed_name_to_index_map;
+    extern std::vector<Grid> __select_card_vec;
     extern PvZ *__pvz_base;
     extern MainObject *__main_object;
     extern HWND __pvz_hwnd;
 
-    bool choose_card(int row, int col)
+    bool ChooseCard(int row, int col)
     {
         int yp, xp;
         if (row > 6) // 模仿者卡片
@@ -46,13 +45,13 @@ namespace AvZ
         return true;
     }
 
-    void click_btn(int x, int y)
+    void ClickBtn(int x, int y)
     {
         PostMessage(__pvz_hwnd, WM_LBUTTONDOWN, 0, (y & 0xFFFF) << 16 | (x & 0xFFFF));
         PostMessage(__pvz_hwnd, WM_LBUTTONUP, 0, (y & 0xFFFF) << 16 | (x & 0xFFFF));
     }
 
-    void deal_wrong_click()
+    void DealWrongClick()
     {
         int z_cnt_max = __main_object->zombieTotal();
         auto zombie_memory = __main_object->zombieArray();
@@ -65,7 +64,7 @@ namespace AvZ
         }
     }
 
-    void select_cards()
+    void ChooseCards()
     {
         static auto it = __select_card_vec.begin();
 
@@ -82,7 +81,7 @@ namespace AvZ
 
         if (it != __select_card_vec.end())
         {
-            if (choose_card(it->row, it->col))
+            if (ChooseCard(it->row, it->col))
             {
                 ++it;
             }
@@ -145,6 +144,7 @@ namespace AvZ
             return;
         }
 
+        SafeClick();
         auto seed = __main_object->seedArray() + seed_index - 1;
         if (!seed->isUsable())
         {
@@ -157,7 +157,7 @@ namespace AvZ
         SafeClick();
     }
 
-    void CardNotInQueue(int seed_index, const std::vector<Crood> &lst)
+    void CardNotInQueue(int seed_index, const std::vector<Position> &lst)
     {
         if (seed_index > 10 || seed_index < 1)
         {
@@ -165,6 +165,7 @@ namespace AvZ
             return;
         }
 
+        SafeClick();
         auto seed = __main_object->seedArray() + seed_index - 1;
         if (!seed->isUsable())
         {
@@ -180,7 +181,7 @@ namespace AvZ
         SafeClick();
     }
 
-    int get_seed_index_for_seed_name(PlantType plant_type)
+    int GetCardIndex(PlantType plant_type)
     {
         if (__seed_name_to_index_map.empty())
         {
@@ -232,7 +233,7 @@ namespace AvZ
     void Card(PlantType plant_type, int row, float col)
     {
         InsertOperation([=]() {
-            int seed_index = get_seed_index_for_seed_name(plant_type);
+            int seed_index = GetCardIndex(plant_type);
             if (seed_index == -1)
             {
                 return;
@@ -244,21 +245,13 @@ namespace AvZ
 
     void Card(const std::vector<CardName> &lst)
     {
-        InsertOperation([=]() {
-            for (const auto &each : lst)
-            {
-                int seed_index = get_seed_index_for_seed_name(each.plant_type);
-                if (seed_index == -1)
-                {
-                    return;
-                }
-                CardNotInQueue(seed_index + 1, each.row, each.col);
-            }
-        },
-                        "card");
+        for (const auto &each : lst)
+        {
+            Card(each.plant_type, each.row, each.col);
+        }
     }
 
-    void Card(int seed_index, const std::vector<Crood> &lst)
+    void Card(int seed_index, const std::vector<Position> &lst)
     {
         InsertOperation([=]() {
             CardNotInQueue(seed_index, lst);
@@ -266,10 +259,10 @@ namespace AvZ
                         "card");
     }
 
-    void Card(PlantType plant_type, const std::vector<Crood> &lst)
+    void Card(PlantType plant_type, const std::vector<Position> &lst)
     {
         InsertOperation([=]() {
-            int seed_index = get_seed_index_for_seed_name(plant_type);
+            int seed_index = GetCardIndex(plant_type);
             if (seed_index == -1)
             {
                 return;

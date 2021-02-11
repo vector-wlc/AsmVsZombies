@@ -323,6 +323,10 @@ public:
     {
         return (int &)((uint8_t *)this)[0x55a4];
     }
+    int &totalWave()
+    {
+        return (int &)((uint8_t *)this)[0x5564];
+    }
     int &wave()
     {
         return (int &)((uint8_t *)this)[0x557c];
