@@ -60,7 +60,6 @@ void Script()
 #if __AVZ_VERSION__ == 201101
 
     OpenMultipleEffective('Q', MAIN_UI_OR_FIGHT_UI);
-    ShowError();
     SetZombies({CG_3, TT_4, BC_12, XC_15, QQ_16, FT_21, TL_22, BY_23, HY_32, TT_18, WW_8});
     SelectCards({
         ICE_SHROOM,
