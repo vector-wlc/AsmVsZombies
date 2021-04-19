@@ -16,27 +16,28 @@
  */
 
 #include "avz.h"
+using namespace AvZ;
 
 #ifdef __AVZ_VERSION__
-#if __AVZ_VERSION__ == 200710
+#if __AVZ_VERSION__ == 210419
 
 // 枚举卡片的对象序列
 enum SeedIndex
 {
-    ICE_SHROOM = 0,      // 寒冰菇
-    ICE_SHROOM_IMITATOR, // 模仿寒冰菇
-    COFFEE_BEEN,         // 咖啡豆
-    SQUASH,              // 倭瓜
-    CHERRY,              // 樱桃炸弹
-    CHILI,               // 火爆辣椒
-    PUMPKIN,             // 南瓜头
-    CLOVER,              // 三叶草
-    FUME_SHROOM,         // 大喷菇
-    PUFF_SHROOM          // 小喷菇
+    _ICE_SHROOM = 0,      // 寒冰菇
+    _ICE_SHROOM_IMITATOR, // 模仿寒冰菇
+    _COFFEE_BEEN,         // 咖啡豆
+    _SQUASH,              // 倭瓜
+    _CHERRY,              // 樱桃炸弹
+    _CHILI,               // 火爆辣椒
+    _PUMPKIN,             // 南瓜头
+    _CLOVER,              // 三叶草
+    _FUME_SHROOM,         // 大喷菇
+    _PUFF_SHROOM          // 小喷菇
 };
 
-AvZ::TickRunner clover_user; // 使用三叶草
-AvZ::TickRunner squash_user; // 使用倭瓜
+TickRunner clover_user; // 使用三叶草
+TickRunner squash_user; // 使用倭瓜
 
 // 使用三叶草
 void UseClover();
@@ -56,11 +57,23 @@ bool IsHaveCannon();
 void Script()
 {
 #ifdef __AVZ_VERSION__
-#if __AVZ_VERSION__ == 200710
+#if __AVZ_VERSION__ == 210419
 
-    OpenMultipleEffective();
-    SetZombies({CG_3, TT_4, BC_12, XC_15, QQ_16, FT_21, TL_22, BY_23, HY_32, TT_18});
-    SelectCards({{"hbg"}, {"Mhbg"}, {"kfd"}, {"wg"}, {"ytzd"}, {"hblj"}, {"ngt"}, {"syc"}, {"dpg"}, {"xpg"}});
+    OpenMultipleEffective('Q', MAIN_UI_OR_FIGHT_UI);
+    SetZombies({CG_3, TT_4, BC_12, XC_15, QQ_16, FT_21, TL_22, BY_23, HY_32, TT_18, WW_8});
+    SelectCards({
+        ICE_SHROOM,
+        M_ICE_SHROOM,
+        COFFEE_BEAN,
+        SQUASH,
+        CHERRY_BOMB,
+        JALAPENO,
+        PUMPKIN,
+        BLOVER,
+        SCAREDY_SHROOM,
+        PUFF_SHROOM,
+    });
+    MaidCheats::dancing();
     clover_user.pushFunc(UseClover);
     squash_user.pushFunc(UseSquash);
 
@@ -73,11 +86,11 @@ void Script()
 
     for (int wave = 1; wave < 21; ++wave)
     {
-        WaitUntil(0, wave);
+        SafeWaitUntil(0, wave);
         // 冰杀小偷
         if (RangeIn(wave, {10, 20}))
         {
-            WaitUntil(375 - 298 + 50, wave);
+            SafeWaitUntil(375 - 298 + 50, wave);
             ice_filler.coffee();
         }
         else
@@ -89,7 +102,7 @@ void Script()
         if (RangeIn(wave, {9, 19, 20}))
         {
             // 如果发现有红眼再进行炮击
-            if (AvZ::isZombieExist(HY_32))
+            if (IsZombieExist(HY_32))
             {
                 pao_operator.recoverPao({{2, 8.5}, {5, 8.5}});
             }
@@ -97,28 +110,26 @@ void Script()
     }
 
 #else
-    AvZ::popErrorWindowNotInQueue("您的版本号与此脚本不对应！");
+#error 您的版本号与此脚本不对应！
 #endif
 
 #else
-    AvZ::popErrorWindowNotInQueue("您的版本号与此脚本不对应！");
+#error 您的版本号与此脚本不对应！
 #endif
 }
 
 #ifdef __AVZ_VERSION__
-#if __AVZ_VERSION__ == 200710
+#if __AVZ_VERSION__ == 210419
 
 void UseClover()
 {
-    auto clover = AvZ::mainObject()->seedArray() + CLOVER; // 首先取出三叶草信息内存块
-    auto zombie = AvZ::mainObject()->zombieArray();        // 再取出僵尸的内存块
+    auto _clover = GetMainObject()->seedArray() + _CLOVER; // 首先取出三叶草信息内存块
+    auto zombie = GetMainObject()->zombieArray();          // 再取出僵尸的内存块
 
-    int index, zombie_count_max;
-    if (clover->isUsable())
+    if (_clover->isUsable())
     {
         // 遍历全场僵尸
-        zombie_count_max = AvZ::mainObject()->zombieTotal();
-        for (index = 0; index < zombie_count_max; ++index)
+        for (int index = 0; index < GetMainObject()->zombieTotal(); ++index)
         {
             // 如果气球僵尸快飞到家了
             if (zombie[index].isExist() &&
@@ -127,7 +138,7 @@ void UseClover()
                 zombie[index].abscissa() <= 2.5 * 80)
             {
                 // 种植三叶草
-                AvZ::cardNotInQueue(CLOVER + 1, 2, 7);
+                CardNotInQueue(_CLOVER + 1, 2, 7);
                 break;
             }
         }
@@ -137,21 +148,21 @@ void UseClover()
 void DealWave(int wave)
 {
     // 此处模拟人为反应
-    WaitUntil(50, wave);
+    SafeWaitUntil(50, wave);
 
     // 辣椒和樱桃总是同时使用，所以只需要检测一个的就行
-    auto seed = AvZ::mainObject()->seedArray();
+    auto seed = GetMainObject()->seedArray();
 
     if (IsHaveCannon())
     {
         pao_operator.pao({{2, 8.5}, {5, 8.5}});
     }
-    else if (seed[CHERRY].isUsable() || 5000 - seed[CHERRY].cd() < 280)
+    else if (seed[_CHERRY].isUsable() || 5000 - seed[_CHERRY].cd() < 280)
     {
-        WaitUntil(440 - 10, wave);
+        SafeWaitUntil(440 - 10, wave);
         // 使用辣椒樱桃
-        Card(CHILI + 1, 5, 7);
-        Card(CHERRY + 1, {{2, 8}, {2, 7}});
+        Card(_CHILI + 1, 5, 7);
+        Card(_CHERRY + 1, {{2, 8}, {2, 7}});
     }
     else // 灰烬没有恢复只能冰杀
     {
@@ -161,8 +172,8 @@ void DealWave(int wave)
 
 void UseSquash()
 {
-    auto seed = AvZ::mainObject()->seedArray();
-    auto zombie = AvZ::mainObject()->zombieArray();
+    auto seed = GetMainObject()->seedArray();
+    auto zombie = GetMainObject()->zombieArray();
 
     struct
     {
@@ -172,12 +183,12 @@ void UseSquash()
 
     int index = 0, zombie_count_max = 0, zombie_type = 0, zombie_row = 0;
     float zombie_abscissa = 0.0;
-    AvZ::Grid use_squash_grid{0, 0};
+    Grid use_squash_grid{0, 0};
 
     zombie_min_position = {800, 0};
-    if (seed[SQUASH].isUsable())
+    if (seed[_SQUASH].isUsable())
     {
-        zombie_count_max = AvZ::mainObject()->zombieTotal();
+        zombie_count_max = GetMainObject()->zombieTotal();
         for (index = 0; index < zombie_count_max; ++index)
         {
 
@@ -212,8 +223,8 @@ void UseSquash()
                 use_squash_grid.col = 9;
             if (use_squash_grid.col < 6)
                 use_squash_grid.col = 6;
-            AvZ::shovelNotInQueue(use_squash_grid.row, use_squash_grid.col);
-            AvZ::cardNotInQueue(SQUASH + 1, use_squash_grid.row, use_squash_grid.col);
+            ShovelNotInQueue(use_squash_grid.row, use_squash_grid.col);
+            CardNotInQueue(_SQUASH + 1, use_squash_grid.row, use_squash_grid.col);
         }
     }
 }
@@ -221,14 +232,16 @@ void UseSquash()
 // 是否还有炮
 bool IsHaveCannon()
 {
-    std::vector<AvZ::Grid> cannon_grids = {{3, 1},
-                                           {4, 1},
-                                           {3, 3},
-                                           {4, 3}};
+    std::vector<Grid> cannon_grids = {
+        {3, 1},
+        {4, 1},
+        {3, 3},
+        {4, 3},
+    };
     std::vector<int> cannon_indexs;
-    AvZ::getPlantIndexs(cannon_grids, YMJNP_47, cannon_indexs);
+    GetPlantIndices(cannon_grids, YMJNP_47, cannon_indexs);
 
-    auto cannon = AvZ::mainObject()->plantArray();
+    auto cannon = GetMainObject()->plantArray();
     for (const auto &ele : cannon_indexs)
     {
         if (cannon[ele].state() == 37) // 状态为 37 代表能用

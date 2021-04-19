@@ -40,17 +40,7 @@ namespace AvZ
         int refresh_time = -1;
         int wave_length = -1;
         std::map<int, std::vector<Operation>> queue;
-        bool is_time_arrived()
-        {
-            extern MainObject *__main_object;
-            if (queue.begin()->first < __main_object->gameClock() - refresh_time)
-            {
-                ShowErrorNotInQueue("您设定时间为 #cs, 但当前时间已到 #cs, 按下确定将以当前时间执行此次操作",
-                                    queue.begin()->first,
-                                    __main_object->gameClock() - refresh_time);
-            }
-            return queue.begin()->first <= __main_object->gameClock() - refresh_time;
-        }
+        bool is_time_arrived();
     };
 
     struct LabelOperation

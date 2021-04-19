@@ -21,6 +21,7 @@ struct Text;            // 文字属性
 struct AnimationMain;   // 动画主要对象
 struct AnimationOffset; // 动画地址偏移
 struct Animation;       // 动画
+struct CardSlot;        // 卡槽
 
 // 安全指针，防止访问野指针
 template <class T>
@@ -365,6 +366,12 @@ public:
     {
         return *(Text **)((uint8_t *)this + 0x140);
     }
+
+    // 载入存档的状态
+    int &loadDataState()
+    {
+        return (int &)((uint8_t *)this)[0x5604];
+    }
 };
 
 struct Plant
@@ -601,6 +608,9 @@ private:
 public:
     uint8_t data[0x50];
 
+    // 返回卡槽中的卡牌个数
+    // 注意：此函数不能迭代使用！！！
+    // 只能这样使用：auto seed_count = GetMainObject()->seedArray()->count();
     int &count()
     {
         return (int &)((uint8_t *)this)[0x24];
@@ -608,27 +618,47 @@ public:
 
     bool &isUsable()
     {
-        return (bool &)((uint8_t *)this)[0x70];
+        return (bool &)((uint8_t *)this)[0x4c + 0x24];
     }
 
     int &cd()
     {
-        return (int &)((uint8_t *)this)[0x4c];
+        return (int &)((uint8_t *)this)[0x28 + 0x24];
     }
 
     int &initialCd()
     {
-        return (int &)((uint8_t *)this)[0x50];
+        return (int &)((uint8_t *)this)[0x2c + 0x24];
     }
 
     int &imitatorType()
     {
-        return (int &)((uint8_t *)this)[0x60];
+        return (int &)((uint8_t *)this)[0x3c + 0x24];
     }
 
     int &type()
     {
-        return (int &)((uint8_t *)this)[0x5c];
+        return (int &)((uint8_t *)this)[0x38 + 0x24];
+    }
+
+    int &abscissa()
+    {
+        return (int &)((uint8_t *)this)[0xc + 0x24];
+    }
+
+    int &ordinate()
+    {
+        return (int &)((uint8_t *)this)[0x10 + 0x24];
+    }
+
+    int &height()
+    {
+        return (int &)((uint8_t *)this)[0x18 + 0x24];
+    }
+
+    int &width()
+    {
+        return (int &)((uint8_t *)this)[0x14 + 0x24];
     }
 };
 

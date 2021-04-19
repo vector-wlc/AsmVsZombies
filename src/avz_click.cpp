@@ -18,7 +18,8 @@ namespace AvZ
     void ClickSeed(int seed_index)
     {
         extern MainObject *__main_object;
-        Asm::ClickScene(__main_object, 50 + 50 * seed_index, 70, 1);
+        auto seed = __main_object->seedArray() + seed_index - 1;
+        Asm::ClickScene(__main_object, int(seed->abscissa() + seed->width() / 2), int(seed->ordinate() + seed->height() / 2), 1);
     }
 
     // *** Not In Queue
@@ -112,7 +113,7 @@ namespace AvZ
         }
         else
         {
-            ClickGrid(row, col, 10);
+            ClickGrid(row, col, 20);
         }
         SafeClick();
     }

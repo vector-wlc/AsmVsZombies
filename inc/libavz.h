@@ -7,7 +7,7 @@
 #ifndef __LIBAVZ_H__
 #define __LIBAVZ_H__
 
-#define __AVZ_VERSION__ 210211
+#define __AVZ_VERSION__ 210419
 
 #include "memory.h"
 #include "pvzfunc.h"

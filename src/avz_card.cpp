@@ -138,7 +138,8 @@ namespace AvZ
 
     void CardNotInQueue(int seed_index, int row, float col)
     {
-        if (seed_index > 10 || seed_index < 1)
+        auto seed_count = __main_object->seedArray()->count();
+        if (seed_index > seed_count || seed_index < 1)
         {
             ShowErrorNotInQueue("Card : 您填写的参数 # 已溢出，请检查卡片名字是否错写为单引号", seed_index);
             return;
@@ -159,7 +160,8 @@ namespace AvZ
 
     void CardNotInQueue(int seed_index, const std::vector<Position> &lst)
     {
-        if (seed_index > 10 || seed_index < 1)
+        auto seed_count = __main_object->seedArray()->count();
+        if (seed_index > seed_count || seed_index < 1)
         {
             ShowErrorNotInQueue("Card : 您填写的参数 # 已溢出", seed_index);
             return;

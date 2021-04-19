@@ -18,6 +18,7 @@
 
 namespace AvZ
 {
+    const int __DEFAULT_START_TIME = -0xffff;
     extern PvZ *__pvz_base;
     extern MainObject *__main_object;
     extern ItemCollector item_collector;
@@ -117,7 +118,7 @@ namespace AvZ
             return;
         }
 
-        if ((__time_wave_insert.wave != 1 || __time_wave_insert.wave % 10 != 0) &&
+        if ((__time_wave_insert.wave != 1 && __time_wave_insert.wave % 10 != 0) &&
             __time_wave_insert.time < -200 &&
             __operation_queue_vec[__time_wave_insert.wave - 2].wave_length == -1)
         {
@@ -296,7 +297,7 @@ namespace AvZ
         else
         {
             __time_wave_start.wave = 1;
-            __time_wave_start.time = -600;
+            __time_wave_start.time = __DEFAULT_START_TIME;
         }
         SetTime(__time_wave_start);
 
@@ -441,6 +442,18 @@ namespace AvZ
         }
     }
 
+    bool OperationQueue::is_time_arrived()
+    {
+        extern MainObject *__main_object;
+        if (queue.begin()->first < __main_object->gameClock() - refresh_time && queue.begin()->first != __DEFAULT_START_TIME)
+        {
+            ShowErrorNotInQueue("您设定时间为 #cs, 但当前时间已到 #cs, 按下确定将以当前时间执行此次操作",
+                                queue.begin()->first,
+                                __main_object->gameClock() - refresh_time);
+        }
+        return queue.begin()->first <= __main_object->gameClock() - refresh_time;
+    }
+
     void __Run(MainObject *level, std::function<void()> Script)
     {
         extern MainObject *__main_object;
@@ -450,18 +463,16 @@ namespace AvZ
             return;
         }
         __main_object = level;
+        // 假进入战斗界面直接返回
+        if (__main_object->loadDataState() == 1)
+        {
+            return;
+        }
 
         if (!__is_loaded)
         {
             void InitAddress();
             InitAddress();
-            // 假进入战斗界面直接返回
-            if (__pvz_base->gameUi() == 3 &&
-                (__main_object->text()->disappearCountdown() == 1001 ||
-                 __main_object->text()->disappearCountdown() == 1000))
-            {
-                return;
-            }
             std::thread task(LoadScript, Script);
             task.detach();
             while (!__is_loaded)
@@ -482,12 +493,8 @@ namespace AvZ
             return;
         }
 
-        // 假进入战斗界面直接返回
-        if ((__main_object->selectCardUi_m()->orizontalScreenOffset() != 0 &&
-             __main_object->selectCardUi_m()->orizontalScreenOffset() != 7830 &&
-             __main_object->selectCardUi_m()->orizontalScreenOffset() != 9780) ||
-            __main_object->text()->disappearCountdown() == 1001 ||
-            __main_object->text()->disappearCountdown() == 1000)
+        // 以下代码到战斗界面才能执行
+        if (__pvz_base->gameUi() == 2)
         {
             return;
         }
@@ -515,23 +522,20 @@ namespace AvZ
         // 卧槽，感觉好亏，不过游戏应该不会卡顿
         for (int wave = 0; wave < __main_object->totalWave(); ++wave)
         {
-            if (__operation_queue_vec[wave].refresh_time == -1 ||
-                __operation_queue_vec[wave].queue.empty() ||
-                !__operation_queue_vec[wave].is_time_arrived())
+            while (__operation_queue_vec[wave].refresh_time != -1 && // 波次刷新时间已知
+                   !__operation_queue_vec[wave].queue.empty() &&     // 有操作
+                   __operation_queue_vec[wave].is_time_arrived())    // 操作时间已到达
             {
-                // 波次没有到达或队列为空或时间没有到达，跳过
-                continue;
-            }
+                auto it = __operation_queue_vec[wave].queue.begin();
+                __time_wave_run.wave = wave + 1;
+                __time_wave_run.time = it->first;
 
-            auto it = __operation_queue_vec[wave].queue.begin();
-            __time_wave_run.wave = wave + 1;
-            __time_wave_run.time = it->first;
-
-            for (const auto &ele : it->second)
-            {
-                ele.operation();
+                for (const auto &ele : it->second)
+                {
+                    ele.operation();
+                }
+                __operation_queue_vec[wave].queue.erase(it);
             }
-            __operation_queue_vec[wave].queue.erase(it);
         }
     }
 
