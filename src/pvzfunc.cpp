@@ -7,6 +7,9 @@
 
 #include "pvzfunc.h"
 
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+
 void Asm::ClickScene(MainObject *level, int x, int y, int key)
 {
     if ((*(PvZ **)0x6a9ec0)->gameUi() != 3)
@@ -227,3 +230,5 @@ void Asm::paoShoot(int x, int y, int rank)
     }
 #endif
 }
+
+#pragma GCC pop_options
