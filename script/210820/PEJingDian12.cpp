@@ -12,7 +12,7 @@ using namespace AvZ;
 void Script()
 {
 #ifdef __AVZ_VERSION__
-#if __AVZ_VERSION__ == 210419
+#if __AVZ_VERSION__ == 210820
 
     SetZombies({CG_3, TT_4, BC_12, XC_15, QQ_16, FT_21, TL_22, BY_23, HY_32, TT_18});
 

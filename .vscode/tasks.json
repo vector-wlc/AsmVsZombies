@@ -17,10 +17,7 @@
                 "-shared",
                 "-o",
                 "${workspaceRoot}\\bin\\libavz.dll"
-            ],
-            "options": {
-                "cwd": "E:\\MinGW\\bin"
-            }
+            ]
         }
     ],
     "version": "2.0.0"

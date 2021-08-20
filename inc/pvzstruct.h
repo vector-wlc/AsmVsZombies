@@ -1,8 +1,8 @@
 #pragma once
 
 #include <Windows.h>
-#include <type_traits>
 #include <cstdint>
+#include <type_traits>
 
 struct PvZ;             // 游戏主体
 struct MainObject;      // 主要对象
@@ -25,31 +25,30 @@ struct CardSlot;        // 卡槽
 
 // 安全指针，防止访问野指针
 template <class T>
-class SafePtr
-{
+class SafePtr {
 private:
-    T *t;
+    T* t;
     static T __t;
 
-    int &game_ui()
+    int& game_ui()
     {
-        return (int &)((uint8_t *)((*(void **)(0x6a9ec0))))[0x7fc];
+        return (int&)((uint8_t*)((*(void**)(0x6a9ec0))))[0x7fc];
     }
 
     template <class D>
     SafePtr<typename std::enable_if<std::is_base_of<T, D>::value, D>::type> safeptr_to_safeptr()
     {
-        return SafePtr<D>((D *)t);
+        return SafePtr<D>((D*)t);
     }
 
     template <class D>
-    typename std::enable_if<std::is_base_of<T, D>::value, D>::type *safeptr_to_unsafeptr()
+    typename std::enable_if<std::is_base_of<T, D>::value, D>::type* safeptr_to_unsafeptr()
     {
-        return (D *)t;
+        return (D*)t;
     }
 
 public:
-    SafePtr(T *_t)
+    SafePtr(T* _t)
     {
         t = _t;
     }
@@ -58,12 +57,12 @@ public:
     {
     }
 
-    operator void *()
+    operator void*()
     {
         return t;
     }
 
-    T *toUnsafe()
+    T* toUnsafe()
     {
         return t;
     }
@@ -75,24 +74,22 @@ public:
     }
 
     template <class D>
-    operator D *()
+    operator D*()
     {
         return safeptr_to_unsafeptr<D>();
     }
 
-    T *operator->()
+    T* operator->()
     {
-        if (game_ui() == 1)
-        {
+        if (game_ui() == 1) {
             return &__t;
         }
         return t;
     }
 
-    T &operator[](int index)
+    T& operator[](int index)
     {
-        if (game_ui() == 1)
-        {
+        if (game_ui() == 1) {
             return __t;
         }
         return t[index];
@@ -100,8 +97,7 @@ public:
 
     SafePtr<T> operator+(int index)
     {
-        if (game_ui() == 1)
-        {
+        if (game_ui() == 1) {
             return &__t;
         }
         return t + index;
@@ -109,8 +105,7 @@ public:
 
     SafePtr<T> operator-(int index)
     {
-        if (game_ui() == 1)
-        {
+        if (game_ui() == 1) {
             return &__t;
         }
         return t - index;
@@ -118,8 +113,7 @@ public:
 
     SafePtr<T> operator++()
     {
-        if (game_ui() == 1)
-        {
+        if (game_ui() == 1) {
             return &__t;
         }
         return ++t;
@@ -127,16 +121,14 @@ public:
 
     SafePtr<T> operator++(int)
     {
-        if (game_ui() == 1)
-        {
+        if (game_ui() == 1) {
             return &__t;
         }
         return t++;
     }
     SafePtr<T> operator--()
     {
-        if (game_ui() == 1)
-        {
+        if (game_ui() == 1) {
             return &__t;
         }
         return --t;
@@ -144,8 +136,7 @@ public:
 
     SafePtr<T> operator--(int)
     {
-        if (game_ui() == 1)
-        {
+        if (game_ui() == 1) {
             return &__t;
         }
         return t--;
@@ -153,8 +144,7 @@ public:
 
     SafePtr<T> operator+=(int index)
     {
-        if (game_ui() == 1)
-        {
+        if (game_ui() == 1) {
             return &__t;
         }
         return t += index;
@@ -162,8 +152,7 @@ public:
 
     SafePtr<T> operator-=(int index)
     {
-        if (game_ui() == 1)
-        {
+        if (game_ui() == 1) {
             return &__t;
         }
         return t -= index;
@@ -173,619 +162,814 @@ public:
 template <typename T>
 T SafePtr<T>::__t;
 
-struct PvZ
-{
+// 游戏基址
+struct PvZ {
 private:
-    void operator=(PvZ) {}
+    void operator=(PvZ&& __) { }
+    PvZ(PvZ&& __) { }
 
 public:
+    PvZ() { }
+    // 当前游戏信息和对象
     SafePtr<MainObject> mainObject()
     {
-        return *(MainObject **)((uint8_t *)this + 0x768);
+        return *(MainObject**)((uint8_t*)this + 0x768);
     }
 
-    MouseWindow *mouseWindow()
+    // 鼠标和窗口
+    MouseWindow* mouseWindow()
     {
-        return *(MouseWindow **)((uint8_t *)this + 0x320);
+        return *(MouseWindow**)((uint8_t*)this + 0x320);
     }
 
-    SelectCardUi_p *selectCardUi_p()
+    // 选卡界面属性
+    SelectCardUi_p* selectCardUi_p()
     {
-        return *(SelectCardUi_p **)((uint8_t *)this + 0x774);
+        return *(SelectCardUi_p**)((uint8_t*)this + 0x774);
     }
 
-    AnimationMain *animationMain()
+    // 动画信息
+    AnimationMain* animationMain()
     {
-        return *(AnimationMain **)((uint8_t *)this + 0x820);
+        return *(AnimationMain**)((uint8_t*)this + 0x820);
     }
 
-    int &gameUi()
+    // 游戏界面
+    // 1 - 主界面
+    // 2 - 选卡界面
+    // 3 - 战斗界面
+    int& gameUi()
     {
-        return (int &)((uint8_t *)this)[0x7fc];
+        return (int&)((uint8_t*)this)[0x7fc];
     }
 
-    int &tickMs()
+    // 每帧的时长
+    int& tickMs()
     {
-        return (int &)((uint8_t *)this)[0x454];
+        return (int&)((uint8_t*)this)[0x454];
     }
 };
 
-struct MainObject
-{
+// 当前游戏信息和对象
+struct MainObject {
 private:
-    void operator=(MainObject) {}
+    void operator=(MainObject&& __) { }
+    MainObject(MainObject&& __) { }
     uint8_t data[0x57b0];
 
 public:
+    MainObject() { }
+    // 僵尸内存数组
     SafePtr<Zombie> zombieArray()
     {
-        return *(Zombie **)((uint8_t *)this + 0x90);
+        return *(Zombie**)((uint8_t*)this + 0x90);
     }
-    int &zombieCountMax()
+
+    // 僵尸数组大小
+    int& zombieCountMax()
     {
-        return (int &)((uint8_t *)this)[0x94];
+        return (int&)((uint8_t*)this)[0x94];
     }
-    int &zombieTotal()
+
+    // 僵尸数组大小
+    int& zombieTotal()
     {
-        return (int &)((uint8_t *)this)[0x94];
+        return (int&)((uint8_t*)this)[0x94];
     }
-    int &zombieLimit()
+
+    // 僵尸数量上限
+    int& zombieLimit()
     {
-        return (int &)((uint8_t *)this)[0x98];
+        return (int&)((uint8_t*)this)[0x98];
     }
-    int &zombieNext()
+
+    // 下一个僵尸的编号
+    int& zombieNext()
     {
-        return (int &)((uint8_t *)this)[0x9c];
+        return (int&)((uint8_t*)this)[0x9c];
     }
-    int &zombieCount()
+
+    // 当前僵尸的数量
+    int& zombieCount()
     {
-        return (int &)((uint8_t *)this)[0xa0];
+        return (int&)((uint8_t*)this)[0xa0];
     }
-    int &zombieLast()
+
+    // 最后一个僵尸的编号
+    int& zombieLast()
     {
-        return (int &)((uint8_t *)this)[0xa4];
+        return (int&)((uint8_t*)this)[0xa4];
     }
-    int &zombieRefreshHp()
+
+    // 僵尸刷新血量
+    int& zombieRefreshHp()
     {
-        return (int &)((uint8_t *)this)[0x5594];
+        return (int&)((uint8_t*)this)[0x5594];
     }
+
+    // 植物内存数组
     SafePtr<Plant> plantArray()
     {
-        return *(Plant **)((uint8_t *)this + 0xac);
-    }
-    int &plantCountMax()
-    {
-        return (int &)((uint8_t *)this)[0xb0];
-    }
-    int &plantTotal()
-    {
-        return (int &)((uint8_t *)this)[0xb0];
-    }
-    int &plantLimit()
-    {
-        return (int &)((uint8_t *)this)[0xb4];
-    }
-    int &plantNext()
-    {
-        return (int &)((uint8_t *)this)[0xb8];
-    }
-    int &plantCount()
-    {
-        return (int &)((uint8_t *)this)[0xbc];
-    }
-    int &plantLast()
-    {
-        return (int &)((uint8_t *)this)[0xc0];
+        return *(Plant**)((uint8_t*)this + 0xac);
     }
 
+    // 植物数组大小
+    int& plantCountMax()
+    {
+        return (int&)((uint8_t*)this)[0xb0];
+    }
+
+    // 植物数组大小
+    int& plantTotal()
+    {
+        return (int&)((uint8_t*)this)[0xb0];
+    }
+
+    // 植物数量上限
+    int& plantLimit()
+    {
+        return (int&)((uint8_t*)this)[0xb4];
+    }
+
+    // 下一个植物的编号
+    int& plantNext()
+    {
+        return (int&)((uint8_t*)this)[0xb8];
+    }
+
+    // 当前植物的数量
+    int& plantCount()
+    {
+        return (int&)((uint8_t*)this)[0xbc];
+    }
+
+    // 最后一个植物的编号
+    int& plantLast()
+    {
+        return (int&)((uint8_t*)this)[0xc0];
+    }
+
+    // 种子内存数组
     SafePtr<Seed> seedArray()
     {
-        return *(Seed **)((uint8_t *)this + 0x144);
+        return *(Seed**)((uint8_t*)this + 0x144);
     }
 
+    // 收集物内存数组
     SafePtr<Item> itemArray()
     {
-        return *(Item **)((uint8_t *)this + 0xe4);
-    }
-    int &itemCountMax()
-    {
-        return (int &)((uint8_t *)this)[0xe8];
-    }
-    int &itemTotal()
-    {
-        return (int &)((uint8_t *)this)[0xe8];
-    }
-    bool &gamePaused()
-    {
-        return (bool &)((uint8_t *)this)[0x164];
-    }
-    int &scene()
-    {
-        return (int &)((uint8_t *)this)[0x554c];
+        return *(Item**)((uint8_t*)this + 0xe4);
     }
 
-    int &sun()
+    // 收集物内存数组大小
+    int& itemCountMax()
     {
-        return (int &)((uint8_t *)this)[0x5560];
-    }
-    int &gameClock()
-    {
-        return (int &)((uint8_t *)this)[0x5568];
-    }
-    int &globalClock()
-    {
-        return (int &)((uint8_t *)this)[0x556c];
-    }
-    int &refreshCountdown()
-    {
-        return (int &)((uint8_t *)this)[0x559c];
-    }
-    int &hugeWaveCountdown()
-    {
-        return (int &)((uint8_t *)this)[0x55a4];
-    }
-    int &totalWave()
-    {
-        return (int &)((uint8_t *)this)[0x5564];
-    }
-    int &wave()
-    {
-        return (int &)((uint8_t *)this)[0x557c];
-    }
-    int &initialCountdown()
-    {
-        return (int &)((uint8_t *)this)[0x55a0];
+        return (int&)((uint8_t*)this)[0xe8];
     }
 
-    int &clickPaoCountdown()
+    // 收集物内存数组大小
+    int& itemTotal()
     {
-        return (int &)((uint8_t *)this)[0x5754];
+        return (int&)((uint8_t*)this)[0xe8];
     }
 
-    Mouse *mouseAttribution()
+    // 游戏是否暂停
+    bool& gamePaused()
     {
-        return *(Mouse **)((uint8_t *)this + 0x138);
+        return (bool&)((uint8_t*)this)[0x164];
     }
 
-    MouseExtra *mouseExtraAttribution()
+    // 游戏场景
+    // 0 - 白天
+    // 1 - 黑夜
+    // 2 - 泳池
+    // 3 - 雾夜
+    // 4 - 天台
+    int& scene()
     {
-        return *(MouseExtra **)((uint8_t *)this + 0x13c);
+        return (int&)((uint8_t*)this)[0x554c];
     }
 
-    SelectCardUi_m *selectCardUi_m()
+    // 当前阳光数量
+    int& sun()
     {
-        return *(SelectCardUi_m **)((uint8_t *)this + 0x15c);
+        return (int&)((uint8_t*)this)[0x5560];
     }
 
-    uint32_t *zombieList()
+    // 战斗界面游戏时钟
+    // 选卡界面暂停计时
+    int& gameClock()
     {
-        return (uint32_t *)((uint8_t *)this + 0x6b4);
+        return (int&)((uint8_t*)this)[0x5568];
     }
 
-    Text *text()
+    // 全局时钟
+    // 战斗界面和选卡界面都计时
+    int& globalClock()
     {
-        return *(Text **)((uint8_t *)this + 0x140);
+        return (int&)((uint8_t*)this)[0x556c];
+    }
+
+    // 僵尸刷新倒计时
+    int& refreshCountdown()
+    {
+        return (int&)((uint8_t*)this)[0x559c];
+    }
+
+    // 大波僵尸刷新倒计时
+    int& hugeWaveCountdown()
+    {
+        return (int&)((uint8_t*)this)[0x55a4];
+    }
+
+    // 总波数
+    int& totalWave()
+    {
+        return (int&)((uint8_t*)this)[0x5564];
+    }
+
+    // 当前波数
+    int& wave()
+    {
+        return (int&)((uint8_t*)this)[0x557c];
+    }
+
+    // 僵尸初始刷新倒计时
+    int& initialCountdown()
+    {
+        return (int&)((uint8_t*)this)[0x55a0];
+    }
+
+    // 点炮倒计时
+    // 游戏 30cs 防误触机制
+    int& clickPaoCountdown()
+    {
+        return (int&)((uint8_t*)this)[0x5754];
+    }
+
+    // 鼠标属性
+    Mouse* mouseAttribution()
+    {
+        return *(Mouse**)((uint8_t*)this + 0x138);
+    }
+
+    // 鼠标额外属性
+    MouseExtra* mouseExtraAttribution()
+    {
+        return *(MouseExtra**)((uint8_t*)this + 0x13c);
+    }
+
+    // 选卡界面属性
+    SelectCardUi_m* selectCardUi_m()
+    {
+        return *(SelectCardUi_m**)((uint8_t*)this + 0x15c);
+    }
+
+    // 出怪列表
+    uint32_t* zombieList()
+    {
+        return (uint32_t*)((uint8_t*)this + 0x6b4);
+    }
+
+    // 出怪种类列表
+    uint8_t* zombieTypeList()
+    {
+        return (uint8_t*)((uint8_t*)this + 0x54d4);
+    }
+
+    // 文字信息
+    Text* text()
+    {
+        return *(Text**)((uint8_t*)this + 0x140);
     }
 
     // 载入存档的状态
-    int &loadDataState()
+    int& loadDataState()
     {
-        return (int &)((uint8_t *)this)[0x5604];
+        return (int&)((uint8_t*)this)[0x5604];
     }
 };
 
-struct Plant
-{
+// 植物内存属性
+struct Plant {
 private:
-    void operator=(Plant) {}
+    void operator=(Plant&& _) { }
+    Plant(Plant&& _) { }
 
 public:
+    Plant() { }
     uint8_t data[0x14c];
 
-    int &xi()
+    // 横坐标
+    int& xi()
     {
-        return (int &)((uint8_t *)this)[0x8];
-    }
-    int &yi()
-    {
-        return (int &)((uint8_t *)this)[0xc];
+        return (int&)((uint8_t*)this)[0x8];
     }
 
-    int &visible()
+    // 纵坐标
+    int& yi()
     {
-        return (int &)((uint8_t *)this)[0x18];
-    }
-    int &row()
-    {
-        return (int &)((uint8_t *)this)[0x1c];
-    }
-    int &type()
-    {
-        return (int &)((uint8_t *)this)[0x24];
-    }
-    int &col()
-    {
-        return (int &)((uint8_t *)this)[0x28];
+        return (int&)((uint8_t*)this)[0xc];
     }
 
-    //返回植物的状态
-    //35：空炮
-    //36：正在装填
-    //37：准备就绪
-    //38：正在发射
-    int &state()
+    // 植物是否可见
+    int& visible()
     {
-        return (int &)((uint8_t *)this)[0x3c];
+        return (int&)((uint8_t*)this)[0x18];
     }
-    int &stateCountdown()
+
+    // 植物所在行
+    // 范围 : [0, 5]
+    int& row()
     {
-        return (int &)((uint8_t *)this)[0x54];
+        return (int&)((uint8_t*)this)[0x1c];
     }
-    int &hp()
+
+    // 植物类型
+    // 范围 : [0, 47]
+    // 注意模仿者植物种下去后的类型与原卡数字代号一样
+    // 只是外表不一样，例如 南瓜头 和 模仿南瓜头 的植物类型都是 30
+    int& type()
     {
-        return (int &)((uint8_t *)this)[0x40];
+        return (int&)((uint8_t*)this)[0x24];
     }
-    int &hpMax()
+
+    // 植物所在列
+    // 范围 : [0, 8]
+    int& col()
     {
-        return (int &)((uint8_t *)this)[0x44];
+        return (int&)((uint8_t*)this)[0x28];
     }
-    int &canShoot()
+
+    // 返回植物的状态
+    // 35：空炮
+    // 36：正在装填
+    // 37：准备就绪
+    // 38：正在发射
+    int& state()
     {
-        return (int &)((uint8_t *)this)[0x48];
+        return (int&)((uint8_t*)this)[0x3c];
     }
-    int &bloverCountdown()
+
+    // 植物状态倒计时
+    int& stateCountdown()
     {
-        return (int &)((uint8_t *)this)[0x4c];
+        return (int&)((uint8_t*)this)[0x54];
     }
-    int &explodeCountdown()
+
+    // 植物当前血量
+    int& hp()
     {
-        return (int &)((uint8_t *)this)[0x50];
+        return (int&)((uint8_t*)this)[0x40];
     }
-    int &shootCountdown()
+
+    // 植物最大血量
+    int& hpMax()
     {
-        return (int &)((uint8_t *)this)[0x90];
+        return (int&)((uint8_t*)this)[0x44];
     }
-    int &mushroomCountdown()
+
+    // 为1则可以攻击
+    int& canShoot()
     {
-        return (int &)((uint8_t *)this)[0x130];
+        return (int&)((uint8_t*)this)[0x48];
     }
-    bool &isDisappeared()
+
+    // 三叶草消失倒计时
+    int& bloverCountdown()
     {
-        return (bool &)((uint8_t *)this)[0x141];
+        return (int&)((uint8_t*)this)[0x4c];
     }
-    bool &isCrushed()
+
+    // 灰烬冰核三叶草生效倒计时
+    int& explodeCountdown()
     {
-        return (bool &)((uint8_t *)this)[0x142];
+        return (int&)((uint8_t*)this)[0x50];
     }
-    bool &sleeping()
+
+    // 子弹发射倒计时
+    int& shootCountdown()
     {
-        return (bool &)((uint8_t *)this)[0x143];
+        return (int&)((uint8_t*)this)[0x90];
     }
+
+    // 蘑菇倒计时
+    int& mushroomCountdown()
+    {
+        return (int&)((uint8_t*)this)[0x130];
+    }
+
+    // 植物是否消失
+    bool& isDisappeared()
+    {
+        return (bool&)((uint8_t*)this)[0x141];
+    }
+
+    // 植物是否被压扁
+    bool& isCrushed()
+    {
+        return (bool&)((uint8_t*)this)[0x142];
+    }
+
+    // 植物是否在睡觉
+    bool& sleeping()
+    {
+        return (bool&)((uint8_t*)this)[0x143];
+    }
+
     // 动作编号
-    uint16_t &animationCode()
+    uint16_t& animationCode()
     {
-        return (uint16_t &)((uint8_t *)this)[0x94];
+        return (uint16_t&)((uint8_t*)this)[0x94];
     }
 };
 
-struct Zombie
-{
+struct Zombie {
 private:
-    void operator=(Zombie) {}
+    void operator=(Zombie&& __) { }
+    Zombie(Zombie&& __) { }
 
 public:
+    Zombie() { }
     uint8_t data[0x15c];
 
+    // 僵尸是否存在
+    // 只读
     bool isExist()
     {
-        return (short)((uint8_t *)this)[0x15a];
-    }
-    int &row()
-    {
-        return (int &)((uint8_t *)this)[0x1c];
+        return (short)((uint8_t*)this)[0x15a];
     }
 
-    float &abscissa()
+    // 僵尸所在行
+    // 范围 : [0, 5]
+    int& row()
     {
-        return (float &)((uint8_t *)this)[0x2c];
+        return (int&)((uint8_t*)this)[0x1c];
     }
 
-    float &ordinate()
+    // 僵尸横坐标
+    float& abscissa()
     {
-        return (float &)((uint8_t *)this)[0x30];
+        return (float&)((uint8_t*)this)[0x2c];
     }
 
-    int &type()
+    // 僵尸纵坐标
+    float& ordinate()
     {
-        return (int &)((uint8_t *)this)[0x24];
+        return (float&)((uint8_t*)this)[0x30];
     }
 
-    int &hp()
+    // 僵尸类型
+    int& type()
     {
-        return (int &)((uint8_t *)this)[0xC8];
+        return (int&)((uint8_t*)this)[0x24];
     }
 
-    int &oneHp()
+    // 僵尸目前本体血量
+    int& hp()
     {
-        return (int &)((uint8_t *)this)[0xD0];
+        return (int&)((uint8_t*)this)[0xC8];
     }
 
-    int &twoHp()
+    // 僵尸一类饰品目前血量
+    int& oneHp()
     {
-        return (int &)((uint8_t *)this)[0xDC];
+        return (int&)((uint8_t*)this)[0xD0];
     }
 
-    bool &isEat()
+    // 僵尸二类饰品目前血量
+    int& twoHp()
     {
-        return (bool &)((uint8_t *)this)[0x51];
+        return (int&)((uint8_t*)this)[0xDC];
     }
 
-    int &state()
+    // 僵尸是否在啃食
+    bool& isEat()
     {
-        return (int &)((uint8_t *)this)[0x28];
+        return (bool&)((uint8_t*)this)[0x51];
+    }
+
+    // 僵尸状态
+    // 1 - 倒地
+    // 2 - 灰烬
+    // 3 - 小推车
+    // 70 - 巨人举锤
+    int& state()
+    {
+        return (int&)((uint8_t*)this)[0x28];
     }
 
     // 返回选卡界面僵尸站立状态
     // 为-2/-3时静止,-4时向上(对于选卡界面的僵尸)
-    int &standState()
+    // 僵尸所在波数 ?????
+    // https://space.bilibili.com/1321409404
+    int& standState()
     {
-        return (int &)((uint8_t *)this)[0x6c];
+        return (int&)((uint8_t*)this)[0x6c];
     }
 
+    // 僵尸是否死亡
+    // 只读
     bool isDead()
     {
-        return state() == 1;
+        return state() == 1 || state() == 2 || state() == 3;
     }
 
+    // 僵尸是否举锤
+    // 只读
     bool isHammering()
     {
         return state() == 70;
     }
-    bool &isStealth()
+
+    // 僵尸是否隐形
+    bool& isStealth()
     {
-        return (bool &)((uint8_t *)this)[0x18];
+        return (bool&)((uint8_t*)this)[0x18];
     }
 
-    float &speed()
+    // 僵尸横向相对速度
+    float& speed()
     {
-        return (float &)((uint8_t *)this)[0x34];
-    }
-    int &existTime()
-    {
-        return (int &)((uint8_t *)this)[0x60];
+        return (float&)((uint8_t*)this)[0x34];
     }
 
-    int &stateCountdown()
+    // 僵尸存在时间
+    int& existTime()
     {
-        return (int &)((uint8_t *)this)[0x68];
+        return (int&)((uint8_t*)this)[0x60];
     }
 
-    bool &isDisappeared()
+    // 僵尸状态倒计时
+    int& stateCountdown()
     {
-        return (bool &)((uint8_t *)this)[0xEC];
+        return (int&)((uint8_t*)this)[0x68];
     }
 
-    int &bulletAbscissa()
+    // 僵尸是否消失
+    bool& isDisappeared()
     {
-        return (int &)((uint8_t *)this)[0x8C];
-    }
-    int &bulletOrdinate()
-    {
-        return (int &)((uint8_t *)this)[0x90];
+        return (bool&)((uint8_t*)this)[0xEC];
     }
 
-    int &attackAbscissa()
+    // 中弹判定的横坐标
+    int& bulletAbscissa()
     {
-        return (int &)((uint8_t *)this)[0x9C];
+        return (int&)((uint8_t*)this)[0x8C];
     }
 
-    int &attackOrdinate()
+    // 中弹判定的纵坐标
+    int& bulletOrdinate()
     {
-        return (int &)((uint8_t *)this)[0xA0];
+        return (int&)((uint8_t*)this)[0x90];
     }
 
-    int &slowCountdown()
+    // 攻击判定的横坐标
+    int& attackAbscissa()
     {
-        return (int &)((uint8_t *)this)[0xAC];
+        return (int&)((uint8_t*)this)[0x9C];
     }
 
-    int &fixationCountdown()
+    // 攻击判定的纵坐标
+    int& attackOrdinate()
     {
-        return (int &)((uint8_t *)this)[0xB0];
+        return (int&)((uint8_t*)this)[0xA0];
     }
 
-    int &freezeCountdown()
+    // 僵尸减速倒计时
+    int& slowCountdown()
     {
-        return (int &)((uint8_t *)this)[0xB4];
+        return (int&)((uint8_t*)this)[0xAC];
+    }
+
+    // 僵尸黄油固定倒计时
+    int& fixationCountdown()
+    {
+        return (int&)((uint8_t*)this)[0xB0];
+    }
+
+    // 僵尸冻结倒计时
+    int& freezeCountdown()
+    {
+        return (int&)((uint8_t*)this)[0xB4];
     }
 };
 
-struct Seed
-{
+// 种子 / 卡牌 属性
+struct Seed {
 private:
-    void operator=(Seed) {}
+    void operator=(Seed&& __) { }
+    Seed(Seed&& __) { }
 
 public:
+    Seed() { }
     uint8_t data[0x50];
 
     // 返回卡槽中的卡牌个数
     // 注意：此函数不能迭代使用！！！
     // 只能这样使用：auto seed_count = GetMainObject()->seedArray()->count();
-    int &count()
+    int& count()
     {
-        return (int &)((uint8_t *)this)[0x24];
+        return (int&)((uint8_t*)this)[0x24];
     }
 
-    bool &isUsable()
+    // 种子是否可用
+    bool& isUsable()
     {
-        return (bool &)((uint8_t *)this)[0x4c + 0x24];
+        return (bool&)((uint8_t*)this)[0x4c + 0x24];
     }
 
-    int &cd()
+    // 种子冷却
+    int& cd()
     {
-        return (int &)((uint8_t *)this)[0x28 + 0x24];
+        return (int&)((uint8_t*)this)[0x28 + 0x24];
     }
 
-    int &initialCd()
+    // 种子初始冷却
+    int& initialCd()
     {
-        return (int &)((uint8_t *)this)[0x2c + 0x24];
+        return (int&)((uint8_t*)this)[0x2c + 0x24];
     }
 
-    int &imitatorType()
+    // 模仿者类型
+    int& imitatorType()
     {
-        return (int &)((uint8_t *)this)[0x3c + 0x24];
+        return (int&)((uint8_t*)this)[0x3c + 0x24];
     }
 
-    int &type()
+    // 种子类型
+    int& type()
     {
-        return (int &)((uint8_t *)this)[0x38 + 0x24];
+        return (int&)((uint8_t*)this)[0x38 + 0x24];
     }
 
-    int &abscissa()
+    // 种子横坐标
+    int& abscissa()
     {
-        return (int &)((uint8_t *)this)[0xc + 0x24];
+        return (int&)((uint8_t*)this)[0xc + 0x24];
     }
 
-    int &ordinate()
+    // 种子纵坐标
+    int& ordinate()
     {
-        return (int &)((uint8_t *)this)[0x10 + 0x24];
+        return (int&)((uint8_t*)this)[0x10 + 0x24];
     }
 
-    int &height()
+    // 卡牌判定高度
+    int& height()
     {
-        return (int &)((uint8_t *)this)[0x18 + 0x24];
+        return (int&)((uint8_t*)this)[0x18 + 0x24];
     }
 
-    int &width()
+    // 卡牌判定宽度
+    int& width()
     {
-        return (int &)((uint8_t *)this)[0x14 + 0x24];
+        return (int&)((uint8_t*)this)[0x14 + 0x24];
     }
 };
 
-struct Item
-{
+// 收集物品属性
+struct Item {
 private:
-    void operator=(Item) {}
+    void operator=(Item&& __) { }
+    Item(Item&& __) { }
 
 public:
+    Item() { }
     uint8_t data[0xd8];
 
-    bool &isDisappeared()
+    // 物品是否消失
+    bool& isDisappeared()
     {
-        return (bool &)((uint8_t *)this)[0x38];
+        return (bool&)((uint8_t*)this)[0x38];
     }
 
-    bool &is_collected()
+    // 物品是否被收集
+    bool& isCollected()
     {
-        return (bool &)((uint8_t *)this)[0x50];
+        return (bool&)((uint8_t*)this)[0x50];
     }
 
-    float &abscissa()
+    // 物品所在横坐标
+    float& abscissa()
     {
-        return (float &)((uint8_t *)this)[0x24];
+        return (float&)((uint8_t*)this)[0x24];
     }
 
-    float &ordinate()
+    // 物品所在纵坐标
+    float& ordinate()
     {
-        return (float &)((uint8_t *)this)[0x28];
-    }
-};
-
-struct AnimationMain
-{
-private:
-    void operator=(AnimationMain) {}
-
-public:
-    AnimationOffset *animationOffset()
-    {
-        return *(AnimationOffset **)((uint8_t *)this + 0x8);
+        return (float&)((uint8_t*)this)[0x28];
     }
 };
 
-struct AnimationOffset
-{
+// 动画主要属性
+struct AnimationMain {
 private:
-    void operator=(AnimationOffset) {}
+    void operator=(AnimationMain&& __) { }
+    AnimationMain(AnimationMain&& __) { }
 
 public:
-    Animation *animationArray()
+    AnimationMain() { }
+    // 动画偏移
+    AnimationOffset* animationOffset()
     {
-        return *(Animation **)((uint8_t *)this + 0x0);
+        return *(AnimationOffset**)((uint8_t*)this + 0x8);
     }
 };
 
-struct Animation
-{
+// 动画偏移属性
+struct AnimationOffset {
 private:
-    void operator=(Animation) {}
+    void operator=(AnimationOffset&& __) { }
+    AnimationOffset(AnimationOffset&& __) { }
 
 public:
+    AnimationOffset() { }
+    // 动画内存数组
+    Animation* animationArray()
+    {
+        return *(Animation**)((uint8_t*)this + 0x0);
+    }
+};
+
+// 动画属性
+struct Animation {
+private:
+    void operator=(Animation&& __) { }
+    Animation(Animation&& __) { }
+
+public:
+    Animation() { }
     uint8_t data[0xa0];
 
     // 动画循环率
-    float &circulationRate()
+    float& circulationRate()
     {
-        return (float &)((uint8_t *)this)[0x4];
+        return (float&)((uint8_t*)this)[0x4];
     }
 };
 
-struct TopMouseWindow
-{
+struct TopMouseWindow {
 private:
-    void operator=(TopMouseWindow) {}
+    void operator=(TopMouseWindow&& __) { }
+    TopMouseWindow(TopMouseWindow&& __) { }
 
 public:
+    TopMouseWindow() { }
     // 窗口类型(1图鉴,2暂停,3是否,4商店等,6用户管理,8菜单)
-    int &type()
+    int& type()
     {
-        return (int &)((uint8_t *)this)[0xc];
+        return (int&)((uint8_t*)this)[0xc];
     }
 };
 
-struct MouseWindow
-{
+struct MouseWindow {
 private:
-    void operator=(MouseWindow) {}
+    void operator=(MouseWindow&& __) { }
+    MouseWindow(MouseWindow&& __) { }
 
 public:
-    TopMouseWindow *topWindow()
+    MouseWindow() { }
+    TopMouseWindow* topWindow()
     {
-        return *(TopMouseWindow **)((uint8_t *)this + 0x94);
+        return *(TopMouseWindow**)((uint8_t*)this + 0x94);
     }
 
-    bool &isInWindow()
+    bool& isInWindow()
     {
-        return (bool &)((uint8_t *)this)[0xdc];
+        return (bool&)((uint8_t*)this)[0xdc];
     }
 };
 
-struct SelectCardUi_m
-{
+struct SelectCardUi_m {
 private:
-    void operator=(SelectCardUi_m) {}
+    void operator=(SelectCardUi_m&& _) { }
+    SelectCardUi_m(SelectCardUi_m&& __) { }
 
 public:
-    int &orizontalScreenOffset()
+    SelectCardUi_m() { }
+    int& orizontalScreenOffset()
     {
-        return (int &)((uint8_t *)this)[0x8];
+        return (int&)((uint8_t*)this)[0x8];
     }
 
-    bool &isCreatZombie()
+    bool& isCreatZombie()
     {
-        return (bool &)((uint8_t *)this)[0x35];
+        return (bool&)((uint8_t*)this)[0x35];
     }
 };
 
-struct SelectCardUi_p
-{
+struct SelectCardUi_p {
 private:
-    void operator=(SelectCardUi_p) {}
+    void operator=(SelectCardUi_p&& __) { }
+    SelectCardUi_p(SelectCardUi_p&& __) { }
 
 public:
-    LetsRockBtn *letsRockBtn()
+    SelectCardUi_p() { }
+    LetsRockBtn* letsRockBtn()
     {
-        return *(LetsRockBtn **)((uint8_t *)this + 0x88);
+        return *(LetsRockBtn**)((uint8_t*)this + 0x88);
     }
 
     // 卡片移动状态
@@ -794,74 +978,77 @@ public:
     // 1在卡槽里
     // 2移下卡槽
     // 3在选卡界面里
-    int &cardMoveState(int index)
+    int& cardMoveState(int index)
     {
-        return (int &)((uint8_t *)this)[index * 0x3c + 0xc8];
+        return (int&)((uint8_t*)this)[index * 0x3c + 0xc8];
     }
 };
 
-struct LetsRockBtn
-{
+struct LetsRockBtn {
 private:
-    void operator=(LetsRockBtn) {}
+    void operator=(LetsRockBtn&& __) { }
+    LetsRockBtn(LetsRockBtn&& __) { }
 
 public:
-    bool &isUnusable()
+    LetsRockBtn() { }
+    bool& isUnusable()
     {
-        return (bool &)((uint8_t *)this)[0x1a];
+        return (bool&)((uint8_t*)this)[0x1a];
     }
 };
 
-struct Mouse
-{
+struct Mouse {
 private:
-    void operator=(Mouse) {}
+    void operator=(Mouse&& __) { }
+    Mouse(Mouse&& __) { }
 
 public:
+    Mouse() { }
     // 鼠标上物品的类型
-    int &type()
+    int& type()
     {
-        return (int &)((uint8_t *)this)[0x30];
+        return (int&)((uint8_t*)this)[0x30];
     }
 
-    int &abscissa()
+    int& abscissa()
     {
-        return (int &)((uint8_t *)this)[0x8];
+        return (int&)((uint8_t*)this)[0x8];
     }
 
-    uintptr_t &cannonAddress()
+    uintptr_t& cannonAddress()
     {
-        return (uintptr_t &)((uint8_t *)this)[0x40];
-    }
-};
-
-struct MouseExtra
-{
-private:
-    void operator=(MouseExtra) {}
-
-public:
-    int &row()
-    {
-        return (int &)((uint8_t *)this)[0x28];
+        return (uintptr_t&)((uint8_t*)this)[0x40];
     }
 };
 
-struct Text
-{
+struct MouseExtra {
 private:
-    void operator=(Text) {}
+    void operator=(MouseExtra&& __) { }
+    MouseExtra(MouseExtra&& __) { }
 
 public:
-    int &disappearCountdown()
+    MouseExtra() { }
+    int& row()
     {
-        return (int &)((uint8_t *)this)[0x88];
+        return (int&)((uint8_t*)this)[0x28];
+    }
+};
+
+struct Text {
+private:
+    void operator=(Text&& __) { }
+    Text(Text&& __) { }
+
+public:
+    Text() { }
+    int& disappearCountdown()
+    {
+        return (int&)((uint8_t*)this)[0x88];
     }
 };
 
 // 植物类型
-enum PlantType
-{
+enum PlantType {
     PEASHOOTER = 0, // 豌豆射手
     SUNFLOWER,      // 向日葵
     CHERRY_BOMB,    // 樱桃炸弹
@@ -1048,8 +1235,7 @@ enum PlantType
 #define M_JZH_38 M_MARIGOLD        // 金盏花
 #define M_XGTS_39 M_MELON_PULT     // 西瓜投手
 
-enum ZombieType
-{
+enum ZombieType {
     ZOMBIE = 0,             // 普僵
     FLAG_ZOMBIE,            // 旗帜
     CONEHEAD_ZOMBIE,        // 路障

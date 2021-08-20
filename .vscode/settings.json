@@ -1,6 +1,7 @@
 {
     "C_Cpp.errorSquiggles": "Enabled",
     "files.associations": {
+        "*.m": "matlab",
         "functional": "cpp",
         "vector": "cpp",
         "cstdlib": "cpp",
@@ -69,6 +70,8 @@
         "xstring": "cpp",
         "xtr1common": "cpp",
         "xtree": "cpp",
-        "xutility": "cpp"
+        "xutility": "cpp",
+        "bit": "cpp",
+        "stop_token": "cpp"
     }
 }

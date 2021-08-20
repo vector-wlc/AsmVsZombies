@@ -19,7 +19,7 @@ public:
     // key 1: left click
     // key -1: right click
     // key 3: middle click
-    static void ClickScene(MainObject *level, int x, int y, int key);
+    static void clickScene(MainObject *level, int x, int y, int key);
 
     static void click(MouseWindow *mw, int x, int y, int key);
 
@@ -32,5 +32,18 @@ public:
 
     static void mouseClick(int x, int y, int key);
 
-    static void paoShoot(int x, int y, int rank);
+    // 发射炮
+    static void shootPao(int x, int y, int rank);
+
+    // 种卡函数
+    static void plantCard(int x, int y, int index);
+
+    // 铲除函数
+    static void shovelPlant(int x, int y);
+
+    // 选择卡片
+    static void chooseCard(int card_type);
+
+    // 选择模仿者卡片
+    static void chooseImitatorCard(int card_type);
 };

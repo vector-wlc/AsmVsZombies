@@ -12,7 +12,7 @@
 using namespace AvZ;
 
 #ifdef __AVZ_VERSION__
-#if __AVZ_VERSION__ == 210419 // 这里使用预编译指令是来识别版本号的，使用者不需要声明这些！！！
+#if __AVZ_VERSION__ == 210820 // 这里使用预编译指令是来识别版本号的，使用者不需要声明这些！！！
 
 // 不刷新情况
 void NotRefreshed()
@@ -218,7 +218,7 @@ void Refreshed()
 void Script()
 {
 #ifdef __AVZ_VERSION__
-#if __AVZ_VERSION__ == 210419 // 这里使用预编译指令是来识别版本号的，使用者不需要声明这些！！！
+#if __AVZ_VERSION__ == 210820 // 这里使用预编译指令是来识别版本号的，使用者不需要声明这些！！！
 
     SetZombies({PJ_0, TT_4, WW_8, QS_11, BC_12, XC_15, KG_17, HT_14, FT_21, BY_23, HY_32});
     SelectCards({ICE_SHROOM, M_ICE_SHROOM, COFFEE_BEAN, WALL_NUT, PUMPKIN, SQUASH, PUFF_SHROOM, SUN_SHROOM, SCAREDY_SHROOM, FLOWER_POT});

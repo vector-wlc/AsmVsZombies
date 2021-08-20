@@ -18,8 +18,7 @@
 #include <sstream>
 #include <string>
 
-class Memory
-{
+class Memory {
 public:
     Memory();
     ~Memory();
@@ -30,7 +29,7 @@ public:
     PVOID Alloc(DWORD len);
     BOOL Free(PVOID addr);
 
-    BOOL Write(uintptr_t addr, size_t len, uint8_t *data);
+    BOOL Write(uintptr_t addr, size_t len, uint8_t* data);
 
     template <typename T>
     T ReadMemory(std::initializer_list<uintptr_t>);
@@ -61,14 +60,13 @@ T Memory::ReadMemory(std::initializer_list<uintptr_t> addr)
 {
     T result = T();
 
-    if (IsValid())
-    {
+    if (IsValid()) {
         uintptr_t offset = 0;
         for (auto it = addr.begin(); it != addr.end(); it++)
             if (it != addr.end() - 1)
-                ReadProcessMemory(handle, (const void *)(offset + *it), &offset, sizeof(offset), nullptr);
+                ReadProcessMemory(handle, (const void*)(offset + *it), &offset, sizeof(offset), nullptr);
             else
-                ReadProcessMemory(handle, (const void *)(offset + *it), &result, sizeof(result), nullptr);
+                ReadProcessMemory(handle, (const void*)(offset + *it), &result, sizeof(result), nullptr);
 #ifdef _DEBUG
         auto int_to_hex_string = [](unsigned int num) -> std::string {
             std::stringstream sstream;
@@ -102,14 +100,13 @@ T Memory::ReadMemory(std::initializer_list<uintptr_t> addr)
 template <typename T>
 void Memory::WriteMemory(T value, std::initializer_list<uintptr_t> addr)
 {
-    if (IsValid())
-    {
+    if (IsValid()) {
         uintptr_t offset = 0;
         for (auto it = addr.begin(); it != addr.end(); it++)
             if (it != addr.end() - 1)
-                ReadProcessMemory(handle, (const void *)(offset + *it), &offset, sizeof(offset), nullptr);
+                ReadProcessMemory(handle, (const void*)(offset + *it), &offset, sizeof(offset), nullptr);
             else
-                WriteProcessMemory(handle, (void *)(offset + *it), &value, sizeof(value), nullptr);
+                WriteProcessMemory(handle, (void*)(offset + *it), &value, sizeof(value), nullptr);
 #ifdef _DEBUG
         std::cout << "Write: ";
         T read = ReadMemory<T>(addr);
@@ -124,19 +121,16 @@ std::array<T, size> Memory::ReadMemory(std::initializer_list<uintptr_t> addr)
 {
     std::array<T, size> result = {T()};
 
-    if (IsValid())
-    {
+    if (IsValid()) {
         T buff[size] = {0};
         uintptr_t offset = 0;
         for (auto it = addr.begin(); it != addr.end(); it++)
             if (it != addr.end() - 1)
-                ReadProcessMemory(handle, (const void *)(offset + *it), &offset, sizeof(offset), nullptr);
-            else
-            {
-                ReadProcessMemory(handle, (const void *)(offset + *it), &buff, sizeof(buff), nullptr);
+                ReadProcessMemory(handle, (const void*)(offset + *it), &offset, sizeof(offset), nullptr);
+            else {
+                ReadProcessMemory(handle, (const void*)(offset + *it), &buff, sizeof(buff), nullptr);
 #ifdef _DEBUG
-                for (size_t i = 0; i < size; i++)
-                {
+                for (size_t i = 0; i < size; i++) {
                     std::cout << "Read Array: ";
                     ReadMemory<T>({offset + *it + i * sizeof(T)});
                 }
@@ -152,21 +146,18 @@ std::array<T, size> Memory::ReadMemory(std::initializer_list<uintptr_t> addr)
 template <typename T, size_t size>
 void Memory::WriteMemory(std::array<T, size> value, std::initializer_list<uintptr_t> addr)
 {
-    if (IsValid())
-    {
+    if (IsValid()) {
         T buff[size] = {0};
         for (size_t i = 0; i < size; i++)
             buff[i] = value[i];
         uintptr_t offset = 0;
         for (auto it = addr.begin(); it != addr.end(); it++)
             if (it != addr.end() - 1)
-                ReadProcessMemory(handle, (const void *)(offset + *it), &offset, sizeof(offset), nullptr);
-            else
-            {
-                WriteProcessMemory(handle, (void *)(offset + *it), &buff, sizeof(buff), nullptr);
+                ReadProcessMemory(handle, (const void*)(offset + *it), &offset, sizeof(offset), nullptr);
+            else {
+                WriteProcessMemory(handle, (void*)(offset + *it), &buff, sizeof(buff), nullptr);
 #ifdef _DEBUG
-                for (size_t i = 0; i < size; i++)
-                {
+                for (size_t i = 0; i < size; i++) {
                     std::cout << "Write Array: ";
                     T read = ReadMemory<T>({offset + *it + i * sizeof(T)});
                     if (read != value[i])

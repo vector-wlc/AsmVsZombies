@@ -19,7 +19,7 @@
 using namespace AvZ;
 
 #ifdef __AVZ_VERSION__
-#if __AVZ_VERSION__ == 210419
+#if __AVZ_VERSION__ == 210820
 
 // 枚举卡片的对象序列
 enum SeedIndex {
@@ -56,7 +56,7 @@ bool IsHaveCannon();
 void Script()
 {
 #ifdef __AVZ_VERSION__
-#if __AVZ_VERSION__ == 210419
+#if __AVZ_VERSION__ == 210820
 
     OpenMultipleEffective('Q', MAIN_UI_OR_FIGHT_UI);
     SetZombies({CG_3, TT_4, BC_12, XC_15, QQ_16, FT_21, TL_22, BY_23, HY_32, TT_18, WW_8});
@@ -112,7 +112,7 @@ void Script()
 }
 
 #ifdef __AVZ_VERSION__
-#if __AVZ_VERSION__ == 210419
+#if __AVZ_VERSION__ == 210820
 
 void UseClover()
 {

@@ -17,12 +17,12 @@ void Script();
 
 // The codes written in this function will run every tick
 #ifdef __MINGW32__
-void RunScriptEveryTick(MainObject *level)
+void RunScriptEveryTick(MainObject* level)
 {
 #else
 void RunScriptEveryTick()
 {
-    MainObject *level;
+    MainObject* level;
     __asm {
 		mov level, ebx
     }
@@ -45,7 +45,7 @@ uintptr_t addr = 0;
 #endif
 
 // call script() instead of game_loop()
-void InstallHook(Memory &memory)
+void InstallHook(Memory& memory)
 {
 #ifdef __MINGW32__
     addr = (uintptr_t)memory.Alloc(4096);
@@ -56,7 +56,7 @@ void InstallHook(Memory &memory)
     uint8_t call_addr[5];
     // call addr
     call_addr[0] = 0xe8;
-    (int &)call_addr[1] = addr - (0x415945 + 5);
+    (int&)call_addr[1] = addr - (0x415945 + 5);
     memory.Write(0x415945, sizeof(call_addr), call_addr);
     /*
     addr:
@@ -71,12 +71,12 @@ void InstallHook(Memory &memory)
     patch[0] = 0x53;
     // call _script
     patch[1] = 0xe8;
-    (int &)patch[2] = (uintptr_t)RunScriptEveryTick - (addr + 1 + 5);
+    (int&)patch[2] = (uintptr_t)RunScriptEveryTick - (addr + 1 + 5);
     // pop ebx
     patch[6] = 0x5b;
     // call 4130d0
     patch[7] = 0xe8;
-    (int &)patch[8] = 0x4130d0 - (addr + 7 + 5);
+    (int&)patch[8] = 0x4130d0 - (addr + 7 + 5);
     // ret
     patch[12] = 0xc3;
     memory.Write(addr, sizeof(patch), patch);
@@ -88,12 +88,12 @@ void InstallHook(Memory &memory)
     uint8_t call_addr[5];
     // call script
     call_addr[0] = 0xe8;
-    (int &)call_addr[1] = (uintptr_t)RunScriptEveryTick - (0x415945 + 5);
+    (int&)call_addr[1] = (uintptr_t)RunScriptEveryTick - (0x415945 + 5);
     memory.Write(0x415945, sizeof(call_addr), call_addr);
 #endif
 }
 
-void UninstallHook(Memory &memory)
+void UninstallHook(Memory& memory)
 {
     /*
     0x415945:
@@ -102,7 +102,7 @@ void UninstallHook(Memory &memory)
     uint8_t call_addr[5];
     // call addr
     call_addr[0] = 0xe8;
-    (int &)call_addr[1] = 0x4130d0 - (0x415945 + 5);
+    (int&)call_addr[1] = 0x4130d0 - (0x415945 + 5);
     memory.Write(0x415945, sizeof(call_addr), call_addr);
 #ifdef __MINGW32__
     memory.Free((PVOID)addr);
@@ -114,8 +114,7 @@ Memory memory;
 BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
 
-    switch (fdwReason)
-    {
+    switch (fdwReason) {
     case DLL_PROCESS_ATTACH:
         // attach to process
         // return FALSE to fail DLL load
