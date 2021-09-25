@@ -91,7 +91,7 @@ void InsertOperation(const std::function<void()>& operation,
         return;
     }
 
-    if (!__is_insert_operation || (__time_wave_insert.time == __time_wave_run.time && __time_wave_insert.wave == __time_wave_run.wave)) {
+    if (!__is_insert_operation || (__time_wave_insert.time == NowTime(__time_wave_insert.wave))) {
         // 暂存时间插入点的状态
         auto temp = __time_wave_insert;
         operation();
@@ -183,7 +183,7 @@ bool WaitUntil(const TimeWave& _time_wave)
 
 bool WaitUntil(int time, int wave) { return WaitUntil({time, wave}); }
 
-// 得到当前时间，读取失败返回 -1
+// 得到当前时间，读取失败返回 __DEFAULT_START_TIME
 // *** 注意得到的是以参数波刷新时间点为基准的相对时间
 // *** 使用示例：
 // nowTime(1) -------- 得到以第一波刷新时间点为基准的当前时间
@@ -192,8 +192,7 @@ int NowTime(int wave)
 {
     extern MainObject* __main_object;
     if (__operation_queue_vec[wave - 1].refresh_time == -1) {
-        ShowErrorNotInQueue("第 # 波刷新时间未知", wave);
-        return -1;
+        return __DEFAULT_START_TIME;
     }
     return __main_object->gameClock() - __operation_queue_vec[wave - 1].refresh_time;
 }
@@ -458,12 +457,6 @@ void __Run(MainObject* level, std::function<void()> Script)
         UpdateRefreshTime();
     }
 
-    for (const auto& thread_info : __thread_vec) {
-        if (*thread_info.id_ptr >= 0) {
-            thread_info.func();
-        }
-    }
-
     // 对 __main_object->totalWave 个队列进行遍历
     // 最大比较次数 __main_object->totalWave * 3 = 60 次
     // 卧槽，感觉好亏，不过游戏应该不会卡顿
@@ -480,6 +473,12 @@ void __Run(MainObject* level, std::function<void()> Script)
                 ele.operation();
             }
             __operation_queue_vec[wave].queue.erase(it);
+        }
+    }
+
+    for (const auto& thread_info : __thread_vec) {
+        if (*thread_info.id_ptr >= 0) {
+            thread_info.func();
         }
     }
 }

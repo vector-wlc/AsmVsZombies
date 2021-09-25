@@ -11,4 +11,6 @@ downloader/Release
 downloader/downloader/Debug
 downloader/downloader/Release
 code_association.txt
+debug
+/*.zip
 
