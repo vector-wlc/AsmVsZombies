@@ -7,7 +7,7 @@
 
 # 起步
 
-## 本教程只完全适配 `AvZ 210820` 版本，如果根据本教程编写的脚本出现语法错误，请先检查是否与该教程的版本相对应
+## 本教程只完全适配 `AvZ 210820` 版本，如果根据本教程编写的脚本出现语法错误，请先检查是否与该教程的版本相对应，如果确定自身没有任何问题，请及时联系我
 
 AvZ 版本号按照以下方式查找
 ```C++
@@ -34,6 +34,8 @@ AvZ 版本号按照以下方式查找
 
 接下来给出一些传送门
 
+视频教程：https://www.bilibili.com/video/BV1A7411V79A
+
 VSCode版下载：https://gitee.com/vector-wlc/AvZTools/blob/master/bin/AsmVsZombies_VSCode_Setup.exe
 
 更新：https://gitee.com/vector-wlc/AsmVsZombies/tree/master/release
@@ -41,3 +43,7 @@ VSCode版下载：https://gitee.com/vector-wlc/AvZTools/blob/master/bin/AsmVsZom
 准备阶段完成之后，请继续结合视频教程完成自己的第一脚本 ：经典十二炮。
 
 最后，希望 AvZ 能够在键控方面帮助到您！
+
+[目录](../catalogue.md)
+
+[下一篇 名称空间](./namespace.md)

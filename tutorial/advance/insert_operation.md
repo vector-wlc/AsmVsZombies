@@ -74,3 +74,9 @@ void pause()
 
 
 其前两个参数就是操作插入的时间点，其他与 `InsertOperation` 相同。
+
+[上一篇 函数属性](./function_attribute.md)
+
+[目录](../catalogue.md)
+
+[下一篇 属性转换](./transform_attribute.md)

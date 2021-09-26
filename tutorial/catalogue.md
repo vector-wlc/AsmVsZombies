@@ -5,13 +5,14 @@
  * @Description: 
 -->
 
-[root]:https://gitee.com/vector-wlc/AsmVsZombies/blob/master/tutorial
 # 目录
 
 ## 基础
 * [起步](./basic/start.md)
 
 * [名称空间](./basic/namespace.md)
+
+* [多次生效](./basic/multiple_effective.md)
 
 * [卡片操作](./basic/card.md)
 
@@ -41,7 +42,7 @@
 
 
 ## 进阶
-* [操作队列](../../../blob/master/tutorial/advance/time_operate.md)
+* [操作队列](./advance/time_operate.md)
 
 * [阻塞函数](./advance/wait_until.md)
 
@@ -54,4 +55,6 @@
 * [运行调试](./advance/debug.md)
 
 * ["智能"操作](./advance/smart.md)
+
+* [插件](./advance/extension.md)
 

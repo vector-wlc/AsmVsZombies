@@ -68,3 +68,10 @@ public:
 还有一个重要的细节是 `KeyConnect` 函数绑定的操作是否会受到函数是否进队列的影响？答案是不会，`KeyConnect` 函数内部智能处理了这一切，不论 In Queue 还是 Not In Queue，`KeyConnect` 都会在按下按键的时候立即执行这个函数的功能！
 
 最后大家应该会有一个疑问，就是 `OpenMultipleEffective` 这个函数不会录入队列，那我们就想让他在固定的时间点运行该怎么办呢？很简单，使用上一篇教程中的 WaitUntil 阻塞函数就可以实现，**当然这种做法并不推荐，因为使用阻塞函数违背了 AvZ 想让使用者摆脱蛋疼的时间调试的设计初衷，** 因此下一篇教程将会再给大家介绍一个函数——动态插入队列函数 ：`InsertOperation`！
+
+
+[上一篇 阻塞函数](./wait_until.md)
+
+[目录](../catalogue.md)
+
+[下一篇 动态操作插入](./insert_operation.md)

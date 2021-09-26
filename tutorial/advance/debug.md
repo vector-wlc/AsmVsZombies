@@ -134,3 +134,10 @@ void Script()
 ![debug_6](../img/debug_6.jpg)
 
 将模式设置为控制台的好处就是报错时并不会阻塞游戏的运行。
+
+
+[上一篇 属性转换](./transform_attribute.md)
+
+[目录](../catalogue.md)
+
+[下一篇 "智能"操作](./smart.md)

@@ -35,3 +35,9 @@ Shovel(4, 6, true);
 // 铲除3行6列，4行6列的植物
 Shovel({{3, 6},{4, 6}});
 ```
+
+[上一篇 存冰类](./ice_filler.md)
+
+[目录](../catalogue.md)
+
+[下一篇 修补植物类](./plant_fixer.md)

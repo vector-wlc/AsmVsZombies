@@ -23,3 +23,9 @@ OpenMultipleEffective('Q', AvZ::MAIN_UI_OR_FIGHT_UI)
 // 脚本多次生效，按下 Q 键取消此效果，多次生效效果仅在主界面生效
 OpenMultipleEffective('Q', AvZ::MAIN_UI)
 ```
+
+[上一篇 名称空间](./namespace.md)
+
+[目录](../catalogue.md)
+
+[下一篇 卡片操作](./card.md)

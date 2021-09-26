@@ -21,7 +21,7 @@ Card(LILY_PAD, {{3, 4}, {2, 4}});
 
 // 根据卡片所在卡槽位置用卡
 
- // 将第一张卡片放在二行三列
+// 将第一张卡片放在二行三列
 Card(1, 2, 3);
 
 // 优先将第一张卡片放在二行三列，如果不能种，则放在二行四列
@@ -223,3 +223,10 @@ enum PlantType {
 #define M_XGTS_39 M_MELON_PULT     // 西瓜投手
 
 ```
+
+
+[上一篇 多次生效](./multiple_effective.md)
+
+[目录](../catalogue.md)
+
+[下一篇 时间设定](./time_rule.md)

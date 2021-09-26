@@ -53,6 +53,13 @@ Q 键绑定了用卡和多次生效，这样做是不可以的，因为 AvZ 并�
 
 ```C++
 KeyConnect('Q', [=](){
-    Card(WG_17, MouseRow(), MouseCol());    OpenMultipleEffective();
+    Card(WG_17, MouseRow(), MouseCol());    
+    OpenMultipleEffective();
 });
 ```
+
+[上一篇 波长设定与非定态](./wave_set.md)
+
+[目录](../catalogue.md)
+
+[下一篇 出怪设置与女仆秘籍](./set_zombie.md)

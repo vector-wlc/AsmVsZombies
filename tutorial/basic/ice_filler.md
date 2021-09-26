@@ -18,16 +18,21 @@ extern IceFiller ice_filler;
 ```C++
 // 在一行二列，一行三列进行存冰
 // 注意是优先存 一行二列 再存 一行三列
+// 不要频繁调用此接口，性能消耗大
 ice_filler.start({{1, 2}, {1, 3}});
 
 // 使用存冰列表中的冰
 // 注意 coffee 函数将会倒序使用存冰列表中的冰，例如如果使用示例 start 中的列表，那么 coffee 函数将会优先使用一行三列的存冰。
 ice_filler.coffee();
 
-// 停止存冰
+// 停止存冰 
+// 完全停止这个对象的运行，如果长时间不再使用此对象需要调用此接口
+// 再次激活对象的运行需要调用 start 
 ice_filler.stop();
 
 // 暂停存冰
+// 对象以一种低耗状态运行，如果短时间不使用此对象需要调用此接口
+// 再次激活对象的运行需要调用 goOn
 ice_filler.pause();
 
 // 继续存冰
@@ -43,7 +48,11 @@ ice_filler.resetIceSeedList({ICE_SHROOM})
 ice_filler.resetIceSeedList({M_ICE_SHROOM, ICE_SHROOM}) 
 ```
 
+[上一篇 时间设定](./time_rule.md)
 
+[目录](../catalogue.md)
+
+[下一篇 冰三和铲除函数](./ice3_and_shovel.md)
 
 
 

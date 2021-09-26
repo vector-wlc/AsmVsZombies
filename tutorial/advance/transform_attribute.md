@@ -83,4 +83,11 @@ KeyConnect('Q', [=]() {
 });
 ```
 
-实际上很简单，只要再使用 `InsertGuard` 转换为 In Queue 不就信了吗！不过这里需要注意的是 `SetNowTime` 这个函数的调用，这条代码十分重要，因为如果不调用此条代码，`InsertOperation` 将会把操作插入上个 `SetTime` 设定的时间点中，这样明显不符合我们的预期，因此 `SetNowTime` 这个函数就是将时间点设置为 KeyConnect 绑定的代码运行的时候。
+实际上很简单，只要再使用 `InsertGuard` 转换为 In Queue 不就行了吗！不过这里需要注意的是 `SetNowTime` 这个函数的调用，这条代码十分重要，因为如果不调用此条代码，`InsertOperation` 将会把操作插入上个 `SetTime` 设定的时间点中，这样明显不符合我们的预期，因此 `SetNowTime` 这个函数就是将时间点设置为 KeyConnect 绑定的代码运行的时候。
+
+
+[上一篇 动态操作插入](./insert_operation.md)
+
+[目录](../catalogue.md)
+
+[下一篇 运行调试](./debug.md)

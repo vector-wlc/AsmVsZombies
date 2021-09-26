@@ -41,3 +41,9 @@ pao_operator.fixLatestPao();
 ```
 
 `fixLatestPao` 将会修补 `pao` 刚刚发射出去的炮，此函数不用填写任何参数，直接调用即可，**但是其只支持原地铲种**，原因后续再进行介绍。
+
+[上一篇 炮操作类——多炮列表](./pao_operator_2.md)
+
+[目录](../catalogue.md)
+
+[下一篇 炮操作类——炮序模式](./pao_operator_4.md)

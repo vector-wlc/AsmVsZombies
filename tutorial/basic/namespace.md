@@ -28,4 +28,8 @@ Card(XRK_1, 3, 4); // 正确，因为 using namespace AvZ; 直接“废除”了
 
 ##  在此声明，由于作者精力原因，此教程所有的示例代码没有严格到每次都注意使用 AvZ:: , 但请使用者使用时注意此名称空间的作用
 
+[上一篇 起步](./start.md)
 
+[目录](../catalogue.md)
+
+[下一篇 多次生效](./multiple_effective.md)

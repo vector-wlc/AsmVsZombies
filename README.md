@@ -41,11 +41,7 @@ AvZ 操作精度为理论上的100%绝对精准，使用这套框架将再也不
 
 ## 使用
 
-#### MinGW Visual Studio Code
-在 [https://wwe.lanzous.com/b015az7nc](https://wwe.lanzous.com/b015az7nc) (a0a3) 下载压缩包，
-解压并使用 [VSCode](https://code.visualstudio.com/) 打开，无需任何配置，便可直接使用。<br>
-在 [https://wwe.lanzous.com/b015az8yj](https://wwe.lanzous.com/b015az8yj) (37zu) 下载相应版本包，
-进行更新或退回，注意在 2020_07_10 之后的版本包将只支持新的 [VSCode](https://code.visualstudio.com/) 环境包
+请转到教程的起步篇 : [Gitee](https://gitee.com/vector-wlc/AsmVsZombies/blob/master/tutorial/basic/start.md) / [GitHub](https://github.com/vector-wlc/AsmVsZombies/blob/master/tutorial/basic/start.md)
 
 ## 致谢
 [yuchenxi2000/AssemblyVsZombies](https://github.com/yuchenxi2000/AssemblyVsZombies)<br>
