@@ -2,6 +2,7 @@
 ## 更新日志
 
 AvZ 2021_08_20
+
 * 修复了 TickRunner pushFunc 函数调用后下一帧才生效的问题 (09-24)
 * 提供了 VSCode AvZ 插件，并且不再维护 AvZTools
 * 增加了得到出怪类型函数

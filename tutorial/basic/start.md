@@ -40,6 +40,8 @@ VSCode版下载：https://gitee.com/vector-wlc/AvZTools/blob/master/bin/AsmVsZom
 
 更新：https://gitee.com/vector-wlc/AsmVsZombies/tree/master/release
 
+QQ 群：[704655241](https://jq.qq.com/?_wv=1027&k=h6lNOpt0) ( 请先看完视频教程之后再加 )
+
 准备阶段完成之后，请继续结合视频教程完成自己的第一脚本 ：经典十二炮。
 
 最后，希望 AvZ 能够在键控方面帮助到您！
