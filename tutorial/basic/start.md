@@ -34,11 +34,11 @@ AvZ 版本号按照以下方式查找
 
 接下来给出一些传送门
 
-视频教程：https://www.bilibili.com/video/BV1A7411V79A
+视频教程：[bilibili](https://www.bilibili.com/video/BV1A7411V79A)
 
-VSCode版下载：https://gitee.com/vector-wlc/AvZTools/blob/master/bin/AsmVsZombies_VSCode_Setup.exe
+开发安装包下载：[Gitee](https://gitee.com/vector-wlc/AsmVsZombies) / [GitHub](https://github.com/vector-wlc/AsmVsZombies)  点击网页右边的发行版
 
-更新：https://gitee.com/vector-wlc/AsmVsZombies/tree/master/release
+更新：[Gitee](https://gitee.com/vector-wlc/AsmVsZombies/tree/master/release) / [GitHub](https://github.com/vector-wlc/AsmVsZombies/tree/master/release)
 
 QQ 群：[704655241](https://jq.qq.com/?_wv=1027&k=h6lNOpt0) ( 请先看完视频教程之后再加 )
 
