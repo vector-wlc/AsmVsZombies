@@ -87,11 +87,12 @@ void InsertOperation(const std::function<void()>& operation,
     const std::string& description)
 {
     extern PvZ* __pvz_base;
+
     if (__pvz_base->gameUi() == 1 || (__time_wave_start.wave >= __time_wave_insert.wave && __time_wave_start.time > __time_wave_insert.time)) {
         return;
     }
 
-    if (!__is_insert_operation || (__time_wave_insert.time == NowTime(__time_wave_insert.wave))) {
+    if (!__is_insert_operation || (__time_wave_insert.time != __DEFAULT_START_TIME && __time_wave_insert.time == NowTime(__time_wave_insert.wave))) {
         // 暂存时间插入点的状态
         auto temp = __time_wave_insert;
         operation();
@@ -105,7 +106,6 @@ void InsertOperation(const std::function<void()>& operation,
             __main_object->totalWave());
         return;
     }
-
     if ((__time_wave_insert.wave != 1 && __time_wave_insert.wave % 10 != 0) && __time_wave_insert.time < -200 && __operation_queue_vec[__time_wave_insert.wave - 2].wave_length == -1) {
         ShowErrorNotInQueue(
             "第 # 波设定的时间为 #, 在前一波未设定波长的情况下, time "
@@ -113,7 +113,6 @@ void InsertOperation(const std::function<void()>& operation,
             __time_wave_insert.wave, __time_wave_insert.time);
         return;
     }
-
     auto& operation_queue = __operation_queue_vec[__time_wave_insert.wave - 1].queue; // 取出相应波数的队列
     auto it = operation_queue.find(__time_wave_insert.time);
     Operation operate = {operation, description};

@@ -458,6 +458,9 @@ void PaoOperator::roofPao(int row, float col)
 
         // 寻找恢复时间最少的炮
         int min_delay_time = update_next_pao(0, true);
+        if (min_delay_time == -1) {
+            return;
+        }
         int delay_time = 387 - get_roof_fly_time(pao_grid_vec[next_pao].col, col);
         if (min_delay_time > delay_time) {
             std::string error_str = (sequential_mode == TIME ? "TIME 模式 : 未找到能够发射的炮，"
