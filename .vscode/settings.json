@@ -1,8 +1,5 @@
 {
     "editor.formatOnSave": true,
     "C_Cpp.clang_format_fallbackStyle": "{ BasedOnStyle: WebKit, AlignTrailingComments: true, Cpp11BracedListStyle: true}",
-    "C_Cpp.errorSquiggles": "Disabled",
-    "files.associations": {
-        "vector": "cpp"
-    }
+    "C_Cpp.errorSquiggles": "Disabled"
 }

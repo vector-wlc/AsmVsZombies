@@ -386,9 +386,9 @@ void Asm::chooseImitatorCard(int card_type)
         "pushl %%eax;"
         "pushl %%ecx;"
         "movl $0x486030, %%edx;"
-        "call %%edx;"
+        "calll %%edx;"
         "movl $0x4866E0, %%edx;"
-        "call %%edx;"
+        "calll %%edx;"
         "popal;"
         :
         : [card_type] "g"(card_type)
@@ -416,6 +416,41 @@ void Asm::chooseImitatorCard(int card_type)
         popad
     }
 #endif
+}
+
+int Asm::GetPlantRejectType(int card_type, int row, int col)
+{
+    int is_plantable = 0;
+#ifdef __MINGW32__
+    __asm__ __volatile__(
+        "pushal;"
+        "movl %[row], %%eax;"
+        "pushl %[card_type];"
+        "pushl %[col];"
+        "movl $0x6A9EC0, %%ebx;"
+        "movl (%%ebx), %%ebx;"
+        "movl 0x768(%%ebx), %%ebx;"
+        "pushl %%ebx;"
+        "movl $0x40E020, %%edx;"
+        "calll %%edx;"
+        "movl %%eax, %[is_plantable];"
+        "popal;"
+        :
+        : [card_type] "g"(card_type), [row] "g"(row), [col] "g"(col), [is_plantable] "g"(is_plantable)
+        :);
+#else
+    __asm {
+        pushad
+        esi row
+        push cardtype
+        push col
+        push 6A9EC0+768
+        call 40E020
+        mov ans, eax
+        popad
+    }
+#endif
+    return is_plantable;
 }
 
 #pragma GCC pop_options

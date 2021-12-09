@@ -2,22 +2,8 @@
     "tasks": [
         {
             "type": "shell",
-            "label": "g++",
-            "command": "g++",
-            "args": [
-                // "-g",
-                "${file}",
-                "-std=c++1z",
-                "-I",
-                "${workspaceRoot}\\inc",
-                "-l",
-                "avz",
-                "-L",
-                "${workspaceRoot}\\bin",
-                "-shared",
-                "-o",
-                "${workspaceRoot}\\bin\\libavz.dll"
-            ]
+            "label": "avz",
+            "command": "${command:AsmVsZombies.runScript}",
         }
     ],
     "version": "2.0.0"

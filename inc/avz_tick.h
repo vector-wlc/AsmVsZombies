@@ -94,13 +94,7 @@ public:
             "startCollect");
     }
     // *** In Queue
-    void setInterval(int _time_interval)
-    {
-        InsertOperation([=]() {
-            this->time_interval = _time_interval;
-        },
-            "setInterval");
-    }
+    void setInterval(int _time_interval);
 };
 
 class IceFiller : public TickRunner {

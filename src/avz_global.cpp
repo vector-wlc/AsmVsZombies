@@ -5,12 +5,13 @@
  * @Description: AvZ global var
  */
 
-#include "avz_global.h"
-
 #include <map>
+#include <mutex>
 #include <stack>
 
 #include "avz_cannon.h"
+#include "avz_execption.h"
+#include "avz_global.h"
 #include "avz_tick.h"
 #include "avz_time_operation.h"
 
@@ -24,6 +25,7 @@ std::vector<int> __select_card_vec;
 std::vector<ThreadInfo> __thread_vec;
 std::stack<int> __stopped_thread_id_stack;
 std::vector<OperationQueue> __operation_queue_vec;
+std::mutex __operation_mutex;
 TimeWave __time_wave_insert;
 TimeWave __time_wave_run;
 TimeWave __time_wave_start;
@@ -44,6 +46,19 @@ bool RangeIn(int num, std::initializer_list<int> lst)
         }
     }
     return false;
+}
+
+// 随时检测线程退出
+void ExitSleep(int ms)
+{
+    do {
+        extern bool __is_exited;
+        if (__is_exited) {
+            extern HWND __pvz_hwnd;
+            throw Exception("script has exited\n");
+        }
+        Sleep(1);
+    } while (--ms);
 }
 
 void InitAddress()

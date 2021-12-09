@@ -48,4 +48,5 @@ AvZ 操作精度为理论上的100%绝对精准，使用这套框架将再也不
 [lmintlcx/pvzscript](https://github.com/lmintlcx/pvzscripts)<br>
 [失控的指令(bilibili)](https://space.bilibili.com/147204150/)<br>
 [Power_tile(bilibili)](https://space.bilibili.com/367385512)<br>
+[六三enjoy(bilibili)](https://space.bilibili.com/660622963)<br>
 <strong>以及所有对此项目提出建议的使用者和开发人员</strong>

@@ -1,5 +1,15 @@
-
 ## 更新日志
+
+AvZ 2021_12_12
+
+* AvZ VSCode 插件支持断点调试，可更容易的查看 AvZ 脚本的执行流程
+* 可能修复了多线程中数据冲突导致的游戏崩溃问题
+* 使用异常实现了阻塞函数，不用再检测 waitUntil 的返回值，使用更方便了
+* pvzstruct.h 中的 `enum PlantType` 增加了模仿者 `IMITATOR` (实际上是之前忘了写了)
+* 增加了选卡判断, 即检查一次选卡中是否选择了两个相同的植物和是否选择了两个模仿者植物
+* 新增判断某个位置能否种植物函数 : `Asm::GetPlantRejectType`, 请在文件 `pvzfunc.h` 中查看其用法
+* 限制 `SetPlantActiveTime` 函数不允许修改的生效时间超过 3cs
+* 自动收集类优先收集阳光
 
 AvZ 2021_08_20
 
@@ -48,7 +58,7 @@ AvZ 2020_11_01
 * 修正单词拼写错误：indexs->indices
 * PaoOperator 新增了自动填充炮列表函数 ： autoGetPaoList
 * PaoOperator 使用 调用 PvZ 内置函数发炮 的方法实现发炮，理论上解决炮发不出去的问题
-* SelectCards 使用 调用 PvZ 内置函数 的方法进入战斗界面，理论上解决选卡函数带来的崩溃问题 
+* SelectCards 使用 调用 PvZ 内置函数 的方法进入战斗界面，理论上解决选卡函数带来的崩溃问题
 * 修复了 clickGrid 天台场景有点击误差的 BUG
 
 AvZ 2020_09_15
@@ -65,7 +75,7 @@ AvZ 2020_09_15
 * 修补植物类，自动存冰类在没有花盆荷叶的情况下不会种植植物
 * 削弱了 vector-wlc 的头发
 
-AvZ 2020_08_10 
+AvZ 2020_08_10
 
 * 新增 AvZ::setGameSpeed 函数，可以设定游戏的运行速度
 * 修复部分 Windows 7 存在的选卡函数崩溃问题
@@ -81,11 +91,12 @@ AvZ 2020_07_27 (2020_07_10 的优化版，因此框架代码中的版本号没�
 * 新增错误提示方式，具体用法请查看 setErrorMode 函数
 * 改进了 waitUntil 阻塞函数的实现方法，对非定态和无炮有了更加人性化的支持
 * 修复了非第一波进入游戏的 BUG，调试脚本的时间占用将会变得更少
-* 修复了不立即使用 fixLatestPao 会报错误的 BUG 
+* 修复了不立即使用 fixLatestPao 会报错误的 BUG
 * 改进了注入程序的运行逻辑，减少不必要的注入错误
 * 削弱了 vector-wlc 的头发
 
 **AvZ 2020_07_10**
+
 * 放弃对于 Visual Studio 的支持，提供新的无需配置的 AvZ [VSCode](https://code.visualstudio.com/) 环境包
 * 新增 setWavelength 设定波长函数，使用此函数可以使用小于 -200 的时间参数
 * 新增 setInsertOperation 设定插入队列属性函数，使用此函数可以临时改变 insertOperation 的属性

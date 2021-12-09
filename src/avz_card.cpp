@@ -78,8 +78,8 @@ void ChooseCards()
     }
 
     if (it != __select_card_vec.end()) {
-        if (*it > 48) {
-            Asm::chooseImitatorCard(*it - 48);
+        if (*it >= 49) {
+            Asm::chooseImitatorCard(*it - 49);
         } else {
             Asm::chooseCard(*it);
         }
@@ -116,10 +116,26 @@ void SelectCards(const std::vector<int>& lst)
     Grid grid;
 
     __select_card_vec.clear();
-    for (const auto& plant_type : lst) {
-        if (plant_type > 87) {
-            ShowErrorNotInQueue("您选择的代号为 # 的植物在 PvZ 中不存在",
-                plant_type);
+    std::set<int> repetitive_type_set;
+    bool is_imitator_selected = false;
+    for (const auto& card_type : lst) {
+        if (card_type > 87) {
+            ShowErrorNotInQueue("您选择的代号为 # 的卡片在 PvZ 中不存在",
+                card_type);
+            return;
+        }
+
+        if (repetitive_type_set.find(card_type) == repetitive_type_set.end()) { // 没有被选择的卡片
+            repetitive_type_set.insert(card_type);
+        } else {
+            ShowErrorNotInQueue("您重复选择了代号为 # 的卡片", card_type);
+            return;
+        }
+
+        if (!is_imitator_selected) {
+            is_imitator_selected = (card_type > IMITATOR);
+        } else if (card_type > IMITATOR) {
+            ShowErrorNotInQueue("您重复选择了模仿者卡片");
             return;
         }
     }
@@ -193,10 +209,9 @@ int GetCardIndex(PlantType plant_type)
                 //如果是模仿者卡片
                 if (seed_type == 48) {
                     seed_type = seed->imitatorType();
-                    seed_info.first = seed_type + 48;
+                    seed_info.first = seed_type + 49;
                     seed_info.second = i;
-                } else // if(seed_info != 48)
-                {
+                } else { // if(seed_info != 48)
                     seed_info.first = seed_type;
                     seed_info.second = i;
                 }

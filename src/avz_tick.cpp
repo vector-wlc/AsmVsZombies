@@ -62,6 +62,19 @@ void TickRunner::pushFunc(const std::function<void()>& _run)
     }
 }
 
+// *** In Queue
+void ItemCollector::setInterval(int _time_interval)
+{
+    if (_time_interval < 1) {
+        ShowErrorNotInQueue("自动收集类时间间隔范围为:[1, 正无穷], 你现在设定的参数为 #", _time_interval);
+        return;
+    }
+    InsertOperation([=]() {
+        this->time_interval = _time_interval;
+    },
+        "setInterval");
+}
+
 void ItemCollector::run()
 {
     if (__main_object->gameClock() % time_interval != 0 || __main_object->mouseAttribution()->type() != 0) {
@@ -69,20 +82,30 @@ void ItemCollector::run()
     }
 
     auto item = __main_object->itemArray();
-    for (int index = 0; index < __main_object->itemTotal(); ++index, ++item) {
+    int total = __main_object->itemTotal();
+    int collect_index = -1;
+    for (int index = 0; index < total; ++index, ++item) {
         if (item->isCollected() || item->isDisappeared()) {
             continue;
         }
-        float item_x = item->abscissa();
-        float item_y = item->ordinate();
-        if (item_x >= 0.0 && item_y >= 70) {
-            SafeClick();
-            int x = static_cast<int>(item_x + 30);
-            int y = static_cast<int>(item_y + 30);
-            LeftClick(x, y);
-            SafeClick();
+        collect_index = index;
+        if (RangeIn(item->type(), {4, 5, 6})) { // 优先采集阳光
             break;
         }
+    }
+    if (collect_index == -1) { // 没有要收集的物品
+        return;
+    }
+
+    item = __main_object->itemArray() + collect_index;
+    float item_x = item->abscissa();
+    float item_y = item->ordinate();
+    if (item_x >= 0.0 && item_y >= 70) {
+        SafeClick();
+        int x = static_cast<int>(item_x + 30);
+        int y = static_cast<int>(item_y + 30);
+        LeftClick(x, y);
+        SafeClick();
     }
 }
 

@@ -7,12 +7,12 @@
 
 # 起步
 
-## 本教程只完全适配 `AvZ 210820` 版本，如果根据本教程编写的脚本出现语法错误，请先检查是否与该教程的版本相对应，如果确定自身没有任何问题，请及时联系我
+## 本教程只完全适配 `AvZ 211212` 版本，如果根据本教程编写的脚本出现语法错误，请先检查是否与该教程的版本相对应，如果确定自身没有任何问题，请及时联系我
 
 AvZ 版本号按照以下方式查找
 ```C++
 // AvZ根目录->inc->libavz.h 
-#define __AVZ_VERSION__ 210820
+#define __AVZ_VERSION__ 211212
 ```
 
 欢迎学习 AsmVsZombies 键控框架，AsmVsZombies 是由我和 [yuchenxi0_0](https://www.bilibili.com/video/BV1WJ41177a3) 两人合作完成，yuchenxi0_0 主要完成了反汇编注入工作，我主要完成了键控逻辑。我相信这套框架会带给脚本编写者焕然一新的使用体验。
@@ -38,7 +38,14 @@ AvZ 版本号按照以下方式查找
 
 开发安装包下载：[Gitee](https://gitee.com/vector-wlc/AsmVsZombies) / [GitHub](https://github.com/vector-wlc/AsmVsZombies)  点击网页右边的发行版
 
-更新：[Gitee](https://gitee.com/vector-wlc/AsmVsZombies/tree/master/release) / [GitHub](https://github.com/vector-wlc/AsmVsZombies/tree/master/release)
+更新：
+
+* 使用 VSCode AvZ 插件的命令 ： 按下 Ctrl+Shift+P 组合键，然后再键入 AvZ : Update 再选择相应版本即可。
+
+* 使用 AsmVsZombies 安装目录下的 `版本管理器.exe`, 双击运行，后续操作与前者相同。
+
+* 使用代码存储库 [Gitee](https://gitee.com/vector-wlc/AsmVsZombies/tree/master/release) / [GitHub](https://github.com/vector-wlc/AsmVsZombies/tree/master/release) 中的相应 \[版本\].zip 文件，下载下来，手动解压替换更新 （如果上面两个无法使用时，只能使用此方法）。
+
 
 QQ 群：[704655241](https://jq.qq.com/?_wv=1027&k=h6lNOpt0) ( 请先看完视频教程之后再加 )
 

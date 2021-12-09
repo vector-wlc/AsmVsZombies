@@ -861,6 +861,12 @@ public:
     {
         return (float&)((uint8_t*)this)[0x28];
     }
+
+    // 物品类型
+    int& type()
+    {
+        return (int&)((uint8_t*)this)[0x58];
+    }
 };
 
 // 动画主要属性
@@ -1097,6 +1103,7 @@ enum PlantType {
     GOLD_MAGNET,    // 吸金磁
     SPIKEROCK,      // 地刺王
     COB_CANNON,     // 玉米加农炮
+    IMITATOR,       // 模仿者
 
     // 模仿者命名 + M
     M_PEASHOOTER,     // 豌豆射手
@@ -1191,6 +1198,7 @@ enum PlantType {
 #define XJC_45 GOLD_MAGNET      // 吸金磁
 #define DCW_46 SPIKEROCK        // 地刺王
 #define YMJNP_47 COB_CANNON     // 玉米加农炮
+#define MFZ_48 IMITATOR         // 模仿者
 
 // 模仿者植物
 

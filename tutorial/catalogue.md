@@ -12,7 +12,7 @@
 
 * [名称空间](./basic/namespace.md)
 
-* [多次生效](./basic/multiple_effective.md)
+* [多次生效(挂机函数)](./basic/multiple_effective.md)
 
 * [卡片操作](./basic/card.md)
 

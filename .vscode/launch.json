@@ -1,26 +1,26 @@
 {
-    "version": "0.2.0",
     "configurations": [
         {
-            "name": "(gdb) Launch",
+            "name": "(gdb) attach",
             "type": "cppdbg",
-            "request": "launch",
-            "program": "${workspaceRoot}\\bin\\injector.exe",
+            "request": "attach",
+            "processId": "${command:AsmVsZombies.getPvzProcessId}",
+            "program": "${command:AsmVsZombies.getPvzExePath}",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceRoot}",
+            "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
-            "miDebuggerPath": "E:\\setup\\MinGW5_1_0\\bin\\gdb32.exe",
-            "preLaunchTask": "g++",
+            "miDebuggerPath": "d:/Software/AsmVsZombies/MinGW/bin/gdb32.exe",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
                     "text": "-enable-pretty-printing",
                     "ignoreFailures": true
                 }
-            ]
+            ],
+            "preLaunchTask": "avz"
         }
     ]
 }

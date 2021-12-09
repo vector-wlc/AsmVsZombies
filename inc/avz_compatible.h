@@ -64,6 +64,12 @@
 #define setInsertOperation SetInsertOperation
 #define showQueue ShowQueue
 
+// 此接口在 版本 211111 之后已被弃用，现在是为了保持兼容性
+inline void SafeWaitUntil(int time, int wave)
+{
+    AvZ::WaitUntil(time, wave);
+}
+
 // instances
 using AvZ::ice_filler;
 using AvZ::item_collector;

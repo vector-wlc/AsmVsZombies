@@ -151,7 +151,11 @@ void SetPlantActiveTime(PlantType plant_type, int delay_time)
         for (int index = 0; index < __main_object->plantCountMax();
              ++index, ++plant) {
             if (!plant->isDisappeared() && !plant->isCrushed() && plant->type() == plant_type && plant->state() == 2) {
-                plant->explodeCountdown() = 96;
+                if (std::abs(plant->explodeCountdown() - 96) < 3) {
+                    plant->explodeCountdown() = 96;
+                } else {
+                    ShowErrorNotInQueue("SetPlantActiveTime 不允许修改的生效时间超过 3cs");
+                }
                 return;
             }
         }

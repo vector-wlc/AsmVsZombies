@@ -4,12 +4,11 @@ release/ahpha
 script/test
 bin/libavz.dll
 /*.cpp
-.clang-format
-downloader/.vs
-downloader/Debug
-downloader/Release
-downloader/downloader/Debug
-downloader/downloader/Release
+tools/downloader/.vs
+tools/downloader/Debug
+tools/downloader/Release
+tools/downloader/downloader/Debug
+tools/downloader/downloader/Release
 code_association.txt
 debug
 /*.zip

@@ -85,18 +85,7 @@ void WriteMemory(T value, Args... args)
 }
 
 // 随时检测线程退出
-#define ExitSleep(ms)                   \
-    do {                                \
-        int _ms = ms;                   \
-        do {                            \
-            extern bool __is_exited;    \
-            if (__is_exited) {          \
-                extern HWND __pvz_hwnd; \
-                return;                 \
-            }                           \
-            Sleep(1);                   \
-        } while (--_ms);                \
-    } while (false)
+void ExitSleep(int ms);
 
 struct Grid {
     int row;

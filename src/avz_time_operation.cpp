@@ -6,16 +6,18 @@
  *         It's important to understand these!
  */
 
-#include "avz_time_operation.h"
-
+#include <mutex>
 #include <sstream>
 #include <thread>
 
 #include "avz_cannon.h"
 #include "avz_debug.h"
+#include "avz_execption.h"
 #include "avz_global.h"
 #include "avz_memory.h"
 #include "avz_tick.h"
+#include "avz_time_operation.h"
+#include "pvzstruct.h"
 
 namespace AvZ {
 const int __DEFAULT_START_TIME = -0xffff;
@@ -31,6 +33,7 @@ extern std::stack<int> __stopped_thread_id_stack;
 extern std::map<int, int> __seed_name_to_index_map;
 extern std::vector<Grid> __select_card_vec;
 extern std::vector<OperationQueue> __operation_queue_vec;
+extern std::mutex __operation_mutex;
 extern TimeWave __time_wave_insert;
 extern TimeWave __time_wave_run;
 extern TimeWave __time_wave_start;
@@ -78,7 +81,6 @@ void UpdateRefreshTime()
 void __Exit()
 {
     extern HWND __pvz_hwnd;
-    SetWindowText(__pvz_hwnd, TEXT("Plants vs. Zombies"));
     extern bool __is_exited;
     __is_exited = true;
 }
@@ -113,6 +115,8 @@ void InsertOperation(const std::function<void()>& operation,
             __time_wave_insert.wave, __time_wave_insert.time);
         return;
     }
+
+    __operation_mutex.lock();
     auto& operation_queue = __operation_queue_vec[__time_wave_insert.wave - 1].queue; // 取出相应波数的队列
     auto it = operation_queue.find(__time_wave_insert.time);
     Operation operate = {operation, description};
@@ -124,6 +128,7 @@ void InsertOperation(const std::function<void()>& operation,
     } else {
         it->second.push_back(operate);
     }
+    __operation_mutex.unlock();
 }
 
 void InsertTimeOperation(const TimeWave& time_wave,
@@ -156,16 +161,21 @@ bool WaitUntil(const TimeWave& _time_wave)
     extern PvZ* __pvz_base;
     __block_var = true;
 
+    // 这里的 return 是为了兼容之前的版本的代码不报错
+    // 实际上已经没有任何作用了
+
     if (__is_exited) {
-        return false;
+        throw Exception("script have exited\n");
     }
 
     {
         InsertGuard insert_guard(true);
         SetTime(_time_wave);
         InsertOperation([=]() {
-            __block_var = false; // 唤醒 Script 线程
-            Sleep(10);           // 停滞一帧
+            __block_var = false;   // 唤醒 Script 线程
+            while (!__block_var) { // 阻塞 pvz 进程，等待操作完成
+                ExitSleep(1);
+            }
         });
     }
 
@@ -173,7 +183,7 @@ bool WaitUntil(const TimeWave& _time_wave)
         // 阻塞 Script 线程
         Sleep(1);
         if (__pvz_base->gameUi() == 1) {
-            return false;
+            throw Exception("game return main ui\n");
         }
     }
 
@@ -269,26 +279,35 @@ void LoadScript(const std::function<void()> func)
     SetTime(__time_wave_start);
 
     __is_loaded = true;
-    func();
 
-    // 等待游戏进入战斗界面
-    while (__pvz_base->gameUi() != 3) {
-        if (__pvz_base->gameUi() == 1) {
-            break;
-        }
-        ExitSleep(1);
-    }
+    try {
+        func();
 
-    // 等待游戏结束
-    while (__pvz_base->gameUi() == 3) {
-        ExitSleep(1);
-    }
+        __block_var = true;
 
-    if (__effective_mode != MAIN_UI_OR_FIGHT_UI) {
-        // 如果战斗界面不允许重新注入则等待回主界面
-        while (__pvz_base->gameUi() != 1) {
+        // 等待游戏进入战斗界面
+        while (__pvz_base->gameUi() != 3) {
+            if (__pvz_base->gameUi() == 1) {
+                break;
+            }
             ExitSleep(1);
         }
+
+        // 等待游戏结束
+        while (__pvz_base->gameUi() == 3) {
+            ExitSleep(1);
+        }
+
+        if (__effective_mode != MAIN_UI_OR_FIGHT_UI) {
+            // 如果战斗界面不允许重新注入则等待回主界面
+            while (__pvz_base->gameUi() != 1) {
+                ExitSleep(1);
+            }
+        }
+    } catch (Exception& exce) {
+        printf(exce.what());
+    } catch (...) {
+        ShowErrorNotInQueue("脚本触发了一个未知的异常\n");
     }
 
     // 停止一切线程
@@ -297,22 +316,14 @@ void LoadScript(const std::function<void()> func)
     }
 
     // 释放资源
+    Sleep(100);
     __script_exit_deal();
-    fclose(stdout);
-    FreeConsole();
-    extern HWND __pvz_hwnd;
+    AvZ::SetErrorMode(AvZ::POP_WINDOW);
     SetInsertOperation(false);
     MaidCheats::stop();
     __pvz_base->tickMs() = 10;
     SetInsertOperation(true);
-    __operation_queue_vec.clear(); // 清除一切操作
-    __thread_vec.clear();
-    key_connector.clear();
-    __seed_name_to_index_map.clear();
 
-    while (!__stopped_thread_id_stack.empty()) {
-        __stopped_thread_id_stack.pop();
-    }
     __is_loaded = !(__effective_mode >= 0);
 }
 
@@ -412,73 +423,91 @@ bool OperationQueue::is_time_arrived()
 
 void __Run(MainObject* level, std::function<void()> Script)
 {
-    extern MainObject* __main_object;
-    extern PvZ* __pvz_base;
-    if (__is_exited) {
-        return;
-    }
-    __main_object = level;
-    // 假进入战斗界面直接返回
-    if (__main_object->loadDataState() == 1) {
-        return;
-    }
-
-    if (!__is_loaded) {
-        void InitAddress();
-        InitAddress();
-        std::thread task(LoadScript, Script);
-        task.detach();
-        while (!__is_loaded) {
-            ExitSleep(10);
+    try {
+        extern MainObject* __main_object;
+        extern PvZ* __pvz_base;
+        if (__is_exited) {
+            return;
         }
-    }
+        __main_object = level;
+        // 假进入战斗界面直接返回
+        if (__main_object->loadDataState() == 1) {
+            return;
+        }
 
-    if (__pvz_base->gameUi() == 2 && !__select_card_vec.empty()) {
-        void ChooseCards();
-        ChooseCards();
-    }
+        if (!__is_loaded) {
+            void InitAddress();
+            InitAddress();
 
-    if (__pvz_base->gameUi() != 3 || __pvz_base->mouseWindow()->topWindow()) {
-        __seed_name_to_index_map.clear();
-        return;
-    }
-
-    // 以下代码到战斗界面才能执行
-    if (__pvz_base->gameUi() == 2) {
-        return;
-    }
-
-    if (!__select_card_vec.empty()) {
-        __select_card_vec.clear();
-    }
-
-    if (__main_object->wave() != __main_object->totalWave()) {
-        UpdateRefreshTime();
-    }
-
-    // 对 __main_object->totalWave 个队列进行遍历
-    // 最大比较次数 __main_object->totalWave * 3 = 60 次
-    // 卧槽，感觉好亏，不过游戏应该不会卡顿
-    for (int wave = 0; wave < __main_object->totalWave(); ++wave) {
-        while (__operation_queue_vec[wave].refresh_time != -1 && // 波次刷新时间已知
-            !__operation_queue_vec[wave].queue.empty() &&        // 有操作
-            __operation_queue_vec[wave].is_time_arrived())       // 操作时间已到达
-        {
-            auto it = __operation_queue_vec[wave].queue.begin();
-            __time_wave_run.wave = wave + 1;
-            __time_wave_run.time = it->first;
-
-            for (const auto& ele : it->second) {
-                ele.operation();
+            __operation_queue_vec.clear(); // 清除一切操作
+            __thread_vec.clear();
+            key_connector.clear();
+            __seed_name_to_index_map.clear();
+            while (!__stopped_thread_id_stack.empty()) {
+                __stopped_thread_id_stack.pop();
             }
-            __operation_queue_vec[wave].queue.erase(it);
-        }
-    }
 
-    for (const auto& thread_info : __thread_vec) {
-        if (*thread_info.id_ptr >= 0) {
-            thread_info.func();
+            std::thread task(LoadScript, Script);
+            task.detach();
+            while (!__is_loaded) {
+                ExitSleep(10);
+            }
         }
+
+        if (__pvz_base->gameUi() == 2 && !__select_card_vec.empty()) {
+            void ChooseCards();
+            ChooseCards();
+        }
+
+        if (__pvz_base->gameUi() != 3 || __pvz_base->mouseWindow()->topWindow()) {
+            __seed_name_to_index_map.clear();
+            return;
+        }
+
+        // 以下代码到战斗界面才能执行
+        if (__pvz_base->gameUi() == 2) {
+            return;
+        }
+
+        if (!__select_card_vec.empty()) {
+            __select_card_vec.clear();
+        }
+
+        if (__main_object->wave() != __main_object->totalWave()) {
+            UpdateRefreshTime();
+        }
+
+        // 对 __main_object->totalWave 个队列进行遍历
+        // 最大比较次数 __main_object->totalWave * 3 = 60 次
+        // 卧槽，感觉好亏，不过游戏应该不会卡顿
+
+        for (int wave = 0; wave < __main_object->totalWave(); ++wave) {
+            while (__operation_queue_vec[wave].refresh_time != -1 && // 波次刷新时间已知
+                !__operation_queue_vec[wave].queue.empty() &&        // 有操作
+                __operation_queue_vec[wave].is_time_arrived())       // 操作时间已到达
+            {
+                auto it = __operation_queue_vec[wave].queue.begin();
+                __time_wave_run.wave = wave + 1;
+                __time_wave_run.time = it->first;
+
+                for (const auto& ele : it->second) {
+                    ele.operation();
+                }
+                __operation_mutex.lock();
+                __operation_queue_vec[wave].queue.erase(it);
+                __operation_mutex.unlock();
+            }
+        }
+
+        for (const auto& thread_info : __thread_vec) {
+            if (*thread_info.id_ptr >= 0) {
+                thread_info.func();
+            }
+        }
+    } catch (Exception& exce) {
+        printf(exce.what());
+    } catch (...) {
+        ShowErrorNotInQueue("脚本触发了一个未知的异常\n");
     }
 }
 

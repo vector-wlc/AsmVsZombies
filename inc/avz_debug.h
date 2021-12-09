@@ -67,15 +67,14 @@ void ShowErrorNotInQueue(const std::string& content = "", Args... args)
 
     std::initializer_list<int> {(string_convert(_content, args), 0)...};
 
-    void Utf8ToGbk(std::string & strUTF8);
     _content += "\n\n\n";
+    void Utf8ToGbk(std::string & strUTF8);
     Utf8ToGbk(_content);
     if (__error_mode == POP_WINDOW) {
         MessageBoxA(NULL, _content.c_str(), "Error", 0);
     } else if (__error_mode == CONSOLE) {
 
         std::printf(_content.c_str());
-        // WriteConsole(hOutput, _content.c_str(), _content.size(), NULL, NULL); //向控制台窗口写入信息
     }
 };
 
@@ -86,10 +85,9 @@ template <typename... Args>
 void ShowError(const std::string& content = "", Args... args)
 {
     void InsertOperation(const std::function<void()>& operation, const std::string& description = "unknown");
-    InsertOperation(
-        [=]() {
-            ShowErrorNotInQueue(content, args...);
-        });
+    InsertOperation([=]() {
+        ShowErrorNotInQueue(content, args...);
+    });
 };
 
 } // namespace AvZ

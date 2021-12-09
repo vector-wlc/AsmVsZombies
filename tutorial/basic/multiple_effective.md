@@ -18,6 +18,7 @@ OpenMultipleEffective()
 OpenMultipleEffective('Q') 
 
 // 脚本多次生效，按下 Q 键取消此效果，多次生效效果在主界面和选卡界面都会生效
+// 脚本挂机可用这条语句
 OpenMultipleEffective('Q', AvZ::MAIN_UI_OR_FIGHT_UI)
 
 // 脚本多次生效，按下 Q 键取消此效果，多次生效效果仅在主界面生效
