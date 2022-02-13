@@ -6,65 +6,246 @@
  */
 
 #include "pvzfunc.h"
+#include <mutex>
 
 #pragma GCC push_options
 #pragma GCC optimize("O0")
 
+static MainObject* __level;
+static MouseWindow* __mw;
+static int __x;
+static int __y;
+static int __key;
+static int __rank;
+static int __index;
+static int __card_type;
+static int __row;
+static int __col;
+static int __reject_type;
+
 void Asm::clickScene(MainObject* level, int x, int y, int key)
 {
-    if ((*(PvZ**)0x6a9ec0)->gameUi() != 3) {
-        return;
-    }
-#ifdef __MINGW32__
-    __asm__ __volatile__(
-        "pushl %0;"
-        "pushl %1;"
-        "pushl %2;"
-        "movl %3, %%ecx;"
-        "movl $0x411f20, %%eax;"
-        "calll %%eax;"
-        :
-        : "g"(key), "g"(y), "g"(x), "g"(level)
-        : "eax", "ecx");
-#else
-    __asm {
-        push key
-        push y
-        push x
-        mov ecx, level
-        mov eax, 0x411f20
-        call eax
-    }
-#endif
+    __level = level;
+    __x = x;
+    __y = y;
+    __key = key;
+    __clickScene();
 }
 
 void Asm::click(MouseWindow* mw, int x, int y, int key)
 {
+    __mw = mw;
+    __x = x;
+    __y = y;
+    __key = key;
+    __click();
+}
+void Asm::mouseClick(int x, int y, int key)
+{
+    __x = x;
+    __y = y;
+    __key = key;
+    __mouseClick();
+}
+
+void Asm::shootPao(int x, int y, int rank)
+{
+    __x = x;
+    __y = y;
+    __rank = rank;
+    __shootPao();
+}
+
+void Asm::plantCard(int x, int y, int index)
+{
+    __x = x;
+    __y = y;
+    __index = index;
+    __plantCard();
+}
+
+void Asm::shovelPlant(int x, int y)
+{
+    __x = x;
+    __y = y;
+    __shovelPlant();
+}
+
+// 选择卡片
+void Asm::chooseCard(int card_type)
+{
+    __card_type = card_type;
+    __chooseCard();
+}
+
+// 选择模仿者卡片
+void Asm::chooseImitatorCard(int card_type)
+{
+    __card_type = card_type;
+    __chooseImitatorCard();
+}
+
+int Asm::getPlantRejectType(int card_type, int row, int col)
+{
+    __card_type = card_type;
+    __row = row;
+    __col = col;
+    __getPlantRejectType();
+    return __reject_type;
+}
+
+void Asm::gameFightLoop()
+{
+
 #ifdef __MINGW32__
     __asm__ __volatile__(
-        "pushl %0;"
-        "movl %1, %%ebx;"
-        "movl %2, %%eax;"
-        "movl %3, %%ecx;"
-        "movl $0x539390, %%edx;"
-        "calll %%edx;"
+        "pushal;"
+        "movl 0x6a9ec0, %%ecx;"
+        "movl 0x768(%%ecx), %%ecx;"
+        "movl $0x415d40, %%eax;"
+        "calll %%eax;"
+        "popal;"
         :
-        : "g"(x), "g"(key), "g"(y), "g"(mw)
-        : "eax", "ecx", "ebx", "edx");
+        :
+        :);
 #else
-    __asm {
-		push ebx;
-		push x;
-		mov ebx, key;
-		mov eax, y;
-		mov ecx, mw;
-		mov edx, 0x539390;
-		call edx;
-		pop ebx;
+    __asm
+    {
+        popad
+        movl ecx, [0x6a9ec0]
+        movl ecx, [ecx+0x768]
+        mov eax, 0x415d40 
+        call eax
+
+        popal
     }
-    ;
 #endif
 }
+
+void Asm::gameTotalLoop()
+{
+#ifdef __MINGW32__
+    __asm__ __volatile__(
+        "pushal;"
+        "movl 0x6a9ec0, %%ecx;"
+        "movl $0x452650, %%eax;"
+        "calll %%eax;"
+        "popal;"
+        :
+        :
+        :);
+#else
+    __asm
+    {
+        popad
+        movl ecx, [0x6a9ec0]
+        mov eax, 0x452650 
+        call eax
+
+        popal
+    }
+#endif
+}
+
+void Asm::gameSleepLoop()
+{
+#ifdef __MINGW32__
+    __asm__ __volatile__(
+        "pushal;"
+        "movl 0x6a9ec0, %%ecx;"
+        "movl $0x453a50, %%eax;"
+        "calll %%eax;"
+        "popal;"
+        :
+        :
+        :);
+#else
+    __asm
+    {
+        mov ecx 6A9EC0
+        call 0x453a50
+    }
+#endif
+}
+
+void Asm::clearObjectMemory()
+{
+#ifdef __MINGW32__
+    __asm__ __volatile__(
+        "pushal;"
+        "movl 0x6a9ec0, %%ebx;"
+        "movl 0x768(%%ebx), %%esi;"
+        "movl $0x41bad0, %%eax;"
+        "calll %%eax;"
+
+        "movl 0x6a9ec0, %%ebx;"
+        "movl 0x820(%%ebx), %%esi;"
+        "pushl %%esi;"
+        "movl $0x445680, %%eax;"
+        "calll %%eax;"
+        "popal;"
+        :
+        :
+        :);
+#else
+    __asm
+    {
+        mov esi 6A9EC0+768
+        call 41BAD0
+        push 6A9EC0+820
+        call 445680
+    }
+#endif
+}
+
+void Asm::killZombiesPreview()
+{
+#ifdef __MINGW32__
+    __asm__ __volatile__(
+        "pushal;"
+        "movl 0x6a9ec0, %%ebx;"
+        "movl 0x768(%%ebx), %%ebx;"
+        "movl $0x40df70, %%eax;"
+        "calll %%eax;"
+        "popal;"
+        :
+        :
+        :);
+#else
+    __asm
+    {
+        mov ebx 6A9EC0+768
+        call 0x40df70
+    }
+#endif
+}
+
+void Asm::setImprovePerformance(bool is_improve_performance)
+{
+    *(bool*)(0x6a66f4) = !is_improve_performance;
+}
+
+void Asm::gameExit()
+{
+#ifdef __MINGW32__
+    __asm__ __volatile__(
+        "pushal;"
+        "movl 0x6a9ec0, %%eax;"
+        "movl $0x4524f0, %%ecx;"
+        "calll %%ecx;"
+        "popal;"
+        :
+        :
+        :);
+#else
+    __asm
+    {
+        mov eax 6A9EC0
+        call 0x4524f0
+    }
+#endif
+}
+
 void Asm::saveData()
 {
 #ifdef __MINGW32__
@@ -148,53 +329,109 @@ void Asm::rock()
 #endif
 }
 
-void Asm::mouseClick(int x, int y, int key)
+void Asm::__clickScene()
+{
+    if ((*(PvZ**)0x6a9ec0)->gameUi() != 3) {
+        return;
+    }
+#ifdef __MINGW32__
+    __asm__ __volatile__(
+        "pushl %0;"
+        "pushl %1;"
+        "pushl %2;"
+        "movl %3, %%ecx;"
+        "movl $0x411f20, %%eax;"
+        "calll %%eax;"
+        :
+        : "m"(__key), "m"(__y), "m"(__x), "m"(__level)
+        : "eax", "ecx");
+#else
+    __asm {
+        push __key
+        push __y
+        push __x
+        mov ecx, __level
+        mov eax, 0x411f20
+        call eax
+    }
+#endif
+}
+
+void Asm::__click()
 {
 #ifdef __MINGW32__
     __asm__ __volatile__(
+        "pushl %0;"
+        "movl %1, %%ebx;"
+        "movl %2, %%eax;"
+        "movl %3, %%ecx;"
+        "movl $0x539390, %%edx;"
+        "calll %%edx;"
+        :
+        : "m"(__x), "m"(__key), "m"(__y), "m"(__mw)
+        : "eax", "ecx", "ebx", "edx");
+#else
+    __asm {
+		push ebx;
+		push __x;
+		mov ebx, __key;
+		mov eax, __y;
+		mov ecx, __mw;
+		mov edx, 0x539390;
+		call edx;
+		pop ebx;
+    }
+#endif
+}
+
+void Asm::__mouseClick()
+{
+
+#ifdef __MINGW32__
+    __asm__ __volatile__(
         "pushal;"
-        "pushl %[x];"
-        "movl %[y], %%eax;"
-        "movl %[key], %%ebx;"
+        "pushl %[__x];"
+        "movl %[__y], %%eax;"
+        "movl %[__key], %%ebx;"
         "movl 0x6a9ec0, %%ecx;"
         "movl 0x320(%%ecx), %%ecx;"
         "movl $0x539390, %%edx;"
         "calll %%edx;"
-        "pushl %[key];"
-        "pushl %[x];"
+        "pushl %[__key];"
+        "pushl %[__x];"
         "movl 0x6a9ec0, %%eax;"
         "movl 0x320(%%eax), %%eax;"
-        "movl %[y], %%ebx;"
+        "movl %[__y], %%ebx;"
         "movl $0x5392e0, %%edx;"
         "calll %%edx;"
         "popal;"
         :
-        : [x] "g"(x), [y] "g"(y), [key] "g"(key)
+        : [__x] "m"(__x), [__y] "m"(__y), [__key] "m"(__key)
         :);
 #else
     __asm {
         pushad
-        push x
-        mov eax,y
-        mov ebx,act
+        push __x
+        mov eax,__y
+        mov ebx,__key
         mov ecx,[0x6a9ec0]
         mov ecx,[ecx+0x320]
         mov edx,0x539390
         call edx
-        push act
-        push x
+        push __key
+        push __x
         mov eax,[0x6a9ec0]
         mov eax,[eax+0x320]
-        mov ebx,y
+        mov ebx,__y
         mov edx,0x5392e0
         call edx
         popad
     }
 #endif
 }
-
-void Asm::shootPao(int x, int y, int rank)
+void Asm::__shootPao()
 {
+
 #ifdef __MINGW32__
     __asm__ __volatile__(
         "pushal;"
@@ -202,15 +439,15 @@ void Asm::shootPao(int x, int y, int rank)
         "movl 0x768(%%eax), %%edi;"
         "movl 0xac(%%edi), %%eax;"
         "movl $0x14c, %%ecx;"
-        "imull %[rank], %%ecx;"
+        "imull %[__rank], %%ecx;"
         "addl %%ecx, %%eax;"
-        "pushl %[y];"
-        "pushl %[x];"
+        "pushl %[__y];"
+        "pushl %[__x];"
         "movl $0x466d50, %%edx;"
         "calll %%edx;"
         "popal;"
         :
-        : [x] "g"(x), [y] "g"(y), [rank] "g"(rank)
+        : [__x] "m"(__x), [__y] "m"(__y), [__rank] "m"(__rank)
         :);
 #else
     __asm {
@@ -219,31 +456,31 @@ void Asm::shootPao(int x, int y, int rank)
         mov edi,[eax+0x768]
         mov eax,[edi+0xac]
         mov ecx,0x14c
-        imul ecx,%[rank]
+        imul ecx,%[__rank]
         add eax,ecx
-        push %[x]
-        push %[y]
+        push %[__x]
+        push %[__y]
         mov edx,0x466d50
         call edx
         popad
     }
 #endif
 }
-
-void Asm::plantCard(int x, int y, int index)
+void Asm::__plantCard()
 {
+
 #ifdef __MINGW32__
     __asm__ __volatile__(
 
         "pushal;"
         "movl 0x6a9ec0, %%eax;"
         "movl 0x768(%%eax), %%edi;"
-        "pushl %[y];"
-        "pushl %[x];"
+        "pushl %[__y];"
+        "pushl %[__x];"
         "pushl %%edi;"
         "movl 0x144(%%edi), %%eax;"
         "movl $0x50, %%ecx;"
-        "imull %[index], %%ecx;"
+        "imull %[__index], %%ecx;"
         "addl %%ecx, %%eax;"
         "addl $0x28, %%eax;"
         "pushl %%eax;"
@@ -254,18 +491,18 @@ void Asm::plantCard(int x, int y, int index)
         "calll %%edx;"
         "popal;"
         :
-        : [x] "g"(x), [y] "g"(y), [index] "g"(index)
+        : [__x] "m"(__x), [__y] "m"(__y), [__index] "m"(__index)
         :);
 #else
     __asm {
         pushad
         mov eax,[6A9EC0]
         mov eax,[eax+768]
-        push y
-        push x
+        push __y
+        push __x
         push eax
         mov eax,[eax+144]
-        mov ecx,rank
+        mov ecx,__rank
         imul ecx,50
         add eax,28
         add eax,ecx
@@ -280,31 +517,31 @@ void Asm::plantCard(int x, int y, int index)
     }
 #endif
 }
-
-void Asm::shovelPlant(int x, int y)
+void Asm::__shovelPlant()
 {
+
 #ifdef __MINGW32__
     __asm__ __volatile__(
         "pushal;"
         "pushl $0x6;"
         "pushl $0x1;"
-        "movl %[y], %%ecx;"
-        "movl %[x], %%edx;"
+        "movl %[__y], %%ecx;"
+        "movl %[__x], %%edx;"
         "movl 0x6a9ec0, %%edi;"
         "movl 0x768(%%edi), %%eax;"
         "movl $0x411060, %%ebx;"
         "calll %%ebx;"
         "popal;"
         :
-        : [x] "g"(x), [y] "g"(y)
+        : [__x] "m"(__x), [__y] "m"(__y)
         :);
 #else
     __asm {
         pushad
         push 6
         push 1
-        mov ecx y
-        mov edx x
+        mov ecx __y
+        mov edx __x
         mov eax,[6A9EC0]
         mov eax,[eax+768]
         mov ebx,411060
@@ -314,9 +551,7 @@ void Asm::shovelPlant(int x, int y)
     }
 #endif
 }
-
-// 选择卡片
-void Asm::chooseCard(int card_type)
+void Asm::__chooseCard()
 {
 #ifdef __MINGW32__
     __asm__ __volatile__(
@@ -324,9 +559,9 @@ void Asm::chooseCard(int card_type)
         "movl $0x6A9EC0, %%eax;"
         "movl (%%eax), %%eax;"
         "movl 0x774(%%eax), %%eax;"
-        "movl %[card_type], %%edx;"
+        "movl %[__card_type], %%edx;"
         "shll $0x4, %%edx;"
-        "subl %[card_type], %%edx;"
+        "subl %[__card_type], %%edx;"
         "shll $0x2, %%edx;"
         "addl $0xa4, %%edx;"
         "addl %%eax, %%edx;"
@@ -335,7 +570,7 @@ void Asm::chooseCard(int card_type)
         "calll %%ecx;"
         "popal;"
         :
-        : [card_type] "g"(card_type)
+        : [__card_type] "m"(__card_type)
         :);
 #else
     __asm {
@@ -343,9 +578,9 @@ void Asm::chooseCard(int card_type)
         mov eax,0x6A9EC0
         mov eax,[eax]
         mov eax,[eax+0x774]
-        mov edx,cardType
+        mov edx, __card_type
         shl edx,0x4
-        sub edx,cardType
+        sub edx, __card_type
         shl edx,0x2
         add edx,0xA4
         add edx,eax
@@ -356,10 +591,9 @@ void Asm::chooseCard(int card_type)
     }
 #endif
 }
-
-// 选择模仿者卡片
-void Asm::chooseImitatorCard(int card_type)
+void Asm::__chooseImitatorCard()
 {
+
 #ifdef __MINGW32__
     __asm__ __volatile__(
         "pushal;"
@@ -371,7 +605,7 @@ void Asm::chooseImitatorCard(int card_type)
         "movl $0x0, 0x0C09(%%eax);"
         "movl $0x0, 0x0C0A(%%eax);"
         "movl $0x0, 0x0C0B(%%eax);"
-        "movl %[card_type], %%edx;"
+        "movl %[__card_type], %%edx;"
         "movl %%edx, 0x0C18(%%eax);"
         "movl $0x0, 0x0C19(%%eax);"
         "movl $0x0, 0x0C1A(%%eax);"
@@ -391,7 +625,7 @@ void Asm::chooseImitatorCard(int card_type)
         "calll %%edx;"
         "popal;"
         :
-        : [card_type] "g"(card_type)
+        : [__card_type] "m"(__card_type)
         :);
 #else
     __asm {
@@ -400,7 +634,7 @@ void Asm::chooseImitatorCard(int card_type)
         mov eax, [eax]
         mov eax, [eax + 0x774]
         mov dword ptr[eax + 0x0C08], 0x3
-        mov dword ptr[eax + 0x0C18], cardType
+        mov dword ptr[eax + 0x0C18], __cardType
         lea ecx, [eax + 0xBE4]
         mov edx, [eax + 0xA0]
         mov ebx, [edx + 0x8]
@@ -418,39 +652,37 @@ void Asm::chooseImitatorCard(int card_type)
 #endif
 }
 
-int Asm::GetPlantRejectType(int card_type, int row, int col)
+void Asm::__getPlantRejectType()
 {
-    int is_plantable = 0;
 #ifdef __MINGW32__
     __asm__ __volatile__(
         "pushal;"
-        "movl %[row], %%eax;"
-        "pushl %[card_type];"
-        "pushl %[col];"
+        "movl %[__row], %%eax;"
+        "pushl %[__card_type];"
+        "pushl %[__col];"
         "movl $0x6A9EC0, %%ebx;"
         "movl (%%ebx), %%ebx;"
         "movl 0x768(%%ebx), %%ebx;"
         "pushl %%ebx;"
         "movl $0x40E020, %%edx;"
         "calll %%edx;"
-        "movl %%eax, %[is_plantable];"
+        "movl %%eax, %[__reject_type];"
         "popal;"
         :
-        : [card_type] "g"(card_type), [row] "g"(row), [col] "g"(col), [is_plantable] "g"(is_plantable)
+        : [__card_type] "m"(__card_type), [__row] "m"(__row), [__col] "m"(__col), [__reject_type] "m"(__reject_type)
         :);
 #else
     __asm {
         pushad
         esi row
-        push cardtype
+        push __card_type
         push col
         push 6A9EC0+768
         call 40E020
-        mov ans, eax
+        mov __reject_type, eax
         popad
     }
 #endif
-    return is_plantable;
 }
 
 #pragma GCC pop_options

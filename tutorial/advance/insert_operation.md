@@ -49,7 +49,7 @@ InsertOperation([=]() {
     });
 });
 
-SetTime(-600, 1);
+SetTime(-599, 1);
 Card(PUFF_SHROOM, 1, 2);
 ```
 

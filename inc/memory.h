@@ -29,7 +29,7 @@ public:
     PVOID Alloc(DWORD len);
     BOOL Free(PVOID addr);
 
-    BOOL Write(uintptr_t addr, size_t len, uint8_t* data);
+    BOOL Write(uintptr_t addr, size_t len, void* data);
 
     template <typename T>
     T ReadMemory(std::initializer_list<uintptr_t>);

@@ -12,12 +12,35 @@
 #include "avz_memory.h"
 
 namespace AvZ {
-extern std::vector<ThreadInfo> __thread_vec;
-extern std::stack<int> __stopped_thread_id_stack;
-
 extern MainObject* __main_object;
 extern PvZ* __pvz_base;
 extern HWND __pvz_hwnd;
+
+void TickManager::run()
+{
+    for (auto id : running_id_set) {
+        tick_func_vec[id].second();
+    }
+}
+
+void TickManager::stop(int id)
+{
+    running_id_set.erase(id);
+    stopped_id_vec.push_back(id);
+}
+
+void TickManager::clear()
+{
+    running_id_set.clear();
+    stopped_id_vec.clear();
+    for (auto& func : tick_func_vec) {
+        *func.first = STOPPED;
+    }
+    tick_func_vec.clear();
+}
+
+TickManager TickRunner::tick_in_fight;
+TickManager TickRunner::tick_in_global;
 
 // *** Not In Queue
 // 通过得到线程的状态
@@ -25,41 +48,51 @@ extern HWND __pvz_hwnd;
 // 停止状态：return STOPED
 // 暂停状态：return PAUSED
 // 运行状态：return RUNNING
-TickRunner::ThreadStatus TickRunner::getStatus() const
+int TickRunner::getStatus() const
 {
-    if (thread_id < 0) {
-        return STOPPED;
-    }
-
-    if (is_paused) {
-        return PAUSED;
-    }
-
-    return RUNNING;
+    return status;
 }
 
-void TickRunner::pushFunc(const std::function<void()>& _run)
+// *** In Queue
+void TickRunner::stop()
 {
-    if (!thread_examine()) {
-        return;
-    }
-    is_paused = false;
-    auto run = [=]() {
-        if (is_paused) {
-            return;
-        }
+    InsertOperation([=]() {
+        tick_manager->stop(tick_id);
+        status = STOPPED;
+    },
+        "stop");
+}
 
-        _run();
-    };
-    //如果没有找到停下来的线程则创建新线程
-    if (__stopped_thread_id_stack.empty()) {
-        __thread_vec.push_back({run, &thread_id});
-        thread_id = __thread_vec.size() - 1;
-    } else {
-        thread_id = __stopped_thread_id_stack.top();
-        __thread_vec[thread_id] = {run, &thread_id};
-        __stopped_thread_id_stack.pop();
-    }
+void TickRunner::pause()
+{
+    InsertOperation([=]() {
+        status = PAUSED;
+    },
+        "pause");
+}
+
+void TickRunner::goOn()
+{
+    InsertOperation([=]() {
+        status = RUNNING;
+    },
+        "goOn");
+}
+
+void TickRunner::clear()
+{
+    tick_in_fight.clear();
+    tick_in_global.clear();
+}
+
+void TickRunner::runInFight()
+{
+    tick_in_fight.run();
+}
+
+void TickRunner::runInGlobal()
+{
+    tick_in_global.run();
 }
 
 // *** In Queue
@@ -73,6 +106,16 @@ void ItemCollector::setInterval(int _time_interval)
         this->time_interval = _time_interval;
     },
         "setInterval");
+}
+
+void ItemCollector::start()
+{
+    InsertOperation([=]() {
+        pushFunc([=]() {
+            run();
+        });
+    },
+        "startCollect");
 }
 
 void ItemCollector::run()
@@ -426,38 +469,6 @@ void PlantFixer::run()
         //种植植物
         use_seed_((*usable_seed_index_it), need_plant_grid.row,
             need_plant_grid.col, true);
-    }
-}
-
-/////////////////////////////////////////////////
-//    PlantFixer
-/////////////////////////////////////////////////
-
-void KeyConnector::add(char key, std::function<void()> operate)
-{
-    if (key >= 'a' && key <= 'z')
-        key -= 32;
-
-    for (const auto& key_operation : key_operation_vec) {
-        if (key_operation.first == key) {
-            ShowErrorNotInQueue("按键 # 绑定了多个操作", key);
-            return;
-        }
-    }
-
-    key_operation_vec.push_back(
-        std::pair<char, std::function<void()>>(key, operate));
-
-    if (getStatus() == STOPPED) {
-        pushFunc([=]() {
-            for (const auto& key_operation : key_operation_vec) {
-                if ((GetAsyncKeyState(key_operation.first) & 0x8001) == 0x8001 && GetForegroundWindow() == __pvz_hwnd) { // 检测 pvz 是否为顶层窗口
-                    InsertGuard insert_guard(false);
-                    key_operation.second();
-                    return;
-                }
-            }
-        });
     }
 }
 } // namespace AvZ

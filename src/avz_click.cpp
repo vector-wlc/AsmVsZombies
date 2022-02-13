@@ -105,7 +105,10 @@ void ShovelNotInQueue(int row, float col, bool pumpkin)
     if (pumpkin) {
         y += 20;
     }
-
+    extern int __error_mode;
+    if (__error_mode == CONSOLE) {
+        Print("Shovel (%d, %g)\n", row, col);
+    }
     Asm::shovelPlant(x, y);
     SafeClick();
 }

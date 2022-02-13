@@ -14,6 +14,7 @@
 
 // 使用汇编代码调用 PvZ 游戏内部的函数
 class Asm {
+
 public:
     // key 1: left click
     // key -1: right click
@@ -69,5 +70,41 @@ public:
     // if(GetPlantRejectType(XRK_1, 1, 1) == Asm::NIL) { // NIL 表示可以种植物， 检查一下 2 行 2 列是否可以种植物
     //
     // }
-    static int GetPlantRejectType(int card_type, int row, int col);
+    static int getPlantRejectType(int card_type, int row, int col);
+
+    // 战斗界面刷新函数
+    static void gameFightLoop();
+
+    // 游戏整体刷新函数
+    static void gameTotalLoop();
+
+    // 游戏最完整刷新函数，带帧率控制
+    static void gameSleepLoop();
+
+    static void clearObjectMemory();
+
+    static void gameExit();
+
+    static void killZombiesPreview();
+
+    static void setImprovePerformance(bool is_improve_performance);
+
+private:
+    static void __clickScene();
+
+    static void __click();
+
+    static void __mouseClick();
+
+    static void __shootPao();
+
+    static void __plantCard();
+
+    static void __shovelPlant();
+
+    static void __chooseCard();
+
+    static void __chooseImitatorCard();
+
+    static void __getPlantRejectType();
 };

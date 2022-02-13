@@ -560,7 +560,7 @@ public:
     }
 
     // 植物是否消失
-    bool& isDisappeared()
+    const bool& isDisappeared()
     {
         return (bool&)((uint8_t*)this)[0x141];
     }
@@ -707,7 +707,7 @@ public:
     }
 
     // 僵尸是否消失
-    bool& isDisappeared()
+    const bool& isDisappeared()
     {
         return (bool&)((uint8_t*)this)[0xEC];
     }
@@ -839,7 +839,7 @@ public:
     uint8_t data[0xd8];
 
     // 物品是否消失
-    bool& isDisappeared()
+    const bool& isDisappeared()
     {
         return (bool&)((uint8_t*)this)[0x38];
     }

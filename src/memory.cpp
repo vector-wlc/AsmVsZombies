@@ -30,7 +30,7 @@ PVOID Memory::Alloc(DWORD len)
 
 BOOL Memory::Free(PVOID addr) { return VirtualFree(addr, 0, MEM_RELEASE); }
 
-BOOL Memory::Write(uintptr_t addr, size_t len, uint8_t* data)
+BOOL Memory::Write(uintptr_t addr, size_t len, void* data)
 {
     return WriteProcessMemory(handle, (void*)addr, data, len, nullptr);
 }

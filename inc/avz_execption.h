@@ -2,7 +2,7 @@
  * @Coding: utf-8
  * @Author: vector-wlc
  * @Date: 2021-11-15 11:06:42
- * @Description: 
+ * @Description:
  */
 
 #ifndef __AVZ_EXCEPTION_H__
@@ -16,7 +16,7 @@ public:
      *  @param message C-style string error message.
      *                 The string contents are copied upon construction.
      *                 Hence, responsibility for deleting the char* lies
-     *                 with the caller. 
+     *                 with the caller.
      */
     explicit Exception(const char* message)
         : msg_(message)

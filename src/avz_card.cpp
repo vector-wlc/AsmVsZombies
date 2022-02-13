@@ -11,6 +11,7 @@
 #include "avz_global.h"
 #include "avz_time_operation.h"
 #include "pvzfunc.h"
+#include <cstdio>
 
 namespace AvZ {
 extern std::map<int, int> __seed_name_to_index_map;
@@ -64,7 +65,7 @@ void DealWrongClick()
 }
 *************************************************/
 
-void ChooseCards()
+void __ChooseCards()
 {
     static auto it = __select_card_vec.begin();
 
@@ -162,6 +163,11 @@ void CardNotInQueue(int seed_index, int row, float col)
         return;
     }
     SafeClick();
+    extern int __error_mode;
+    if (__error_mode == CONSOLE) {
+        Print("Plant Card (%d) to (%d, %g)\n",
+            seed_index, row, col);
+    }
     int x;
     int y;
     GridToCoordinate(row, col, x, y);
@@ -186,12 +192,21 @@ void CardNotInQueue(int seed_index, const std::vector<Position>& lst)
         return;
     }
     SafeClick();
+
     int x;
     int y;
-
+    extern int __error_mode;
     for (const auto& crood : lst) {
         GridToCoordinate(crood.row, crood.col, x, y);
+        std::printf("Game clock : %d ||", __main_object->gameClock());
+        if (__error_mode == CONSOLE) {
+            std::printf("Try Plant Card (%d) to (%d, %g) | ",
+                seed_index, crood.row, crood.col);
+        }
         Asm::plantCard(x, y, seed_index - 1);
+    }
+    if (__error_mode == CONSOLE) {
+        std::printf("\n");
     }
     SafeClick();
 }

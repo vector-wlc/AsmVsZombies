@@ -12,10 +12,10 @@
 #include "avz_memory.h"
 
 namespace AvZ {
+extern int __error_mode;
 extern MainObject* __main_object;
 extern PvZ* __pvz_base;
 extern HWND __pvz_hwnd;
-extern TimeWave __time_wave_run;
 PaoOperator::RoofFlyTime PaoOperator::fly_time_data[8] = {
     {515, 359},
     {499, 362},
@@ -28,6 +28,11 @@ PaoOperator::RoofFlyTime PaoOperator::fly_time_data[8] = {
 };
 TickRunner PaoOperator::tick_runner;
 std::set<int> PaoOperator::lock_pao_set; // 锁定的炮
+
+void PaoOperator::initialState()
+{
+    lock_pao_set.clear();
+}
 
 // 得到炮的恢复时间
 int PaoOperator::get_recover_time(int index)
@@ -72,6 +77,15 @@ void PaoOperator::base_fire_pao(int cannon_index, int drop_row, float drop_col)
     SafeClick();
     int x = 0;
     int y = 0;
+    if (__error_mode == CONSOLE) {
+        auto plant = GetMainObject()->plantArray() + cannon_index;
+        std::printf("Game clock : %d || shoot from (%d, %d) to (%d, %g)\n",
+            __main_object->gameClock(),
+            plant->row() + 1,
+            plant->col() + 1,
+            drop_row,
+            drop_col);
+    }
     GridToCoordinate(drop_row, drop_col, x, y);
     Asm::shootPao(x, y, cannon_index);
     SafeClick();
@@ -86,13 +100,11 @@ void PaoOperator::delay_fire_pao(int delay_time,
         // 将操作动态插入消息队列
         lock_pao_set.insert(cannon_index);
         InsertGuard insert_guard(true);
-        SetTime(NowTime(__time_wave_run.wave) + delay_time,
-            __time_wave_run.wave);
-        InsertOperation(
-            [=]() {
-                base_fire_pao(cannon_index, row, col);
-                lock_pao_set.erase(cannon_index);
-            },
+        SetDelayTime(delay_time);
+        InsertOperation([=]() {
+            base_fire_pao(cannon_index, row, col);
+            lock_pao_set.erase(cannon_index);
+        },
             "delay_fire_pao");
     } else {
         base_fire_pao(cannon_index, row, col);
@@ -306,9 +318,8 @@ void PaoOperator::fixLatestPao()
         if (delay_time < 0) {
             delay_time = 0;
         }
-        int time = NowTime(__time_wave_run.wave) + delay_time;
         InsertGuard insert_guard(true);
-        SetTime(time, __time_wave_run.wave);
+        SetDelayTime(delay_time);
         InsertOperation([=]() {
             lastest_pao_msg.is_writable = true; // 解锁信息
             ShovelNotInQueue(pao_grid_vec[lastest_pao_msg.vec_index].row,

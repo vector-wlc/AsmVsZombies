@@ -50,6 +50,7 @@ int GetPlantIndex(int row, int col, int type = -1);
 // 参数3：得到对象序列，此函数按照位置的顺序填写对象序列
 // *** 注意：如果没有植物填写-1，如果有植物但是不是指定类型，会填写-2
 void GetPlantIndices(const std::vector<Grid>& lst_in_, int type, std::vector<int>& indexs_out_);
+std::vector<int> GetPlantIndices(const std::vector<Grid>& lst, int type);
 
 // *** Not In Queue
 // 检查僵尸是否存在

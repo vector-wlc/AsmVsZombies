@@ -1,7 +1,6 @@
 #ifndef __AVZ_TICK_H__
 #define __AVZ_TICK_H__
 
-#include <stack>
 #include <vector>
 
 #include "avz_debug.h"
@@ -9,71 +8,108 @@
 #include "avz_time_operation.h"
 
 namespace AvZ {
-struct ThreadInfo {
-    std::function<void()> func;
-    int* id_ptr;
+
+enum TickStatus {
+    STOPPED = 0,
+    PAUSED,
+    RUNNING
+};
+
+class TickManager {
+private:
+    std::set<int> running_id_set;
+    std::vector<int> stopped_id_vec;
+    std::vector<std::pair<int*, VoidFunc<void>>> tick_func_vec;
+
+public:
+    void run();
+
+    template <class Func>
+    int pushFunc(Func&& run, int* status)
+    {
+        int tick_id = 0;
+        // 如果没有找到停下来的线程则创建新线程
+        if (stopped_id_vec.empty()) {
+            tick_func_vec.push_back({status, run});
+            tick_id = tick_func_vec.size() - 1;
+            running_id_set.insert(tick_id);
+        } else {
+            tick_id = *stopped_id_vec.rbegin();
+            tick_func_vec[tick_id].first = status;
+            tick_func_vec[tick_id].second = run;
+            running_id_set.insert(tick_id);
+            stopped_id_vec.pop_back();
+        }
+
+        return tick_id;
+    }
+
+    void stop(int id);
+    void clear();
 };
 
 // CLASS TickRunner
 // 使用此类使得操作每帧都运行
 class TickRunner {
-private:
-    int thread_id = -1;
-    bool is_paused = false;
-    bool thread_examine()
-    { // 线程出现异常返回 false
-        if (thread_id >= 0) {
-            ShowErrorNotInQueue("一个自动线程类不允许同时拥有两个线程！");
-            return false;
-        }
-        return true;
-    }
-
 public:
-    enum ThreadStatus {
-        STOPPED = 0,
-        PAUSED,
-        RUNNING
-    };
-
     // *** Not In Queue
     // 得到线程的状态
     // *** 返回值：
     // 停止状态：return STOPPED
     // 暂停状态：return PAUSED
     // 运行状态：return RUNNING
-    ThreadStatus getStatus() const;
+    int getStatus() const;
 
     // *** Not In Queue
-    void pushFunc(const std::function<void()>& run);
-
-    // *** In Queue
-    void stop()
+    template <class Func>
+    void pushFunc(Func&& _run, bool is_in_fight = true)
     {
-        InsertOperation([=]() {
-            extern std::vector<ThreadInfo> __thread_vec;
-            extern std::stack<int> __stopped_thread_id_stack;
-            __stopped_thread_id_stack.push(thread_id);
-            thread_id = -1;
-        },
-            "stop");
+        if (!tick_examine()) {
+            return;
+        }
+
+        auto run = [=, _run = std::move(_run)]() {
+            if (status == RUNNING) {
+                _run();
+            }
+        };
+
+        tick_manager = is_in_fight ? &tick_in_fight : &tick_in_global;
+        tick_id = tick_manager->pushFunc(run, &status);
+        status = RUNNING;
     }
 
     // *** In Queue
-    void pause()
-    {
-        InsertOperation([=]() {
-            is_paused = true;
-        },
-            "pause");
-    }
+    void stop();
+
     // *** In Queue
-    void goOn()
+    void pause();
+
+    // *** In Queue
+    void goOn();
+
+    static void clear();
+
+    static void runInFight();
+
+    static void runInGlobal();
+
+private:
+    static TickManager tick_in_fight;
+    static TickManager tick_in_global;
+    int status = STOPPED;
+    TickManager* tick_manager;
+    int tick_id;
+
+    // 线程出现异常返回 false
+    bool tick_examine()
     {
-        InsertOperation([=]() {
-            is_paused = false;
-        },
-            "goOn");
+
+        if (status != STOPPED) {
+            ShowErrorNotInQueue("一个自动线程类不允许同时拥有两个线程！");
+            return false;
+        }
+        return true;
     }
 };
 
@@ -84,15 +120,8 @@ private:
 
 public:
     // *** In Queue
-    void start()
-    {
-        InsertOperation([=]() {
-            pushFunc([=]() {
-                run();
-            });
-        },
-            "startCollect");
-    }
+    void start();
+
     // *** In Queue
     void setInterval(int _time_interval);
 };
@@ -204,13 +233,41 @@ public:
 
 class KeyConnector : public TickRunner {
 private:
-    std::vector<std::pair<char, std::function<void()>>> key_operation_vec;
+    std::vector<std::pair<char, VoidFunc<void>>> key_operation_vec;
 
 public:
     // *** Not In Queue
     // 添加操作
     // 不论此函数在何时被调用，指令全局有效！
-    void add(char key, std::function<void()> operate);
+    template <class Func>
+    void add(char key, Func&& operate)
+    {
+        if (key >= 'a' && key <= 'z')
+            key -= 32;
+
+        for (const auto& key_operation : key_operation_vec) {
+            if (key_operation.first == key) {
+                ShowErrorNotInQueue("按键 # 绑定了多个操作", key);
+                return;
+            }
+        }
+
+        key_operation_vec.push_back({key, operate});
+
+        extern HWND __pvz_hwnd;
+        if (getStatus() == STOPPED) {
+            pushFunc([=]() {
+                for (const auto& key_operation : key_operation_vec) {
+                    if (Unlikely((GetAsyncKeyState(key_operation.first) & 0x8001) == 0x8001 && GetForegroundWindow() == __pvz_hwnd)) { // 检测 pvz 是否为顶层窗口
+                        InsertGuard insert_guard(false);
+                        key_operation.second();
+                        return;
+                    }
+                }
+            },
+                false);
+        }
+    }
 
     void clear()
     {

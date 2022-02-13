@@ -6,7 +6,6 @@
  */
 
 #include <map>
-#include <mutex>
 #include <stack>
 
 #include "avz_cannon.h"
@@ -20,14 +19,11 @@ HWND __pvz_hwnd;
 HANDLE __pvz_handle = nullptr;
 PvZ* __pvz_base;
 MainObject* __main_object;
+AnimationMain* __animation_main;
 std::map<int, int> __seed_name_to_index_map;
 std::vector<int> __select_card_vec;
-std::vector<ThreadInfo> __thread_vec;
-std::stack<int> __stopped_thread_id_stack;
 std::vector<OperationQueue> __operation_queue_vec;
-std::mutex __operation_mutex;
 TimeWave __time_wave_insert;
-TimeWave __time_wave_run;
 TimeWave __time_wave_start;
 bool __is_loaded = false;
 int __effective_mode = -1;
@@ -35,8 +31,16 @@ bool __is_exited = false;
 bool __is_insert_operation = true;
 bool __block_var = false;
 int __error_mode = POP_WINDOW;
+bool __is_advanced_pause = false;
+int __call_depth = 0;
 std::vector<OperationQueue>::iterator __wavelength_it;
-std::function<void()> __script_exit_deal = []() {};
+std::vector<OperationQueue>::iterator __run_wave_iter;
+
+VoidFunc<bool> __skip_tick_condition = []() -> bool {
+    return false;
+};
+
+VoidFunc<void> __script_exit_deal = []() {};
 
 bool RangeIn(int num, std::initializer_list<int> lst)
 {
@@ -48,20 +52,7 @@ bool RangeIn(int num, std::initializer_list<int> lst)
     return false;
 }
 
-// 随时检测线程退出
-void ExitSleep(int ms)
-{
-    do {
-        extern bool __is_exited;
-        if (__is_exited) {
-            extern HWND __pvz_hwnd;
-            throw Exception("script has exited\n");
-        }
-        Sleep(1);
-    } while (--ms);
-}
-
-void InitAddress()
+void __InitAddress()
 {
     __pvz_base = *(PvZ**)0x6a9ec0;
     __pvz_hwnd = FindWindowW(L"MainWindow", L"Plants vs. Zombies");

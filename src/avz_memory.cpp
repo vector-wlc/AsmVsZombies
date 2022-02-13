@@ -2,11 +2,13 @@
  * @coding: utf-8
  * @Author: vector-wlc
  * @Date: 2020-02-06 10:22:46
- * @Description: API memory 
+ * @Description: API memory
  */
 
+#include "avz_execption.h"
 #include "avz_global.h"
 #include "avz_time_operation.h"
+#include "pvzfunc.h"
 
 namespace AvZ {
 extern MainObject* __main_object;
@@ -116,15 +118,22 @@ void GetPlantIndices(const std::vector<Grid>& lst_in_, int type,
     }
 }
 
+std::vector<int> GetPlantIndices(const std::vector<Grid>& lst, int type)
+{
+    std::vector<int> indexs;
+    GetPlantIndices(lst, type, indexs);
+    return indexs;
+}
+
 bool IsZombieExist(int type, int row)
 {
     auto zombie = __main_object->zombieArray();
     int zombies_count_max = __main_object->zombieTotal();
     for (int i = 0; i < zombies_count_max; ++i, ++zombie) {
         if (zombie->isExist() && !zombie->isDead())
-            if (type < 0 && row < 0)
+            if (type < 0 && row < 0) {
                 return true;
-            else if (type >= 0 && row >= 0) {
+            } else if (type >= 0 && row >= 0) {
                 if (zombie->row() == row - 1 && zombie->type() == type)
                     return true;
             } else if (type < 0 && row >= 0) {
@@ -167,22 +176,13 @@ void SetPlantActiveTime(PlantType plant_type, int delay_time)
 void UpdateZombiesPreview()
 {
     // 去掉当前画面上的僵尸
-    auto zombie_memory = __main_object->zombieArray();
-    for (int i = 0; i < __main_object->zombieTotal(); ++i, ++zombie_memory) {
-        if (zombie_memory->standState() == -2 || zombie_memory->standState() == -3 || zombie_memory->standState() == -4) {
-            zombie_memory->isDisappeared() = true;
-            zombie_memory->state() = 3;
-        }
-    }
+    Asm::killZombiesPreview();
     // 重新生成僵尸
     __main_object->selectCardUi_m()->isCreatZombie() = false;
 }
 
 void SetZombies(const std::vector<int>& zombie_type)
 {
-    while (__main_object->text()->disappearCountdown()) {
-        ExitSleep(1);
-    }
     std::vector<int> zombie_type_vec;
 
     for (const auto& type : zombie_type) {
@@ -213,9 +213,6 @@ void SetZombies(const std::vector<int>& zombie_type)
 
 void SetWaveZombies(int wave, const std::vector<int>& zombie_type)
 {
-    while (__main_object->text()->disappearCountdown()) {
-        ExitSleep(1);
-    }
     std::vector<int> zombie_type_vec;
 
     for (const auto& type : zombie_type) {
@@ -287,14 +284,13 @@ void SetWavelength(const std::vector<WaveTime>& lst)
             __main_object->refreshCountdown() = countdown;
             __main_object->initialCountdown() = ele.time;
 
-            if (__wavelength_it - __operation_queue_vec.begin() < ele.wave) {
+            if (__wavelength_it - __operation_queue_vec.begin() < ele.wave - 1) {
                 __wavelength_it = __operation_queue_vec.begin() + ele.wave - 1;
             }
 
             // 设定刷新时间点
-            for (; __wavelength_it != __operation_queue_vec.end() - 1;
-                 ++__wavelength_it) {
-                if (__wavelength_it->refresh_time == -1 || __wavelength_it->wave_length == -1) {
+            for (; __wavelength_it != __operation_queue_vec.end() - 1; ++__wavelength_it) {
+                if (__wavelength_it->refresh_time == __DEFAULT_START_TIME || __wavelength_it->wave_length == -1) {
                     break;
                 }
                 (__wavelength_it + 1)->refresh_time = __wavelength_it->refresh_time + __wavelength_it->wave_length;

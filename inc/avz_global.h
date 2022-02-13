@@ -10,15 +10,34 @@
 
 #include <Windows.h>
 #include <algorithm>
+#include <cstdio>
 #include <cstdlib>
+#include <functional>
 #include <initializer_list>
 #include <set>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "pvzstruct.h"
 
-namespace AvZ {
 #define FindInAllRange(container, goal) std::find(container.begin(), container.end(), goal)
+#define Likely(x) __builtin_expect(!!(x), 1)
+#define Unlikely(x) __builtin_expect(!!(x), 0)
+
+namespace AvZ {
+
+template <class ReturnType>
+using VoidFunc = std::function<ReturnType()>;
+
+constexpr int __DEFAULT_START_TIME = -0xffff;
+
+template <typename... Args>
+void Print(const std::string& str, Args&&... args)
+{
+    extern MainObject* __main_object;
+    std::printf(("Game clock : %d || " + str).data(), __main_object->gameClock(), std::forward<Args>(args)...);
+}
 
 // *** 函数功能：判断数字范围
 // *** 使用示例：
@@ -84,9 +103,6 @@ void WriteMemory(T value, Args... args)
             WriteProcessMemory(__pvz_handle, (void*)(buff + *it), &value, sizeof(value), nullptr);
 }
 
-// 随时检测线程退出
-void ExitSleep(int ms);
-
 struct Grid {
     int row;
     int col;
@@ -114,5 +130,6 @@ struct TimeWave {
     int time;
     int wave;
 };
+
 } // namespace AvZ
 #endif

@@ -47,7 +47,6 @@ void ShowErrorNotInQueue(const std::string& content = "", Args... args)
 {
     extern int __error_mode;
     extern PvZ* __pvz_base;
-    extern TimeWave __time_wave_run;
     extern HWND __pvz_hwnd;
     if (__pvz_base->gameUi() != 3 && __pvz_base->gameUi() != 2) {
         return;
@@ -57,12 +56,15 @@ void ShowErrorNotInQueue(const std::string& content = "", Args... args)
         return;
     }
     std::string _content;
-    if (__time_wave_run.wave == 0) {
-        _content = "操作录入状态  \n\n" + content;
+    if (__pvz_base->gameUi() != 3) {
+        _content = "当前时间未知  \n\n" + content;
     } else {
+        int NowTime(int wave);
+        int GetRunningWave();
+        int current_wave = GetRunningWave();
         _content = "wave : # -- time : #   \n\n" + content;
-        string_convert(_content, __time_wave_run.wave);
-        string_convert(_content, __time_wave_run.time);
+        string_convert(_content, current_wave);
+        string_convert(_content, NowTime(current_wave));
     }
 
     std::initializer_list<int> {(string_convert(_content, args), 0)...};
@@ -84,7 +86,6 @@ void ShowErrorNotInQueue(const std::string& content = "", Args... args)
 template <typename... Args>
 void ShowError(const std::string& content = "", Args... args)
 {
-    void InsertOperation(const std::function<void()>& operation, const std::string& description = "unknown");
     InsertOperation([=]() {
         ShowErrorNotInQueue(content, args...);
     });

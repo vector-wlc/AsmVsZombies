@@ -2,17 +2,18 @@
  * @Coding: utf-8
  * @Author: vector-wlc
  * @Date: 2020-10-30 21:03:04
- * @Description: 
+ * @Description:
  */
 #ifndef __LIBAVZ_H__
 #define __LIBAVZ_H__
 
-#define __AVZ_VERSION__ 211212
+#define __AVZ_VERSION__ 220213
 
 #include "avz_cannon.h"
 #include "avz_card.h"
 #include "avz_click.h"
 #include "avz_debug.h"
+#include "avz_execption.h"
 #include "avz_memory.h"
 #include "avz_tick.h"
 #include "avz_time_operation.h"

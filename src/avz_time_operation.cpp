@@ -8,7 +8,6 @@
 
 #include <mutex>
 #include <sstream>
-#include <thread>
 
 #include "avz_cannon.h"
 #include "avz_debug.h"
@@ -20,7 +19,6 @@
 #include "pvzstruct.h"
 
 namespace AvZ {
-const int __DEFAULT_START_TIME = -0xffff;
 extern PvZ* __pvz_base;
 extern MainObject* __main_object;
 extern ItemCollector item_collector;
@@ -28,14 +26,10 @@ extern IceFiller ice_filler;
 extern PlantFixer plant_fixer;
 extern PaoOperator pao_operator;
 extern KeyConnector key_connector;
-extern std::vector<ThreadInfo> __thread_vec;
-extern std::stack<int> __stopped_thread_id_stack;
 extern std::map<int, int> __seed_name_to_index_map;
 extern std::vector<Grid> __select_card_vec;
 extern std::vector<OperationQueue> __operation_queue_vec;
-extern std::mutex __operation_mutex;
 extern TimeWave __time_wave_insert;
-extern TimeWave __time_wave_run;
 extern TimeWave __time_wave_start;
 extern bool __is_loaded;
 extern int __effective_mode;
@@ -43,39 +37,65 @@ extern bool __is_exited;
 extern bool __is_insert_operation;
 extern bool __block_var;
 extern std::vector<OperationQueue>::iterator __wavelength_it;
-extern std::function<void()> __script_exit_deal;
+extern std::vector<OperationQueue>::iterator __run_wave_iter;
+extern VoidFunc<void> __script_exit_deal;
+extern bool __is_advanced_pause;
+extern VoidFunc<bool> __skip_tick_condition;
+extern int __error_mode;
 
 // 此函数每帧都需调用一次
-void UpdateRefreshTime()
+void __UpdateRefreshTime()
 {
     extern MainObject* __main_object;
     int wave = __main_object->wave();
 
     auto operation_queue_it = __operation_queue_vec.begin() + wave;
 
-    if (operation_queue_it->refresh_time != -1) { // 已经读取过的不再读取
+    if (Unlikely(operation_queue_it->refresh_time != __DEFAULT_START_TIME)) { // 已经读取过的不再读取
         return;
     }
 
-    if (wave == 0) {
-        operation_queue_it->refresh_time = __main_object->refreshCountdown() + __main_object->gameClock();
-    } else {
-        if ((wave + 1) % 10 == 0) {
-            // 大波
-            if (__main_object->refreshCountdown() <= 4) {
-                operation_queue_it->refresh_time = __main_object->hugeWaveCountdown() + __main_object->gameClock();
+    int refresh_time = __main_object->refreshCountdown();
+    int game_clock = __main_object->gameClock();
+
+    if (Likely(wave != 0)) {
+        if (Likely((wave + 1) % 10 != 0)) { // 普通波
+            if (Unlikely(refresh_time <= 200)) {
+                operation_queue_it->refresh_time = refresh_time + game_clock;
             }
-        } else if (__main_object->refreshCountdown() <= 200) {
-            // 普通波
-            operation_queue_it->refresh_time = __main_object->refreshCountdown() + __main_object->gameClock();
+        } else { // 大波
+            if (Unlikely(refresh_time <= 5)) {
+                operation_queue_it->refresh_time = __main_object->hugeWaveCountdown() + game_clock;
+            }
         }
 
         // 在 wave != 0 时，可以由初始刷新倒计时得到当前已刷出波数的刷新时间点
         --operation_queue_it;
-        if (operation_queue_it->refresh_time == -1) {
-            operation_queue_it->refresh_time = __main_object->gameClock() - (__main_object->initialCountdown() - __main_object->refreshCountdown());
+        if (Unlikely(operation_queue_it->refresh_time == __DEFAULT_START_TIME)) {
+            operation_queue_it->refresh_time = game_clock - (__main_object->initialCountdown() - refresh_time);
         }
+    } else { // 第一波
+        operation_queue_it->refresh_time = refresh_time + game_clock;
     }
+}
+
+// 切换运行的波
+// 将上一波未执行的操作移到下一波
+// 将运行波数迭代器 + 1
+void __ChangeRunWave()
+{
+    auto next_wave_iter = __run_wave_iter + 1;
+    int offset_time = __run_wave_iter->refresh_time - next_wave_iter->refresh_time;
+    for (auto&& ele : __run_wave_iter->queue) {
+        next_wave_iter->queue.insert({ele.first + offset_time, ele.second});
+    }
+
+    __run_wave_iter = next_wave_iter;
+}
+
+int GetRunningWave()
+{
+    return __run_wave_iter - __operation_queue_vec.begin() + 1;
 }
 
 void __Exit()
@@ -85,65 +105,63 @@ void __Exit()
     __is_exited = true;
 }
 
-void InsertOperation(const std::function<void()>& operation,
-    const std::string& description)
+TimeWave __CalculateInsertTimeWave()
 {
-    extern PvZ* __pvz_base;
-
-    if (__pvz_base->gameUi() == 1 || (__time_wave_start.wave >= __time_wave_insert.wave && __time_wave_start.time > __time_wave_insert.time)) {
-        return;
+    if (__time_wave_start.wave >= __time_wave_insert.wave && //
+        __time_wave_start.time > __time_wave_insert.time) {
+        return {0, NOT_INSERT};
     }
 
-    if (!__is_insert_operation || (__time_wave_insert.time != __DEFAULT_START_TIME && __time_wave_insert.time == NowTime(__time_wave_insert.wave))) {
-        // 暂存时间插入点的状态
-        auto temp = __time_wave_insert;
-        operation();
-        __time_wave_insert = temp;
-        return;
+    if (!__is_insert_operation ||                           //
+        (__time_wave_insert.time != __DEFAULT_START_TIME && //
+            __time_wave_insert.time == NowTime(__time_wave_insert.wave))) {
+        return {0, RUN};
     }
 
     if (__time_wave_insert.wave < 1 || __time_wave_insert.wave > __main_object->totalWave()) {
         ShowErrorNotInQueue("您填写的 wave 参数为 # , 已超出 [1, #] 的范围",
-            __time_wave_insert.wave,
-            __main_object->totalWave());
-        return;
+            __time_wave_insert.wave, __main_object->totalWave());
+
+        return {0, NOT_INSERT};
     }
-    if ((__time_wave_insert.wave != 1 && __time_wave_insert.wave % 10 != 0) && __time_wave_insert.time < -200 && __operation_queue_vec[__time_wave_insert.wave - 2].wave_length == -1) {
+
+    if ((__time_wave_insert.wave != 1 && __time_wave_insert.wave % 10 != 0) && //
+        __time_wave_insert.time < -200 &&                                      //
+        __operation_queue_vec[__time_wave_insert.wave - 2].wave_length == -1) {
         ShowErrorNotInQueue(
             "第 # 波设定的时间为 #, 在前一波未设定波长的情况下, time "
             "参数不允许小于 -200",
             __time_wave_insert.wave, __time_wave_insert.time);
-        return;
+        return {0, NOT_INSERT};
     }
 
-    __operation_mutex.lock();
-    auto& operation_queue = __operation_queue_vec[__time_wave_insert.wave - 1].queue; // 取出相应波数的队列
-    auto it = operation_queue.find(__time_wave_insert.time);
-    Operation operate = {operation, description};
-    if (it == operation_queue.end()) {
-        std::pair<int, std::vector<Operation>> to;
-        to.first = __time_wave_insert.time;
-        to.second.push_back(operate);
-        operation_queue.insert(to);
-    } else {
-        it->second.push_back(operate);
-    }
-    __operation_mutex.unlock();
-}
+    int current_wave = __run_wave_iter - __operation_queue_vec.begin() + 1;
+    int insert_time = __time_wave_insert.time;
+    int insert_wave = __time_wave_insert.wave;
 
-void InsertTimeOperation(const TimeWave& time_wave,
-    const std::function<void()>& operation,
-    const std::string& description)
-{
-    SetTime(time_wave);
-    InsertOperation(operation, description);
-}
-void InsertTimeOperation(int time, int wave,
-    const std::function<void()>& operation,
-    const std::string& description)
-{
-    SetTime(time, wave);
-    InsertOperation(operation, description);
+    if ((insert_wave != 1 && insert_wave % 10 != 0) && // 使用了 SetWavelength
+        insert_time < -200 && insert_wave > current_wave) {
+        while (insert_wave != 1 && insert_time < -200) {
+            if (__operation_queue_vec[insert_wave - 2].wave_length == -1) {
+                ShowErrorNotInQueue(
+                    "第 # 波设定的时间为 #, 虽然已设定波长，但是已超出波长计算范围",
+                    __time_wave_insert.wave, __time_wave_insert.time);
+                return {0, NOT_INSERT};
+            }
+            insert_time += __operation_queue_vec[insert_wave - 2].wave_length;
+            --insert_wave;
+        }
+
+        return {insert_time, insert_wave};
+    }
+
+    if (insert_wave < current_wave) { // 如果插入的波数小于当前运行的波数，将其时间点折算成当前运行波数
+        auto&& queue = __operation_queue_vec[insert_wave - 1].queue;
+        int offset_time = __operation_queue_vec[insert_wave - 1].refresh_time - __run_wave_iter->refresh_time;
+        return {offset_time + insert_time, current_wave};
+    }
+
+    return __time_wave_insert;
 }
 
 // 设置 insertOperation 属性函数
@@ -160,29 +178,27 @@ bool WaitUntil(const TimeWave& _time_wave)
 {
     extern PvZ* __pvz_base;
     __block_var = true;
-
-    // 这里的 return 是为了兼容之前的版本的代码不报错
-    // 实际上已经没有任何作用了
-
-    if (__is_exited) {
-        throw Exception("script have exited\n");
-    }
+    void RunScriptEveryTick();
 
     {
         InsertGuard insert_guard(true);
         SetTime(_time_wave);
         InsertOperation([=]() {
-            __block_var = false;   // 唤醒 Script 线程
-            while (!__block_var) { // 阻塞 pvz 进程，等待操作完成
-                ExitSleep(1);
-            }
-        });
+            __block_var = false; // 唤醒 Script
+            SetTime(_time_wave.time + 1, _time_wave.wave);
+        },
+            "WaitUntil");
+    }
+
+    RunScriptEveryTick();
+
+    if (Unlikely(__pvz_base->gameUi() == 1)) {
+        throw Exception("game return main ui\n");
     }
 
     while (__block_var) {
-        // 阻塞 Script 线程
-        Sleep(1);
-        if (__pvz_base->gameUi() == 1) {
+        Asm::gameSleepLoop();
+        if (Unlikely(!__pvz_base->mainObject())) {
             throw Exception("game return main ui\n");
         }
     }
@@ -195,12 +211,12 @@ bool WaitUntil(int time, int wave) { return WaitUntil({time, wave}); }
 // 得到当前时间，读取失败返回 __DEFAULT_START_TIME
 // *** 注意得到的是以参数波刷新时间点为基准的相对时间
 // *** 使用示例：
-// nowTime(1) -------- 得到以第一波刷新时间点为基准的当前时间
-// nowTime(2) -------- 得到以第二波刷新时间点为基准的当前时间
+// NowTime(1) -------- 得到以第一波刷新时间点为基准的当前时间
+// NowTime(2) -------- 得到以第二波刷新时间点为基准的当前时间
 int NowTime(int wave)
 {
     extern MainObject* __main_object;
-    if (__operation_queue_vec[wave - 1].refresh_time == -1) {
+    if (__operation_queue_vec[wave - 1].refresh_time == __DEFAULT_START_TIME) {
         return __DEFAULT_START_TIME;
     }
     return __main_object->gameClock() - __operation_queue_vec[wave - 1].refresh_time;
@@ -212,7 +228,7 @@ std::vector<int> GetRefreshedWave()
     int wave = 0;
     for (const auto& ele : __operation_queue_vec) {
         ++wave;
-        if (ele.refresh_time != -1) {
+        if (ele.refresh_time != __DEFAULT_START_TIME) {
             waves.push_back(wave);
         }
     }
@@ -230,15 +246,24 @@ void ShowQueue(const std::vector<int>& lst)
             }
             ss << "---------------------------"
                << " wave : " << wave << " ---------------------------";
-            if (!__operation_queue_vec[wave - 1].queue.empty()) {
-                for (const auto& each :
-                    __operation_queue_vec[wave - 1].queue) {
-                    ss << "\n\t" << each.first;
-                    for (const auto& operation : each.second) {
-                        ss << " " << operation.description;
+
+            bool is_have_operation = false;
+
+            for (const auto& operation_queue : __operation_queue_vec) {
+                int time = __DEFAULT_START_TIME - 1;
+                for (const auto& operation : operation_queue.queue) {
+                    const auto& time_wave = operation.second.getInsertTimeWave();
+                    if (time_wave.wave == wave) {
+                        if (time != time_wave.time) {
+                            is_have_operation = true;
+                            time = time_wave.time;
+                            ss << "\n\t" << time;
+                        }
+                        ss << " " << operation.second.getDescription();
                     }
                 }
-            } else {
+            }
+            if (!is_have_operation) {
                 ss << "\n\tnone";
             }
 
@@ -250,89 +275,12 @@ void ShowQueue(const std::vector<int>& lst)
         "showQueue");
 }
 
-void ScriptExitDeal(const std::function<void()>& func)
-{
-    __script_exit_deal = func;
-}
-
-void LoadScript(const std::function<void()> func)
-{
-    __operation_queue_vec.resize(__main_object->totalWave());
-    __time_wave_run.wave = 0;
-    __wavelength_it = __operation_queue_vec.begin();
-    SetInsertOperation(false);
-    item_collector.start();
-    MaidCheats::stop();
-    __pvz_base->tickMs() = 10;
-    SetInsertOperation(true);
-
-    // 将默认时间设置为刚一进战斗界面的时间
-    if (__pvz_base->gameUi() == 3) {
-        UpdateRefreshTime();
-        auto waves = GetRefreshedWave();
-        __time_wave_start.wave = *waves.begin();
-        __time_wave_start.time = NowTime(__time_wave_start.wave);
-    } else {
-        __time_wave_start.wave = 1;
-        __time_wave_start.time = __DEFAULT_START_TIME;
-    }
-    SetTime(__time_wave_start);
-
-    __is_loaded = true;
-
-    try {
-        func();
-
-        __block_var = true;
-
-        // 等待游戏进入战斗界面
-        while (__pvz_base->gameUi() != 3) {
-            if (__pvz_base->gameUi() == 1) {
-                break;
-            }
-            ExitSleep(1);
-        }
-
-        // 等待游戏结束
-        while (__pvz_base->gameUi() == 3) {
-            ExitSleep(1);
-        }
-
-        if (__effective_mode != MAIN_UI_OR_FIGHT_UI) {
-            // 如果战斗界面不允许重新注入则等待回主界面
-            while (__pvz_base->gameUi() != 1) {
-                ExitSleep(1);
-            }
-        }
-    } catch (Exception& exce) {
-        printf(exce.what());
-    } catch (...) {
-        ShowErrorNotInQueue("脚本触发了一个未知的异常\n");
-    }
-
-    // 停止一切线程
-    for (const auto& ele : __thread_vec) {
-        *ele.id_ptr = -1;
-    }
-
-    // 释放资源
-    Sleep(100);
-    __script_exit_deal();
-    AvZ::SetErrorMode(AvZ::POP_WINDOW);
-    SetInsertOperation(false);
-    MaidCheats::stop();
-    __pvz_base->tickMs() = 10;
-    SetInsertOperation(true);
-
-    __is_loaded = !(__effective_mode >= 0);
-}
-
 void OpenMultipleEffective(char close_key, int _effective_mode)
 {
     __effective_mode = _effective_mode;
     key_connector.add(close_key, []() {
         __effective_mode = -1;
-        ShowErrorNotInQueue("已关闭多次生效");
+        __is_exited = true;
     });
 }
 
@@ -375,14 +323,7 @@ void SetTime(int time)
 
 void SetNowTime()
 {
-    auto waves = GetRefreshedWave();
-    if (waves.size() == 0) {
-        ShowErrorNotInQueue(
-            "SetNowTime : "
-            "未检测到当前时间，请在游戏进入战斗界面之后再调用此函数");
-        return;
-    }
-    int wave = waves[waves.size() - 1];
+    auto wave = GetRunningWave();
     int time = NowTime(wave);
     SetTime(time, wave);
 }
@@ -413,130 +354,45 @@ bool OperationQueue::is_time_arrived()
 {
     extern MainObject* __main_object;
     if (queue.begin()->first < __main_object->gameClock() - refresh_time && queue.begin()->first != __DEFAULT_START_TIME) {
+        auto insert_wave_time = queue.begin()->second.getInsertTimeWave();
         ShowErrorNotInQueue(
             "您设定时间为 #cs, 但当前时间已到 #cs, "
             "按下确定将以当前时间执行此次操作",
-            queue.begin()->first, __main_object->gameClock() - refresh_time);
+            insert_wave_time.time,
+            __main_object->gameClock() - __operation_queue_vec[insert_wave_time.wave - 1].refresh_time);
     }
     return queue.begin()->first <= __main_object->gameClock() - refresh_time;
-}
-
-void __Run(MainObject* level, std::function<void()> Script)
-{
-    try {
-        extern MainObject* __main_object;
-        extern PvZ* __pvz_base;
-        if (__is_exited) {
-            return;
-        }
-        __main_object = level;
-        // 假进入战斗界面直接返回
-        if (__main_object->loadDataState() == 1) {
-            return;
-        }
-
-        if (!__is_loaded) {
-            void InitAddress();
-            InitAddress();
-
-            __operation_queue_vec.clear(); // 清除一切操作
-            __thread_vec.clear();
-            key_connector.clear();
-            __seed_name_to_index_map.clear();
-            while (!__stopped_thread_id_stack.empty()) {
-                __stopped_thread_id_stack.pop();
-            }
-
-            std::thread task(LoadScript, Script);
-            task.detach();
-            while (!__is_loaded) {
-                ExitSleep(10);
-            }
-        }
-
-        if (__pvz_base->gameUi() == 2 && !__select_card_vec.empty()) {
-            void ChooseCards();
-            ChooseCards();
-        }
-
-        if (__pvz_base->gameUi() != 3 || __pvz_base->mouseWindow()->topWindow()) {
-            __seed_name_to_index_map.clear();
-            return;
-        }
-
-        // 以下代码到战斗界面才能执行
-        if (__pvz_base->gameUi() == 2) {
-            return;
-        }
-
-        if (!__select_card_vec.empty()) {
-            __select_card_vec.clear();
-        }
-
-        if (__main_object->wave() != __main_object->totalWave()) {
-            UpdateRefreshTime();
-        }
-
-        // 对 __main_object->totalWave 个队列进行遍历
-        // 最大比较次数 __main_object->totalWave * 3 = 60 次
-        // 卧槽，感觉好亏，不过游戏应该不会卡顿
-
-        for (int wave = 0; wave < __main_object->totalWave(); ++wave) {
-            while (__operation_queue_vec[wave].refresh_time != -1 && // 波次刷新时间已知
-                !__operation_queue_vec[wave].queue.empty() &&        // 有操作
-                __operation_queue_vec[wave].is_time_arrived())       // 操作时间已到达
-            {
-                auto it = __operation_queue_vec[wave].queue.begin();
-                __time_wave_run.wave = wave + 1;
-                __time_wave_run.time = it->first;
-
-                for (const auto& ele : it->second) {
-                    ele.operation();
-                }
-                __operation_mutex.lock();
-                __operation_queue_vec[wave].queue.erase(it);
-                __operation_mutex.unlock();
-            }
-        }
-
-        for (const auto& thread_info : __thread_vec) {
-            if (*thread_info.id_ptr >= 0) {
-                thread_info.func();
-            }
-        }
-    } catch (Exception& exce) {
-        printf(exce.what());
-    } catch (...) {
-        ShowErrorNotInQueue("脚本触发了一个未知的异常\n");
-    }
-}
-
-// 将操作插入操作队列
-void ConditionalOperation::run(int time, int wave)
-{
-    if (!is_set_condition) {
-        ShowErrorNotInQueue("run : 您还未为条件操作设定条件");
-    }
-
-    auto temp = __time_wave_insert;
-
-    SetTime(time, wave);
-    InsertOperation([=]() {
-        int label = condition();
-        for (const auto& ele : label_operation_vec) {
-            if (ele.label == label) {
-                ele.operation();
-            }
-        }
-    });
-
-    SetTime(temp);
 }
 
 void SetScriptStartTime(int time, int wave)
 {
     __time_wave_start.time = time;
     __time_wave_start.wave = wave;
+}
+
+void SetAdvancedPauseKey(char key)
+{
+    key_connector.add(key, [=]() {
+        if (__skip_tick_condition()) {
+            ShowErrorNotInQueue("开启跳帧时不能启用高级暂停");
+            return;
+        }
+        __is_advanced_pause = !__is_advanced_pause;
+    });
+}
+
+void SkipTick(int time, int wave)
+{
+    SkipTick([=]() {
+        int now_time = NowTime(wave);
+        if (now_time == __DEFAULT_START_TIME || now_time < time) { // 时间未到达
+            return true;
+        }
+        if (now_time > time) { // 时间已到达
+            ShowErrorNotInQueue("无法回跳时间点");
+        }
+        return false;
+    });
 }
 
 } // namespace AvZ

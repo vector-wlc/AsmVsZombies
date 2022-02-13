@@ -40,6 +40,10 @@
 
 * [出怪设置与女仆秘籍](./basic/set_zombie.md)
 
+* [高级暂停](./basic/advance_pause.md)
+
+* [跳帧](./basic/skip_tick.md)
+
 
 ## 进阶
 * [操作队列](./advance/time_operate.md)

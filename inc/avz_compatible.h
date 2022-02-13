@@ -36,7 +36,6 @@
 #define writeMemory WriteMemory
 
 // avz_memory.h
-#define mainObject GetMainObject
 #define pvzBase GetPvzBase
 #define mouseRow MouseRow
 #define mouseCol MouseCol

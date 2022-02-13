@@ -9,15 +9,18 @@ import shutil
 import os
 import time
 
-# 更新 AvZ 安装目录的文件
-if(os.path.exists("./bin/libavz_inject.dll")):
-    os.remove("./bin/libavz_inject.dll")
+dst = "d:/Software/AsmVsZombies/"
 
-for dir in ["inc", "src", "bin"]:
-    shutil.copytree(dir, "d:/Software/AsmVsZombies/" + dir, dirs_exist_ok=True)
+# 更新 AvZ 安装目录的文件
+for dir in ["inc", "src"]:
+    shutil.copytree(dir, dst + dir, dirs_exist_ok=True)
+
+for file in ["bin/injector.exe", "bin/libavz.a"]:
+    shutil.copyfile(file, dst + file)
 
 # 打包版本文件
 avz_zip_name = time.strftime("./release/ahpha/%Y_%m_%d.zip", time.localtime())
-cmd = "7z a -tzip " + avz_zip_name + " ./inc ./src ./bin"
+cmd = "7z a -tzip " + avz_zip_name + " " + dst + \
+    "/inc " + dst + "/src " + dst + "/bin"
 print(cmd)
 os.system(cmd)

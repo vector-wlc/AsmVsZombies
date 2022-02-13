@@ -1,11 +1,13 @@
 {
-    "configurations": [{
-        "name": "Windows",
-        "includePath": [
-            "d:/Software/AsmVsZombies/inc"
-        ],
-        "cStandard": "c11",
-        "cppStandard": "c++17"
-    }],
+    "configurations": [
+        {
+            "name": "Windows",
+            "includePath": [
+                "./inc"
+            ],
+            "cStandard": "c11",
+            "cppStandard": "c++17"
+        }
+    ],
     "version": 4
 }

@@ -92,6 +92,10 @@ private:
     }
 
 public:
+    // *** Not In Queue
+    // 炮操作类状态初始化
+    static void initialState();
+
     // *** In Queue
     // 发炮函数：用户自定义位置发射，屋顶修正飞行时间发炮.
     // *** 注意：尽量不要使用此函数操作位于炮列表中的炮，因为使用此函数后自动识别的炮序与 resetPaolist 更新的炮序将无效！
