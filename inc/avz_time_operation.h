@@ -313,7 +313,9 @@ void SkipTick(Condition&& condition, Callback&& callback)
                 return true;
             }
             __skip_tick_condition = []() -> bool { return false; };
-            callback();
+            if (__pvz_base->gameUi() == 3) {
+                callback();
+            }
             return false;
         };
     },
