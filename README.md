@@ -20,6 +20,19 @@ AvZ 操作精度为理论上的100%绝对精准，使用这套框架将再也不
 
 本项目使用 [VSCode](https://code.visualstudio.com/) + MinGW 进行代码编辑、编译和注入。 
 
+
+## 使用
+
+请转到教程的目录 : [Gitee](https://gitee.com/vector-wlc/AsmVsZombies/blob/master/tutorial/catalogue.md) / [GitHub](https://github.com/vector-wlc/AsmVsZombies/blob/master/tutorial/catalogue.md)
+
+
+## 友情链接
+**注意以下存储库的作者不是AsmVsZombies的作者，因此出现任何问题请咨询存储库中的相关作者**
+
+AvZ 扩展功能库 : [AvZLib](https://github.com/qrmd0/AvZLib)
+
+AvZ 脚本库 : [AvZScript](https://github.com/qrmd0/AvZScript)
+
 ## 原理
 
 在游戏主循环函数前面注入键控代码，使得键控脚本在每一帧都被调用，从而实现真正意义上100%精确的键控。
@@ -39,14 +52,11 @@ AvZ 操作精度为理论上的100%绝对精准，使用这套框架将再也不
 > * 对硬件配置 (CPU) 的要求低
 > * 对操作时间顺序不做严格要求
 
-## 使用
-
-请转到教程的起步篇 : [Gitee](https://gitee.com/vector-wlc/AsmVsZombies/blob/master/tutorial/basic/start.md) / [GitHub](https://github.com/vector-wlc/AsmVsZombies/blob/master/tutorial/basic/start.md)
-
 ## 致谢
 [yuchenxi2000/AssemblyVsZombies](https://github.com/yuchenxi2000/AssemblyVsZombies)<br>
 [lmintlcx/pvzscript](https://github.com/lmintlcx/pvzscripts)<br>
 [失控的指令(bilibili)](https://space.bilibili.com/147204150/)<br>
 [Power_tile(bilibili)](https://space.bilibili.com/367385512)<br>
 [六三enjoy(bilibili)](https://space.bilibili.com/660622963)<br>
+[Reisen-レイセン(bilibili)](https://space.bilibili.com/323002513)<br>
 <strong>以及所有对此项目提出建议的使用者和开发人员</strong>

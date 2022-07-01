@@ -122,6 +122,9 @@ void SetDelayTime(int time);
 
 // 阻塞运行直到达到目标时间点
 // 使用方法与 setTime 相同
+// *** 注意：WaitUntil 停止阻塞的时间点是设定的时间点的下一帧
+// 例如 WaitUntil(150, 1); int time = NowTime(1)
+// 此时 time 的值是 151
 // *** return : 阻塞是否正常结束
 // ture 阻塞正常结束
 // false 阻塞异常结束

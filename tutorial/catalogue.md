@@ -60,5 +60,9 @@
 
 * ["智能"操作](./advance/smart.md)
 
+* [对象过滤迭代器](./advance/iterator.md)
+
+* [变量内存管理](./advance/memory_manage.md)
+
 * [插件](./advance/extension.md)
 

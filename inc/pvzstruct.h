@@ -30,7 +30,7 @@ private:
     T* t;
     static T __t;
 
-    int& game_ui()
+    int& game_ui() const
     {
         return (int&)((uint8_t*)((*(void**)(0x6a9ec0))))[0x7fc];
     }
@@ -62,7 +62,7 @@ public:
         return t;
     }
 
-    T* toUnsafe()
+    T* toUnsafe() const
     {
         return t;
     }
@@ -103,7 +103,7 @@ public:
         return t + index;
     }
 
-    SafePtr<T> operator-(int index)
+    SafePtr<T> operator-(int index) const
     {
         if (game_ui() == 1) {
             return &__t;
@@ -157,6 +157,16 @@ public:
         }
         return t -= index;
     }
+
+    bool operator==(const SafePtr<T>& rhs) const
+    {
+        return t == rhs.toUnsafe();
+    }
+
+    bool operator!=(const SafePtr<T>& rhs) const
+    {
+        return t != rhs.toUnsafe();
+    }
 };
 
 template <typename T>
@@ -207,6 +217,12 @@ public:
     int& tickMs()
     {
         return (int&)((uint8_t*)this)[0x454];
+    }
+
+    // MJ 时钟
+    int& mjClock()
+    {
+        return (int&)((uint8_t*)this)[0x838];
     }
 };
 
@@ -455,10 +471,10 @@ struct Plant {
 private:
     void operator=(Plant&& _) { }
     Plant(Plant&& _) { }
+    uint8_t data[0x14c];
 
 public:
     Plant() { }
-    uint8_t data[0x14c];
 
     // 横坐标
     int& xi()
@@ -588,16 +604,16 @@ struct Zombie {
 private:
     void operator=(Zombie&& __) { }
     Zombie(Zombie&& __) { }
+    uint8_t data[0x15c];
 
 public:
     Zombie() { }
-    uint8_t data[0x15c];
 
     // 僵尸是否存在
     // 只读
     bool isExist()
     {
-        return (short)((uint8_t*)this)[0x15a];
+        return !(bool)((uint8_t*)this)[0xEC];
     }
 
     // 僵尸所在行
@@ -760,10 +776,10 @@ struct Seed {
 private:
     void operator=(Seed&& __) { }
     Seed(Seed&& __) { }
+    uint8_t data[0x50];
 
 public:
     Seed() { }
-    uint8_t data[0x50];
 
     // 返回卡槽中的卡牌个数
     // 注意：此函数不能迭代使用！！！
@@ -833,10 +849,10 @@ struct Item {
 private:
     void operator=(Item&& __) { }
     Item(Item&& __) { }
+    uint8_t data[0xd8];
 
 public:
     Item() { }
-    uint8_t data[0xd8];
 
     // 物品是否消失
     const bool& isDisappeared()

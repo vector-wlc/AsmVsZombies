@@ -12,6 +12,9 @@ IceFiller ice_filler;
 PlantFixer plant_fixer;
 PaoOperator pao_operator;
 KeyConnector key_connector;
+AliveFilter<Zombie> alive_zombie_filter;
+AliveFilter<Plant> alive_plant_filter;
+AliveFilter<Seed> alive_seed_filter;
 } // namespace AvZ
 
 namespace AvZ {
@@ -29,26 +32,31 @@ extern int __error_mode;
 extern int __call_depth;
 extern bool __block_var;
 extern std::vector<OperationQueue>::iterator __run_wave_iter;
+extern PvZ* __pvz_base;
+extern MainObject* __main_object;
+extern int __error_mode;
+extern int __effective_mode;
+extern TimeWave __time_wave_start;
+extern bool __is_insert_operation;
+extern std::vector<OperationQueue> __operation_queue_vec;
+extern std::vector<OperationQueue>::iterator __wavelength_it;
+extern bool __is_loaded;
+extern VoidFunc<void> __script_exit_deal;
+extern std::vector<GlobalVar*> __global_var_vec;
+extern bool __is_run_enter_fight;
+extern bool __is_run_exit_fight;
 
 void __UpdateRefreshTime();
 void __InitAddress();
 void __ChooseCards();
 void __ChangeRunWave();
+void __BeforeScript();
+void __AfterScript();
+void __EnterFight();
+void __ExitFight();
 
 void __LoadScript()
 {
-    extern PvZ* __pvz_base;
-    extern MainObject* __main_object;
-    extern int __error_mode;
-    extern int __effective_mode;
-    extern TimeWave __time_wave_start;
-    extern bool __is_insert_operation;
-    extern std::vector<OperationQueue> __operation_queue_vec;
-    extern std::vector<OperationQueue>::iterator __wavelength_it;
-    extern bool __is_loaded;
-    extern bool __block_var;
-    extern VoidFunc<void> __script_exit_deal;
-
     // 脚本初始化
     __InitAddress();
 
@@ -65,45 +73,11 @@ void __LoadScript()
 
     __is_loaded = true;
 
-    __operation_queue_vec.resize(__main_object->totalWave() + 1);
-    __wavelength_it = __operation_queue_vec.begin();
-    SetInsertOperation(false);
-    item_collector.start();
-    MaidCheats::stop();
-    __pvz_base->tickMs() = 10;
-    SetInsertOperation(true);
-
-    __skip_tick_condition = []() -> bool {
-        return false;
-    };
-
-    Asm::setImprovePerformance(false);
-    key_connector.clear();
-    __seed_name_to_index_map.clear();
-    PaoOperator::initialState();
-
-    std::vector<int> waves;
-    // 将默认时间设置为刚一进战斗界面的时间
-    if (__pvz_base->gameUi() == 3) {
-        __UpdateRefreshTime();
-        waves = GetRefreshedWave();
-    }
-
-    if (waves.size() == 0) {
-        __time_wave_start.wave = 1;
-        __time_wave_start.time = __DEFAULT_START_TIME;
-    } else {
-        __time_wave_start.wave = *waves.begin();
-        __time_wave_start.time = NowTime(__time_wave_start.wave);
-    }
-
-    __run_wave_iter = __operation_queue_vec.begin() + __time_wave_start.wave - 1;
-
-    SetTime(__time_wave_start);
-
     try {
         __block_var = true;
+        __BeforeScript();
         Script();
+        __AfterScript();
         __block_var = true;
 
         void RunScriptEveryTick();
@@ -119,6 +93,11 @@ void __LoadScript()
             Asm::gameSleepLoop();
         }
 
+        if (!__is_run_exit_fight) {
+            __is_run_exit_fight = true;
+            __ExitFight();
+        }
+
         if (__effective_mode != MAIN_UI_OR_FIGHT_UI) {
             // 如果战斗界面不允许重新注入则等待回主界面
             while (__pvz_base->mainObject()) {
@@ -130,15 +109,9 @@ void __LoadScript()
     } catch (...) {
         ShowErrorNotInQueue("脚本触发了一个未知的异常\n");
     }
-    __script_exit_deal();
-    AvZ::SetErrorMode(AvZ::POP_WINDOW);
-    __operation_queue_vec.clear(); // 清除一切操作
-    TickRunner::clear();
-    SetInsertOperation(false);
-    MaidCheats::stop();
-    __pvz_base->tickMs() = 10;
-    SetInsertOperation(true);
-
+    if (!__is_run_exit_fight) {
+        __ExitFight();
+    }
     __is_loaded = !(__effective_mode >= 0);
 }
 
@@ -169,6 +142,11 @@ extern "C" __declspec(dllexport) void __cdecl __Run()
             // 以下代码到战斗界面才能执行
             if (Unlikely(game_ui == 2)) {
                 return;
+            }
+
+            if (Unlikely(!__is_run_enter_fight)) {
+                __is_run_enter_fight = true;
+                __EnterFight();
             }
 
             if (Unlikely(!__select_card_vec.empty())) {
@@ -238,6 +216,7 @@ extern "C" __declspec(dllexport) void __cdecl ManageScript()
         if (AvZ::__is_advanced_pause) {
             return;
         }
+        AvZ::__pvz_base->mjClock() += 1;
         Asm::gameFightLoop();
         Asm::clearObjectMemory();
         Asm::gameExit();

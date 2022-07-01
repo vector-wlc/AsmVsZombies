@@ -12,7 +12,7 @@
 #include <set>
 
 namespace AvZ {
-class PaoOperator {
+class PaoOperator : public GlobalVar {
 public:
     // structs
     // 用于RAWPAO函数
@@ -48,6 +48,12 @@ public:
         SPACE,
         TIME
     };
+
+public:
+    void virtual beforeScript() override
+    {
+        initialState();
+    }
 
 private:
     static std::set<int> lock_pao_set; // 锁定的炮

@@ -7,13 +7,14 @@
 #ifndef __LIBAVZ_H__
 #define __LIBAVZ_H__
 
-#define __AVZ_VERSION__ 220213
+#define __AVZ_VERSION__ 220630
 
 #include "avz_cannon.h"
 #include "avz_card.h"
 #include "avz_click.h"
 #include "avz_debug.h"
 #include "avz_execption.h"
+#include "avz_iterator.h"
 #include "avz_memory.h"
 #include "avz_tick.h"
 #include "avz_time_operation.h"
@@ -27,6 +28,9 @@ extern IceFiller ice_filler;
 extern PlantFixer plant_fixer;
 extern PaoOperator pao_operator;
 extern KeyConnector key_connector;
+extern AliveFilter<Zombie> alive_zombie_filter;
+extern AliveFilter<Plant> alive_plant_filter;
+extern AliveFilter<Seed> alive_seed_filter;
 } // namespace AvZ
 
 #define KeyConnect AvZ::key_connector.add

@@ -64,7 +64,7 @@ bool IsZombieExist(int type = -1, int row = -1);
 // *** Not In Queue
 // 设定特定波的波长
 // *** 注意： wave 9 19 20 无法设定波长
-// 波长的设定范围为 601 - 2500
+// 波长的设定范围为 601 - 2510
 // *** 使用示例：
 // SetWavelength({{1, 601}, {4, 1000}}) ----- 将第一波的波长设置为 601，将第四波的波长设置为 1000
 void SetWavelength(const std::vector<WaveTime>& lst);
@@ -144,7 +144,6 @@ public:
 void SetZombies(const std::vector<int>& zombie_type);
 
 // *** Not In Queue
-// 设置特定波出怪 此函数不管填不填蹦极都会在 wave 10 20 刷蹦极！！！！！！！！！！！！
 // 参数命名规则：与英文原版图鉴名称一致
 // *** 使用示例：
 // SetWaveZombies(1, {

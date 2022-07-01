@@ -10,6 +10,7 @@
 #include "avz_card.h"
 #include "avz_click.h"
 #include "avz_memory.h"
+#include "pvzstruct.h"
 
 namespace AvZ {
 extern MainObject* __main_object;
@@ -174,7 +175,7 @@ void IceFiller::resetIceSeedList(const std::vector<int>& lst)
         ice_seed_index_vec.clear();
         int ice_index = 0;
         for (const auto& seed_type : lst) {
-            ice_index = GetSeedIndex(seed_type % 48, seed_type / 48);
+            ice_index = GetSeedIndex(ICE_SHROOM, seed_type / 49);
             if (ice_index == -1) {
                 ShowErrorNotInQueue(
                     "resetIceSeedList : 您貌似没有选择对应的冰卡");

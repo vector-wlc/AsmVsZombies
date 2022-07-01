@@ -22,8 +22,14 @@
 #include "pvzstruct.h"
 
 #define FindInAllRange(container, goal) std::find(container.begin(), container.end(), goal)
+
+#ifdef __MINGW32__
 #define Likely(x) __builtin_expect(!!(x), 1)
 #define Unlikely(x) __builtin_expect(!!(x), 0)
+#else
+#define Likely(x) (x)
+#define Unlikely(x) (x)
+#endif
 
 namespace AvZ {
 
@@ -31,6 +37,28 @@ template <class ReturnType>
 using VoidFunc = std::function<ReturnType()>;
 
 constexpr int __DEFAULT_START_TIME = -0xffff;
+
+class GlobalVar {
+public:
+    GlobalVar()
+    {
+        extern std::vector<GlobalVar*> __global_var_vec;
+        __global_var_vec.push_back(this);
+    }
+
+    // 此函数会在 AvZ 基本内存信息初始化完成后且调用 void Script() 之前运行
+    void virtual beforeScript() { }
+
+    // 此函数会在 AvZ 调用 void Script() 之后运行
+    void virtual afterScript() { }
+
+    // 此函数会在游戏进入战斗界面后立即运行
+    void virtual enterFight() { }
+
+    // 此函数会在游戏退出战斗界面后立即运行
+    // 特别注意: 如果用户从主界面进入选卡界面但是又立即退回主界面，此函数依然会运行
+    void virtual exitFight() { }
+};
 
 template <typename... Args>
 void Print(const std::string& str, Args&&... args)

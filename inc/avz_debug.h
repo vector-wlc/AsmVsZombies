@@ -21,7 +21,10 @@ void string_convert(std::string& content, T t)
 {
     std::stringstream conversion;
     conversion << t;
-    content.replace(content.find_first_of('#'), 1, conversion.str());
+    auto idx = content.find_first_of('#');
+    if (idx != std::string::npos) {
+        content.replace(idx, 1, conversion.str());
+    }
 }
 
 // 该部分为调试功能部分，使用下面两个接口可以对脚本进行调试

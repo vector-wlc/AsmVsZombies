@@ -130,7 +130,7 @@ bool IsZombieExist(int type, int row)
     auto zombie = __main_object->zombieArray();
     int zombies_count_max = __main_object->zombieTotal();
     for (int i = 0; i < zombies_count_max; ++i, ++zombie) {
-        if (zombie->isExist() && !zombie->isDead())
+        if (zombie->isExist() && !zombie->isDead()) {
             if (type < 0 && row < 0) {
                 return true;
             } else if (type >= 0 && row >= 0) {
@@ -144,6 +144,7 @@ bool IsZombieExist(int type, int row)
                 if (zombie->type() == type)
                     return true;
             }
+        }
     }
 
     return false;
@@ -230,11 +231,6 @@ void SetWaveZombies(int wave, const std::vector<int>& zombie_type)
     for (auto index : {450, 950}) {
         (*(__main_object->zombieList() + index)) = QZ_1;
     }
-
-    // 生成蹦极
-    for (auto index : {451, 452, 453, 454, 951, 952, 953, 954}) {
-        (*(__main_object->zombieList() + index)) = BJ_20;
-    }
 }
 
 uint8_t* GetZombieTypeList()
@@ -258,7 +254,7 @@ void SetWavelength(const std::vector<WaveTime>& lst)
             continue;
         }
 
-        if (ele.time < 601 || ele.time > 2500) {
+        if (ele.time < 601 || ele.time > 2510) {
             ShowErrorNotInQueue(
                 "setWavelength : 您当前设定第 # 波 的 time 参数为 #, "
                 "超出有效范围",

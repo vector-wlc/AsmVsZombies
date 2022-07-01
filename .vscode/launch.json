@@ -12,7 +12,7 @@
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
-            "miDebuggerPath": "d:/Software/AsmVsZombies/MinGW/bin/gdb32.exe",
+            "miDebuggerPath": "e:/AsmVsZombies/MinGW/bin/gdb32.exe",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
