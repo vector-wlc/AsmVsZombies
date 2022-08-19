@@ -1,14 +1,12 @@
 
 build
 script/test
-bin/libavz.dll
 /*.cpp
 tools/downloader/.vs
 tools/downloader/Debug
 tools/downloader/Release
 tools/downloader/downloader/Debug
 tools/downloader/downloader/Release
-code_association.txt
 debug
 /*.zip
 .cache

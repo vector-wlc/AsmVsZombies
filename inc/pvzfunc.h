@@ -89,6 +89,8 @@ public:
 
     static void setImprovePerformance(bool is_improve_performance);
 
+    static void releaseMouse();
+
 private:
     static void __clickScene();
 

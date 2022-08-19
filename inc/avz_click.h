@@ -36,7 +36,6 @@ void ClickSeed(int seed_index);
 // *** Not In Queue
 // 右键安全点击
 void SafeClick();
-;
 
 // *** Not In Queue
 // 鼠标左击

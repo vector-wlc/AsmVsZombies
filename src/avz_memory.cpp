@@ -35,7 +35,12 @@ PvZ* GetPvzBase()
 int MouseRow()
 {
     extern MainObject* __main_object;
-    return __main_object->mouseExtraAttribution()->row() + 1;
+    static int last_value = -1;
+    auto memory_value = __main_object->mouseExtraAttribution()->row();
+    if (memory_value > 0) {
+        last_value = memory_value + 1;
+    }
+    return last_value;
 }
 
 // *** Not In Queue
@@ -43,7 +48,12 @@ int MouseRow()
 float MouseCol()
 {
     extern MainObject* __main_object;
-    return float(__main_object->mouseAttribution()->abscissa() + 25) / 80;
+    static float last_value = -1;
+    auto memory_value = __main_object->mouseAttribution()->abscissa();
+    if (memory_value > 0) {
+        last_value = float(memory_value + 25) / 80;
+    }
+    return last_value;
 }
 
 int GetSeedIndex(int type, bool imitator)

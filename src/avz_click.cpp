@@ -26,8 +26,9 @@ void ClickSeed(int seed_index)
 // 右键安全点击
 void SafeClick()
 {
-    extern MainObject* __main_object;
-    Asm::mouseClick(1, 1, -1);
+    // extern MainObject* __main_object;
+    // Asm::mouseClick(20, 20, -1);
+    Asm::releaseMouse();
 }
 
 // *** Not In Queue

@@ -42,8 +42,8 @@ class GlobalVar {
 public:
     GlobalVar()
     {
-        extern std::vector<GlobalVar*> __global_var_vec;
-        __global_var_vec.push_back(this);
+        extern std::set<GlobalVar*> __global_var_set;
+        __global_var_set.insert(this);
     }
 
     // 此函数会在 AvZ 基本内存信息初始化完成后且调用 void Script() 之前运行
@@ -58,6 +58,12 @@ public:
     // 此函数会在游戏退出战斗界面后立即运行
     // 特别注意: 如果用户从主界面进入选卡界面但是又立即退回主界面，此函数依然会运行
     void virtual exitFight() { }
+
+    virtual ~GlobalVar()
+    {
+        extern std::set<GlobalVar*> __global_var_set;
+        __global_var_set.erase(this);
+    }
 };
 
 template <typename... Args>

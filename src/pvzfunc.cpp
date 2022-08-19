@@ -685,4 +685,27 @@ void Asm::__getPlantRejectType()
 #endif
 }
 
+void Asm::releaseMouse()
+{
+#ifdef __MINGW32__
+    __asm__ __volatile__(
+        "pushal;"
+        "movl 0x6A9EC0, %%eax;"
+        "movl 0x768(%%eax), %%eax;"
+        "movl $0x40CD80, %%edx;"
+        "calll %%edx;"
+        "popal;"
+        :
+        :
+        :);
+#else
+    __asm {
+        pushad
+        eax 6A9EC0+768
+        call 40CD80
+        popad
+    }
+#endif
+}
+
 #pragma GCC pop_options

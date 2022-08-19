@@ -42,7 +42,7 @@ extern std::vector<OperationQueue> __operation_queue_vec;
 extern std::vector<OperationQueue>::iterator __wavelength_it;
 extern bool __is_loaded;
 extern VoidFunc<void> __script_exit_deal;
-extern std::vector<GlobalVar*> __global_var_vec;
+extern std::vector<GlobalVar*> __global_var_set;
 extern bool __is_run_enter_fight;
 extern bool __is_run_exit_fight;
 

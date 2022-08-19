@@ -11,7 +11,7 @@
 #include "libavz.h"
 
 namespace AvZ {
-std::vector<GlobalVar*> __global_var_vec;
+std::set<GlobalVar*> __global_var_set;
 HWND __pvz_hwnd;
 HANDLE __pvz_handle = nullptr;
 PvZ* __pvz_base;
@@ -79,7 +79,7 @@ void __BeforeScript()
     key_connector.clear();
     __seed_name_to_index_map.clear();
 
-    for (auto&& global_var : __global_var_vec) {
+    for (auto&& global_var : __global_var_set) {
         global_var->beforeScript();
     }
 
@@ -106,14 +106,14 @@ void __BeforeScript()
 
 void __AfterScript()
 {
-    for (auto&& global_var : __global_var_vec) {
+    for (auto&& global_var : __global_var_set) {
         global_var->afterScript();
     }
 }
 
 void __EnterFight()
 {
-    for (auto&& global_var : __global_var_vec) {
+    for (auto&& global_var : __global_var_set) {
         global_var->enterFight();
     }
 }
@@ -128,7 +128,7 @@ void __ExitFight()
     MaidCheats::stop();
     __pvz_base->tickMs() = __tick_ms;
     SetInsertOperation(true);
-    for (auto&& global_var : __global_var_vec) {
+    for (auto&& global_var : __global_var_set) {
         global_var->exitFight();
     }
 }
