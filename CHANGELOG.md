@@ -2,7 +2,10 @@
 
 Nightly (无法通过 AvZ 插件下载，需要在此存储库中的 release/nightly 文件夹下载并手动替换更新)
 
-* 修复继承 GlobalVar 的局部对象析构时无法移除 this 指针的问题
+* 优化自动存冰类、自动修植物类逻辑
+* 优化坐标转换逻辑
+* `class PaoOperator` 的 private 成员更改为 protected 成员
+* 修复继承 `GlobalVar` 的局部对象析构时无法移除 this 指针的问题
 * 修复了偶尔存在卡片 CD 无法正常恢复的问题
 * 修复了当鼠标位置不动且场地上存在收集物导致的 `MouseCol` `MouseRow` 读取内存值错误的问题
 

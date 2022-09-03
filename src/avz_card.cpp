@@ -170,6 +170,7 @@ void CardNotInQueue(int seed_index, int row, float col)
     }
     int x;
     int y;
+    col = int(col + 0.5);
     GridToCoordinate(row, col, x, y);
     Asm::plantCard(x, y, seed_index - 1);
     SafeClick();
@@ -193,11 +194,13 @@ void CardNotInQueue(int seed_index, const std::vector<Position>& lst)
     }
     SafeClick();
 
-    int x;
-    int y;
+    int x = 0;
+    int y = 0;
+    int col = 0;
     extern int __error_mode;
     for (const auto& crood : lst) {
-        GridToCoordinate(crood.row, crood.col, x, y);
+        col = int(crood.col + 0.5);
+        GridToCoordinate(crood.row, col, x, y);
         std::printf("Game clock : %d ||", __main_object->gameClock());
         if (__error_mode == CONSOLE) {
             std::printf("Try Plant Card (%d) to (%d, %g) | ",

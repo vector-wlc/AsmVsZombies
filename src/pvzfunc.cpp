@@ -708,4 +708,66 @@ void Asm::releaseMouse()
 #endif
 }
 
+int Asm::gridToAbscissa(int row, int col)
+{
+    __row = row;
+    __col = col;
+#ifdef __MINGW32__
+    __asm__ __volatile__(
+        "pushal;"
+        "movl 0x6A9EC0, %%ecx;"
+        "movl 0x768(%%ecx), %%ecx;"
+        "movl %[__col], %%eax;"
+        "movl %[__row], %%esi;"
+        "movl $0x41C680, %%edx;"
+        "calll %%edx;"
+        "movl %%eax, %[__x];"
+        "popal;"
+        :
+        : [__col] "m"(__col), [__row] "m"(__row), [__x] "m"(__x)
+        :);
+#else
+    __asm {
+        ecx 6A9EC0+768
+        eax col(int)
+        esi row(int)
+        call 41C680
+        x eax(int)
+    }
+
+#endif
+    return __x;
+}
+
+int Asm::gridToOrdinate(int row, int col)
+{
+    __row = row;
+    __col = col;
+#ifdef __MINGW32__
+    __asm__ __volatile__(
+        "pushal;"
+        "movl 0x6A9EC0, %%ebx;"
+        "movl 0x768(%%ebx), %%ebx;"
+        "movl %[__col], %%ecx;"
+        "movl %[__row], %%eax;"
+        "movl $0x41C740, %%edx;"
+        "calll %%edx;"
+        "movl %%eax, %[__y];"
+        "popal;"
+        :
+        : [__col] "m"(__col), [__row] "m"(__row), [__y] "m"(__y)
+        :);
+#else
+    __asm {
+        ebx 6A9EC0+768
+        ecx col(int)
+        eax row(int)
+        call 41C740
+        y eax(int)
+    }
+
+#endif
+    return __y;
+}
+
 #pragma GCC pop_options

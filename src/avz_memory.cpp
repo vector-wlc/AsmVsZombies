@@ -37,7 +37,7 @@ int MouseRow()
     extern MainObject* __main_object;
     static int last_value = -1;
     auto memory_value = __main_object->mouseExtraAttribution()->row();
-    if (memory_value > 0) {
+    if (memory_value >= 0) {
         last_value = memory_value + 1;
     }
     return last_value;
@@ -50,7 +50,7 @@ float MouseCol()
     extern MainObject* __main_object;
     static float last_value = -1;
     auto memory_value = __main_object->mouseAttribution()->abscissa();
-    if (memory_value > 0) {
+    if (memory_value >= 0) {
         last_value = float(memory_value + 25) / 80;
     }
     return last_value;

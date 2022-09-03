@@ -95,6 +95,14 @@ public:
         return t[index];
     }
 
+    T& operator*()
+    {
+        if (game_ui() == 1) {
+            return __t;
+        }
+        return *t;
+    }
+
     SafePtr<T> operator+(int index)
     {
         if (game_ui() == 1) {
@@ -150,7 +158,7 @@ public:
         return t += index;
     }
 
-    SafePtr<T> operator-=(int index)
+    SafePtr<T>& operator-=(int index)
     {
         if (game_ui() == 1) {
             return &__t;
@@ -439,6 +447,12 @@ public:
     SelectCardUi_m* selectCardUi_m()
     {
         return *(SelectCardUi_m**)((uint8_t*)this + 0x15c);
+    }
+
+    // 场地格子类型列表
+    uint32_t* gridTypeList()
+    {
+        return (uint32_t*)((uint8_t*)this + 0x168);
     }
 
     // 出怪列表

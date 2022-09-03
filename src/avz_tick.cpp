@@ -235,26 +235,9 @@ void IceFiller::run()
         for (; ice_plant_index_it != ice_plant_index_vec.end();
              ++fill_ice_grid_it, ++ice_plant_index_it) {
             if ((*ice_plant_index_it) == -1) {
-                //如果为池塘场景而且在水路
-                if ((__main_object->scene() == 2 || __main_object->scene() == 3) && (fill_ice_grid_it->row == 3 || fill_ice_grid_it->row == 4)) {
-                    //如果不存在荷叶
-                    if (GetPlantIndex(fill_ice_grid_it->row,
-                            fill_ice_grid_it->col, LILY_PAD)
-                        == -1) {
-                        continue;
-                    }
+                if (Asm::getPlantRejectType(ICE_SHROOM, fill_ice_grid_it->row - 1, fill_ice_grid_it->col - 1) != Asm::NIL) {
+                    continue;
                 }
-
-                // 如果是天台场景
-                if (__main_object->scene() == 4 || __main_object->scene() == 5) {
-                    if (GetPlantIndex(fill_ice_grid_it->row,
-                            fill_ice_grid_it->col,
-                            FLOWER_POT)
-                        == -1) {
-                        continue;
-                    }
-                }
-
                 CardNotInQueue(*ice_seed_index_it + 1, fill_ice_grid_it->row,
                     fill_ice_grid_it->col);
                 ++fill_ice_grid_it;
@@ -433,19 +416,8 @@ void PlantFixer::run()
         }
 
         if (*plant_index_it == -1) {
-            //如果为池塘场景而且在水路
-            if ((__main_object->scene() == 2 || __main_object->scene() == 3) && (grid_it->row == 3 || grid_it->row == 4)) {
-                //如果不存在荷叶
-                if (GetPlantIndex(grid_it->row, grid_it->col, LILY_PAD) == -1 && plant_type != LILY_PAD) {
-                    continue;
-                }
-            }
-
-            // 如果是天台场景
-            if (__main_object->scene() == 4 || __main_object->scene() == 5) {
-                if (GetPlantIndex(grid_it->row, grid_it->col, FLOWER_POT) == -1 && plant_type != FLOWER_POT) {
-                    continue;
-                }
+            if (Asm::getPlantRejectType(plant_type, grid_it->row - 1, grid_it->col - 1) != Asm::NIL) {
+                continue;
             }
 
             use_seed_((*usable_seed_index_it), grid_it->row, grid_it->col,

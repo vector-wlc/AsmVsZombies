@@ -91,6 +91,10 @@ public:
 
     static void releaseMouse();
 
+    static int gridToAbscissa(int row, int col);
+
+    static int gridToOrdinate(int row, int col);
+
 private:
     static void __clickScene();
 

@@ -55,7 +55,7 @@ public:
         initialState();
     }
 
-private:
+protected:
     static std::set<int> lock_pao_set; // 锁定的炮
     std::vector<int> pao_index_vec;    // 炮的内存位置
     std::vector<Grid> pao_grid_vec;    // 炮列表，记录炮的信息

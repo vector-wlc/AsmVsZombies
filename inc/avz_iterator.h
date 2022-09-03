@@ -118,17 +118,22 @@ public:
         }
     }
 
-    SafePtr<T> operator*() const
+    SafePtr<T> toPtr() const
     {
         return __cur;
     }
 
-    SafePtr<T> operator->() const
+    T& operator*()
+    {
+        return *__cur;
+    }
+
+    SafePtr<T>& operator->()
     {
         return __cur;
     }
 
-    FilterIterator<T> operator++()
+    FilterIterator<T>& operator++()
     {
         forward();
         return *this;

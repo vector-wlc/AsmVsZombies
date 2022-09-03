@@ -63,31 +63,33 @@ void Shovel(const std::vector<ShovelPosition>& lst)
         "Shovel");
 }
 
+template <typename T>
+void __LimitValue(T& value, T min_v, T max_v)
+{
+    if (value < min_v) {
+        value = min_v;
+    }
+    if (value > max_v) {
+        value = max_v;
+    }
+}
+
 // 将格子转换成坐标
 void GridToCoordinate(int row, float col, int& x, int& y)
 {
     x = 80 * col;
-    y = 0;
-
-    if ((__main_object->scene() == 2) || (__main_object->scene() == 3)) {
-        y = 55 + 85 * row;
-    } else if ((__main_object->scene() == 4) || (__main_object->scene() == 5)) {
-        int t_col = static_cast<int>(col + 0.5);
-        if (t_col > 5) {
-            y = 35 + 85 * row;
-        } else {
-            y = 35 + 85 * row + (120 - 20 * t_col);
-        }
-    } else {
-        y = 40 + 100 * row;
-    }
+    __LimitValue(x, 0, 800);
+    __LimitValue(row, 1, 6);
+    int t_col = int(col + 0.5);
+    __LimitValue(t_col, 1, 9);
+    y = Asm::gridToOrdinate(row - 1, t_col - 1) + 40;
 }
 
 void ClickGrid(int row, float col, int offset)
 {
     int x = 0;
     int y = 0;
-
+    col = int(col + 0.5);
     GridToCoordinate(row, col, x, y);
     y += offset;
     LeftClick(x, y);
@@ -100,11 +102,11 @@ void ShovelNotInQueue(int row, float col, bool pumpkin)
 
     int x = 0;
     int y = 0;
-
+    col = int(col + 0.5);
     GridToCoordinate(row, col, x, y);
 
     if (pumpkin) {
-        y += 20;
+        y += 40;
     }
     extern int __error_mode;
     if (__error_mode == CONSOLE) {
