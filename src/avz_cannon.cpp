@@ -39,7 +39,7 @@ int PaoOperator::get_recover_time(int index)
 {
     auto cannon = __main_object->plantArray() + index;
     if (cannon->isDisappeared() || cannon->type() != COB_CANNON) {
-        return -1;
+        return NO_EXIST_RECOVER_TIME;
     }
     auto animation_memory = __pvz_base->animationMain()->animationOffset()->animationArray() + cannon->animationCode();
 
@@ -53,7 +53,7 @@ int PaoOperator::get_recover_time(int index)
     case 38:
         return 3125 + int(350 * (1 - animation_memory->circulationRate()) + 0.5);
     default:
-        return -1;
+        return NO_EXIST_RECOVER_TIME;
     }
 }
 
@@ -334,7 +334,7 @@ void PaoOperator::fixLatestPao()
 int PaoOperator::get_recover_time_vec()
 {
     int time = get_recover_time(pao_index_vec[next_pao]);
-    if (time == -1) {
+    if (time == NO_EXIST_RECOVER_TIME) {
         int index = GetPlantIndex(
             pao_grid_vec[next_pao].row, pao_grid_vec[next_pao].col, COB_CANNON);
         if (index < 0) // 找不到本来位置的炮
@@ -343,7 +343,7 @@ int PaoOperator::get_recover_time_vec()
                 pao_grid_vec[next_pao].row,
                 pao_grid_vec[next_pao].col,
                 next_pao + 1);
-            return -1;
+            return NO_EXIST_RECOVER_TIME;
         }
         pao_index_vec[next_pao] = index;
         time = get_recover_time(pao_index_vec[next_pao]);
@@ -351,7 +351,7 @@ int PaoOperator::get_recover_time_vec()
     return time;
 }
 
-int PaoOperator::update_next_pao(int delay_time, bool is_delay_pao)
+int PaoOperator::update_next_pao(bool is_delay_pao, float drop_col)
 {
     int recover_time = 0xFFFF;
 
@@ -366,11 +366,14 @@ int PaoOperator::update_next_pao(int delay_time, bool is_delay_pao)
             }
 
             time = get_recover_time_vec();
-
-            if (time == -1 || time <= delay_time) {
-                return time;
+            if (time == NO_EXIST_RECOVER_TIME) {
+                return NO_EXIST_RECOVER_TIME;
             }
-
+            int roof_offset_time = drop_col < 0 ? 0 : (387 - get_roof_fly_time(pao_grid_vec[next_pao].col, drop_col));
+            time -= roof_offset_time;
+            if (time <= 0) { // 这里返回 roof_offset_time 目的是直接让 roofPao 使用, 对于普通的炮, roof_offset_time 一直为 0
+                return roof_offset_time;
+            }
             if (recover_time > time) {
                 recover_time = time;
                 _next_pao = next_pao;
@@ -380,7 +383,7 @@ int PaoOperator::update_next_pao(int delay_time, bool is_delay_pao)
         next_pao = _next_pao;
     } else { // SPACE
         recover_time = get_recover_time_vec();
-        if (recover_time == -1 || recover_time <= delay_time) {
+        if (recover_time <= 0) {
             return recover_time;
         }
     }
@@ -399,8 +402,8 @@ int PaoOperator::update_next_pao(int delay_time, bool is_delay_pao)
         pao_grid_vec[next_pao].row,
         pao_grid_vec[next_pao].col,
         next_pao + 1,
-        recover_time - delay_time);
-    return -1;
+        recover_time);
+    return NO_EXIST_RECOVER_TIME;
 }
 
 // 发炮函数：单发
@@ -411,7 +414,7 @@ void PaoOperator::pao(int row, float col)
             ShowErrorNotInQueue("pao : 您尚未为此炮列表分配炮");
             return;
         }
-        if (update_next_pao() == -1) {
+        if (update_next_pao() == NO_EXIST_RECOVER_TIME) {
             return;
         }
         base_fire_pao(pao_index_vec[next_pao], row, col);
@@ -436,8 +439,8 @@ void PaoOperator::recoverPao(int row, float col)
             ShowErrorNotInQueue("recoverPao : 您尚未为此炮列表分配炮");
             return;
         }
-        int delay_time = update_next_pao(0, true);
-        if (delay_time == -1) {
+        int delay_time = update_next_pao(true);
+        if (delay_time == NO_EXIST_RECOVER_TIME) {
             return;
         }
         delay_fire_pao(delay_time, pao_index_vec[next_pao], row, col);
@@ -467,21 +470,8 @@ void PaoOperator::roofPao(int row, float col)
             return;
         }
 
-        // 寻找恢复时间最少的炮
-        int min_delay_time = update_next_pao(0, true);
-        if (min_delay_time == -1) {
-            return;
-        }
-        int delay_time = 387 - get_roof_fly_time(pao_grid_vec[next_pao].col, col);
-        if (min_delay_time > delay_time) {
-            std::string error_str = (sequential_mode == TIME ? "TIME 模式 : 未找到能够发射的炮，"
-                                                             : "SPACE 模式 : ");
-            error_str += "位于 (#, #) 的第 # 门炮还有 #cs 恢复";
-            ShowErrorNotInQueue(error_str,
-                pao_grid_vec[next_pao].row,
-                pao_grid_vec[next_pao].col,
-                next_pao + 1,
-                min_delay_time - delay_time);
+        int delay_time = update_next_pao(false, col);
+        if (delay_time == NO_EXIST_RECOVER_TIME) {
             return;
         }
 

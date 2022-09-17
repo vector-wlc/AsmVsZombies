@@ -56,6 +56,7 @@ public:
     }
 
 protected:
+    static constexpr int NO_EXIST_RECOVER_TIME = INT_MIN;
     static std::set<int> lock_pao_set; // 锁定的炮
     std::vector<int> pao_index_vec;    // 炮的内存位置
     std::vector<Grid> pao_grid_vec;    // 炮列表，记录炮的信息
@@ -75,13 +76,15 @@ protected:
     // 禁用 =
     void operator=(const PaoOperator& p);
     // 得到炮列表中的炮恢复时间
-    // return -1 :  can't find pao index
+    // return NO_EXIST_RECOVER_TIME :  can't find pao index
     int get_recover_time_vec();
 
     // 更新下一门要发射的炮
+    // 第一个参数用于 recoverPao
+    // 第二个参数用于 roofPao
     // 返回 >=0 下一门炮可用且意义为该门炮剩余的恢复时间
-    // 返回 -1 下一门炮不可用
-    int update_next_pao(int delay_time = 0, bool is_delay_pao = false);
+    // 返回 NO_EXIST_RECOVER_TIME 下一门炮不可用
+    int update_next_pao(bool is_delay_pao = false, float drop_col = -1);
 
     // 更新最近发炮的信息
     void update_lastest_pao_msg(int fire_time, int index)

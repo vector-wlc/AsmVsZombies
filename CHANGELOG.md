@@ -2,6 +2,7 @@
 
 Nightly (无法通过 AvZ 插件下载，需要在此存储库中的 release/nightly 文件夹下载并手动替换更新)
 
+* 修复了 roofPao 错误寻找最短 cd 炮的 BUG
 * 优化自动存冰类、自动修植物类逻辑
 * 优化坐标转换逻辑
 * `class PaoOperator` 的 private 成员更改为 protected 成员
