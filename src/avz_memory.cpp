@@ -16,7 +16,7 @@ extern PvZ* __pvz_base;
 
 // *** Not In Queue
 // 游戏主要信息
-SafePtr<MainObject> GetMainObject()
+MainObject* GetMainObject()
 {
     extern MainObject* __main_object;
     return __main_object;

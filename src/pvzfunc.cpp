@@ -5,7 +5,7 @@
  * @Description: pvzfunc
  */
 
-#include "pvzfunc.h"
+#include "libavz.h"
 #include <mutex>
 
 #pragma GCC push_options
@@ -103,7 +103,7 @@ void Asm::gameFightLoop()
         "movl 0x6a9ec0, %%ecx;"
         "movl 0x768(%%ecx), %%ecx;"
         "movl $0x415d40, %%eax;"
-        "calll %%eax;"
+        "calll *%%eax;"
         "popal;"
         :
         :
@@ -129,7 +129,7 @@ void Asm::gameTotalLoop()
         "pushal;"
         "movl 0x6a9ec0, %%ecx;"
         "movl $0x452650, %%eax;"
-        "calll %%eax;"
+        "calll *%%eax;"
         "popal;"
         :
         :
@@ -154,7 +154,7 @@ void Asm::gameSleepLoop()
         "pushal;"
         "movl 0x6a9ec0, %%ecx;"
         "movl $0x453a50, %%eax;"
-        "calll %%eax;"
+        "calll *%%eax;"
         "popal;"
         :
         :
@@ -176,13 +176,13 @@ void Asm::clearObjectMemory()
         "movl 0x6a9ec0, %%ebx;"
         "movl 0x768(%%ebx), %%esi;"
         "movl $0x41bad0, %%eax;"
-        "calll %%eax;"
+        "calll *%%eax;"
 
         "movl 0x6a9ec0, %%ebx;"
         "movl 0x820(%%ebx), %%esi;"
         "pushl %%esi;"
         "movl $0x445680, %%eax;"
-        "calll %%eax;"
+        "calll *%%eax;"
         "popal;"
         :
         :
@@ -206,7 +206,7 @@ void Asm::killZombiesPreview()
         "movl 0x6a9ec0, %%ebx;"
         "movl 0x768(%%ebx), %%ebx;"
         "movl $0x40df70, %%eax;"
-        "calll %%eax;"
+        "calll *%%eax;"
         "popal;"
         :
         :
@@ -232,7 +232,7 @@ void Asm::gameExit()
         "pushal;"
         "movl 0x6a9ec0, %%eax;"
         "movl $0x4524f0, %%ecx;"
-        "calll %%ecx;"
+        "calll *%%ecx;"
         "popal;"
         :
         :
@@ -255,7 +255,7 @@ void Asm::saveData()
         "movl 0x768(%%eax), %%eax;"
         "pushl %%eax;"
         "movl $0x408c30, %%eax;"
-        "calll %%eax;"
+        "calll *%%eax;"
         "popal;"
         :
         :
@@ -281,7 +281,7 @@ void Asm::loadData()
         "movl 0x6a9ec0, %%eax;"
         "pushl %%eax;"
         "movl $0x44f7a0, %%eax;"
-        "calll %%eax;"
+        "calll *%%eax;"
         "popal;"
         :
         :
@@ -309,7 +309,7 @@ void Asm::rock()
         "movl 0x6a9ec0, %%esi;"
         "movl $0x1, %%edi;"
         "movl $0x1, %%ebp;"
-        "calll %%eax;"
+        "calll *%%eax;"
         "popal;"
         :
         :
@@ -341,7 +341,7 @@ void Asm::__clickScene()
         "pushl %2;"
         "movl %3, %%ecx;"
         "movl $0x411f20, %%eax;"
-        "calll %%eax;"
+        "calll *%%eax;"
         :
         : "m"(__key), "m"(__y), "m"(__x), "m"(__level)
         : "eax", "ecx");
@@ -366,7 +366,7 @@ void Asm::__click()
         "movl %2, %%eax;"
         "movl %3, %%ecx;"
         "movl $0x539390, %%edx;"
-        "calll %%edx;"
+        "calll *%%edx;"
         :
         : "m"(__x), "m"(__key), "m"(__y), "m"(__mw)
         : "eax", "ecx", "ebx", "edx");
@@ -396,14 +396,14 @@ void Asm::__mouseClick()
         "movl 0x6a9ec0, %%ecx;"
         "movl 0x320(%%ecx), %%ecx;"
         "movl $0x539390, %%edx;"
-        "calll %%edx;"
+        "calll *%%edx;"
         "pushl %[__key];"
         "pushl %[__x];"
         "movl 0x6a9ec0, %%eax;"
         "movl 0x320(%%eax), %%eax;"
         "movl %[__y], %%ebx;"
         "movl $0x5392e0, %%edx;"
-        "calll %%edx;"
+        "calll *%%edx;"
         "popal;"
         :
         : [__x] "m"(__x), [__y] "m"(__y), [__key] "m"(__key)
@@ -444,7 +444,7 @@ void Asm::__shootPao()
         "pushl %[__y];"
         "pushl %[__x];"
         "movl $0x466d50, %%edx;"
-        "calll %%edx;"
+        "calll *%%edx;"
         "popal;"
         :
         : [__x] "m"(__x), [__y] "m"(__y), [__rank] "m"(__rank)
@@ -485,10 +485,10 @@ void Asm::__plantCard()
         "addl $0x28, %%eax;"
         "pushl %%eax;"
         "movl $0x488590, %%ecx;"
-        "calll %%ecx;"
+        "calll *%%ecx;"
         "movl $0x1, %%ecx;"
         "movl $0x40fd30, %%edx;"
-        "calll %%edx;"
+        "calll *%%edx;"
         "popal;"
         :
         : [__x] "m"(__x), [__y] "m"(__y), [__index] "m"(__index)
@@ -530,7 +530,7 @@ void Asm::__shovelPlant()
         "movl 0x6a9ec0, %%edi;"
         "movl 0x768(%%edi), %%eax;"
         "movl $0x411060, %%ebx;"
-        "calll %%ebx;"
+        "calll *%%ebx;"
         "popal;"
         :
         : [__x] "m"(__x), [__y] "m"(__y)
@@ -567,7 +567,7 @@ void Asm::__chooseCard()
         "addl %%eax, %%edx;"
         "pushl %%edx;"
         "movl $0x486030, %%ecx;"
-        "calll %%ecx;"
+        "calll *%%ecx;"
         "popal;"
         :
         : [__card_type] "m"(__card_type)
@@ -620,9 +620,9 @@ void Asm::__chooseImitatorCard()
         "pushl %%eax;"
         "pushl %%ecx;"
         "movl $0x486030, %%edx;"
-        "calll %%edx;"
+        "calll *%%edx;"
         "movl $0x4866E0, %%edx;"
-        "calll %%edx;"
+        "calll *%%edx;"
         "popal;"
         :
         : [__card_type] "m"(__card_type)
@@ -665,7 +665,7 @@ void Asm::__getPlantRejectType()
         "movl 0x768(%%ebx), %%ebx;"
         "pushl %%ebx;"
         "movl $0x40E020, %%edx;"
-        "calll %%edx;"
+        "calll *%%edx;"
         "movl %%eax, %[__reject_type];"
         "popal;"
         :
@@ -693,7 +693,7 @@ void Asm::releaseMouse()
         "movl 0x6A9EC0, %%eax;"
         "movl 0x768(%%eax), %%eax;"
         "movl $0x40CD80, %%edx;"
-        "calll %%edx;"
+        "calll *%%edx;"
         "popal;"
         :
         :
@@ -720,7 +720,7 @@ int Asm::gridToAbscissa(int row, int col)
         "movl %[__col], %%eax;"
         "movl %[__row], %%esi;"
         "movl $0x41C680, %%edx;"
-        "calll %%edx;"
+        "calll *%%edx;"
         "movl %%eax, %[__x];"
         "popal;"
         :
@@ -751,7 +751,7 @@ int Asm::gridToOrdinate(int row, int col)
         "movl %[__col], %%ecx;"
         "movl %[__row], %%eax;"
         "movl $0x41C740, %%edx;"
-        "calll %%edx;"
+        "calll *%%edx;"
         "movl %%eax, %[__y];"
         "popal;"
         :

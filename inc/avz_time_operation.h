@@ -257,6 +257,16 @@ void ScriptExitDeal(Func&& func)
 void SetScriptStartTime(int time, int wave);
 
 // *** Not In Queue
+// 设定高级暂停
+// *** 注意开启高级暂停时不能使用跳帧
+// *** 特别注意的是 `SetAdvancedPause` 一旦使得程序进入高级暂停状态后，便再也不会执行 Script 中的代码，
+// 此时必须使用 `SetAdvancedPauseKey` 才能解除高级暂停状态。
+// *** 使用示例
+// SetAdvancedPause(true) ------ 开启高级暂停
+// SetAdvancedPause(false) ------ 关闭高级暂停
+void SetAdvancedPause(bool is_advanced_pause);
+
+// *** Not In Queue
 // 设定高级暂停按键
 // *** 注意开启高级暂停时不能使用跳帧
 // *** 使用示例

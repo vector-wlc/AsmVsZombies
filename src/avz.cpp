@@ -15,6 +15,7 @@ KeyConnector key_connector;
 AliveFilter<Zombie> alive_zombie_filter;
 AliveFilter<Plant> alive_plant_filter;
 AliveFilter<Seed> alive_seed_filter;
+AliveFilter<PlaceItem> alive_place_item_filter;
 } // namespace AvZ
 
 namespace AvZ {
@@ -105,9 +106,17 @@ void __LoadScript()
             }
         }
     } catch (Exception& exce) {
-        printf(exce.what());
+        std::string exce_msg = "catch exception: ";
+        exce_msg += exce.what();
+        if (exce_msg != STR_GAME_RET_MAIN_UI) {
+            __is_exited = true;
+            exce_msg += " ||  AvZ has stopped working !!!";
+        }
+        exce_msg += '\n';
+        std::printf(exce_msg.c_str());
     } catch (...) {
         ShowErrorNotInQueue("脚本触发了一个未知的异常\n");
+        __is_exited = true;
     }
     if (!__is_run_exit_fight) {
         __ExitFight();
@@ -189,9 +198,17 @@ extern "C" __declspec(dllexport) void __cdecl __Run()
             __LoadScript();
         }
     } catch (Exception& exce) {
-        printf(exce.what());
+        std::string exce_msg = "catch exception: ";
+        exce_msg += exce.what();
+        if (exce_msg != STR_GAME_RET_MAIN_UI) {
+            __is_exited = true;
+            exce_msg += " ||  AvZ has stopped working !!!";
+        }
+        exce_msg += '\n';
+        std::printf(exce_msg.c_str());
     } catch (...) {
-        ShowErrorNotInQueue("脚本触发了一个未知的异常\n");
+        ShowErrorNotInQueue("脚本触发了一个未知的异常, 已强制关闭脚本\n");
+        __is_exited = true;
     }
 
     return;
@@ -223,40 +240,22 @@ extern "C" __declspec(dllexport) void __cdecl ManageScript()
     }
 }
 
-Memory memory;
-
-// call script() instead of game_loop()
-void InstallHook(Memory& memory)
-{
-    DWORD temp;
-    VirtualProtect((void*)0x400000, 0x35E000, PAGE_EXECUTE_READWRITE, &temp);
-    *(uint32_t*)0x667bc0 = (uint32_t)&ManageScript;
-}
-
-void UninstallHook(Memory& memory)
-{
-    DWORD temp;
-    VirtualProtect((void*)0x400000, 0x35E000, PAGE_EXECUTE_READWRITE, &temp);
-    *(uint32_t*)0x667bc0 = 0x452650;
-}
-
 BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
-
+    void InstallHook();
+    void UninstallHook();
     switch (fdwReason) {
     case DLL_PROCESS_ATTACH:
         // attach to process
         // return FALSE to fail DLL load
-        memory.OpenSelf();
-        InstallHook(memory);
+        InstallHook();
         break;
 
     case DLL_PROCESS_DETACH:
         // detach from process
         AvZ::__Exit();
         Sleep(10);
-
-        UninstallHook(memory);
+        UninstallHook();
         break;
 
     case DLL_THREAD_ATTACH:

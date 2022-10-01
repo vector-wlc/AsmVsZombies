@@ -7,87 +7,105 @@
 #ifndef __AVZ_ITERATOR_H__
 #define __AVZ_ITERATOR_H__
 
+#include <iterator>
+
 #include "avz_global.h"
 
 namespace AvZ {
 
 extern MainObject* __main_object;
 template <typename T>
-using __PredicateT = std::function<bool(SafePtr<T> ptr)>;
+using __PredicateT = std::function<bool(T* ptr)>;
 
 template <class T>
 struct __filter_trait;
 
 template <>
 struct __filter_trait<Plant> {
-    static SafePtr<Plant> __get_end()
+    static Plant* __get_end()
     {
         return __main_object->plantArray() + __main_object->plantTotal();
     }
-    static SafePtr<Plant> __get_begin()
+    static Plant* __get_begin()
     {
         return __main_object->plantArray();
     }
     static __PredicateT<Plant> __get_alive_predicate()
     {
-        return [](SafePtr<Plant> ptr) -> bool { return !ptr->isDisappeared() && !ptr->isCrushed(); };
+        return [](Plant* ptr) -> bool { return !ptr->isDisappeared() && !ptr->isCrushed(); };
     }
 };
 
 template <>
 struct __filter_trait<Zombie> {
-    static SafePtr<Zombie> __get_end()
+    static Zombie* __get_end()
     {
         return __main_object->zombieArray() + __main_object->zombieTotal();
     }
-    static SafePtr<Zombie> __get_begin()
+    static Zombie* __get_begin()
     {
         return __main_object->zombieArray();
     }
     static __PredicateT<Zombie> __get_alive_predicate()
     {
-        return [](SafePtr<Zombie> ptr) -> bool { return !ptr->isDisappeared() && !ptr->isDead(); };
+        return [](Zombie* ptr) -> bool { return !ptr->isDisappeared() && !ptr->isDead(); };
     }
 };
 
 template <>
 struct __filter_trait<Item> {
-    static SafePtr<Item> __get_end()
+    static Item* __get_end()
     {
         return __main_object->itemArray() + __main_object->itemTotal();
     }
-    static SafePtr<Item> __get_begin()
+    static Item* __get_begin()
     {
         return __main_object->itemArray();
     }
     static __PredicateT<Item> __get_alive_predicate()
     {
-        return [](SafePtr<Item> ptr) -> bool { return !ptr->isDisappeared() && !ptr->isCollected(); };
+        return [](Item* ptr) -> bool { return !ptr->isDisappeared() && !ptr->isCollected(); };
     }
 };
 
 template <>
 struct __filter_trait<Seed> {
-    static SafePtr<Seed> __get_end()
+    static Seed* __get_end()
     {
         return __main_object->seedArray() + __main_object->seedArray()->count();
     }
-    static SafePtr<Seed> __get_begin()
+    static Seed* __get_begin()
     {
         return __main_object->seedArray();
     }
     static __PredicateT<Seed> __get_alive_predicate()
     {
-        return [](SafePtr<Seed> ptr) -> bool { return ptr->isUsable(); };
+        return [](Seed* ptr) -> bool { return ptr->isUsable(); };
+    }
+};
+
+template <>
+struct __filter_trait<PlaceItem> {
+    static PlaceItem* __get_end()
+    {
+        return __main_object->placeItemArray() + __main_object->placeItemTotal();
+    }
+    static PlaceItem* __get_begin()
+    {
+        return __main_object->placeItemArray();
+    }
+    static __PredicateT<PlaceItem> __get_alive_predicate()
+    {
+        return [](PlaceItem* ptr) -> bool { return !ptr->isDisappeared(); };
     }
 };
 
 template <typename T>
-class FilterIterator : public std::iterator<std::forward_iterator_tag, SafePtr<T>> {
+class FilterIterator {
 private:
     __PredicateT<T> __pred;
-    SafePtr<T> __cur;
-    SafePtr<T> __end;
+    T* __cur;
+    T* __end;
 
     void forward()
     {
@@ -98,7 +116,26 @@ private:
     }
 
 public:
-    FilterIterator(SafePtr<T> ptr, __PredicateT<T>&& func)
+    template <typename V>
+    class Value : public V {
+    public:
+        _ADEPRECATED const V* operator->() const
+        {
+            return this;
+        }
+
+        _ADEPRECATED V* operator->()
+        {
+            return this;
+        }
+    };
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = Value<T>;
+    using difference_type = void;
+    using pointer = T*;
+    using reference = value_type&;
+
+    FilterIterator(pointer ptr, __PredicateT<T>&& func)
         : __cur(ptr)
         , __pred(std::move(func))
         , __end(__filter_trait<T>::__get_end())
@@ -108,7 +145,7 @@ public:
         }
     }
 
-    FilterIterator(SafePtr<T> ptr, const __PredicateT<T>& func)
+    FilterIterator(pointer ptr, const __PredicateT<T>& func)
         : __cur(ptr)
         , __pred(func)
         , __end(__filter_trait<T>::__get_end())
@@ -118,17 +155,27 @@ public:
         }
     }
 
-    SafePtr<T> toPtr() const
+    pointer toPtr() const
     {
         return __cur;
     }
 
-    T& operator*()
+    reference operator*()
     {
-        return *__cur;
+        return *(value_type*)(__cur);
     }
 
-    SafePtr<T>& operator->()
+    const reference operator*() const
+    {
+        return *(value_type*)(__cur);
+    }
+
+    pointer operator->()
+    {
+        return __cur;
+    }
+
+    const pointer operator->() const
     {
         return __cur;
     }
@@ -148,12 +195,12 @@ public:
 
     bool operator==(const FilterIterator<T>& rhs) const
     {
-        return __cur.toUnsafe() == rhs.__cur.toUnsafe();
+        return __cur == rhs.__cur;
     }
 
     bool operator!=(const FilterIterator<T>& rhs) const
     {
-        return __cur.toUnsafe() != rhs.__cur.toUnsafe();
+        return __cur != rhs.__cur;
     }
 };
 
@@ -166,7 +213,7 @@ public:
     using Iterator = FilterIterator<T>;
 
     BasicFilter()
-        : __pred([](SafePtr<T>) { return true; })
+        : __pred([](T*) { return true; })
     {
     }
 
@@ -192,14 +239,12 @@ public:
 
     Iterator begin()
     {
-        void* unsafe_ptr = __filter_trait<T>::__get_begin();
-        return Iterator(SafePtr<T>((T*)(unsafe_ptr)), this->__pred);
+        return Iterator(__filter_trait<T>::__get_begin(), this->__pred);
     }
 
     Iterator end()
     {
-        void* unsafe_ptr = __filter_trait<T>::__get_end();
-        return Iterator(SafePtr<T>((T*)(unsafe_ptr)), this->__pred);
+        return Iterator(__filter_trait<T>::__get_end(), this->__pred);
     }
 };
 
@@ -229,14 +274,14 @@ public:
 
     virtual void setPredicate(__PredicateT<T>&& func) override
     {
-        this->__pred = [this, func = std::move(func)](SafePtr<T> ptr) -> bool {
+        this->__pred = [this, func = std::move(func)](T* ptr) -> bool {
             return this->__alive_pred(ptr) && func(ptr);
         };
     }
 
     virtual void setPredicate(const __PredicateT<T>& func) override
     {
-        this->__pred = [this, func](SafePtr<T> ptr) -> bool {
+        this->__pred = [this, func](T* ptr) -> bool {
             return this->__alive_pred(ptr) && func(ptr);
         };
     }

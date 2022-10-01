@@ -6,9 +6,7 @@
  */
 
 #include "avz_debug.h"
-
 #include <Windows.h>
-
 #include <string>
 
 namespace AvZ {
@@ -28,6 +26,7 @@ void SetErrorMode(ErrorMode _error_mode)
         if (AllocConsole()) {
             SetConsoleTitle(TEXT("AvZ Debug"));
             freopen("CON", "w", stdout);
+            setlocale(LC_ALL, "chs");
         }
     } else {
         fclose(stdout);

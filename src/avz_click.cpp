@@ -63,25 +63,14 @@ void Shovel(const std::vector<ShovelPosition>& lst)
         "Shovel");
 }
 
-template <typename T>
-void __LimitValue(T& value, T min_v, T max_v)
-{
-    if (value < min_v) {
-        value = min_v;
-    }
-    if (value > max_v) {
-        value = max_v;
-    }
-}
-
 // 将格子转换成坐标
 void GridToCoordinate(int row, float col, int& x, int& y)
 {
     x = 80 * col;
-    __LimitValue(x, 0, 800);
-    __LimitValue(row, 1, 6);
+    LimitValue(x, 0, 800);
+    LimitValue(row, 1, 6);
     int t_col = int(col + 0.5);
-    __LimitValue(t_col, 1, 9);
+    LimitValue(t_col, 1, 9);
     y = Asm::gridToOrdinate(row - 1, t_col - 1) + 40;
 }
 

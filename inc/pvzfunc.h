@@ -6,11 +6,10 @@
  */
 #pragma once
 
-#include <Windows.h>
-
-#include <initializer_list>
-
+#include "avz_global.h"
 #include "pvzstruct.h"
+#include <Windows.h>
+#include <initializer_list>
 
 // 使用汇编代码调用 PvZ 游戏内部的函数
 class Asm {
@@ -67,7 +66,7 @@ public:
     // 是否可种卡片
     // 返回值意义查看 `enum PlantReject`
     // *** 使用示例:
-    // if(GetPlantRejectType(XRK_1, 1, 1) == Asm::NIL) { // NIL 表示可以种植物， 检查一下 2 行 2 列是否可以种植物
+    // if(getPlantRejectType(XRK_1, 1, 1) == Asm::NIL) { // NIL 表示可以种植物， 检查一下 2 行 2 列是否可以种植物
     //
     // }
     static int getPlantRejectType(int card_type, int row, int col);

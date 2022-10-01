@@ -120,17 +120,20 @@ void __EnterFight()
 
 void __ExitFight()
 {
-    __script_exit_deal();
+    if (!__is_exited) {
+        __script_exit_deal();
+        __operation_queue_vec.clear(); // 清除一切操作
+        for (auto&& global_var : __global_var_set) {
+            global_var->exitFight();
+        }
+    }
+
     AvZ::SetErrorMode(AvZ::POP_WINDOW);
-    __operation_queue_vec.clear(); // 清除一切操作
     TickRunner::clear();
     SetInsertOperation(false);
     MaidCheats::stop();
     __pvz_base->tickMs() = __tick_ms;
     SetInsertOperation(true);
-    for (auto&& global_var : __global_var_set) {
-        global_var->exitFight();
-    }
 }
 
 } // namespace AvZ

@@ -173,7 +173,7 @@ void Script()
 将模式设置为控制台的好处就是报错时并不会阻塞游戏的运行。
 
 
-[上一篇 属性转换](./transform_attribute.md)
+[上一篇 源码剖析操作队列内存运行机制](./operation_queue_src.md)
 
 [目录](../catalogue.md)
 

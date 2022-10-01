@@ -10,6 +10,7 @@ struct Plant;           // 植物
 struct Zombie;          // 僵尸
 struct Seed;            // 种子（卡片）
 struct Item;            // 收集物
+struct PlaceItem;       // 场地物品
 struct MouseWindow;     // 鼠标窗口
 struct TopMouseWindow;  // 顶层鼠标窗口
 struct LetsRockBtn;     // lets_rock 按钮
@@ -23,173 +24,20 @@ struct AnimationOffset; // 动画地址偏移
 struct Animation;       // 动画
 struct CardSlot;        // 卡槽
 
-// 安全指针，防止访问野指针
-template <class T>
-class SafePtr {
-private:
-    T* t;
-    static T __t;
-
-    int& game_ui() const
-    {
-        return (int&)((uint8_t*)((*(void**)(0x6a9ec0))))[0x7fc];
-    }
-
-    template <class D>
-    SafePtr<typename std::enable_if<std::is_base_of<T, D>::value, D>::type> safeptr_to_safeptr()
-    {
-        return SafePtr<D>((D*)t);
-    }
-
-    template <class D>
-    typename std::enable_if<std::is_base_of<T, D>::value, D>::type* safeptr_to_unsafeptr()
-    {
-        return (D*)t;
-    }
-
+class __ConstructorDeleter {
 public:
-    SafePtr(T* _t)
-    {
-        t = _t;
-    }
-
-    SafePtr()
-    {
-    }
-
-    operator void*()
-    {
-        return t;
-    }
-
-    T* toUnsafe() const
-    {
-        return t;
-    }
-
-    template <class D>
-    operator SafePtr<D>()
-    {
-        return safeptr_to_safeptr<D>();
-    }
-
-    template <class D>
-    operator D*()
-    {
-        return safeptr_to_unsafeptr<D>();
-    }
-
-    T* operator->()
-    {
-        if (game_ui() == 1) {
-            return &__t;
-        }
-        return t;
-    }
-
-    T& operator[](int index)
-    {
-        if (game_ui() == 1) {
-            return __t;
-        }
-        return t[index];
-    }
-
-    T& operator*()
-    {
-        if (game_ui() == 1) {
-            return __t;
-        }
-        return *t;
-    }
-
-    SafePtr<T> operator+(int index)
-    {
-        if (game_ui() == 1) {
-            return &__t;
-        }
-        return t + index;
-    }
-
-    SafePtr<T> operator-(int index) const
-    {
-        if (game_ui() == 1) {
-            return &__t;
-        }
-        return t - index;
-    }
-
-    SafePtr<T> operator++()
-    {
-        if (game_ui() == 1) {
-            return &__t;
-        }
-        return ++t;
-    }
-
-    SafePtr<T> operator++(int)
-    {
-        if (game_ui() == 1) {
-            return &__t;
-        }
-        return t++;
-    }
-    SafePtr<T> operator--()
-    {
-        if (game_ui() == 1) {
-            return &__t;
-        }
-        return --t;
-    }
-
-    SafePtr<T> operator--(int)
-    {
-        if (game_ui() == 1) {
-            return &__t;
-        }
-        return t--;
-    }
-
-    SafePtr<T> operator+=(int index)
-    {
-        if (game_ui() == 1) {
-            return &__t;
-        }
-        return t += index;
-    }
-
-    SafePtr<T>& operator-=(int index)
-    {
-        if (game_ui() == 1) {
-            return &__t;
-        }
-        return t -= index;
-    }
-
-    bool operator==(const SafePtr<T>& rhs) const
-    {
-        return t == rhs.toUnsafe();
-    }
-
-    bool operator!=(const SafePtr<T>& rhs) const
-    {
-        return t != rhs.toUnsafe();
-    }
+    __ConstructorDeleter(__ConstructorDeleter&& __) = delete;
+    __ConstructorDeleter(const __ConstructorDeleter& __) = delete;
+    __ConstructorDeleter& operator=(__ConstructorDeleter&& __) = delete;
+    __ConstructorDeleter& operator=(const __ConstructorDeleter& __) = delete;
 };
 
-template <typename T>
-T SafePtr<T>::__t;
-
 // 游戏基址
-struct PvZ {
-private:
-    void operator=(PvZ&& __) { }
-    PvZ(PvZ&& __) { }
+struct PvZ : public __ConstructorDeleter {
 
 public:
-    PvZ() { }
     // 当前游戏信息和对象
-    SafePtr<MainObject> mainObject()
+    MainObject* mainObject()
     {
         return *(MainObject**)((uint8_t*)this + 0x768);
     }
@@ -235,16 +83,13 @@ public:
 };
 
 // 当前游戏信息和对象
-struct MainObject {
-private:
-    void operator=(MainObject&& __) { }
-    MainObject(MainObject&& __) { }
+struct MainObject : public __ConstructorDeleter {
+
     uint8_t data[0x57b0];
 
 public:
-    MainObject() { }
     // 僵尸内存数组
-    SafePtr<Zombie> zombieArray()
+    Zombie* zombieArray()
     {
         return *(Zombie**)((uint8_t*)this + 0x90);
     }
@@ -292,7 +137,7 @@ public:
     }
 
     // 植物内存数组
-    SafePtr<Plant> plantArray()
+    Plant* plantArray()
     {
         return *(Plant**)((uint8_t*)this + 0xac);
     }
@@ -334,13 +179,13 @@ public:
     }
 
     // 种子内存数组
-    SafePtr<Seed> seedArray()
+    Seed* seedArray()
     {
         return *(Seed**)((uint8_t*)this + 0x144);
     }
 
     // 收集物内存数组
-    SafePtr<Item> itemArray()
+    Item* itemArray()
     {
         return *(Item**)((uint8_t*)this + 0xe4);
     }
@@ -355,6 +200,24 @@ public:
     int& itemTotal()
     {
         return (int&)((uint8_t*)this)[0xe8];
+    }
+
+    // 收集物内存数组
+    PlaceItem* placeItemArray()
+    {
+        return *(PlaceItem**)((uint8_t*)this + 0x11c);
+    }
+
+    // 收集物内存数组大小
+    int& placeItemCountMax()
+    {
+        return (int&)((uint8_t*)this)[0x120];
+    }
+
+    // 收集物内存数组大小
+    int& placeItemTotal()
+    {
+        return (int&)((uint8_t*)this)[0x120];
     }
 
     // 游戏是否暂停
@@ -481,15 +344,11 @@ public:
 };
 
 // 植物内存属性
-struct Plant {
+struct Plant : public __ConstructorDeleter {
 private:
-    void operator=(Plant&& _) { }
-    Plant(Plant&& _) { }
     uint8_t data[0x14c];
 
 public:
-    Plant() { }
-
     // 横坐标
     int& xi()
     {
@@ -498,6 +357,18 @@ public:
 
     // 纵坐标
     int& yi()
+    {
+        return (int&)((uint8_t*)this)[0xc];
+    }
+
+    // 横坐标
+    int& abscissa()
+    {
+        return (int&)((uint8_t*)this)[0x8];
+    }
+
+    // 纵坐标
+    int& ordinate()
     {
         return (int&)((uint8_t*)this)[0xc];
     }
@@ -589,6 +460,18 @@ public:
         return (int&)((uint8_t*)this)[0x130];
     }
 
+    // 受伤判定宽度
+    int& hurtWidth()
+    {
+        return (int&)((uint8_t*)this)[0x10];
+    }
+
+    // 蘑菇倒计时
+    int& hurtHeight()
+    {
+        return (int&)((uint8_t*)this)[0x14];
+    }
+
     // 植物是否消失
     const bool& isDisappeared()
     {
@@ -614,15 +497,11 @@ public:
     }
 };
 
-struct Zombie {
+struct Zombie : public __ConstructorDeleter {
 private:
-    void operator=(Zombie&& __) { }
-    Zombie(Zombie&& __) { }
     uint8_t data[0x15c];
 
 public:
-    Zombie() { }
-
     // 僵尸是否存在
     // 只读
     bool isExist()
@@ -783,18 +662,26 @@ public:
     {
         return (int&)((uint8_t*)this)[0xB4];
     }
+
+    // 受伤判定宽度
+    int& hurtWidth()
+    {
+        return (int&)((uint8_t*)this)[0x94];
+    }
+
+    // 蘑菇倒计时
+    int& hurtHeight()
+    {
+        return (int&)((uint8_t*)this)[0x98];
+    }
 };
 
 // 种子 / 卡牌 属性
-struct Seed {
+struct Seed : public __ConstructorDeleter {
 private:
-    void operator=(Seed&& __) { }
-    Seed(Seed&& __) { }
     uint8_t data[0x50];
 
 public:
-    Seed() { }
-
     // 返回卡槽中的卡牌个数
     // 注意：此函数不能迭代使用！！！
     // 只能这样使用：auto seed_count = GetMainObject()->seedArray()->count();
@@ -806,68 +693,70 @@ public:
     // 种子是否可用
     bool& isUsable()
     {
-        return (bool&)((uint8_t*)this)[0x4c + 0x24];
+        return (bool&)((uint8_t*)this)[0x48 + 0x28];
     }
 
     // 种子冷却
     int& cd()
     {
-        return (int&)((uint8_t*)this)[0x28 + 0x24];
+        return (int&)((uint8_t*)this)[0x24 + 0x28];
     }
 
     // 种子初始冷却
     int& initialCd()
     {
-        return (int&)((uint8_t*)this)[0x2c + 0x24];
+        return (int&)((uint8_t*)this)[0x28 + 0x28];
     }
 
     // 模仿者类型
     int& imitatorType()
     {
-        return (int&)((uint8_t*)this)[0x3c + 0x24];
+        return (int&)((uint8_t*)this)[0x38 + 0x28];
     }
 
     // 种子类型
     int& type()
     {
-        return (int&)((uint8_t*)this)[0x38 + 0x24];
+        return (int&)((uint8_t*)this)[0x34 + 0x28];
     }
 
     // 种子横坐标
     int& abscissa()
     {
-        return (int&)((uint8_t*)this)[0xc + 0x24];
+        return (int&)((uint8_t*)this)[0x8 + 0x28];
     }
 
     // 种子纵坐标
     int& ordinate()
     {
-        return (int&)((uint8_t*)this)[0x10 + 0x24];
+        return (int&)((uint8_t*)this)[0xc + 0x28];
     }
 
     // 卡牌判定高度
     int& height()
     {
-        return (int&)((uint8_t*)this)[0x18 + 0x24];
+        return (int&)((uint8_t*)this)[0x14 + 0x28];
     }
 
     // 卡牌判定宽度
     int& width()
     {
-        return (int&)((uint8_t*)this)[0x14 + 0x24];
+        return (int&)((uint8_t*)this)[0x10 + 0x28];
+    }
+
+    // 卡牌 x 偏移量
+    int xOffset()
+    {
+        return (int&)((uint8_t*)this)[0x30 + 0x28];
     }
 };
 
 // 收集物品属性
-struct Item {
+struct Item : public __ConstructorDeleter {
 private:
-    void operator=(Item&& __) { }
-    Item(Item&& __) { }
     uint8_t data[0xd8];
 
 public:
-    Item() { }
-
     // 物品是否消失
     const bool& isDisappeared()
     {
@@ -899,14 +788,46 @@ public:
     }
 };
 
-// 动画主要属性
-struct AnimationMain {
+// 场地物品属性
+struct PlaceItem : public __ConstructorDeleter {
 private:
-    void operator=(AnimationMain&& __) { }
-    AnimationMain(AnimationMain&& __) { }
+    uint8_t data[0xec];
 
 public:
-    AnimationMain() { }
+    // 物品是否消失
+    const bool& isDisappeared()
+    {
+        return (bool&)((uint8_t*)this)[0x20];
+    }
+
+    // 物品所在行
+    int& row()
+    {
+        return (int&)((uint8_t*)this)[0x14];
+    }
+
+    // 物品所在列
+    int& col()
+    {
+        return (int&)((uint8_t*)this)[0x10];
+    }
+
+    // 物品类型
+    int& type()
+    {
+        return (int&)((uint8_t*)this)[0x8];
+    }
+
+    // 墓碑冒出的量,弹坑消失倒计时,脑子血量,钉钯消失倒计时
+    int& value()
+    {
+        return (int&)((uint8_t*)this)[0x18];
+    }
+};
+
+// 动画主要属性
+struct AnimationMain : public __ConstructorDeleter {
+public:
     // 动画偏移
     AnimationOffset* animationOffset()
     {
@@ -915,13 +836,8 @@ public:
 };
 
 // 动画偏移属性
-struct AnimationOffset {
-private:
-    void operator=(AnimationOffset&& __) { }
-    AnimationOffset(AnimationOffset&& __) { }
-
+struct AnimationOffset : public __ConstructorDeleter {
 public:
-    AnimationOffset() { }
     // 动画内存数组
     Animation* animationArray()
     {
@@ -930,15 +846,11 @@ public:
 };
 
 // 动画属性
-struct Animation {
+struct Animation : public __ConstructorDeleter {
 private:
-    void operator=(Animation&& __) { }
-    Animation(Animation&& __) { }
-
-public:
-    Animation() { }
     uint8_t data[0xa0];
 
+public:
     // 动画循环率
     float& circulationRate()
     {
@@ -946,13 +858,8 @@ public:
     }
 };
 
-struct TopMouseWindow {
-private:
-    void operator=(TopMouseWindow&& __) { }
-    TopMouseWindow(TopMouseWindow&& __) { }
-
+struct TopMouseWindow : public __ConstructorDeleter {
 public:
-    TopMouseWindow() { }
     // 窗口类型(1图鉴,2暂停,3是否,4商店等,6用户管理,8菜单)
     int& type()
     {
@@ -960,13 +867,8 @@ public:
     }
 };
 
-struct MouseWindow {
-private:
-    void operator=(MouseWindow&& __) { }
-    MouseWindow(MouseWindow&& __) { }
-
+struct MouseWindow : public __ConstructorDeleter {
 public:
-    MouseWindow() { }
     TopMouseWindow* topWindow()
     {
         return *(TopMouseWindow**)((uint8_t*)this + 0x94);
@@ -976,15 +878,20 @@ public:
     {
         return (bool&)((uint8_t*)this)[0xdc];
     }
+
+    int& mouseAbscissa()
+    {
+        return (int&)((uint8_t*)this)[0xe0];
+    }
+
+    int& mouseOrdinate()
+    {
+        return (int&)((uint8_t*)this)[0xe4];
+    }
 };
 
-struct SelectCardUi_m {
-private:
-    void operator=(SelectCardUi_m&& _) { }
-    SelectCardUi_m(SelectCardUi_m&& __) { }
-
+struct SelectCardUi_m : public __ConstructorDeleter {
 public:
-    SelectCardUi_m() { }
     int& orizontalScreenOffset()
     {
         return (int&)((uint8_t*)this)[0x8];
@@ -996,13 +903,8 @@ public:
     }
 };
 
-struct SelectCardUi_p {
-private:
-    void operator=(SelectCardUi_p&& __) { }
-    SelectCardUi_p(SelectCardUi_p&& __) { }
-
+struct SelectCardUi_p : public __ConstructorDeleter {
 public:
-    SelectCardUi_p() { }
     LetsRockBtn* letsRockBtn()
     {
         return *(LetsRockBtn**)((uint8_t*)this + 0x88);
@@ -1020,26 +922,16 @@ public:
     }
 };
 
-struct LetsRockBtn {
-private:
-    void operator=(LetsRockBtn&& __) { }
-    LetsRockBtn(LetsRockBtn&& __) { }
-
+struct LetsRockBtn : public __ConstructorDeleter {
 public:
-    LetsRockBtn() { }
     bool& isUnusable()
     {
         return (bool&)((uint8_t*)this)[0x1a];
     }
 };
 
-struct Mouse {
-private:
-    void operator=(Mouse&& __) { }
-    Mouse(Mouse&& __) { }
-
+struct Mouse : public __ConstructorDeleter {
 public:
-    Mouse() { }
     // 鼠标上物品的类型
     int& type()
     {
@@ -1057,26 +949,16 @@ public:
     }
 };
 
-struct MouseExtra {
-private:
-    void operator=(MouseExtra&& __) { }
-    MouseExtra(MouseExtra&& __) { }
-
+struct MouseExtra : public __ConstructorDeleter {
 public:
-    MouseExtra() { }
     int& row()
     {
         return (int&)((uint8_t*)this)[0x28];
     }
 };
 
-struct Text {
-private:
-    void operator=(Text&& __) { }
-    Text(Text&& __) { }
-
+struct Text : public __ConstructorDeleter {
 public:
-    Text() { }
     int& disappearCountdown()
     {
         return (int&)((uint8_t*)this)[0x88];

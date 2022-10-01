@@ -10,4 +10,5 @@ tools/downloader/downloader/Release
 debug
 /*.zip
 .cache
+extension
 

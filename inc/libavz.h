@@ -7,7 +7,7 @@
 #ifndef __LIBAVZ_H__
 #define __LIBAVZ_H__
 
-#define __AVZ_VERSION__ 220630
+#define __AVZ_VERSION__ 221001
 
 #include "avz_cannon.h"
 #include "avz_card.h"
@@ -31,6 +31,7 @@ extern KeyConnector key_connector;
 extern AliveFilter<Zombie> alive_zombie_filter;
 extern AliveFilter<Plant> alive_plant_filter;
 extern AliveFilter<Seed> alive_seed_filter;
+extern AliveFilter<PlaceItem> alive_place_item_filter;
 } // namespace AvZ
 
 #define KeyConnect AvZ::key_connector.add

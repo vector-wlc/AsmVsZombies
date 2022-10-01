@@ -14,7 +14,7 @@
 namespace AvZ {
 // *** Not In Queue
 // 游戏主要信息
-SafePtr<MainObject> GetMainObject();
+MainObject* GetMainObject();
 
 // *** Not In Queue
 // 游戏基址

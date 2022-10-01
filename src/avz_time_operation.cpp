@@ -193,13 +193,13 @@ bool WaitUntil(const TimeWave& _time_wave)
     RunScriptEveryTick();
 
     if (Unlikely(__pvz_base->gameUi() == 1)) {
-        throw Exception("game return main ui\n");
+        throw Exception(STR_GAME_RET_MAIN_UI);
     }
 
     while (__block_var) {
         Asm::gameSleepLoop();
         if (Unlikely(!__pvz_base->mainObject())) {
-            throw Exception("game return main ui\n");
+            throw Exception(STR_GAME_RET_MAIN_UI);
         }
     }
 
@@ -368,6 +368,11 @@ void SetScriptStartTime(int time, int wave)
 {
     __time_wave_start.time = time;
     __time_wave_start.wave = wave;
+}
+
+void SetAdvancedPause(bool is_advanced_pause)
+{
+    __is_advanced_pause = is_advanced_pause;
 }
 
 void SetAdvancedPauseKey(char key)

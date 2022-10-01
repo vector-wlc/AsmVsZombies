@@ -10,10 +10,12 @@
 
 #include <Windows.h>
 #include <algorithm>
+#include <codecvt>
 #include <cstdio>
 #include <cstdlib>
 #include <functional>
 #include <initializer_list>
+#include <locale>
 #include <set>
 #include <string>
 #include <utility>
@@ -21,6 +23,7 @@
 
 #include "pvzstruct.h"
 
+#define STR_GAME_RET_MAIN_UI "game return main ui"
 #define FindInAllRange(container, goal) std::find(container.begin(), container.end(), goal)
 
 #ifdef __MINGW32__
@@ -30,6 +33,8 @@
 #define Likely(x) (x)
 #define Unlikely(x) (x)
 #endif
+
+#define _ADEPRECATED [[deprecated]]
 
 namespace AvZ {
 
@@ -66,11 +71,59 @@ public:
     }
 };
 
+struct Grid {
+    int row;
+    int col;
+
+    friend bool operator==(const Grid& grid1, const Grid& grid2)
+    {
+        return grid1.row == grid2.row && grid1.col == grid2.col;
+    }
+
+    friend bool operator<(const Grid& grid1, const Grid& grid2)
+    {
+        if (grid1.row == grid2.row) {
+            return grid1.col < grid2.col;
+        }
+        return grid1.row < grid2.row;
+    }
+};
+
+struct Position {
+    int row;
+    float col;
+};
+
+struct TimeWave {
+    int time;
+    int wave;
+};
+
+// convert string to wstring
+// Copy From https://blog.csdn.net/10km/article/details/111058219
+inline std::wstring StrToWstr(const std::string& input)
+{
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+    return converter.from_bytes(input);
+}
+
 template <typename... Args>
 void Print(const std::string& str, Args&&... args)
 {
     extern MainObject* __main_object;
-    std::printf(("Game clock : %d || " + str).data(), __main_object->gameClock(), std::forward<Args>(args)...);
+    size_t buf_size = str.size() + 100;
+    char* c_str = new char[buf_size];
+    size_t need_buf_size = std::snprintf(c_str, buf_size, ("Game clock : %d || " + str).data(),
+        __main_object->gameClock(), std::forward<Args>(args)...);
+    if (need_buf_size > buf_size) {
+        delete[] c_str;
+        buf_size = need_buf_size;
+        c_str = new char[buf_size];
+        std::snprintf(c_str, buf_size, ("Game clock : %d || " + str).data(),
+            __main_object->gameClock(), std::forward<Args>(args)...);
+    }
+    std::wprintf(StrToWstr(c_str).c_str());
+    delete[] c_str;
 }
 
 // *** 函数功能：判断数字范围
@@ -137,33 +190,16 @@ void WriteMemory(T value, Args... args)
             WriteProcessMemory(__pvz_handle, (void*)(buff + *it), &value, sizeof(value), nullptr);
 }
 
-struct Grid {
-    int row;
-    int col;
-
-    friend bool operator==(const Grid& grid1, const Grid& grid2)
-    {
-        return grid1.row == grid2.row && grid1.col == grid2.col;
+template <typename T>
+void LimitValue(T& value, T min_v, T max_v)
+{
+    if (value < min_v) {
+        value = min_v;
     }
-
-    friend bool operator<(const Grid& grid1, const Grid& grid2)
-    {
-        if (grid1.row == grid2.row) {
-            return grid1.col < grid2.col;
-        }
-        return grid1.row < grid2.row;
+    if (value > max_v) {
+        value = max_v;
     }
-};
-
-struct Position {
-    int row;
-    float col;
-};
-
-struct TimeWave {
-    int time;
-    int wave;
-};
+}
 
 } // namespace AvZ
 #endif

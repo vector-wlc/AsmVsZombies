@@ -1,13 +1,14 @@
 {
-    "configurations": [
-        {
-            "name": "Windows",
-            "includePath": [
-                "./inc"
-            ],
-            "cStandard": "c11",
-            "cppStandard": "c++17"
-        }
-    ],
+    "configurations": [{
+        "name": "Windows",
+        "includePath": [
+            "${workspaceFolder}/**"
+        ],
+        "cStandard": "c11",
+        "cppStandard": "c++17",
+        "defines": [
+            "__MINGW32__"
+        ]
+    }],
     "version": 4
 }

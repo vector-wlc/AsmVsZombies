@@ -9,21 +9,19 @@
 
 #include <cstdio>
 #include <functional>
-#include <sstream>
 #include <string>
 
 #include "avz_global.h"
 #include "pvzstruct.h"
 
 namespace AvZ {
+
 template <typename T>
-void string_convert(std::string& content, T t)
+void __StringConvert(std::string& content, T t)
 {
-    std::stringstream conversion;
-    conversion << t;
     auto idx = content.find_first_of('#');
     if (idx != std::string::npos) {
-        content.replace(idx, 1, conversion.str());
+        content.replace(idx, 1, std::to_string(t));
     }
 }
 
@@ -66,20 +64,18 @@ void ShowErrorNotInQueue(const std::string& content = "", Args... args)
         int GetRunningWave();
         int current_wave = GetRunningWave();
         _content = "wave : # -- time : #   \n\n" + content;
-        string_convert(_content, current_wave);
-        string_convert(_content, NowTime(current_wave));
+        __StringConvert(_content, current_wave);
+        __StringConvert(_content, NowTime(current_wave));
     }
 
-    std::initializer_list<int> {(string_convert(_content, args), 0)...};
+    std::initializer_list<int> {(__StringConvert(_content, args), 0)...};
 
     _content += "\n\n\n";
-    void Utf8ToGbk(std::string & strUTF8);
-    Utf8ToGbk(_content);
+    auto wstr = StrToWstr(_content);
     if (__error_mode == POP_WINDOW) {
-        MessageBoxA(NULL, _content.c_str(), "Error", 0);
+        MessageBoxW(NULL, wstr.c_str(), L"Error", 0);
     } else if (__error_mode == CONSOLE) {
-
-        std::printf(_content.c_str());
+        std::wprintf(wstr.c_str());
     }
 };
 
@@ -91,7 +87,8 @@ void ShowError(const std::string& content = "", Args... args)
 {
     InsertOperation([=]() {
         ShowErrorNotInQueue(content, args...);
-    });
+    },
+        "ShowError");
 };
 
 } // namespace AvZ
