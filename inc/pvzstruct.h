@@ -24,40 +24,58 @@ struct AnimationOffset; // 动画地址偏移
 struct Animation;       // 动画
 struct CardSlot;        // 卡槽
 
-class __ConstructorDeleter {
+class PvzStruct {
 public:
-    __ConstructorDeleter(__ConstructorDeleter&& __) = delete;
-    __ConstructorDeleter(const __ConstructorDeleter& __) = delete;
-    __ConstructorDeleter& operator=(__ConstructorDeleter&& __) = delete;
-    __ConstructorDeleter& operator=(const __ConstructorDeleter& __) = delete;
+    PvzStruct(PvzStruct&& __) = delete;
+    PvzStruct(const PvzStruct& __) = delete;
+    PvzStruct& operator=(PvzStruct&& __) = delete;
+    PvzStruct& operator=(const PvzStruct& __) = delete;
+
+    template <typename T>
+    T& mRef(uintptr_t addr)
+    {
+        return (T&)((uint8_t*)this)[addr];
+    }
+
+    template <typename T>
+    T* mPtr(uintptr_t addr)
+    {
+        return *(T**)((uint8_t*)this + addr);
+    }
+
+    template <typename T>
+    T mVal(uintptr_t addr)
+    {
+        return (T)((uint8_t*)this + addr);
+    }
 };
 
 // 游戏基址
-struct PvZ : public __ConstructorDeleter {
+struct PvZ : public PvzStruct {
 
 public:
     // 当前游戏信息和对象
     MainObject* mainObject()
     {
-        return *(MainObject**)((uint8_t*)this + 0x768);
+        return mPtr<MainObject>(0x768);
     }
 
     // 鼠标和窗口
     MouseWindow* mouseWindow()
     {
-        return *(MouseWindow**)((uint8_t*)this + 0x320);
+        return mPtr<MouseWindow>(0x320);
     }
 
     // 选卡界面属性
     SelectCardUi_p* selectCardUi_p()
     {
-        return *(SelectCardUi_p**)((uint8_t*)this + 0x774);
+        return mPtr<SelectCardUi_p>(0x774);
     }
 
     // 动画信息
     AnimationMain* animationMain()
     {
-        return *(AnimationMain**)((uint8_t*)this + 0x820);
+        return mPtr<AnimationMain>(0x820);
     }
 
     // 游戏界面
@@ -66,24 +84,24 @@ public:
     // 3 - 战斗界面
     int& gameUi()
     {
-        return (int&)((uint8_t*)this)[0x7fc];
+        return mRef<int>(0x7fc);
     }
 
     // 每帧的时长
     int& tickMs()
     {
-        return (int&)((uint8_t*)this)[0x454];
+        return mRef<int>(0x454);
     }
 
     // MJ 时钟
     int& mjClock()
     {
-        return (int&)((uint8_t*)this)[0x838];
+        return mRef<int>(0x838);
     }
 };
 
 // 当前游戏信息和对象
-struct MainObject : public __ConstructorDeleter {
+struct MainObject : public PvzStruct {
 
     uint8_t data[0x57b0];
 
@@ -91,139 +109,139 @@ public:
     // 僵尸内存数组
     Zombie* zombieArray()
     {
-        return *(Zombie**)((uint8_t*)this + 0x90);
+        return mPtr<Zombie>(0x90);
     }
 
     // 僵尸数组大小
     int& zombieCountMax()
     {
-        return (int&)((uint8_t*)this)[0x94];
+        return mRef<int>(0x94);
     }
 
     // 僵尸数组大小
     int& zombieTotal()
     {
-        return (int&)((uint8_t*)this)[0x94];
+        return mRef<int>(0x94);
     }
 
     // 僵尸数量上限
     int& zombieLimit()
     {
-        return (int&)((uint8_t*)this)[0x98];
+        return mRef<int>(0x98);
     }
 
     // 下一个僵尸的编号
     int& zombieNext()
     {
-        return (int&)((uint8_t*)this)[0x9c];
+        return mRef<int>(0x9c);
     }
 
     // 当前僵尸的数量
     int& zombieCount()
     {
-        return (int&)((uint8_t*)this)[0xa0];
+        return mRef<int>(0xa0);
     }
 
     // 最后一个僵尸的编号
     int& zombieLast()
     {
-        return (int&)((uint8_t*)this)[0xa4];
+        return mRef<int>(0xa4);
     }
 
     // 僵尸刷新血量
     int& zombieRefreshHp()
     {
-        return (int&)((uint8_t*)this)[0x5594];
+        return mRef<int>(0x5594);
     }
 
     // 植物内存数组
     Plant* plantArray()
     {
-        return *(Plant**)((uint8_t*)this + 0xac);
+        return mPtr<Plant>(0xac);
     }
 
     // 植物数组大小
     int& plantCountMax()
     {
-        return (int&)((uint8_t*)this)[0xb0];
+        return mRef<int>(0xb0);
     }
 
     // 植物数组大小
     int& plantTotal()
     {
-        return (int&)((uint8_t*)this)[0xb0];
+        return mRef<int>(0xb0);
     }
 
     // 植物数量上限
     int& plantLimit()
     {
-        return (int&)((uint8_t*)this)[0xb4];
+        return mRef<int>(0xb4);
     }
 
     // 下一个植物的编号
     int& plantNext()
     {
-        return (int&)((uint8_t*)this)[0xb8];
+        return mRef<int>(0xb8);
     }
 
     // 当前植物的数量
     int& plantCount()
     {
-        return (int&)((uint8_t*)this)[0xbc];
+        return mRef<int>(0xbc);
     }
 
     // 最后一个植物的编号
     int& plantLast()
     {
-        return (int&)((uint8_t*)this)[0xc0];
+        return mRef<int>(0xc0);
     }
 
     // 种子内存数组
     Seed* seedArray()
     {
-        return *(Seed**)((uint8_t*)this + 0x144);
+        return mPtr<Seed>(0x144);
     }
 
     // 收集物内存数组
     Item* itemArray()
     {
-        return *(Item**)((uint8_t*)this + 0xe4);
+        return mPtr<Item>(0xe4);
     }
 
     // 收集物内存数组大小
     int& itemCountMax()
     {
-        return (int&)((uint8_t*)this)[0xe8];
+        return mRef<int>(0xe8);
     }
 
     // 收集物内存数组大小
     int& itemTotal()
     {
-        return (int&)((uint8_t*)this)[0xe8];
+        return mRef<int>(0xe8);
     }
 
     // 收集物内存数组
     PlaceItem* placeItemArray()
     {
-        return *(PlaceItem**)((uint8_t*)this + 0x11c);
+        return mPtr<PlaceItem>(0x11c);
     }
 
     // 收集物内存数组大小
     int& placeItemCountMax()
     {
-        return (int&)((uint8_t*)this)[0x120];
+        return mRef<int>(0x120);
     }
 
     // 收集物内存数组大小
     int& placeItemTotal()
     {
-        return (int&)((uint8_t*)this)[0x120];
+        return mRef<int>(0x120);
     }
 
     // 游戏是否暂停
     bool& gamePaused()
     {
-        return (bool&)((uint8_t*)this)[0x164];
+        return mRef<bool>(0x164);
     }
 
     // 游戏场景
@@ -234,117 +252,117 @@ public:
     // 4 - 天台
     int& scene()
     {
-        return (int&)((uint8_t*)this)[0x554c];
+        return mRef<int>(0x554c);
     }
 
     // 当前阳光数量
     int& sun()
     {
-        return (int&)((uint8_t*)this)[0x5560];
+        return mRef<int>(0x5560);
     }
 
     // 战斗界面游戏时钟
     // 选卡界面暂停计时
     int& gameClock()
     {
-        return (int&)((uint8_t*)this)[0x5568];
+        return mRef<int>(0x5568);
     }
 
     // 全局时钟
     // 战斗界面和选卡界面都计时
     int& globalClock()
     {
-        return (int&)((uint8_t*)this)[0x556c];
+        return mRef<int>(0x556c);
     }
 
     // 僵尸刷新倒计时
     int& refreshCountdown()
     {
-        return (int&)((uint8_t*)this)[0x559c];
+        return mRef<int>(0x559c);
     }
 
     // 大波僵尸刷新倒计时
     int& hugeWaveCountdown()
     {
-        return (int&)((uint8_t*)this)[0x55a4];
+        return mRef<int>(0x55a4);
     }
 
     // 总波数
     int& totalWave()
     {
-        return (int&)((uint8_t*)this)[0x5564];
+        return mRef<int>(0x5564);
     }
 
     // 当前波数
     int& wave()
     {
-        return (int&)((uint8_t*)this)[0x557c];
+        return mRef<int>(0x557c);
     }
 
     // 僵尸初始刷新倒计时
     int& initialCountdown()
     {
-        return (int&)((uint8_t*)this)[0x55a0];
+        return mRef<int>(0x55a0);
     }
 
     // 点炮倒计时
     // 游戏 30cs 防误触机制
     int& clickPaoCountdown()
     {
-        return (int&)((uint8_t*)this)[0x5754];
+        return mRef<int>(0x5754);
     }
 
     // 鼠标属性
     Mouse* mouseAttribution()
     {
-        return *(Mouse**)((uint8_t*)this + 0x138);
+        return mPtr<Mouse>(0x138);
     }
 
     // 鼠标额外属性
     MouseExtra* mouseExtraAttribution()
     {
-        return *(MouseExtra**)((uint8_t*)this + 0x13c);
+        return mPtr<MouseExtra>(0x13c);
     }
 
     // 选卡界面属性
     SelectCardUi_m* selectCardUi_m()
     {
-        return *(SelectCardUi_m**)((uint8_t*)this + 0x15c);
+        return mPtr<SelectCardUi_m>(0x15c);
     }
 
     // 场地格子类型列表
     uint32_t* gridTypeList()
     {
-        return (uint32_t*)((uint8_t*)this + 0x168);
+        return mVal<uint32_t*>(0x168);
     }
 
     // 出怪列表
     uint32_t* zombieList()
     {
-        return (uint32_t*)((uint8_t*)this + 0x6b4);
+        return mVal<uint32_t*>(0x6b4);
     }
 
     // 出怪种类列表
     uint8_t* zombieTypeList()
     {
-        return (uint8_t*)((uint8_t*)this + 0x54d4);
+        return mVal<uint8_t*>(0x54d4);
     }
 
     // 文字信息
     Text* text()
     {
-        return *(Text**)((uint8_t*)this + 0x140);
+        return mPtr<Text>(0x140);
     }
 
     // 载入存档的状态
     int& loadDataState()
     {
-        return (int&)((uint8_t*)this)[0x5604];
+        return mRef<int>(0x5604);
     }
 };
 
 // 植物内存属性
-struct Plant : public __ConstructorDeleter {
+struct Plant : public PvzStruct {
 private:
     uint8_t data[0x14c];
 
@@ -352,38 +370,38 @@ public:
     // 横坐标
     int& xi()
     {
-        return (int&)((uint8_t*)this)[0x8];
+        return mRef<int>(0x8);
     }
 
     // 纵坐标
     int& yi()
     {
-        return (int&)((uint8_t*)this)[0xc];
+        return mRef<int>(0xc);
     }
 
     // 横坐标
     int& abscissa()
     {
-        return (int&)((uint8_t*)this)[0x8];
+        return mRef<int>(0x8);
     }
 
     // 纵坐标
     int& ordinate()
     {
-        return (int&)((uint8_t*)this)[0xc];
+        return mRef<int>(0xc);
     }
 
     // 植物是否可见
-    int& visible()
+    bool& visible()
     {
-        return (int&)((uint8_t*)this)[0x18];
+        return mRef<bool>(0x18);
     }
 
     // 植物所在行
     // 范围 : [0, 5]
     int& row()
     {
-        return (int&)((uint8_t*)this)[0x1c];
+        return mRef<int>(0x1c);
     }
 
     // 植物类型
@@ -392,14 +410,14 @@ public:
     // 只是外表不一样，例如 南瓜头 和 模仿南瓜头 的植物类型都是 30
     int& type()
     {
-        return (int&)((uint8_t*)this)[0x24];
+        return mRef<int>(0x24);
     }
 
     // 植物所在列
     // 范围 : [0, 8]
     int& col()
     {
-        return (int&)((uint8_t*)this)[0x28];
+        return mRef<int>(0x28);
     }
 
     // 返回植物的状态
@@ -409,95 +427,95 @@ public:
     // 38：正在发射
     int& state()
     {
-        return (int&)((uint8_t*)this)[0x3c];
+        return mRef<int>(0x3c);
     }
 
     // 植物状态倒计时
     int& stateCountdown()
     {
-        return (int&)((uint8_t*)this)[0x54];
+        return mRef<int>(0x54);
     }
 
     // 植物当前血量
     int& hp()
     {
-        return (int&)((uint8_t*)this)[0x40];
+        return mRef<int>(0x40);
     }
 
     // 植物最大血量
     int& hpMax()
     {
-        return (int&)((uint8_t*)this)[0x44];
+        return mRef<int>(0x44);
     }
 
     // 为1则可以攻击
     int& canShoot()
     {
-        return (int&)((uint8_t*)this)[0x48];
+        return mRef<int>(0x48);
     }
 
     // 三叶草消失倒计时
     int& bloverCountdown()
     {
-        return (int&)((uint8_t*)this)[0x4c];
+        return mRef<int>(0x4c);
     }
 
     // 灰烬冰核三叶草生效倒计时
     int& explodeCountdown()
     {
-        return (int&)((uint8_t*)this)[0x50];
+        return mRef<int>(0x50);
     }
 
     // 子弹发射倒计时
     int& shootCountdown()
     {
-        return (int&)((uint8_t*)this)[0x90];
+        return mRef<int>(0x90);
     }
 
     // 蘑菇倒计时
     int& mushroomCountdown()
     {
-        return (int&)((uint8_t*)this)[0x130];
+        return mRef<int>(0x130);
     }
 
     // 受伤判定宽度
     int& hurtWidth()
     {
-        return (int&)((uint8_t*)this)[0x10];
+        return mRef<int>(0x10);
     }
 
     // 蘑菇倒计时
     int& hurtHeight()
     {
-        return (int&)((uint8_t*)this)[0x14];
+        return mRef<int>(0x14);
     }
 
     // 植物是否消失
     const bool& isDisappeared()
     {
-        return (bool&)((uint8_t*)this)[0x141];
+        return mRef<bool>(0x141);
     }
 
     // 植物是否被压扁
     bool& isCrushed()
     {
-        return (bool&)((uint8_t*)this)[0x142];
+        return mRef<bool>(0x142);
     }
 
     // 植物是否在睡觉
     bool& sleeping()
     {
-        return (bool&)((uint8_t*)this)[0x143];
+        return mRef<bool>(0x143);
     }
 
     // 动作编号
     uint16_t& animationCode()
     {
-        return (uint16_t&)((uint8_t*)this)[0x94];
+        return mRef<uint16_t>(0x94);
     }
 };
 
-struct Zombie : public __ConstructorDeleter {
+struct Zombie : public PvzStruct {
 private:
     uint8_t data[0x15c];
 
@@ -506,56 +524,56 @@ public:
     // 只读
     bool isExist()
     {
-        return !(bool)((uint8_t*)this)[0xEC];
+        return !mRef<bool>(0xEC);
     }
 
     // 僵尸所在行
     // 范围 : [0, 5]
     int& row()
     {
-        return (int&)((uint8_t*)this)[0x1c];
+        return mRef<int>(0x1c);
     }
 
     // 僵尸横坐标
     float& abscissa()
     {
-        return (float&)((uint8_t*)this)[0x2c];
+        return mRef<float>(0x2c);
     }
 
     // 僵尸纵坐标
     float& ordinate()
     {
-        return (float&)((uint8_t*)this)[0x30];
+        return mRef<float>(0x30);
     }
 
     // 僵尸类型
     int& type()
     {
-        return (int&)((uint8_t*)this)[0x24];
+        return mRef<int>(0x24);
     }
 
     // 僵尸目前本体血量
     int& hp()
     {
-        return (int&)((uint8_t*)this)[0xC8];
+        return mRef<int>(0xC8);
     }
 
     // 僵尸一类饰品目前血量
     int& oneHp()
     {
-        return (int&)((uint8_t*)this)[0xD0];
+        return mRef<int>(0xD0);
     }
 
     // 僵尸二类饰品目前血量
     int& twoHp()
     {
-        return (int&)((uint8_t*)this)[0xDC];
+        return mRef<int>(0xDC);
     }
 
     // 僵尸是否在啃食
     bool& isEat()
     {
-        return (bool&)((uint8_t*)this)[0x51];
+        return mRef<bool>(0x51);
     }
 
     // 僵尸状态
@@ -565,7 +583,7 @@ public:
     // 70 - 巨人举锤
     int& state()
     {
-        return (int&)((uint8_t*)this)[0x28];
+        return mRef<int>(0x28);
     }
 
     // 返回选卡界面僵尸站立状态
@@ -574,7 +592,7 @@ public:
     // https://space.bilibili.com/1321409404
     int& standState()
     {
-        return (int&)((uint8_t*)this)[0x6c];
+        return mRef<int>(0x6c);
     }
 
     // 僵尸是否死亡
@@ -594,90 +612,90 @@ public:
     // 僵尸是否隐形
     bool& isStealth()
     {
-        return (bool&)((uint8_t*)this)[0x18];
+        return mRef<bool>(0x18);
     }
 
     // 僵尸横向相对速度
     float& speed()
     {
-        return (float&)((uint8_t*)this)[0x34];
+        return mRef<float>(0x34);
     }
 
     // 僵尸存在时间
     int& existTime()
     {
-        return (int&)((uint8_t*)this)[0x60];
+        return mRef<int>(0x60);
     }
 
     // 僵尸状态倒计时
     int& stateCountdown()
     {
-        return (int&)((uint8_t*)this)[0x68];
+        return mRef<int>(0x68);
     }
 
     // 僵尸是否消失
     const bool& isDisappeared()
     {
-        return (bool&)((uint8_t*)this)[0xEC];
+        return mRef<bool>(0xEC);
     }
 
     // 中弹判定的横坐标
     int& bulletAbscissa()
     {
-        return (int&)((uint8_t*)this)[0x8C];
+        return mRef<int>(0x8C);
     }
 
     // 中弹判定的纵坐标
     int& bulletOrdinate()
     {
-        return (int&)((uint8_t*)this)[0x90];
+        return mRef<int>(0x90);
     }
 
     // 攻击判定的横坐标
     int& attackAbscissa()
     {
-        return (int&)((uint8_t*)this)[0x9C];
+        return mRef<int>(0x9C);
     }
 
     // 攻击判定的纵坐标
     int& attackOrdinate()
     {
-        return (int&)((uint8_t*)this)[0xA0];
+        return mRef<int>(0xA0);
     }
 
     // 僵尸减速倒计时
     int& slowCountdown()
     {
-        return (int&)((uint8_t*)this)[0xAC];
+        return mRef<int>(0xAC);
     }
 
     // 僵尸黄油固定倒计时
     int& fixationCountdown()
     {
-        return (int&)((uint8_t*)this)[0xB0];
+        return mRef<int>(0xB0);
     }
 
     // 僵尸冻结倒计时
     int& freezeCountdown()
     {
-        return (int&)((uint8_t*)this)[0xB4];
+        return mRef<int>(0xB4);
     }
 
     // 受伤判定宽度
     int& hurtWidth()
     {
-        return (int&)((uint8_t*)this)[0x94];
+        return mRef<int>(0x94);
     }
 
     // 蘑菇倒计时
     int& hurtHeight()
     {
-        return (int&)((uint8_t*)this)[0x98];
+        return mRef<int>(0x98);
     }
 };
 
 // 种子 / 卡牌 属性
-struct Seed : public __ConstructorDeleter {
+struct Seed : public PvzStruct {
 private:
     uint8_t data[0x50];
 
@@ -687,72 +705,73 @@ public:
     // 只能这样使用：auto seed_count = GetMainObject()->seedArray()->count();
     int& count()
     {
-        return (int&)((uint8_t*)this)[0x24];
+        return mRef<int>(0x24);
     }
 
     // 种子是否可用
     bool& isUsable()
     {
-        return (bool&)((uint8_t*)this)[0x48 + 0x28];
+        return mRef<bool>(0x48 + 0x28);
     }
 
     // 种子冷却
     int& cd()
     {
-        return (int&)((uint8_t*)this)[0x24 + 0x28];
+        return mRef<int>(0x24 + 0x28);
     }
 
     // 种子初始冷却
     int& initialCd()
     {
-        return (int&)((uint8_t*)this)[0x28 + 0x28];
+        return mRef<int>(0x28 + 0x28);
     }
 
     // 模仿者类型
     int& imitatorType()
     {
-        return (int&)((uint8_t*)this)[0x38 + 0x28];
+        return mRef<int>(0x38 + 0x28);
     }
 
     // 种子类型
     int& type()
     {
-        return (int&)((uint8_t*)this)[0x34 + 0x28];
+        return mRef<int>(0x34 + 0x28);
     }
 
     // 种子横坐标
     int& abscissa()
     {
-        return (int&)((uint8_t*)this)[0x8 + 0x28];
+        return mRef<int>(0x8 + 0x28);
     }
 
     // 种子纵坐标
     int& ordinate()
     {
-        return (int&)((uint8_t*)this)[0xc + 0x28];
+        return mRef<int>(0xc + 0x28);
     }
 
     // 卡牌判定高度
     int& height()
     {
-        return (int&)((uint8_t*)this)[0x14 + 0x28];
+        return mRef<int>(0x14 + 0x28);
     }
 
     // 卡牌判定宽度
     int& width()
     {
-        return (int&)((uint8_t*)this)[0x10 + 0x28];
+        return mRef<int>(0x10 + 0x28);
     }
 
     // 卡牌 x 偏移量
+    // 在老虎机中的位置
     int xOffset()
     {
-        return (int&)((uint8_t*)this)[0x30 + 0x28];
+        return mRef<int>(0x30 + 0x28);
     }
 };
 
 // 收集物品属性
-struct Item : public __ConstructorDeleter {
+struct Item : public PvzStruct {
 private:
     uint8_t data[0xd8];
 
@@ -760,36 +779,36 @@ public:
     // 物品是否消失
     const bool& isDisappeared()
     {
-        return (bool&)((uint8_t*)this)[0x38];
+        return mRef<bool>(0x38);
     }
 
     // 物品是否被收集
     bool& isCollected()
     {
-        return (bool&)((uint8_t*)this)[0x50];
+        return mRef<bool>(0x50);
     }
 
     // 物品所在横坐标
     float& abscissa()
     {
-        return (float&)((uint8_t*)this)[0x24];
+        return mRef<float>(0x24);
     }
 
     // 物品所在纵坐标
     float& ordinate()
     {
-        return (float&)((uint8_t*)this)[0x28];
+        return mRef<float>(0x28);
     }
 
     // 物品类型
     int& type()
     {
-        return (int&)((uint8_t*)this)[0x58];
+        return mRef<int>(0x58);
     }
 };
 
 // 场地物品属性
-struct PlaceItem : public __ConstructorDeleter {
+struct PlaceItem : public PvzStruct {
 private:
     uint8_t data[0xec];
 
@@ -797,56 +816,56 @@ public:
     // 物品是否消失
     const bool& isDisappeared()
     {
-        return (bool&)((uint8_t*)this)[0x20];
+        return mRef<bool>(0x20);
     }
 
     // 物品所在行
     int& row()
     {
-        return (int&)((uint8_t*)this)[0x14];
+        return mRef<int>(0x14);
     }
 
     // 物品所在列
     int& col()
     {
-        return (int&)((uint8_t*)this)[0x10];
+        return mRef<int>(0x10);
     }
 
     // 物品类型
     int& type()
     {
-        return (int&)((uint8_t*)this)[0x8];
+        return mRef<int>(0x8);
     }
 
     // 墓碑冒出的量,弹坑消失倒计时,脑子血量,钉钯消失倒计时
     int& value()
     {
-        return (int&)((uint8_t*)this)[0x18];
+        return mRef<int>(0x18);
     }
 };
 
 // 动画主要属性
-struct AnimationMain : public __ConstructorDeleter {
+struct AnimationMain : public PvzStruct {
 public:
     // 动画偏移
     AnimationOffset* animationOffset()
     {
-        return *(AnimationOffset**)((uint8_t*)this + 0x8);
+        return mPtr<AnimationOffset>(0x8);
     }
 };
 
 // 动画偏移属性
-struct AnimationOffset : public __ConstructorDeleter {
+struct AnimationOffset : public PvzStruct {
 public:
     // 动画内存数组
     Animation* animationArray()
     {
-        return *(Animation**)((uint8_t*)this + 0x0);
+        return mPtr<Animation>(0x0);
     }
 };
 
 // 动画属性
-struct Animation : public __ConstructorDeleter {
+struct Animation : public PvzStruct {
 private:
     uint8_t data[0xa0];
 
@@ -854,60 +873,60 @@ public:
     // 动画循环率
     float& circulationRate()
     {
-        return (float&)((uint8_t*)this)[0x4];
+        return mRef<float>(0x4);
     }
 };
 
-struct TopMouseWindow : public __ConstructorDeleter {
+struct TopMouseWindow : public PvzStruct {
 public:
     // 窗口类型(1图鉴,2暂停,3是否,4商店等,6用户管理,8菜单)
     int& type()
     {
-        return (int&)((uint8_t*)this)[0xc];
+        return mRef<int>(0xc);
     }
 };
 
-struct MouseWindow : public __ConstructorDeleter {
+struct MouseWindow : public PvzStruct {
 public:
     TopMouseWindow* topWindow()
     {
-        return *(TopMouseWindow**)((uint8_t*)this + 0x94);
+        return mPtr<TopMouseWindow>(0x94);
     }
 
     bool& isInWindow()
     {
-        return (bool&)((uint8_t*)this)[0xdc];
+        return mRef<bool>(0xdc);
     }
 
     int& mouseAbscissa()
     {
-        return (int&)((uint8_t*)this)[0xe0];
+        return mRef<int>(0xe0);
     }
 
     int& mouseOrdinate()
     {
-        return (int&)((uint8_t*)this)[0xe4];
+        return mRef<int>(0xe4);
     }
 };
 
-struct SelectCardUi_m : public __ConstructorDeleter {
+struct SelectCardUi_m : public PvzStruct {
 public:
     int& orizontalScreenOffset()
     {
-        return (int&)((uint8_t*)this)[0x8];
+        return mRef<int>(0x8);
     }
 
     bool& isCreatZombie()
     {
-        return (bool&)((uint8_t*)this)[0x35];
+        return mRef<bool>(0x35);
     }
 };
 
-struct SelectCardUi_p : public __ConstructorDeleter {
+struct SelectCardUi_p : public PvzStruct {
 public:
     LetsRockBtn* letsRockBtn()
     {
-        return *(LetsRockBtn**)((uint8_t*)this + 0x88);
+        return mPtr<LetsRockBtn>(0x88);
     }
 
     // 卡片移动状态
@@ -918,50 +937,50 @@ public:
     // 3在选卡界面里
     int& cardMoveState(int index)
     {
-        return (int&)((uint8_t*)this)[index * 0x3c + 0xc8];
+        return mRef<int>(index * 0x3c + 0xc8);
     }
 };
 
-struct LetsRockBtn : public __ConstructorDeleter {
+struct LetsRockBtn : public PvzStruct {
 public:
     bool& isUnusable()
     {
-        return (bool&)((uint8_t*)this)[0x1a];
+        return mRef<bool>(0x1a);
     }
 };
 
-struct Mouse : public __ConstructorDeleter {
+struct Mouse : public PvzStruct {
 public:
     // 鼠标上物品的类型
     int& type()
     {
-        return (int&)((uint8_t*)this)[0x30];
+        return mRef<int>(0x30);
     }
 
     int& abscissa()
     {
-        return (int&)((uint8_t*)this)[0x8];
+        return mRef<int>(0x8);
     }
 
     uintptr_t& cannonAddress()
     {
-        return (uintptr_t&)((uint8_t*)this)[0x40];
+        return mRef<uintptr_t>(0x40);
     }
 };
 
-struct MouseExtra : public __ConstructorDeleter {
+struct MouseExtra : public PvzStruct {
 public:
     int& row()
     {
-        return (int&)((uint8_t*)this)[0x28];
+        return mRef<int>(0x28);
     }
 };
 
-struct Text : public __ConstructorDeleter {
+struct Text : public PvzStruct {
 public:
     int& disappearCountdown()
     {
-        return (int&)((uint8_t*)this)[0x88];
+        return mRef<int>(0x88);
     }
 };
 
