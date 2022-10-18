@@ -106,12 +106,12 @@ void __LoadScript()
             }
         }
     } catch (Exception& exce) {
-        std::string exce_msg = "catch exception: ";
-        exce_msg += exce.what();
+        std::string exce_msg = exce.what();
         if (exce_msg != STR_GAME_RET_MAIN_UI) {
             __is_exited = true;
             exce_msg += " ||  AvZ has stopped working !!!";
         }
+        exce_msg = "catch exception: " + exce_msg;
         exce_msg += '\n';
         std::printf(exce_msg.c_str());
     } catch (...) {
@@ -198,14 +198,15 @@ extern "C" __declspec(dllexport) void __cdecl __Run()
             __LoadScript();
         }
     } catch (Exception& exce) {
-        std::string exce_msg = "catch exception: ";
-        exce_msg += exce.what();
+        std::string exce_msg = exce.what();
         if (exce_msg != STR_GAME_RET_MAIN_UI) {
             __is_exited = true;
             exce_msg += " ||  AvZ has stopped working !!!";
         }
+        exce_msg = "catch exception: " + exce_msg;
         exce_msg += '\n';
         std::printf(exce_msg.c_str());
+        __is_loaded = !(__effective_mode >= 0);
     } catch (...) {
         ShowErrorNotInQueue("脚本触发了一个未知的异常, 已强制关闭脚本\n");
         __is_exited = true;
