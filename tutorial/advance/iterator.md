@@ -53,8 +53,8 @@ for (auto&& zombie : AliveFilter<Zombie>()) {
 
 这就是使用对象迭代器的亿些好处，除此之外，对象迭代器依然有其他功能，比如可将判断僵尸是否是红眼的代码写在过滤器的构造函数中
 ```C++
-AliveFilter<Zombie> zombie_filter([](SafePtr<Zombie> zombie) {
-    return zombie.type() == HY_32;
+AliveFilter<Zombie> zombie_filter([](Zombie* zombie) {
+    return zombie->type() == HY_32;
 });
 
 for (auto&& zombie : zombie_filter) {
@@ -78,8 +78,8 @@ for (auto&& zombie : zombie_filter) {
 
 查看这段代码，你可能心里会想，这不就是最原始普通的遍历加上了一个范围for循环吗，好像确实如此，但是当你在构造函数中添加亿些条件看起来也许就不那么一样了
 ```C++
-BasicFilter<Zombie> zombie_filter([](SafePtr<Zombie> zombie) {
-    return !zombie.isDisappeared() && !zombie.isDead() && zombie.type() == HY_32;
+BasicFilter<Zombie> zombie_filter([](Zombie* zombie) {
+    return !zombie->isDisappeared() && !zombie->isDead() && zombie->type() == HY_32;
 });
 
 for (auto&& zombie : zombie_filter) {
