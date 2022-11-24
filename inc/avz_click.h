@@ -1,59 +1,45 @@
 /*
  * @Coding: utf-8
  * @Author: vector-wlc
- * @Date: 2020-10-30 16:22:00
- * @Description: click api
+ * @Date: 2022-11-06 15:48:38
+ * @Description:
  */
+
 #ifndef __AVZ_CLICK_H__
 #define __AVZ_CLICK_H__
 
-#include "avz_time_operation.h"
-#include "pvzfunc.h"
+#include "avz_logger.h"
 
-namespace AvZ {
-struct ShovelPosition {
+struct AShovelPosition {
     int row;
     float col;
     bool pumpkin = false;
 };
 
 // 将格子转换成坐标
-void GridToCoordinate(int row, float col, int& x, int& y);
+void AGridToCoordinate(int row, float col, int& x, int& y);
 
-// *** Not In Queue
 // 点击格子
 // *** 使用示例：
-// ClickGrid(3, 4)---- 点击格子(3, 4)
-// ClickGrid(3, 4, 10)---- 向下偏移10像素点击格子(3, 4)
-void ClickGrid(int row, float col, int offset = 0);
+// AClickGrid(3, 4)---- 点击格子(3, 4)
+// AClickGrid(3, 4, 10)---- 向下偏移10像素点击格子(3, 4)
+void AClickGrid(int row, float col, int offset = 0);
 
-// *** Not In Queue
 // 点击种子/卡片
 // *** 使用示例：
-// ClickSeed(1) ----- 点击第一个种子
-void ClickSeed(int seed_index);
+// AClickSeed(1) ----- 点击第一个种子
+void AClickSeed(int seed_index);
 
-// *** Not In Queue
-// 右键安全点击
-void SafeClick();
-
-// *** Not In Queue
 // 鼠标左击
-// LeftClick(400, 300)-----点击 PVZ 窗口中央
-void LeftClick(int x, int y);
+// ALeftClick(400, 300)-----点击 PVZ 窗口中央
+void ALeftClick(int x, int y);
 
-void ShovelNotInQueue(int row, float col, bool pumpkin = false);
-
-// *** In Queue
 // 铲除植物函数
-void Shovel(int row, float col, bool pumpkin = false);
-
-// *** In Queue
 // *** 使用示例：
-// Shovel(4, 6)--------铲除4行6列的植物,如果植物有南瓜保护默认铲除被保护植物
-// Shovel(4, 6, true)---铲除4行6列的植物,如果植物有南瓜保护铲除南瓜
-// Shovel({{3, 6},{4, 6}})------铲除3行6列，4行6列的植物
-void Shovel(const std::vector<ShovelPosition>& lst);
+// AShovel(4, 6)--------铲除4行6列的植物,如果植物有南瓜保护默认铲除被保护植物
+// AShovel(4, 6, true)---铲除4行6列的植物,如果植物有南瓜保护铲除南瓜
+// AShovel({{3, 6},{4, 6}})------铲除3行6列，4行6列的植物
+void AShovel(int row, float col, bool pumpkin = false);
+void AShovel(const std::vector<AShovelPosition>& lst);
 
-} // namespace AvZ
 #endif

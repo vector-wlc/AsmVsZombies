@@ -6,6 +6,14 @@
 -->
 ## 版本迁移文档
 
+### 221001 -> 221124 2.0.0 preview
+
+1. 这是一个重大更新，使用 221124  2.0.0 preview 需要重新下载新的环境开发包
+
+2. 会带来 VSCode 插件的不兼容性，需要修改编译命令为 `-m32 -static -std=c++20 -g -Wall "__FILE_NAME__" -I "__AVZ_DIR__/inc" -lavz -lgdi32 -L "__AVZ_DIR__/bin" -shared -o "./bin/libavz.dll"`，注意粘贴复制的时候千万不要有换行符， 然后这个设置需要打开扩展栏，找到 AvZ 扩展，然后右键 AvZ 右下角的齿轮找到扩展设置， 将 `Avz Compiler Cmd` 修改为上面的内容。
+
+3. 其他更新请看新的图文教程
+
 ### 220630 -> 221001
 
 1. 由于 SafePtr 已被弃用, 在脚本中使用 `SafePtr<Type>` 的用户直接使用原始指针 Type 即可,

@@ -1,9 +1,3 @@
-/*
- * @Coding: utf-8
- * @Author: vector-wlc
- * @Date: 2022-06-10 11:54:47
- * @Description:
- */
 #ifndef __AVZ_ITERATOR_H__
 #define __AVZ_ITERATOR_H__
 
@@ -11,281 +5,269 @@
 
 #include "avz_global.h"
 
-namespace AvZ {
-
-extern MainObject* __main_object;
 template <typename T>
-using __PredicateT = std::function<bool(T* ptr)>;
+using __APredicateT = std::function<bool(T* ptr)>;
 
 template <class T>
-struct __filter_trait;
+struct __AFilterTrait;
 
 template <>
-struct __filter_trait<Plant> {
-    static Plant* __get_end()
+struct __AFilterTrait<APlant> {
+    __ANodiscard static APlant* GetEnd()
     {
-        return __main_object->plantArray() + __main_object->plantTotal();
+        return __aInternalGlobal.mainObject->PlantArray() + //
+            __aInternalGlobal.mainObject->PlantTotal();
     }
-    static Plant* __get_begin()
+    __ANodiscard static APlant* GetBegin()
     {
-        return __main_object->plantArray();
+        return __aInternalGlobal.mainObject->PlantArray();
     }
-    static __PredicateT<Plant> __get_alive_predicate()
+    __ANodiscard static __APredicateT<APlant> GetAlivePredicate()
     {
-        return [](Plant* ptr) -> bool { return !ptr->isDisappeared() && !ptr->isCrushed(); };
+        return [](APlant* ptr) -> bool { return !ptr->IsDisappeared() && !ptr->IsCrushed(); };
     }
 };
 
 template <>
-struct __filter_trait<Zombie> {
-    static Zombie* __get_end()
+struct __AFilterTrait<AZombie> {
+    __ANodiscard static AZombie* GetEnd()
     {
-        return __main_object->zombieArray() + __main_object->zombieTotal();
+        return __aInternalGlobal.mainObject->ZombieArray() + //
+            __aInternalGlobal.mainObject->ZombieTotal();
     }
-    static Zombie* __get_begin()
+    __ANodiscard static AZombie* GetBegin()
     {
-        return __main_object->zombieArray();
+        return __aInternalGlobal.mainObject->ZombieArray();
     }
-    static __PredicateT<Zombie> __get_alive_predicate()
+    __ANodiscard static __APredicateT<AZombie> GetAlivePredicate()
     {
-        return [](Zombie* ptr) -> bool { return !ptr->isDisappeared() && !ptr->isDead(); };
-    }
-};
-
-template <>
-struct __filter_trait<Item> {
-    static Item* __get_end()
-    {
-        return __main_object->itemArray() + __main_object->itemTotal();
-    }
-    static Item* __get_begin()
-    {
-        return __main_object->itemArray();
-    }
-    static __PredicateT<Item> __get_alive_predicate()
-    {
-        return [](Item* ptr) -> bool { return !ptr->isDisappeared() && !ptr->isCollected(); };
+        return [](AZombie* ptr) -> bool { return !ptr->IsDisappeared() && !ptr->IsDead(); };
     }
 };
 
 template <>
-struct __filter_trait<Seed> {
-    static Seed* __get_end()
+struct __AFilterTrait<AItem> {
+    __ANodiscard static AItem* GetEnd()
     {
-        return __main_object->seedArray() + __main_object->seedArray()->count();
+        return __aInternalGlobal.mainObject->ItemArray() + //
+            __aInternalGlobal.mainObject->ItemTotal();
     }
-    static Seed* __get_begin()
+    __ANodiscard static AItem* GetBegin()
     {
-        return __main_object->seedArray();
+        return __aInternalGlobal.mainObject->ItemArray();
     }
-    static __PredicateT<Seed> __get_alive_predicate()
+    __ANodiscard static __APredicateT<AItem> GetAlivePredicate()
     {
-        return [](Seed* ptr) -> bool { return ptr->isUsable(); };
+        return [](AItem* ptr) -> bool { return !ptr->IsDisappeared() && !ptr->IsCollected(); };
     }
 };
 
 template <>
-struct __filter_trait<PlaceItem> {
-    static PlaceItem* __get_end()
+struct __AFilterTrait<ASeed> {
+    __ANodiscard static ASeed* GetEnd()
     {
-        return __main_object->placeItemArray() + __main_object->placeItemTotal();
+        return __aInternalGlobal.mainObject->SeedArray() + //
+            __aInternalGlobal.mainObject->SeedArray()->Count();
     }
-    static PlaceItem* __get_begin()
+    __ANodiscard static ASeed* GetBegin()
     {
-        return __main_object->placeItemArray();
+        return __aInternalGlobal.mainObject->SeedArray();
     }
-    static __PredicateT<PlaceItem> __get_alive_predicate()
+    __ANodiscard static __APredicateT<ASeed> GetAlivePredicate()
     {
-        return [](PlaceItem* ptr) -> bool { return !ptr->isDisappeared(); };
+        return [](ASeed* ptr) -> bool { return ptr->IsUsable(); };
+    }
+};
+
+template <>
+struct __AFilterTrait<APlaceItem> {
+    __ANodiscard static APlaceItem* GetEnd()
+    {
+        return __aInternalGlobal.mainObject->PlaceItemArray() + //
+            __aInternalGlobal.mainObject->PlaceItemTotal();
+    }
+    __ANodiscard static APlaceItem* GetBegin()
+    {
+        return __aInternalGlobal.mainObject->PlaceItemArray();
+    }
+    __ANodiscard static __APredicateT<APlaceItem> GetAlivePredicate()
+    {
+        return [](APlaceItem* ptr) -> bool { return !ptr->IsDisappeared(); };
     }
 };
 
 template <typename T>
-class FilterIterator {
-private:
-    __PredicateT<T> __pred;
-    T* __cur;
-    T* __end;
+class AFilterIterator {
+protected:
+    T* _cur;
+    __APredicateT<T> _pred;
+    T* _end;
 
     void forward()
     {
-        ++__cur;
-        while (__cur != __end && !__pred(__cur)) {
-            ++__cur;
+        ++_cur;
+        while (_cur != _end && !_pred(_cur)) {
+            ++_cur;
         }
     }
 
 public:
-    template <typename V>
-    class Value : public V {
-    public:
-        _ADEPRECATED const V* operator->() const
-        {
-            return this;
-        }
-
-        _ADEPRECATED V* operator->()
-        {
-            return this;
-        }
-    };
     using iterator_category = std::forward_iterator_tag;
-    using value_type = Value<T>;
+    using value_type = T;
     using difference_type = void;
     using pointer = T*;
     using reference = value_type&;
 
-    FilterIterator(pointer ptr, __PredicateT<T>&& func)
-        : __cur(ptr)
-        , __pred(std::move(func))
-        , __end(__filter_trait<T>::__get_end())
+    AFilterIterator(pointer ptr, __APredicateT<T>&& func)
+        : _cur(ptr)
+        , _pred(std::move(func))
+        , _end(__AFilterTrait<T>::GetEnd())
     {
-        while (__cur != __end && !__pred(__cur)) {
-            ++__cur;
+        while (_cur != _end && !_pred(_cur)) {
+            ++_cur;
         }
     }
 
-    FilterIterator(pointer ptr, const __PredicateT<T>& func)
-        : __cur(ptr)
-        , __pred(func)
-        , __end(__filter_trait<T>::__get_end())
+    AFilterIterator(pointer ptr, const __APredicateT<T>& func)
+        : _cur(ptr)
+        , _pred(func)
+        , _end(__AFilterTrait<T>::GetEnd())
     {
-        while (__cur != __end && !__pred(__cur)) {
-            ++__cur;
+        while (_cur != _end && !_pred(_cur)) {
+            ++_cur;
         }
     }
 
-    pointer toPtr() const
+    __ANodiscard pointer toPtr() const
     {
-        return __cur;
+        return _cur;
     }
 
     reference operator*()
     {
-        return *(value_type*)(__cur);
+        return *(value_type*)(_cur);
     }
 
-    const reference operator*() const
+    reference operator*() const
     {
-        return *(value_type*)(__cur);
+        return *(value_type*)(_cur);
     }
 
     pointer operator->()
     {
-        return __cur;
+        return _cur;
     }
 
     const pointer operator->() const
     {
-        return __cur;
+        return _cur;
     }
 
-    FilterIterator<T>& operator++()
+    AFilterIterator<T>& operator++()
     {
         forward();
         return *this;
     }
 
-    FilterIterator<T> operator++(int)
+    AFilterIterator<T> operator++(int)
     {
         auto tmp = *this;
         forward();
         return tmp;
     }
 
-    bool operator==(const FilterIterator<T>& rhs) const
+    __ANodiscard bool operator==(const AFilterIterator<T>& rhs) const
     {
-        return __cur == rhs.__cur;
+        return _cur == rhs._cur;
     }
 
-    bool operator!=(const FilterIterator<T>& rhs) const
+    __ANodiscard bool operator!=(const AFilterIterator<T>& rhs) const
     {
-        return __cur != rhs.__cur;
+        return _cur != rhs._cur;
     }
 };
 
 template <typename T>
-class BasicFilter {
+class ABasicFilter {
 protected:
-    __PredicateT<T> __pred;
+    __APredicateT<T> _pred;
 
 public:
-    using Iterator = FilterIterator<T>;
+    using Iterator = AFilterIterator<T>;
 
-    BasicFilter()
-        : __pred([](T*) { return true; })
+    ABasicFilter()
+        : _pred([](T*) { return true; })
     {
     }
 
-    BasicFilter(__PredicateT<T>&& func)
-        : __pred(std::move(func))
+    ABasicFilter(__APredicateT<T>&& func)
+        : _pred(std::move(func))
     {
     }
 
-    BasicFilter(const __PredicateT<T>& func)
-        : __pred(func)
+    ABasicFilter(const __APredicateT<T>& func)
+        : _pred(func)
     {
     }
 
-    virtual void setPredicate(__PredicateT<T>&& func)
+    virtual void SetPredicate(__APredicateT<T>&& func)
     {
-        this->__pred = std::move(func);
+        this->_pred = std::move(func);
     }
 
-    virtual void setPredicate(const __PredicateT<T>& func)
+    virtual void SetPredicate(const __APredicateT<T>& func)
     {
-        this->__pred = func;
+        this->_pred = func;
     }
 
-    Iterator begin()
+    __ANodiscard Iterator begin()
     {
-        return Iterator(__filter_trait<T>::__get_begin(), this->__pred);
+        return Iterator(__AFilterTrait<T>::GetBegin(), this->_pred);
     }
 
-    Iterator end()
+    __ANodiscard Iterator end()
     {
-        return Iterator(__filter_trait<T>::__get_end(), this->__pred);
+        return Iterator(__AFilterTrait<T>::GetEnd(), this->_pred);
     }
 };
 
 template <typename T>
-class AliveFilter : public BasicFilter<T> {
-private:
-    __PredicateT<T> __alive_pred;
+class AAliveFilter : public ABasicFilter<T> {
+protected:
+    __APredicateT<T> _alivePred;
 
 public:
-    AliveFilter()
-        : __alive_pred(__filter_trait<T>::__get_alive_predicate())
+    AAliveFilter()
+        : _alivePred(__AFilterTrait<T>::GetAlivePredicate())
     {
-        this->__pred = this->__alive_pred;
+        this->_pred = this->_alivePred;
     }
 
-    AliveFilter(__PredicateT<T>&& func)
-        : __alive_pred(__filter_trait<T>::__get_alive_predicate())
+    AAliveFilter(__APredicateT<T>&& func)
+        : _alivePred(__AFilterTrait<T>::GetAlivePredicate())
     {
-        setPredicate(std::move(func));
+        SetPredicate(std::move(func));
     }
 
-    AliveFilter(const __PredicateT<T>& func)
-        : __alive_pred(__filter_trait<T>::__get_alive_predicate())
+    AAliveFilter(const __APredicateT<T>& func)
+        : _alivePred(__AFilterTrait<T>::GetAlivePredicate())
     {
-        setPredicate(func);
+        SetPredicate(func);
     }
 
-    virtual void setPredicate(__PredicateT<T>&& func) override
+    virtual void SetPredicate(__APredicateT<T>&& func) override
     {
-        this->__pred = [this, func = std::move(func)](T* ptr) -> bool {
-            return this->__alive_pred(ptr) && func(ptr);
+        this->_pred = [this, func = std::move(func)](T* ptr) -> bool {
+            return this->_alivePred(ptr) && func(ptr);
         };
     }
 
-    virtual void setPredicate(const __PredicateT<T>& func) override
+    virtual void SetPredicate(const __APredicateT<T>& func) override
     {
-        this->__pred = [this, func](T* ptr) -> bool {
-            return this->__alive_pred(ptr) && func(ptr);
+        this->_pred = [this, func](T* ptr) -> bool {
+            return this->_alivePred(ptr) && func(ptr);
         };
     }
 };
-}
 
 #endif

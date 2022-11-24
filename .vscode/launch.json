@@ -1,18 +1,13 @@
 {
     "configurations": [
         {
-            "name": "(gdb) attach",
+            "name": "avz",
             "type": "cppdbg",
             "request": "attach",
             "processId": "${command:AsmVsZombies.getPvzProcessId}",
             "program": "${command:AsmVsZombies.getPvzExePath}",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "externalConsole": false,
             "MIMode": "gdb",
-            "miDebuggerPath": "d:/Software/AsmVsZombies/MinGW/bin/gdb32.exe",
+            "miDebuggerPath": "H:\\Game\\PvZ\\AvZTest\\AsmVsZombies\\MinGW\\bin\\gdb32.exe",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",

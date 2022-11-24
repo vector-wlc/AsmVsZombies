@@ -1,6 +1,14 @@
 ## 更新日志
 
-<!-- Nightly (无法通过 AvZ 插件下载，需要在此存储库中的 release/nightly 文件夹下载并手动替换更新) -->
+AvZ 2022_11_24 2.0.0 preview (breaking change)
+
+* 所有的标识符都带有一个 `A`(类，函数，常量) 或者 `a`(变量、对象) 的前缀
+* 新增核心机制 AConnect 
+* 新增功能相较完善的 ALogger 日志类
+* 新增假设波长功能 `AAssumeWavelength`，此功能在不内存的情况下实现 <-200 时间的设定
+* 新增绘制类 `APainter`
+* 移除操作队列的所有接口
+* 操作函数不再分为 In Queue 和 Not In Queue，所有操作函数都是立即执行
 
 AvZ 2022_10_01
 
@@ -13,7 +21,7 @@ AvZ 2022_10_01
 * 修复了 roofPao 错误寻找最短 cd 炮的 BUG
 * 优化自动存冰类、自动修植物类逻辑
 * 优化坐标转换逻辑
-* `class PaoOperator` 的 private 成员更改为 protected 成员
+* `class PaoOperator` 的 protected 成员更改为 protected 成员
 * 修复继承 `GlobalVar` 的局部对象析构时无法移除 this 指针的问题
 * 修复了偶尔存在卡片 CD 无法正常恢复的问题
 * 修复了当鼠标位置不动且场地上存在收集物导致的 `MouseCol` `MouseRow` 读取内存值错误的问题

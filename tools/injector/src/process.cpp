@@ -1,7 +1,9 @@
 #include "_process.h"
 #include <Windows.h>
 #include <direct.h>
+#include <filesystem>
 #include <iostream>
+#include <stdio.h>
 #include <string>
 
 Process::Process()
@@ -13,14 +15,16 @@ Process::Process()
 
 Process::~Process()
 {
-    if (IsValid())
+    if (IsValid()) {
         CloseHandle(handle);
+    }
 }
 
 bool Process::OpenByWindow(const wchar_t* class_name, const wchar_t* window_name)
 {
-    if (IsValid())
+    if (IsValid()) {
         CloseHandle(handle);
+    }
     hwnd = FindWindowW(class_name, window_name);
 
     while (hwnd == nullptr) {
@@ -34,7 +38,7 @@ bool Process::OpenByWindow(const wchar_t* class_name, const wchar_t* window_name
     }
 
     if (ReadMemory<uint32_t>(0x4140c5) != 0x0019b337) {
-        MessageBoxW(NULL, L"您使用的游戏版本不是英文原版，请到下载安装包的链接下载 AvZ 所支持的英文原版", L"Error", MB_ICONERROR);
+        MessageBoxW(NULL, L"您使用的游戏版本不是英文原版，请到下载安装包的链接下载 本框架 所支持的英文原版", L"Error", MB_ICONERROR);
         return false;
     }
 
@@ -52,23 +56,23 @@ void Process::ManageDLL()
 {
     EjectDLL();
 
-    wchar_t szBuf[512] = {0};
-    _wgetcwd(szBuf, sizeof(szBuf) - 1);
+    std::wstring libavzPath = L"bin/libavz.dll";
 
-    std::wstring libavz_path_name = szBuf;
-
-    libavz_path_name += L"\\bin\\libavz_inject.dll";
-
-    DeleteFileW(libavz_path_name.c_str());
-
-    if (!MoveFileW(L"libavz.dll", libavz_path_name.c_str()) && !MoveFileW(L"bin\\libavz.dll", libavz_path_name.c_str())) {
-        MessageBoxW(NULL, L"libavz.dll 重命名失败，失败可能原因如下\n 1. 计算机开启了杀软，此行为被杀软拦截 \n 2. 脚本有语法错误，编译器无法生成动态库文件 \n 3. AvZ 项目路径需要管理员权限才可以进行文件的生成和复制", L"Error", MB_ICONERROR);
+    if (!std::filesystem::exists(libavzPath)) {
+        MessageBoxW(NULL, L"未检测到 libavz.dll, 请检查您编写的脚本是否有语法错误？", L"Error", MB_ICONERROR);
         return;
     }
 
-    if (!InjectDLL(libavz_path_name.c_str())) {
-        MessageBoxW(NULL, L"libavz.dll 注入失败，失败可能原因如下\n 1. 计算机开启了杀软，此行为被杀软拦截 \n 2. 脚本有语法错误，编译器无法生成动态库文件 \n 3. AvZ 项目路径需要管理员权限才可以进行文件的生成和复制", L"Error", MB_ICONERROR);
+    std::wstring libavzInjectPath = L"bin/libavz_inject.dll";
+    std::filesystem::rename(libavzPath, libavzInjectPath);
+    libavzInjectPath = std::filesystem::absolute(libavzInjectPath);
+
+    if (!InjectDLL(libavzInjectPath.c_str())) {
+        MessageBoxW(NULL, L"libavz.dll 注入失败，失败可能原因如下\n 1. 计算机开启了杀软，此行为被杀软拦截 \n 2. 脚本有语法错误，编译器无法生成动态库文件 \n 3. 本框架 项目路径需要管理员权限才可以进行文件的生成和复制", L"Error", MB_ICONERROR);
+        return;
     }
+
+    wprintf(L"inject libavz.dll success\n");
 }
 
 DWORD Process::EjectDLL()
@@ -129,15 +133,15 @@ DWORD Process::InjectDLL(PCWSTR pszLibFile)
         return FALSE;
     }
 
-    // Get the real address of LoadLibraryW in Kernel32.dll
-    LPTHREAD_START_ROUTINE pfnThreadRtn = (LPTHREAD_START_ROUTINE)GetProcAddress(GetModuleHandle(TEXT("Kernel32")), "LoadLibraryW");
-    if (pfnThreadRtn == NULL) {
-        wprintf(L"[-] Error: Could not find LoadLibraryA function inside kernel32.dll library.\n");
-        return FALSE;
-    }
+    // // Get the real address of LoadLibraryW in Kernel32.dll
+    // LPTHREAD_START_ROUTINE pfnThreadRtn = (LPTHREAD_START_ROUTINE)GetProcAddress(GetModuleHandle(TEXT("Kernel32")), "LoadLibraryW");
+    // if (pfnThreadRtn == NULL) {
+    //     wprintf(L"[-] Error: Could not find LoadLibraryW function inside kernel32.dll library.\n");
+    //     return FALSE;
+    // }
 
     // Create a remote thread that calls LoadLibraryW(DLLPathname)
-    HANDLE hThread = CreateRemoteThread(handle, NULL, 0, pfnThreadRtn, pszLibFileRemote, 0, NULL);
+    HANDLE hThread = CreateRemoteThread(handle, NULL, 0, LPTHREAD_START_ROUTINE(LoadLibraryW), pszLibFileRemote, 0, NULL);
     if (hThread == NULL) {
         wprintf(L"[-] Error: Could not create the Remote Thread.\n");
         return FALSE;
@@ -147,11 +151,13 @@ DWORD Process::InjectDLL(PCWSTR pszLibFile)
     WaitForSingleObject(hThread, INFINITE);
 
     // Free the remote memory that contained the DLL's pathname and close Handles
-    if (pszLibFileRemote != NULL)
+    if (pszLibFileRemote != NULL) {
         VirtualFreeEx(handle, pszLibFileRemote, 0, MEM_RELEASE);
+    }
 
-    if (hThread != NULL)
+    if (hThread != NULL) {
         CloseHandle(hThread);
+    }
 
     return TRUE;
 }
@@ -163,9 +169,9 @@ void Process::Write(uintptr_t addr, size_t len, uint8_t* data)
 
 bool Process::IsValid()
 {
-    if (handle == nullptr)
+    if (handle == nullptr) {
         return false;
-
+    }
     DWORD exit_code;
     GetExitCodeProcess(handle, &exit_code);
     bool valid = (exit_code == STILL_ACTIVE);

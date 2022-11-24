@@ -1,0 +1,116 @@
+<!--
+ * @Coding: utf-8
+ * @Author: vector-wlc
+ * @Date: 2022-02-12 11:05:57
+ * @Description: 
+-->
+
+# 游戏控制函数
+
+## 高级暂停
+
+高级暂停功能由 `ASetAdvancedPause`  
+
+
+```C++
+// 设定高级暂停
+// *** 注意开启高级暂停时不能使用跳帧
+// *** 特别注意的是 `ASetAdvancedPause` 一旦使得程序进入高级暂停状态后，便再也不会执行 AScript 中的代码，
+// *** 使用示例
+// ASetAdvancedPause(true) ------ 开启高级暂停
+// ASetAdvancedPause(false) ------ 关闭高级暂停
+void ASetAdvancedPause(bool isAdvancedPause);
+
+// 一般来说，这个函数需要配合 AConnect 使用
+// 按下 Q 进行高级暂停
+AConnect('Q', []{
+    ASetAdvancedPause(true);
+});
+
+// 按下 W 停止高级暂停
+AConnect('W', []{
+    ASetAdvancedPause(false);
+});
+
+
+// 你仍然可以这样做 ，自己整一个 static 变量
+// 至于 static 变量是啥作用，你需要自行百度
+// 简单理解就是这个变量离开作用域也不会消失，且只会初始化一次
+// 那么下面的代码就是实现了这样的功能
+// 如果游戏不是高级暂停，按下 Q 就高级暂停，如果是高级暂停，按下 Q 就不会高级暂停
+AConnect('Q', []{
+    static bool isPaused = false;
+    isPaused = !isPaused;
+    ASetAdvancedPause(isPaused);
+});
+
+```
+
+## 跳帧
+
+跳帧是节省脚本调试和游戏冲关时间的重要功能，需要使用 `ASkipTick` 来使用此功能。
+
+### 跳到指定时间
+
+```C++
+// 跳到游戏时刻点 (300, 2)
+ASkipTick(300, 2);
+```
+使用这条语句游戏将会跳到 (300, 2)，注意在此过程中，游戏画面是不会刷新的（游戏画面直接卡住），
+游戏内部会以上几十甚至几百倍运行（由 CPU 性能决定），以 i5-7300HQ 为例，运行速度大概为 40 倍，
+当游戏时间进行到 (300, 2) 时，游戏会回复正常运行状态。
+
+### 跳到指定条件
+
+```C++
+// 直接跳过整个游戏
+ASkipTick([=](){
+    return true;
+});
+```
+除了可以指定时间外，还可以指定条件，当返回 `true` 时，游戏帧将会被跳过去，当返回 `false` 时，跳帧将会停止，
+由于上述代码一直返回 `true`，因此所有游戏帧都将会被跳过去。
+
+```C++
+// 检测位于 {1, 3}, {1, 5} 的玉米炮是否被破坏，如果被破坏，停止跳帧
+auto condition = [=]() {
+    std::vector<int> results;
+    AGetPlantIndices({{1, 3}, {1, 5}}, YMJNP_47, results);
+
+    for (auto result : results) {
+        if (result < 0) {
+            return false;
+        }
+    }
+    return true;
+};
+
+ASkipTick(condition);
+```
+上述代码是检测破阵的跳帧使用示例，假如位于 {1, 3}, {1, 5} 的玉米炮被破坏就意味着此解失败，
+那么上述代码会使得游戏直接跳到玉米炮被损坏的时候。
+
+```C++
+auto condition = [=]() {
+    std::vector<int> results;
+    GetPlantIndices({{1, 3}, {1, 5}}, YMJNP_47, results);
+
+    for (auto result : results) {
+        if (result < 0) {
+            return false;
+        }
+    }
+    return true;
+};
+
+auto callback = [=]() {
+    ShowErrorNotInQueue("春哥无了，嘤嘤嘤");
+};
+
+ASkipTick(condition, callback);
+```
+
+当然 `ASkipTick` 还可以使用回调函数，就是当停止跳帧时立马执行的函数，上述代码执行结果：
+当位于 {1, 3}, {1, 5} 的玉米炮被破坏时报出错误："春哥无了，嘤嘤嘤"。
+
+[目录](./0catalogue.md)

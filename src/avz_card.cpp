@@ -1,291 +1,251 @@
-/*
- * @coding: utf-8
- * @Author: vector-wlc
- * @Date: 2020-02-06 10:22:46
- * @Description: API card
- */
-
 #include "avz_card.h"
-
+#include "avz_asm.h"
 #include "avz_click.h"
-#include "avz_global.h"
-#include "avz_time_operation.h"
-#include "pvzfunc.h"
-#include <cstdio>
+#include "avz_logger.h"
 
-namespace AvZ {
-extern std::map<int, int> __seed_name_to_index_map;
-extern std::vector<int> __select_card_vec;
-extern PvZ* __pvz_base;
-extern MainObject* __main_object;
-extern HWND __pvz_hwnd;
+std::vector<int> __ACardManager::_selectCardVec;
+std::unordered_map<int, int> __ACardManager::_seedNameToIndexMap;
+AMainObject* __ACardManager::_mainObject;
+APvzBase* __ACardManager::_pvzBase;
+int __ACardManager::_selectInterval = 17;
 
-/*************************************************
- ** 2021_08_20 版本后弃用
-bool ChooseCard(int row, int col)
+__ACardManager __cm; // AStateHook
+
+void __ACardManager::EnterFight()
 {
-    int yp, xp;
-    if (row > 6) // 模仿者卡片
-    {
-        row -= 6;
-
-        Asm::click(__pvz_base->mouseWindow(), 490, 550, 1);
-        if (!ReadMemory<int>(0x6A9EC0, 0x320, 0x94)) {
-            return false;
-        }
-        yp = 160;
-        xp = 215;
-    } else {
-        yp = 160;
-        xp = 50;
-    }
-    yp += (row - 1) * 70;
-    xp += (col - 1) * 50;
-    Asm::click(__pvz_base->mouseWindow(), xp, yp, 1);
-
-    return true;
-}
-
-void ClickBtn(int x, int y)
-{
-    PostMessage(__pvz_hwnd, WM_LBUTTONDOWN, 0,
-        (y & 0xFFFF) << 16 | (x & 0xFFFF));
-    PostMessage(__pvz_hwnd, WM_LBUTTONUP, 0, (y & 0xFFFF) << 16 | (x & 0xFFFF));
-}
-
-void DealWrongClick()
-{
-    int z_cnt_max = __main_object->zombieTotal();
-    auto zombie_memory = __main_object->zombieArray();
-    for (int index = 0; index < z_cnt_max; ++index, ++zombie_memory) {
-        if ((zombie_memory->standState() == -2 || zombie_memory->standState() == -3 || zombie_memory->standState() == -4) && zombie_memory->abscissa() > 800 && zombie_memory->abscissa() < 930 && zombie_memory->ordinate() > 370) {
-            zombie_memory->abscissa() = 930;
+    _seedNameToIndexMap.clear();
+    _mainObject = __aInternalGlobal.mainObject;
+    _pvzBase = __aInternalGlobal.pvzBase;
+    auto seed = _mainObject->SeedArray();
+    if (_pvzBase->GameUi() == 3) {
+        int seedCount = seed->Count();
+        int seedType;
+        std::pair<int, int> seedInfo;
+        for (int i = 0; i < seedCount; ++i, ++seed) {
+            seedType = seed->Type();
+            // 如果是模仿者卡片
+            if (seedType == 48) {
+                seedType = seed->ImitatorType();
+                seedInfo.first = seedType + 49;
+                seedInfo.second = i;
+            } else { // if(seed_info != 48)
+                seedInfo.first = seedType;
+                seedInfo.second = i;
+            }
+            _seedNameToIndexMap.insert(seedInfo);
         }
     }
+    _selectCardVec.clear();
 }
-*************************************************/
 
-void __ChooseCards()
+void __ACardManager::ChooseSingleCard()
 {
-    static auto it = __select_card_vec.begin();
-
-    if (__main_object->text()->disappearCountdown() || __main_object->selectCardUi_m()->orizontalScreenOffset() != 4250) {
-        it = __select_card_vec.begin();
+    if (_selectCardVec.empty()) {
+        return;
+    }
+    static auto iter = _selectCardVec.begin();
+    _mainObject = __aInternalGlobal.mainObject;
+    _pvzBase = __aInternalGlobal.pvzBase;
+    if (_mainObject->Words()->DisappearCountdown() || //
+        _mainObject->SelectCardUi_m()->OrizontalScreenOffset() != 4250) {
+        iter = _selectCardVec.begin();
         return;
     }
 
-    if (__main_object->globalClock() % 17 != 0) {
-        return; // 检测间隔为 17cs
+    if (_mainObject->GlobalClock() % _selectInterval != 0) {
+        return; // 选卡间隔为 _selectInterval
     }
 
-    if (it != __select_card_vec.end()) {
-        if (*it >= 49) {
-            Asm::chooseImitatorCard(*it - 49);
+    if (iter != _selectCardVec.end()) {
+        if (*iter >= 49) {
+            AAsm::ChooseImitatorCard(*iter - 49);
         } else {
-            Asm::chooseCard(*it);
+            AAsm::ChooseCard(*iter);
         }
-        ++it;
+        ++iter;
         return;
     }
 
-    if (__pvz_base->selectCardUi_p()->letsRockBtn()->isUnusable()) {
+    if (_pvzBase->SelectCardUi_p()->LetsRockBtn()->IsUnusable()) {
         static int cnt = 0;
         ++cnt;
-        Asm::click(__pvz_base->mouseWindow(), 100, 50, 1);
+        AAsm::Click(_pvzBase->MouseWindow(), 100, 50, 1);
         if (cnt == 10) {
             cnt = 0;
-            it = __select_card_vec.begin();
+            iter = _selectCardVec.begin();
         }
 
         return;
     }
 
     // 等待最后一个卡片进入卡槽
-    int index = *(it - 1);
+    int index = *(iter - 1);
     if (index > 48) {
         index = 48;
     }
 
-    if (__pvz_base->selectCardUi_p()->cardMoveState(index) == 1) {
-        Asm::rock();
+    if (_pvzBase->SelectCardUi_p()->CardMoveState(index) == 1) {
+        AAsm::Rock();
     }
 }
 
-void SelectCards(const std::vector<int>& lst)
+void __ACardManager::SelectCards(const std::vector<int>& lst, int selectInterval)
 {
-    bool is_find;
-    Grid grid;
+    if (selectInterval <= 0) {
+        __aInternalGlobal.loggerPtr->Error("ASelectCards 不允许选卡间隔小于 1cs");
+        return;
+    }
+    _selectInterval = selectInterval;
 
-    __select_card_vec.clear();
-    std::set<int> repetitive_type_set;
-    bool is_imitator_selected = false;
-    for (const auto& card_type : lst) {
-        if (card_type > 87) {
-            ShowErrorNotInQueue("您选择的代号为 # 的卡片在 PvZ 中不存在",
-                card_type);
+    auto&& pattern = __aInternalGlobal.loggerPtr->GetPattern();
+
+    _selectCardVec.clear();
+    std::unordered_set<int> repetitiveTypeSet;
+    bool isImitatorSelected = false;
+    for (const auto& cardType : lst) {
+        if (cardType > 87) {
+            __aInternalGlobal.loggerPtr->Error("您选择的代号为 " + pattern + " 的卡片在 PvZ 中不存在",
+                cardType);
             return;
         }
 
-        if (repetitive_type_set.find(card_type) == repetitive_type_set.end()) { // 没有被选择的卡片
-            repetitive_type_set.insert(card_type);
+        if (repetitiveTypeSet.find(cardType) == repetitiveTypeSet.end()) { // 没有被选择的卡片
+            repetitiveTypeSet.insert(cardType);
         } else {
-            ShowErrorNotInQueue("您重复选择了代号为 # 的卡片", card_type);
+            __aInternalGlobal.loggerPtr->Error("您重复选择了代号为 " + pattern + " 的卡片", cardType);
             return;
         }
 
-        if (!is_imitator_selected) {
-            is_imitator_selected = (card_type > IMITATOR);
-        } else if (card_type > IMITATOR) {
-            ShowErrorNotInQueue("您重复选择了模仿者卡片");
+        if (!isImitatorSelected) {
+            isImitatorSelected = (cardType > AIMITATOR);
+        } else if (cardType > AIMITATOR) {
+            __aInternalGlobal.loggerPtr->Error("您重复选择了模仿者卡片");
             return;
         }
     }
 
-    __select_card_vec = lst;
+    _selectCardVec = lst;
 }
 
-void CardNotInQueue(int seed_index, int row, float col)
+APlant* __ACardManager::_BasicCard(int seedIndex, int row, float col)
 {
-    auto seed_count = __main_object->seedArray()->count();
-    if (seed_index > seed_count || seed_index < 1) {
-        ShowErrorNotInQueue(
-            "Card : 您填写的参数 # 已溢出，请检查卡片名字是否错写为单引号",
-            seed_index);
-        return;
+    auto&& pattern = __aInternalGlobal.loggerPtr->GetPattern();
+    auto seedCount = _mainObject->SeedArray()->Count();
+    if (seedIndex > seedCount || seedIndex < 1) {
+        __aInternalGlobal.loggerPtr->Error(
+            "Card : 您填写的参数 " + pattern + " 已溢出，请检查卡片名字是否错写为单引号",
+            seedIndex);
+        return nullptr;
     }
 
-    SafeClick();
-    auto seed = __main_object->seedArray() + seed_index - 1;
-    if (!seed->isUsable()) {
-        ShowErrorNotInQueue(
-            "Card : 第 # 张卡片还有 #cs 才能使用", seed_index,
-            seed->initialCd() - seed->cd() + 1); // PvZ计算问题导致+1
-        return;
+    AAsm::ReleaseMouse();
+    auto seed = _mainObject->SeedArray() + seedIndex - 1;
+    if (!seed->IsUsable()) {
+        __aInternalGlobal.loggerPtr->Error(
+            "Card : 第 " + pattern + " 张卡片还有 " + pattern + " cs 才能使用",
+            seedIndex, seed->InitialCd() - seed->Cd() + 1); // PvZ计算问题导致+1
+        return nullptr;
     }
-    SafeClick();
-    extern int __error_mode;
-    if (__error_mode == CONSOLE) {
-        Print("Plant Card (%d) to (%d, %g)\n",
-            seed_index, row, col);
-    }
+
+    __aInternalGlobal.loggerPtr->Info("Plant Card (" + pattern + ") to (" + //
+            pattern + ", " + pattern + ")",
+        seedIndex, row, col);
     int x;
     int y;
     col = int(col + 0.5);
-    GridToCoordinate(row, col, x, y);
-    Asm::plantCard(x, y, seed_index - 1);
-    SafeClick();
+    AGridToCoordinate(row, col, x, y);
+    auto mainObject = __aInternalGlobal.mainObject;
+    auto currentIdx = mainObject->PlantNext();
+    AAsm::PlantCard(x, y, seedIndex - 1);
+    AAsm::ReleaseMouse();
+    return currentIdx == mainObject->PlantNext() ? nullptr : mainObject->PlantArray() + currentIdx;
 }
 
-void CardNotInQueue(int seed_index, const std::vector<Position>& lst)
+APlant* __ACardManager::_BasicCard(int seedIndex, const std::vector<APosition>& lst)
 {
-    auto seed_count = __main_object->seedArray()->count();
-    if (seed_index > seed_count || seed_index < 1) {
-        ShowErrorNotInQueue("Card : 您填写的参数 # 已溢出", seed_index);
-        return;
+    auto&& pattern = __aInternalGlobal.loggerPtr->GetPattern();
+    auto seedCount = _mainObject->SeedArray()->Count();
+    if (seedIndex > seedCount || seedIndex < 1) {
+        __aInternalGlobal.loggerPtr->Error("Card : 您填写的参数 " + pattern + " 已溢出", seedIndex);
+        return nullptr;
     }
 
-    SafeClick();
-    auto seed = __main_object->seedArray() + seed_index - 1;
-    if (!seed->isUsable()) {
-        ShowErrorNotInQueue(
-            "Card : 第 # 张卡片还有 #cs 才能使用", seed_index,
-            seed->initialCd() - seed->cd() + 1); // PvZ计算问题导致+1
-        return;
+    AAsm::ReleaseMouse();
+    auto seed = _mainObject->SeedArray() + seedIndex - 1;
+    if (!seed->IsUsable()) {
+        __aInternalGlobal.loggerPtr->Error(
+            "Card : 第 " + pattern + " 张卡片还有 " + pattern + "cs 才能使用", seedIndex,
+            seed->InitialCd() - seed->Cd() + 1); // PvZ计算问题导致+1
+        return nullptr;
     }
-    SafeClick();
+    AAsm::ReleaseMouse();
 
     int x = 0;
     int y = 0;
     int col = 0;
-    extern int __error_mode;
+    auto mainObject = __aInternalGlobal.mainObject;
+    auto currentIdx = mainObject->PlantNext();
     for (const auto& crood : lst) {
         col = int(crood.col + 0.5);
-        GridToCoordinate(crood.row, col, x, y);
-        std::printf("Game clock : %d ||", __main_object->gameClock());
-        if (__error_mode == CONSOLE) {
-            std::printf("Try Plant Card (%d) to (%d, %g) | ",
-                seed_index, crood.row, crood.col);
+        AGridToCoordinate(crood.row, col, x, y);
+        __aInternalGlobal.loggerPtr->Info(
+            "Try Plant Card (" + pattern + ") to (" + pattern + ", " + pattern + ")", seedIndex,
+            crood.row, crood.col);
+        AAsm::PlantCard(x, y, seedIndex - 1);
+        if (currentIdx != mainObject->PlantNext()) {
+            return mainObject->PlantArray() + currentIdx;
         }
-        Asm::plantCard(x, y, seed_index - 1);
     }
-    if (__error_mode == CONSOLE) {
-        std::printf("\n");
-    }
-    SafeClick();
+    AAsm::ReleaseMouse();
+    return nullptr;
 }
 
-int GetCardIndex(PlantType plant_type)
+int __ACardManager::GetCardIndex(APlantType plantType)
 {
-    if (__seed_name_to_index_map.empty()) {
-        auto seed = __main_object->seedArray();
-        if (__pvz_base->gameUi() == 3) {
-            int seed_counts = seed->count();
-            int seed_type;
-            std::pair<int, int> seed_info;
-            for (int i = 0; i < seed_counts; ++i, ++seed) {
-                seed_type = seed->type();
-                //如果是模仿者卡片
-                if (seed_type == 48) {
-                    seed_type = seed->imitatorType();
-                    seed_info.first = seed_type + 49;
-                    seed_info.second = i;
-                } else { // if(seed_info != 48)
-                    seed_info.first = seed_type;
-                    seed_info.second = i;
-                }
-                __seed_name_to_index_map.insert(seed_info);
-            }
-        }
-    }
-    auto it = __seed_name_to_index_map.find(plant_type);
-    if (it == __seed_name_to_index_map.end()) {
-        ShowErrorNotInQueue("你没有选择卡片代号为 # 的植物", plant_type);
+    auto&& pattern = __aInternalGlobal.loggerPtr->GetPattern();
+    auto it = _seedNameToIndexMap.find(plantType);
+    if (it == _seedNameToIndexMap.end()) {
+        __aInternalGlobal.loggerPtr->Error("你没有选择卡片代号为 " + pattern + " 的植物", plantType);
         return -1;
     } else {
         return it->second;
     }
 }
 
-void Card(int seed_index, int row, float col)
+APlant* __ACardManager::Card(int seedIndex, int row, float col)
 {
-    InsertOperation([=]() { CardNotInQueue(seed_index, row, col); },
-        "card");
+    return _BasicCard(seedIndex, row, col);
 }
 
-void Card(PlantType plant_type, int row, float col)
+APlant* __ACardManager::Card(APlantType plantType, int row, float col)
 {
-    InsertOperation([=]() {
-        int seed_index = GetCardIndex(plant_type);
-        if (seed_index == -1) {
-            return;
-        }
-        CardNotInQueue(seed_index + 1, row, col);
-    },
-        "card");
-}
-
-void Card(const std::vector<CardName>& lst)
-{
-    for (const auto& each : lst) {
-        Card(each.plant_type, each.row, each.col);
+    int seedIndex = GetCardIndex(plantType);
+    if (seedIndex == -1) {
+        return nullptr;
     }
+
+    return _BasicCard(seedIndex + 1, row, col);
 }
 
-void Card(int seed_index, const std::vector<Position>& lst)
+std::vector<APlant*> __ACardManager::Card(const std::vector<ACardName>& lst)
 {
-    InsertOperation([=]() { CardNotInQueue(seed_index, lst); },
-        "card");
+    std::vector<APlant*> vec;
+    for (const auto& each : lst) {
+        vec.push_back(Card(each.plantType, each.row, each.col));
+    }
+    return vec;
 }
 
-void Card(PlantType plant_type, const std::vector<Position>& lst)
+APlant* __ACardManager::Card(int seedIndex, const std::vector<APosition>& lst)
 {
-    InsertOperation([=]() {
-        int seed_index = GetCardIndex(plant_type);
-        if (seed_index == -1) {
-            return;
-        }
-        CardNotInQueue(seed_index + 1, lst);
-    },
-        "card");
+    return _BasicCard(seedIndex, lst);
 }
-} // namespace AvZ
+
+APlant* __ACardManager::Card(APlantType plantType, const std::vector<APosition>& lst)
+{
+    int seedIndex = GetCardIndex(plantType);
+    if (seedIndex == -1) {
+        return nullptr;
+    }
+    return _BasicCard(seedIndex + 1, lst);
+}
