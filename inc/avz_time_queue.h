@@ -120,6 +120,12 @@ __ANodiscard inline ATime ANowTime()
 }
 
 // 得到当前时间的延迟时间
+__ANodiscard inline int ANowDelayTime(int wave, int delayTime)
+{
+    return ANowTime(wave) + delayTime;
+}
+
+// 得到当前时间的延迟时间
 __ANodiscard inline ATime ANowDelayTime(int delayTime)
 {
     auto time = ANowTime();
@@ -148,5 +154,7 @@ inline void AAssumeWavelength(const std::vector<ATime>& lst)
 {
     __AOperationQueueManager::AssumeWavelength(lst);
 }
+
+inline __AOperationQueueManager __oqm; // AStateHook
 
 #endif

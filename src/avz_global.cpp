@@ -33,23 +33,17 @@ std::wstring AStrToWstr(const std::string& input)
     return m_wchar;
 }
 
-void AUtf8ToGbk(std::string& str)
+bool __AStateHookManager::_isRunBeforeScript = false;
+bool __AStateHookManager::_isRunAfterScript = false;
+bool __AStateHookManager::_isRunEnterFight = false;
+bool __AStateHookManager::_isRunExitFight = false;
+
+void __AStateHookManager::Init()
 {
-    int len = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, NULL, 0);
-    wchar_t* wszGBK = new wchar_t[len + 1];
-    memset(wszGBK, 0, len * 2 + 2);
-    MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, wszGBK, len);
-    len = WideCharToMultiByte(CP_ACP, 0, wszGBK, -1, NULL, 0, NULL, NULL);
-    char* szGBK = new char[len + 1];
-    memset(szGBK, 0, len + 1);
-    WideCharToMultiByte(CP_ACP, 0, wszGBK, -1, szGBK, len, NULL, NULL);
-    str = szGBK;
-    if (wszGBK) {
-        delete[] wszGBK;
-    }
-    if (szGBK) {
-        delete[] szGBK;
-    }
+    _isRunBeforeScript = false;
+    _isRunAfterScript = false;
+    _isRunEnterFight = false;
+    _isRunExitFight = false;
 }
 
 __AStateHookManager::HookContainer& __AStateHookManager::GetHookContainer()
@@ -60,24 +54,47 @@ __AStateHookManager::HookContainer& __AStateHookManager::GetHookContainer()
 
 void __AStateHookManager::RunBeforeScript()
 {
+    if (_isRunBeforeScript) {
+        return;
+    }
+    _isRunBeforeScript = true;
+
     for (auto&& stateHook : GetHookContainer()) {
         stateHook->BeforeScript();
     }
+    if (__aInternalGlobal.pvzBase->GameUi() == 3) { // 如果直接进战斗界面需要立即调用 RunEnterFight
+        RunEnterFight();
+    }
 }
+
 void __AStateHookManager::RunAfterScript()
 {
+    if (_isRunAfterScript) {
+        return;
+    }
+    _isRunAfterScript = true;
     for (auto&& stateHook : GetHookContainer()) {
         stateHook->AfterScript();
     }
 }
+
 void __AStateHookManager::RunEnterFight()
 {
+    if (_isRunEnterFight) {
+        return;
+    }
+    _isRunEnterFight = true;
     for (auto&& stateHook : GetHookContainer()) {
         stateHook->EnterFight();
     }
 }
+
 void __AStateHookManager::RunExitFight()
 {
+    if (_isRunExitFight) {
+        return;
+    }
+    _isRunExitFight = true;
     for (auto&& stateHook : GetHookContainer()) {
         stateHook->ExitFight();
     }

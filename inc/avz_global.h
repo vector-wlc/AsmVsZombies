@@ -25,7 +25,14 @@ public:
     static void RunAfterScript();
     static void RunEnterFight();
     static void RunExitFight();
+    static void Init();
     __ANodiscard static HookContainer& GetHookContainer();
+
+protected:
+    static bool _isRunBeforeScript;
+    static bool _isRunAfterScript;
+    static bool _isRunEnterFight;
+    static bool _isRunExitFight;
 };
 
 class __APublicStateHook {
@@ -36,7 +43,7 @@ public:
     }
 
     // 此函数会在 本框架 基本内存信息初始化完成后且调用 void Script() 之前运行
-    void virtual BeforeScript() {};
+    void virtual BeforeScript() { }
 
     // 此函数会在 本框架 调用 void Script() 之后运行
     void virtual AfterScript() { }
@@ -95,7 +102,7 @@ __ANodiscard auto AFindSameEle(std::vector<Ele>& container, const Ele& ele_) -> 
 }
 
 template <typename T>
-    requires __AIsNumber<T>
+requires __AIsNumber<T>
 void ALimitValue(T& value, T min_v, T max_v)
 {
     if (value < min_v) {

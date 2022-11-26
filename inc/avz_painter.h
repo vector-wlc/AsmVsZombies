@@ -122,7 +122,7 @@ public:
 };
 
 class __ADraw {
-    IDirectDrawSurface7* surface = nullptr;
+    IDirectDrawSurface7* _surface = nullptr;
 
 public:
     __ATextureNeedInfo textNeedInfo;
@@ -131,6 +131,7 @@ public:
     void DrawRect(int x, int y, int w, int h, DWORD color);
     __ATextureNeedInfo* GetTextureNeedInfo();
     bool Refresh();
+    bool IsOpen3dAcceleration();
 };
 
 class __AStaticPainter : public AStateHook {
@@ -163,14 +164,14 @@ public:
         }
     };
 
-    static bool _AsmDraw();
-    static bool _IsOk();
-    static void _DrawEveryTick();
-    static void _ClearFont();
-    static std::deque<DrawInfo> _drawInfoQueue;
-    static __ADraw _draw;
-    static std::unordered_map<wchar_t, __ATexture*> _textureDict;
-    static std::vector<std::vector<int>> _posDict;
+    static bool AsmDraw();
+    static bool IsOk();
+    static void DrawEveryTick();
+    static void ClearFont();
+    static std::deque<DrawInfo> drawInfoQueue;
+    static __ADraw draw;
+    static std::unordered_map<wchar_t, __ATexture*> textureDict;
+    static std::vector<std::vector<int>> posDict;
 
 protected:
     virtual void BeforeScript() override;
@@ -219,14 +220,12 @@ public:
     // ***使用示例
     // Draw(ARect(100, 100, 200, 200)) ------ 在游戏画面(100, 100) 处绘制宽高为 (200, 200) 的矩形, 默认显示 1cs
     // Draw(ARect(100, 100, 200, 200), 100) ------ 在游戏画面(100, 100) 处绘制宽高为 (200, 200) 的矩形, 显示 100cs
-    void Draw(const ARect& rect);
-    void Draw(const AText& posText);
-    void Draw(const ARect& rect, int duration);
-    void Draw(const AText& posText, int duration);
+    void Draw(const ARect& rect, int duration = 1);
+    void Draw(const AText& posText, int duration = 1);
 
 protected:
     DWORD _textColor = AArgb(0xff, 0, 0xff, 0xff);
     DWORD _rectColor = AArgb(0xaf, 0, 0, 0);
-    static __AStaticPainter __sp; // 用于生成绘制的 hook
+    static __AStaticPainter _aStaticPainter; // 用于生成绘制的 hook
 };
 #endif

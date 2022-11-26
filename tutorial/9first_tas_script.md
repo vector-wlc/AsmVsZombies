@@ -25,7 +25,6 @@
 
 void AScript()
 {
-    ASetGameSpeed(10);
     ASetZombies({
         ACG_3,  // 撑杆
         ATT_4,  // 铁桶

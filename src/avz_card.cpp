@@ -9,8 +9,6 @@ AMainObject* __ACardManager::_mainObject;
 APvzBase* __ACardManager::_pvzBase;
 int __ACardManager::_selectInterval = 17;
 
-__ACardManager __cm; // AStateHook
-
 void __ACardManager::EnterFight()
 {
     _seedNameToIndexMap.clear();

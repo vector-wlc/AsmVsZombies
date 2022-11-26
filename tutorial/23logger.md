@@ -124,11 +124,11 @@ protected:
     virtual void _Output(ALogLevel level, std::string&& str) override
     {
         if (level == ALogLevel::INFO) {
-            consoleLogger.Print(str);
+            consoleLogger.Info(str);
         } else if (level == ALogLevel::DEBUG) {
-            fileLogger.Print(str);
+            fileLogger.Debug(str);
         } else if (level == ALogLevel::ERROR) {
-            fileLogger.Print(str);
+            fileLogger.Error(str);
         } // 这里就不写 WARNING 的了，不写会导致 WARNING 没有输出
     }
 };

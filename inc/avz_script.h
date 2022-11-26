@@ -15,8 +15,6 @@ public:
     static bool isBlockable;
     static bool isLoaded;
     static bool isExit;
-    static bool isRunExitFight;
-    static bool isRunEnterFight;
     static const char* const STR_GAME_RET_MAIN_UI;
     static AReloadMode scriptReloadMode;
     static int waitUntilDepth;

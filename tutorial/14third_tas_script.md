@@ -33,7 +33,7 @@ void AScript()
         AM_ICE_SHROOM, // 模仿寒冰菇
         ACOFFEE_BEAN,  // 咖啡豆
         ADOOM_SHROOM,  // 毁灭菇
-        AFLOWER_POT,   // 荷叶
+        AFLOWER_POT,   // 花盆
         ASQUASH,       // 倭瓜
         ACHERRY_BOMB,  // 樱桃炸弹
         ABLOVER,       // 三叶草
@@ -51,6 +51,7 @@ void AScript()
         ATT_4,
         ALZ_2,
         APJ_0,
+        ABJ_20,
     });
 
     AConnect(ATime(1, -599), [] {

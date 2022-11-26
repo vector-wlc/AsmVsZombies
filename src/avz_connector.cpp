@@ -51,7 +51,6 @@ void __AConnectVec::ExitFight()
 
 std::vector<std::string> __AKeyManager::_keyVec;
 std::unordered_map<AKey, AConnectHandle> __AKeyManager::_keyMap;
-__AKeyManager __akm; // AStateHook
 
 __AKeyManager::KeyState __AKeyManager::ToVaildKey(AKey& key)
 {

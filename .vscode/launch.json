@@ -7,7 +7,7 @@
             "processId": "${command:AsmVsZombies.getPvzProcessId}",
             "program": "${command:AsmVsZombies.getPvzExePath}",
             "MIMode": "gdb",
-            "miDebuggerPath": "H:\\Game\\PvZ\\AvZTest\\AsmVsZombies\\MinGW\\bin\\gdb32.exe",
+            "miDebuggerPath": "D:\\AsmVsZombies\\MinGW\\bin\\gdb32.exe",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",

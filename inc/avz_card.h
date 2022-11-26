@@ -38,6 +38,8 @@ protected:
     virtual void EnterFight() override;
 };
 
+inline __ACardManager __cm; // AStateHook
+
 // 选择一堆卡片
 // ***注意：卡片名称与英文原版图鉴一致
 // *** 使用示例：

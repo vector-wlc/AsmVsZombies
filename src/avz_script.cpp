@@ -12,8 +12,6 @@ bool __AScriptManager::isBlocked = false;
 bool __AScriptManager::isBlockable = true;
 bool __AScriptManager::isLoaded = false;
 bool __AScriptManager::isExit = false;
-bool __AScriptManager::isRunExitFight = false;
-bool __AScriptManager::isRunEnterFight = false;
 const char* const __AScriptManager::STR_GAME_RET_MAIN_UI = "game return main ui";
 AReloadMode __AScriptManager::scriptReloadMode = AReloadMode::NONE;
 int __AScriptManager::waitUntilDepth = 0;
@@ -33,13 +31,13 @@ void __AScriptManager::LoadScript()
     if (mainObject->LoadDataState() == 1) {
         return;
     }
-    isRunEnterFight = false;
-    isRunExitFight = false;
+
     isLoaded = true;
     isBlocked = true;
     static ALogger<AMsgBox> logger;
     logger.SetLevel({ALogLevel::ERROR, ALogLevel::WARNING});
     __aInternalGlobal.loggerPtr = &logger;
+    __AStateHookManager::Init();
     __AStateHookManager::RunBeforeScript();
     void AScript();
     AScript();
@@ -60,10 +58,7 @@ void __AScriptManager::LoadScript()
         AAsm::GameSleepLoop();
     }
 
-    if (!isRunExitFight) {
-        isRunExitFight = true;
-        __AStateHookManager::RunExitFight();
-    }
+    __AStateHookManager::RunExitFight();
 
     if (scriptReloadMode != AReloadMode::MAIN_UI_OR_FIGHT_UI) {
         // 如果战斗界面不允许重新注入则等待回主界面
@@ -74,6 +69,7 @@ void __AScriptManager::LoadScript()
 
     // 当递归深度为 0 和 scriptReloadMode > 0 时, 才能重置 isLoaded
     isLoaded = !(int(scriptReloadMode) > 0 && waitUntilDepth == 0);
+    isExit = isLoaded;
 }
 
 void __AScriptManager::RunScript()
@@ -99,10 +95,8 @@ void __AScriptManager::RunScript()
 
     // 下面的代码只能在战斗界面运行
 
-    if (!isRunEnterFight) {
-        isRunEnterFight = true;
-        __AStateHookManager::RunEnterFight();
-    }
+    __AStateHookManager::RunEnterFight();
+
     auto mainObject = __aInternalGlobal.mainObject;
     if (mainObject->Wave() != mainObject->TotalWave()) {
         __AOperationQueueManager::UpdateRefreshTime();
@@ -135,11 +129,12 @@ void __AScriptManager::Run()
         }
         exceMsg += '\n';
         __aInternalGlobal.loggerPtr->Info(exceMsg.c_str());
-        if (!isRunExitFight) {
-            __AStateHookManager::RunExitFight();
-        }
+
+        __AStateHookManager::RunExitFight();
+
         // 当递归深度为 0 和 scriptReloadMode > 0 时, 才能重置 isLoaded
         isLoaded = !(int(scriptReloadMode) > 0 && waitUntilDepth == 0);
+        isExit = isLoaded;
     } catch (...) {
         __aInternalGlobal.loggerPtr->Error("脚本触发了一个未知的异常\n");
         isExit = true;

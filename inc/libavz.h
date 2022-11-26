@@ -28,7 +28,7 @@
 // #include "avz_types.h"
 // #include "avz_painter.h"
 
-extern AItemCollector aItemCollector;
+inline AItemCollector aItemCollector;
 extern AIceFiller aIceFiller;
 extern APlantFixer aPlantFixer;
 extern ACobManager aCobManager;

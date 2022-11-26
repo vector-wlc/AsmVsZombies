@@ -32,7 +32,7 @@ void AScript()
     // 注意由于第二次进入游戏会导致核无法正常种下
     // 所以 AAssumeWavelength 会报 N 个错误
     ASetReloadMode(AReloadMode::MAIN_UI_OR_FIGHT_UI);
-    ASetZombies({APJ_0, ATT_4, AWW_8, AQS_11, ABC_12, AXC_15, AKG_17, AHT_14, AFT_21, ABY_23, AHY_32});
+    ASetZombies({APJ_0, ATT_4, AWW_8, AQS_11, ABC_12, AXC_15, AKG_17, AHT_14, AFT_21, ABY_23, AHY_32,ABJ_20});
     ASelectCards({AICE_SHROOM, AM_ICE_SHROOM, ACOFFEE_BEAN, ADOOM_SHROOM, ALILY_PAD, ASQUASH, ACHERRY_BOMB, ABLOVER, APUMPKIN, APUFF_SHROOM});
     AAssumeWavelength({
         ATime(1, 601),

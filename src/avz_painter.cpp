@@ -5,19 +5,20 @@
  * @Description:
  */
 #include "avz_painter.h"
+#include "avz_logger.h"
 
-__AStaticPainter APainter::__sp; // 用于生成绘制的 hook
+__AStaticPainter APainter::_aStaticPainter;
 
 void APainter::SetFont(const std::string& name)
 {
-    __AStaticPainter::_draw.fontName = AStrToWstr(name);
-    __AStaticPainter::_ClearFont();
+    __AStaticPainter::draw.fontName = AStrToWstr(name);
+    __AStaticPainter::ClearFont();
 }
 
 void APainter::SetFontSize(int size)
 {
-    __AStaticPainter::_draw.fontSize = size;
-    __AStaticPainter::_ClearFont();
+    __AStaticPainter::draw.fontSize = size;
+    __AStaticPainter::ClearFont();
 }
 
 void APainter::SetTextColor(DWORD color)
@@ -40,35 +41,34 @@ DWORD APainter::GetTextColor()
     return _rectColor;
 }
 
-void APainter::Draw(const ARect& rect)
-{
-    Draw(rect, 1);
-}
-
-void APainter::Draw(const AText& posText)
-{
-    Draw(posText, 1);
-}
-
 void APainter::Draw(const ARect& rect, int duration)
 {
+    if (!_aStaticPainter.draw.IsOpen3dAcceleration()) {
+        __aInternalGlobal.loggerPtr->Warning("您尚未开启 3D 加速，无法使用绘制类");
+        return;
+    }
     __AStaticPainter::DrawInfo info;
-    info.rect.x += info.rect.width * __AStaticPainter::_posDict[int(info.rect.pos)][0];
-    info.rect.y += info.rect.height * __AStaticPainter::_posDict[int(info.rect.pos)][1];
+    info.rect = rect;
+    info.rect.x += info.rect.width * __AStaticPainter::posDict[int(rect.pos)][0];
+    info.rect.y += info.rect.height * __AStaticPainter::posDict[int(rect.pos)][1];
     info.duration = duration;
     info.rectColor = _rectColor;
-    __AStaticPainter::_drawInfoQueue.emplace_back(std::move(info));
+    __AStaticPainter::drawInfoQueue.emplace_back(std::move(info));
 }
 
 void APainter::Draw(const AText& posText, int duration)
 {
+    if (!_aStaticPainter.draw.IsOpen3dAcceleration()) {
+        __aInternalGlobal.loggerPtr->Warning("您尚未开启 3D 加速，无法使用绘制类");
+        return;
+    }
     if (posText.text.empty()) {
         return;
     }
     __AStaticPainter::DrawInfo info;
     std::wstring lineText;
     auto wText = AStrToWstr(posText.text);
-    int fontSize = __AStaticPainter::_draw.fontSize;
+    int fontSize = __AStaticPainter::draw.fontSize;
     int textRightX = posText.x;
     int width = 0;
 
@@ -101,87 +101,87 @@ void APainter::Draw(const AText& posText, int duration)
 
     if (posText.isHasBkg) {
         info.rect.width = width;
-        info.rect.height = info.textVec.size() * __AStaticPainter::_draw.fontSize;
-        info.rect.x = posText.x + info.rect.width * __AStaticPainter::_posDict[int(posText.pos)][0];
-        info.rect.y = posText.y + info.rect.height * __AStaticPainter::_posDict[int(posText.pos)][1];
+        info.rect.height = info.textVec.size() * __AStaticPainter::draw.fontSize;
+        info.rect.x = posText.x + info.rect.width * __AStaticPainter::posDict[int(posText.pos)][0];
+        info.rect.y = posText.y + info.rect.height * __AStaticPainter::posDict[int(posText.pos)][1];
         info.rectColor = _rectColor;
     } else { // 不绘制背景，将宽度设置为 -1
         info.rect.width = -1;
     }
     info.duration = duration;
     info.textColor = _textColor;
-    __AStaticPainter::_drawInfoQueue.emplace_back(std::move(info));
+    __AStaticPainter::drawInfoQueue.emplace_back(std::move(info));
 }
 
-std::deque<__AStaticPainter::DrawInfo> __AStaticPainter::_drawInfoQueue;
-__ADraw __AStaticPainter::_draw;
-std::unordered_map<wchar_t, __ATexture*> __AStaticPainter::_textureDict;
-std::vector<std::vector<int>> __AStaticPainter::_posDict = {
+std::deque<__AStaticPainter::DrawInfo> __AStaticPainter::drawInfoQueue;
+__ADraw __AStaticPainter::draw;
+std::unordered_map<wchar_t, __ATexture*> __AStaticPainter::textureDict;
+std::vector<std::vector<int>> __AStaticPainter::posDict = {
     {0, -1},
     {0, 0},
     {-1, -1},
     {-1, 0},
 };
 
-void __AStaticPainter::_ClearFont()
+void __AStaticPainter::ClearFont()
 {
-    DeleteObject(_draw.textNeedInfo.HFont);
-    _draw.textNeedInfo.HFont = nullptr;
+    DeleteObject(draw.textNeedInfo.HFont);
+    draw.textNeedInfo.HFont = nullptr;
     // free texture memory
-    for (auto&& obj : _textureDict) {
+    for (auto&& obj : textureDict) {
         delete obj.second;
     }
-    _textureDict.clear();
+    textureDict.clear();
 }
 
-bool __AStaticPainter::_IsOk()
+bool __AStaticPainter::IsOk()
 {
     static int recordClock = 0;
     static bool isOk = false;
     int gameClock = __aInternalGlobal.mainObject->GlobalClock();
     if (gameClock != recordClock) { // 一帧刷新一次
         recordClock = gameClock;
-        isOk = _draw.Refresh();
+        isOk = draw.Refresh();
     }
     return isOk;
 }
 
-void __AStaticPainter::_DrawEveryTick()
+void __AStaticPainter::DrawEveryTick()
 {
-    if (!_IsOk()) {
+    if (!IsOk()) {
         return;
     }
 
-    while (!_drawInfoQueue.empty()) {
-        if (_drawInfoQueue.front().duration <= 0) { // 释放已经不显示的内存
-            _drawInfoQueue.pop_front();
+    while (!drawInfoQueue.empty()) {
+        if (drawInfoQueue.front().duration <= 0) { // 释放已经不显示的内存
+            drawInfoQueue.pop_front();
         } else {
             break;
         }
     }
 
-    for (auto&& info : _drawInfoQueue) {
+    for (auto&& info : drawInfoQueue) {
         if (info.duration <= 0) {
             continue;
         }
         if (info.rect.width != -1) { // 需要绘制矩形
-            _draw.DrawRect(info.rect.x, info.rect.y, info.rect.width, info.rect.height, info.rectColor);
+            draw.DrawRect(info.rect.x, info.rect.y, info.rect.width, info.rect.height, info.rectColor);
         }
         if (!info.textVec.empty()) { // 需要绘制字符串
             int y = info.rect.y;
             for (auto&& wstr : info.textVec) {
                 int x = info.rect.x;
                 for (auto&& ch : wstr) { // 绘制一行
-                    auto iter = _textureDict.find(ch);
-                    if (iter == _textureDict.end()) { // 将字符串存入字典
-                        auto texPtr = new __ATexture(ch, _draw.GetTextureNeedInfo());
-                        _textureDict[ch] = texPtr;
+                    auto iter = textureDict.find(ch);
+                    if (iter == textureDict.end()) { // 将字符串存入字典
+                        auto texPtr = new __ATexture(ch, draw.GetTextureNeedInfo());
+                        textureDict[ch] = texPtr;
                     }
 
-                    _textureDict[ch]->Draw(info.textColor, x, y);
-                    x += ch > 0xff ? _draw.fontSize : _draw.fontSize / 2 + 1;
+                    textureDict[ch]->Draw(info.textColor, x, y);
+                    x += ch > 0xff ? draw.fontSize : draw.fontSize / 2 + 1;
                 }
-                y += _draw.fontSize;
+                y += draw.fontSize;
             }
         }
         --info.duration;
@@ -190,17 +190,23 @@ void __AStaticPainter::_DrawEveryTick()
 
 void __AStaticPainter::BeforeScript()
 {
+    if (!draw.IsOpen3dAcceleration()) {
+        return;
+    }
     // InstallDrawHook
     *(uint16_t*)0x54C8CD = 0x5890;
-    *(uint32_t*)0x667D0C = (uint32_t)&_AsmDraw;
-    *(uint32_t*)0x671578 = (uint32_t)&_AsmDraw;
-    *(uint32_t*)0x676968 = (uint32_t)&_AsmDraw;
+    *(uint32_t*)0x667D0C = (uint32_t)&AsmDraw;
+    *(uint32_t*)0x671578 = (uint32_t)&AsmDraw;
+    *(uint32_t*)0x676968 = (uint32_t)&AsmDraw;
 }
 
 void __AStaticPainter::ExitFight()
 {
-    _ClearFont();
-    _drawInfoQueue.clear();
+    if (!draw.IsOpen3dAcceleration()) {
+        return;
+    }
+    ClearFont();
+    drawInfoQueue.clear();
     // UninstallDrawHook
     *(uint16_t*)0x54C8CD = 0xD0FF;
     *(uint32_t*)0x667D0C = 0x54C650;
@@ -208,7 +214,7 @@ void __AStaticPainter::ExitFight()
     *(uint32_t*)0x676968 = 0x54C650;
 }
 
-bool __AStaticPainter::_AsmDraw()
+bool __AStaticPainter::AsmDraw()
 {
     static int __x = 0;
 
@@ -225,7 +231,7 @@ bool __AStaticPainter::_AsmDraw()
         :);
 
     if (__x) {
-        _DrawEveryTick();
+        DrawEveryTick();
         __asm__ __volatile__(
             "pushal;"
             "pushl $0;"
@@ -381,7 +387,7 @@ __ATextureNeedInfo* __ADraw::GetTextureNeedInfo()
     return &textNeedInfo;
 }
 
-bool __ADraw::Refresh()
+bool __ADraw::IsOpen3dAcceleration()
 {
     auto p2 = __aInternalGlobal.pvzBase->MPtr<APvzStruct>(0x36C);
     if (!p2) {
@@ -391,9 +397,19 @@ bool __ADraw::Refresh()
     if (!p3) {
         return false;
     }
-    surface = p3->MPtr<IDirectDrawSurface7>(0x14);
+    _surface = p3->MPtr<IDirectDrawSurface7>(0x14);
     textNeedInfo.device = p3->MPtr<IDirect3DDevice7>(0x20);
     textNeedInfo.ddraw = p3->MPtr<IDirectDraw7>(0x10);
+    return (_surface != nullptr &&        //
+        textNeedInfo.device != nullptr && //
+        textNeedInfo.ddraw != nullptr);
+}
+
+bool __ADraw::Refresh()
+{
+    if (!IsOpen3dAcceleration()) {
+        return false;
+    }
     textNeedInfo.device->SetRenderState(D3DRENDERSTATE_SRCBLEND, D3DBLEND_SRCALPHA);
     textNeedInfo.device->SetRenderState(D3DRENDERSTATE_DESTBLEND, D3DBLEND_INVSRCALPHA);
     textNeedInfo.device->SetTextureStageState(0, D3DTSS_MINFILTER, D3DTFG_POINT);

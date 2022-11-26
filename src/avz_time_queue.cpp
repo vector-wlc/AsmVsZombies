@@ -7,8 +7,6 @@
 #include "avz_time_queue.h"
 #include "avz_connector.h"
 
-__AOperationQueueManager __oqm; // AStateHook
-
 void __AOperationQueueManager::_SetRefreshTime(int wave, int refreshTime)
 {
     auto queueIter = opQueueContainer.begin() + wave;

@@ -65,7 +65,7 @@ inline void AIce3(int delayTime)
     ASetPlantActiveTime(AICE_SHROOM, delayTime);
 }
 
-// 设置出怪 此函数不管填不填蹦极都会在 wave 10 20 刷蹦极！！！！！！！！！！！！
+// 设置出怪
 // 参数命名规则：与英文原版图鉴名称一致
 // *** 使用示例：
 // ASetZombies({
@@ -88,7 +88,7 @@ inline void AIce3(int delayTime)
 //     AZOMBONI,
 // });
 // 设置出怪类型为：铁桶 冰车 并且两种僵尸的比例为 1：2
-void ASetZombies(const std::vector<int>& zombie_type);
+void ASetZombies(const std::vector<int>& zombieType);
 
 // 参数命名规则：与英文原版图鉴名称一致
 // *** 使用示例：
@@ -112,7 +112,7 @@ void ASetZombies(const std::vector<int>& zombie_type);
 //     AZOMBONI,
 // });
 // 设置第一波出怪类型为：铁桶 冰车 并且两种僵尸的比例为 1：2
-void ASetWaveZombies(int wave, const std::vector<int>& zombie_type);
+void ASetWaveZombies(int wave, const std::vector<int>& zombieType);
 
 // *** 使用示例：
 // 检查当前出怪中是否有红眼：
@@ -121,13 +121,15 @@ void ASetWaveZombies(int wave, const std::vector<int>& zombie_type);
 // if(isHasHongYan){
 //      // 如果有红眼干啥
 // }
-__ANodiscard uint8_t* AGetZombieTypeList();
+__ANodiscard bool* AGetZombieTypeList();
 
 class __AGameSpeedManager : public AStateHook {
 public:
     static void Set(float x);
 
 protected:
+    int _oriTickMs = 10;
+    virtual void BeforeScript() override;
     virtual void ExitFight() override;
 };
 
@@ -178,4 +180,7 @@ protected:
         Stop();
     }
 };
+
+inline __AGameSpeedManager __agsm; // AStateHook
+inline AMaidCheats __amc;          // AStateHook
 #endif

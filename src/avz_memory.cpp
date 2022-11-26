@@ -166,19 +166,28 @@ void AUpdateZombiesPreview()
     __aInternalGlobal.mainObject->SelectCardUi_m()->IsCreatZombie() = false;
 }
 
-void ASetZombies(const std::vector<int>& zombie_type)
+void ASetZombies(const std::vector<int>& zombieType)
 {
-    std::vector<int> zombie_type_vec;
+    std::vector<int> zombieTypeVec;
+    bool isHasBungee = false;
 
-    for (const auto& type : zombie_type) {
+    // 设置出怪类型列表
+    auto typeList = AGetMainObject()->ZombieTypeList();
+    std::fill_n(typeList, AHY_32 + 1, 0);
+
+    for (const auto& type : zombieType) {
+        typeList[type] = true;
+        if (type == ABJ_20) {
+            isHasBungee = true;
+        }
         // 做一些处理，出怪生成不应大量含有 旗帜 舞伴 雪橇小队 雪人 蹦极 小鬼
         if (!ARangeIn(type, {AQZ_1, ABW_9, AXQ_13, AXR_19, ABJ_20, AXG_24})) {
-            zombie_type_vec.push_back(type);
+            zombieTypeVec.push_back(type);
         }
     }
-    auto zombie_list = __aInternalGlobal.mainObject->ZombieList();
-    for (int index = 0; index < 1000; ++index, ++zombie_list) {
-        (*zombie_list) = zombie_type_vec[index % zombie_type_vec.size()];
+    auto zombieList = __aInternalGlobal.mainObject->ZombieList();
+    for (int index = 0; index < 1000; ++index, ++zombieList) {
+        (*zombieList) = zombieTypeVec[index % zombieTypeVec.size()];
     }
 
     // 生成旗帜
@@ -186,9 +195,11 @@ void ASetZombies(const std::vector<int>& zombie_type)
         (*(__aInternalGlobal.mainObject->ZombieList() + index)) = AQZ_1;
     }
 
-    // 生成蹦极
-    for (auto index : {451, 452, 453, 454, 951, 952, 953, 954}) {
-        (*(__aInternalGlobal.mainObject->ZombieList() + index)) = ABJ_20;
+    if (isHasBungee) {
+        // 生成蹦极
+        for (auto index : {451, 452, 453, 454, 951, 952, 953, 954}) {
+            (*(__aInternalGlobal.mainObject->ZombieList() + index)) = ABJ_20;
+        }
     }
 
     if (__aInternalGlobal.pvzBase->GameUi() == 2) {
@@ -196,35 +207,50 @@ void ASetZombies(const std::vector<int>& zombie_type)
     }
 }
 
-void ASetWaveZombies(int wave, const std::vector<int>& zombie_type)
+void ASetWaveZombies(int wave, const std::vector<int>& zombieType)
 {
-    std::vector<int> zombie_type_vec;
-
-    for (const auto& type : zombie_type) {
+    std::vector<int> zombieTypeVec;
+    bool isHasBungee = false;
+    for (const auto& type : zombieType) {
+        if (type == ABJ_20) {
+            isHasBungee = wave % 10 == 0; // 大波才能出蹦极
+        }
         // 做一些处理，出怪生成不应大量含有 旗帜 舞伴 雪橇小队 雪人 蹦极 小鬼
         if (!ARangeIn(type, {AQZ_1, ABW_9, AXQ_13, AXR_19, ABJ_20, AXG_24})) {
-            zombie_type_vec.push_back(type);
+            zombieTypeVec.push_back(type);
         }
     }
-    auto zombie_list = __aInternalGlobal.mainObject->ZombieList() + (wave - 1) * 50;
-    for (int index = 0; index < 50; ++index, ++zombie_list) {
-        (*zombie_list) = zombie_type_vec[index % zombie_type_vec.size()];
+    auto zombieList = __aInternalGlobal.mainObject->ZombieList() + (wave - 1) * 50;
+    for (int index = 0; index < 50; ++index, ++zombieList) {
+        (*zombieList) = zombieTypeVec[index % zombieTypeVec.size()];
     }
 
     // 生成旗帜
     for (auto index : {450, 950}) {
         (*(__aInternalGlobal.mainObject->ZombieList() + index)) = AQZ_1;
     }
+
+    if (isHasBungee) {
+        // 生成蹦极
+        for (auto index : {451, 452, 453, 454, 951, 952, 953, 954}) {
+            (*(__aInternalGlobal.mainObject->ZombieList() + index)) = ABJ_20;
+        }
+    }
 }
 
-uint8_t* AGetZombieTypeList()
+bool* AGetZombieTypeList()
 {
     return __aInternalGlobal.mainObject->ZombieTypeList();
 }
 
+void __AGameSpeedManager::BeforeScript()
+{
+    _oriTickMs = __aInternalGlobal.pvzBase->TickMs();
+}
+
 void __AGameSpeedManager::ExitFight()
 {
-    __aInternalGlobal.pvzBase->TickMs() = 10;
+    __aInternalGlobal.pvzBase->TickMs() = _oriTickMs;
 }
 
 void __AGameSpeedManager::Set(float x)
@@ -237,7 +263,3 @@ void __AGameSpeedManager::Set(float x)
     int ms = int(10 / x + 0.5);
     __aInternalGlobal.pvzBase->TickMs() = ms;
 }
-
-__AGameSpeedManager __agsm; // AStateHook
-
-AMaidCheats __amc; // AStateHook

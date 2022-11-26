@@ -71,6 +71,38 @@ auto timeHandle = AConnect(ATime(1, 1), []{});
 timeHandle.Stop();  // 使建立的连接的失效，但是没有 Pause 这些成员
 ```
 
+关于时间连接还有两个不得不介绍的函数，那就是 `ANowTime` 和 `ANowDelayTime` ,
+
+```C++
+// ANowTime 会返回当前的游戏时间点
+
+// 无参调用形式返回值类型为 ATime
+// 如果当前游戏不在战斗界面，他将会返回 (1, INT_MIN) 这么一个特殊的时间点，
+// 如果游戏在战斗界面，他将会返回 (游戏目前波数，波数对应的时间点)
+ANowTime();
+
+// 返回第五波对应的时间点
+// 有参调用形式返回值类型为 int
+ANowTime(5);
+
+// ANowDelayTime 会返回以当前时间点为基准，延迟 参数cs 之后的时间点
+
+// 仅指定 delayTime 的返回值类型为 ATime
+// 假如现在的时间点是 (1, 0)，那么此函数返回值为 ATime(1, 50)
+ANowDelayTime(50);
+
+// 指定波数和 delayTime 的返回值类型为 int
+// 假如现在的时间点是 (5, -150)，那么此函数返回值为 -100
+ANowDelayTime(5, 50);
+
+```
+
+```C++
+// 按下 Q 后过 100cs 种下一张卡
+AConnect('Q', [] {
+    AConnect(ANowDelayTime(100), [] { ACard(1, 1, 1); });
+});
+```
 除了最基础的 AConnect(ATime(1, 1), []{}) 这种调用方式，对于时间连接 AConnect 还有下面几种方式
 
 ```C++

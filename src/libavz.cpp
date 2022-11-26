@@ -6,7 +6,6 @@
  */
 #include "libavz.h"
 
-AItemCollector aItemCollector;
 AIceFiller aIceFiller;
 APlantFixer aPlantFixer;
 ACobManager aCobManager;

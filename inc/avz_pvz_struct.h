@@ -343,9 +343,9 @@ public:
     }
 
     // 出怪种类列表
-    __ANodiscard uint8_t* ZombieTypeList() noexcept
+    __ANodiscard bool* ZombieTypeList() noexcept
     {
-        return MVal<uint8_t*>(0x54d4);
+        return MVal<bool*>(0x54d4);
     }
 
     // 文字信息

@@ -188,6 +188,8 @@ protected:
     }
 };
 
+inline __AKeyManager __akm; // AStateHook
+
 template <typename Op>
     requires __AIsOperation<Op>
 AConnectHandle AConnect(AKey key, Op&& op)
