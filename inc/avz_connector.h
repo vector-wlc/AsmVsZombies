@@ -12,12 +12,12 @@
 #include "avz_tick_runner.h"
 #include "avz_time_queue.h"
 
-class __AConnectVec : public AStateHook {
+class __AConnectVec : public AOrderedStateHook<-1> {
 public:
     std::vector<ATickRunnerWithNoStart*> tickVec;
 
 protected:
-    void virtual ExitFight() override;
+    virtual void _ExitFight() override;
 };
 
 class ATimeConnectHandle {
@@ -160,7 +160,7 @@ AConnectHandle AConnect(Pre&& pre, Op&& op, bool isInGlobal = false)
     return tick;
 }
 
-class __AKeyManager : public AStateHook {
+class __AKeyManager : public AOrderedStateHook<-1> {
 
 public:
     enum KeyState {
@@ -182,7 +182,7 @@ public:
 protected:
     static std::vector<std::string> _keyVec;
     static std::unordered_map<AKey, AConnectHandle> _keyMap;
-    void virtual ExitFight() override
+    virtual void _ExitFight() override
     {
         _keyMap.clear();
     }

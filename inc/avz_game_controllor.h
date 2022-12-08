@@ -9,7 +9,7 @@
 
 #include "avz_logger.h"
 
-class __AGameControllor : public AStateHook {
+class __AGameControllor : public AOrderedStateHook<-1> {
 public:
     static bool isAdvancedPaused;
     static APredication isSkipTick;
@@ -19,17 +19,11 @@ public:
     static void SkipTick(
         Pre&& pre, CallBack&& callback)
     {
-        if (isAdvancedPaused) {
-            __aInternalGlobal.loggerPtr->Error("开启高级暂停不能启用跳帧");
+        if (!_CheckSkipTick()) {
             return;
         }
-
-        if (isSkipTick()) {
-            __aInternalGlobal.loggerPtr->Error("请等待上一个跳帧条件达到后的下一帧再设定跳帧条件");
-            return;
-        }
-
-        isSkipTick = [pre = std::forward<Pre>(pre), callback = std::forward<CallBack>(callback)]() mutable {
+        isSkipTick = [pre = std::forward<Pre>(pre), //
+                         callback = std::forward<CallBack>(callback)]() mutable {
             auto gameUi = __aInternalGlobal.pvzBase->GameUi();
             if (gameUi == 3 && pre()) {
                 return true;
@@ -50,12 +44,14 @@ public:
     static void SkipTick(int wave, int time);
 
 protected:
-    virtual void ExitFight() override
+    virtual void _ExitFight() override
     {
         isSkipTick = []() -> bool {
             return false;
         };
     }
+
+    static bool _CheckSkipTick();
 };
 
 // 跳到游戏指定时刻

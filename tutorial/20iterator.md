@@ -9,12 +9,12 @@
 
 在对植物僵尸的数组进行遍历时，我们常常需要使用以下语句
 ```C++
-int zombieTotal = GetMainObject()->ZombieTotal();
-auto zombieArray = GetMainObject()->ZombieArray();
+int zombieTotal = AGetMainObject()->ZombieTotal();
+auto zombieArray = AGetMainObject()->ZombieArray();
 
 for (int idx = 0; idx < zombieTotal; ++idx) {
-    if (!zombieArray[idx].isDisappeared() && !zombieArray[idx].isDead()) {
-        if(zombie[idx].type() == HY_32){
+    if (!zombieArray[idx].IsDisappeared() && !zombieArray[idx].IsDead()) {
+        if(zombie[idx].Type() == AHY_32){
             // some code
         }
     }
@@ -28,7 +28,7 @@ for (int idx = 0; idx < zombieTotal; ++idx) {
 ```C++
 AAliveFilter<Zombie> zombieFilter;
 for (auto&& zombie : zombieFilter) {
-    if (zombie.type() == HY_32) {
+    if (zombie.Type() == AHY_32) {
         // some code
     }
 }
@@ -44,7 +44,7 @@ for (auto&& zombie : zombieFilter) {
 写出一套可读性很好的代码也是水平的一种体现。
 ```C++
 for (auto&& zombie : AAliveFilter<Zombie>()) {
-    if (zombie.type() == HY_32) {
+    if (zombie.Type() == AHY_32) {
         // some code
     }
 }
@@ -53,7 +53,7 @@ for (auto&& zombie : AAliveFilter<Zombie>()) {
 这就是使用对象迭代器的亿些好处，除此之外，对象迭代器依然有其他功能，比如可将判断僵尸是否是红眼的代码写在过滤器的构造函数中
 ```C++
 AAliveFilter<Zombie> zombieFilter([](Zombie* zombie) {
-    return zombie->type() == HY_32;
+    return zombie->Type() == AHY_32;
 });
 
 for (auto&& zombie : zombieFilter) {
@@ -69,7 +69,7 @@ for (auto&& zombie : zombieFilter) {
 ```C++
 ABasicFilter<Zombie> zombieFilter;
 for (auto&& zombie : zombieFilter) {
-    if (!zombie.IsDisappeared() && !zombie.IsDead() && zombie.Type() == HY_32) {
+    if (!zombie.IsDisappeared() && !zombie.IsDead() && zombie.Type() == AHY_32) {
         // some code
     }
 }
@@ -77,8 +77,8 @@ for (auto&& zombie : zombieFilter) {
 
 查看这段代码，你可能心里会想，这不就是最原始普通的遍历加上了一个范围for循环吗，好像确实如此，但是当你在构造函数中添加亿些条件看起来也许就不那么一样了
 ```C++
-ABasicFilter<Zombie> zombieFilter([](Zombie* zombie) {
-    return !zombie->IsDisappeared() && !zombie->IsDead() && zombie->Type() == HY_32;
+ABasicFilter<AZombie> zombieFilter([](AZombie* zombie) {
+    return !zombie->IsDisappeared() && !zombie->IsDead() && zombie->Type() == AHY_32;
 });
 
 for (auto&& zombie : zombieFilter) {

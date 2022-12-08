@@ -7,63 +7,53 @@
 #ifndef __AVZ_TICK_RUNNER_H__
 #define __AVZ_TICK_RUNNER_H__
 
-#include "avz_global.h"
 #include "avz_logger.h"
+#include "avz_memory.h"
 
-class __ATickQueue : public AStateHook {
-public:
-    struct __ATickOperation {
-        AOperation operation;
-        bool isInGlobal;
-        bool isRunning = true;
+struct __ATickOperation {
+    AOperation operation;
+    bool isInGlobal;
+    bool isRunning = true;
 
-        __ATickOperation(AOperation&& opertaion, bool isInGlobal)
-            : operation(std::move(opertaion))
-            , isInGlobal(isInGlobal)
-        {
-        }
-
-        __ATickOperation(__ATickOperation&& rhs)
-        {
-            this->operation = std::move(rhs.operation);
-            this->isInGlobal = rhs.isInGlobal;
-        }
-
-        __ATickOperation& operator=(__ATickOperation&& rhs)
-        {
-            this->operation = std::move(rhs.operation);
-            this->isInGlobal = rhs.isInGlobal;
-            return *this;
-        }
-
-        __ATickOperation& operator=(const __ATickOperation& rhs)
-        {
-            this->operation = rhs.operation;
-            this->isInGlobal = rhs.isInGlobal;
-            return *this;
-        }
-    };
-
-    using Queue = std::vector<__ATickOperation>;
-    Queue queue;
-    void RunAll();
-    void RunOnlyInGlobal();
-
-protected:
-    void virtual ExitFight() override
+    __ATickOperation(AOperation&& opertaion, bool isInGlobal)
+        : operation(std::move(opertaion))
+        , isInGlobal(isInGlobal)
     {
-        queue.clear();
+    }
+
+    __ATickOperation(__ATickOperation&& rhs)
+    {
+        this->operation = std::move(rhs.operation);
+        this->isInGlobal = rhs.isInGlobal;
+    }
+
+    __ATickOperation& operator=(__ATickOperation&& rhs)
+    {
+        this->operation = std::move(rhs.operation);
+        this->isInGlobal = rhs.isInGlobal;
+        return *this;
+    }
+
+    __ATickOperation& operator=(const __ATickOperation& rhs)
+    {
+        this->operation = rhs.operation;
+        this->isInGlobal = rhs.isInGlobal;
+        return *this;
     }
 };
 
-class __ATickManager : public AStateHook {
+class __ATickManager : public AOrderedStateHook<INT_MIN> {
 protected:
-    int _idx;
+    int _idx = INT_MAX;
     bool _isPaused = false;
     bool _isRunning = false;
 
 public:
-    static __ATickQueue tickQueue;
+    using Queue = std::vector<__ATickOperation>;
+    static Queue queue;
+
+    static void RunAll();
+    static void RunOnlyInGlobal();
 
     template <typename Op>
         requires __AIsOperation<Op>
@@ -75,23 +65,12 @@ public:
         _isRunning = true;
         _isPaused = false;
         auto&& tmp = [this, operation = std::forward<Op>(operation)]() mutable {
-            auto&& noWindow = [] {
-                auto window = __aInternalGlobal.pvzBase->MouseWindow();
-                if (!window) {
-                    return true;
-                }
-                if (!window->TopWindow()) {
-                    return true;
-                }
-                return !window->TopWindow()->IsDisplay();
-            };
-
-            if (!_isPaused && noWindow()) {
+            if (!_isPaused && !AGameIsPaused()) {
                 operation();
             }
         };
-        tickQueue.queue.emplace_back(__ATickQueue::__ATickOperation(std::move(tmp), isInGlobal));
-        _idx = tickQueue.queue.size() - 1;
+        queue.emplace_back(__ATickOperation(std::move(tmp), isInGlobal));
+        _idx = queue.size() - 1;
     }
 
     void Pause() noexcept
@@ -111,7 +90,9 @@ public:
 
     void Stop() noexcept
     {
-        tickQueue.queue[_idx].isRunning = false;
+        if (_idx < queue.size()) {
+            queue[_idx].isRunning = false;
+        }
         _isRunning = false;
     }
 
@@ -121,8 +102,11 @@ public:
     }
 
 protected:
-    virtual void BeforeScript() noexcept override
+    virtual void _BeforeScript() override
     {
+        if (!queue.empty()) {
+            queue.clear();
+        }
         _isRunning = false;
         _isPaused = false;
     }

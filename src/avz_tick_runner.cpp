@@ -6,7 +6,9 @@
  */
 #include "avz_tick_runner.h"
 
-void __ATickQueue::RunAll()
+__ATickManager::Queue __ATickManager::queue;
+
+void __ATickManager::RunAll()
 {
     auto iter = queue.begin();
     while (iter != queue.end()) {
@@ -18,7 +20,7 @@ void __ATickQueue::RunAll()
         }
     }
 }
-void __ATickQueue::RunOnlyInGlobal()
+void __ATickManager::RunOnlyInGlobal()
 {
     auto iter = queue.begin();
     while (iter != queue.end()) {
@@ -35,5 +37,3 @@ void __ATickQueue::RunOnlyInGlobal()
         }
     }
 }
-
-__ATickQueue __ATickManager::tickQueue;

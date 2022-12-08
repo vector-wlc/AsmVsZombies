@@ -82,12 +82,12 @@ struct ARelOp {
         }
     }
     ARelOp(AOperation&& op)
+        : ARelOp(0, std::move(op))
     {
-        ARelOp(0, std::move(op));
     }
     ARelOp(const AOperation& op)
+        : ARelOp(0, op)
     {
-        ARelOp(0, op);
     }
 
     // ARelativeOp + ARelativeOp
@@ -150,7 +150,6 @@ protected:
 
 #define __ADeleteCopyAndMove(ClassName)              \
 public:                                              \
-    ClassName() = default;                           \
     ClassName(ClassName&&) = delete;                 \
     ClassName(const ClassName&) = delete;            \
     ClassName& operator=(ClassName&&) = delete;      \
@@ -183,7 +182,7 @@ struct APosition {
 
 struct ATime {
     int time;
-    int wave;
+    int wave = 1;
 
     ATime() = default;
 

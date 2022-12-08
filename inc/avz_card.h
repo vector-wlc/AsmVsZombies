@@ -8,7 +8,7 @@
 #ifndef __AVZ_CARD_H__
 #define __AVZ_CARD_H__
 
-#include "avz_global.h"
+#include "avz_state_hook.h"
 
 struct ACardName {
     APlantType plantType;
@@ -16,7 +16,7 @@ struct ACardName {
     float col;
 };
 
-class __ACardManager : public AStateHook {
+class __ACardManager : public AOrderedStateHook<-1> {
 public:
     static void ChooseSingleCard();
     static void SelectCards(const std::vector<int>& lst, int selectInterval);
@@ -35,7 +35,7 @@ protected:
     static int _selectInterval;
     static APlant* _BasicCard(int seedIndex, int row, float col);
     static APlant* _BasicCard(int seedIndex, const std::vector<APosition>& lst);
-    virtual void EnterFight() override;
+    virtual void _EnterFight() override;
 };
 
 inline __ACardManager __cm; // AStateHook

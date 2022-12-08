@@ -1,5 +1,14 @@
 ## 更新日志
 
+
+AvZ 2022_XXXXX 
+
+* 修复了一堆 BUG
+* 阻塞函数不再有一帧延迟
+* 选卡函数会阻塞到战斗界面
+* 新增 `AWaitForFight`, 可直接用于阻塞到战斗界面
+* `ASelectCards` 函数内部会自动调用 `AWaitForFight`
+
 AvZ 2022_11_24 2.0.0 preview (breaking change)
 
 * 所有的标识符都带有一个 `A`(类，函数，常量) 或者 `a`(变量、对象) 的前缀

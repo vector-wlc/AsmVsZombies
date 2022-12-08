@@ -11,62 +11,14 @@
 #include "avz_pvz_struct.h"
 #include "avz_types.h"
 #include <Windows.h>
-#include <codecvt>
+#include <map>
 #include <string>
-#include <type_traits>
-#include <unordered_set>
 
-class __APublicStateHook;
-class __AStateHookManager {
-public:
-    using HookContainer = std::unordered_set<__APublicStateHook*>;
-
-    static void RunBeforeScript();
-    static void RunAfterScript();
-    static void RunEnterFight();
-    static void RunExitFight();
-    static void Init();
-    __ANodiscard static HookContainer& GetHookContainer();
-
-protected:
-    static bool _isRunBeforeScript;
-    static bool _isRunAfterScript;
-    static bool _isRunEnterFight;
-    static bool _isRunExitFight;
-};
-
-class __APublicStateHook {
-public:
-    __APublicStateHook()
-    {
-        __AStateHookManager::GetHookContainer().insert(this);
-    }
-
-    // 此函数会在 本框架 基本内存信息初始化完成后且调用 void Script() 之前运行
-    void virtual BeforeScript() { }
-
-    // 此函数会在 本框架 调用 void Script() 之后运行
-    void virtual AfterScript() { }
-
-    // 此函数会在游戏进入战斗界面后立即运行
-    void virtual EnterFight() { }
-
-    // 此函数会在游戏退出战斗界面后立即运行
-    // 特别注意: 如果用户从主界面进入选卡界面但是又立即退回主界面，此函数依然会运行
-    void virtual ExitFight() { }
-
-    virtual ~__APublicStateHook()
-    {
-        __AStateHookManager::GetHookContainer().erase(this);
-    }
-};
-
-class AStateHook : protected __APublicStateHook {
-};
+#undef min
+#undef max
+#undef ERROR
 
 __ANodiscard std::wstring AStrToWstr(const std::string& input);
-
-void AUtf8ToGbk(std::string& str);
 
 // *** 函数功能：判断数字范围
 // *** 使用示例：
@@ -102,7 +54,7 @@ __ANodiscard auto AFindSameEle(std::vector<Ele>& container, const Ele& ele_) -> 
 }
 
 template <typename T>
-requires __AIsNumber<T>
+    requires __AIsNumber<T>
 void ALimitValue(T& value, T min_v, T max_v)
 {
     if (value < min_v) {

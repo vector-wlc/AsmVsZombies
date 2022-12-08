@@ -73,7 +73,7 @@ public:
 
 using __ATimeIter = __AOperationQueue::RunOrderQueue::iterator;
 
-class __AOperationQueueManager : public AStateHook {
+class __AOperationQueueManager : public AOrderedStateHook<INT_MIN> {
 public:
     using OperationQueueContainer = std::vector<__AOperationQueue>;
     static OperationQueueContainer opQueueContainer;
@@ -86,11 +86,11 @@ public:
 
 protected:
     static void _PrintLog(const ATime& time, int nowTime);
-    static void _PrintLog(const ATime& time);
     static bool _CheckWavelength(const ATime& time);
+    static void _CheckAssumeWavelength(int wave);
     static void _SetRefreshTime(int wave, int refreshTime);
-    virtual void EnterFight() override;
-    virtual void BeforeScript() override;
+    virtual void _EnterFight() override;
+    virtual void _BeforeScript() override;
 };
 
 // 得到当前游戏的波数

@@ -72,10 +72,20 @@ ASkipTick([=](){
 由于上述代码一直返回 `true`，因此所有游戏帧都将会被跳过去。
 
 ```C++
+// 使得游戏接近 50 倍速运行
+// 原理解释：当游戏时钟对 50 取余值为 1 时，触发此连接的操作函数，
+// 操作函数运行即进行跳帧，跳帧依然对 50 取余，当此值为 0 时跳帧结束
+// 然后取余 0 的下一帧值又为 1，又触发了连接，便又开始跳帧，
+// 也就是游戏每隔 50cs 启用一次跳帧，跳帧会跳过 49 帧，这便突破了 ASetGameSpeed 10 倍以上的游戏运行速度
+AConnect([] { return AGetMainObject()->GameClock() % 50 == 1; }, 
+         [] { ASkipTick([] { return AGetMainObject()->GameClock() % 50; }); });
+```
+
+```C++
 // 检测位于 {1, 3}, {1, 5} 的玉米炮是否被破坏，如果被破坏，停止跳帧
 auto condition = [=]() {
     std::vector<int> results;
-    AGetPlantIndices({{1, 3}, {1, 5}}, YMJNP_47, results);
+    AGetPlantIndices({{1, 3}, {1, 5}}, AYMJNP_47, results);
 
     for (auto result : results) {
         if (result < 0) {
@@ -93,7 +103,7 @@ ASkipTick(condition);
 ```C++
 auto condition = [=]() {
     std::vector<int> results;
-    GetPlantIndices({{1, 3}, {1, 5}}, YMJNP_47, results);
+    GetPlantIndices({{1, 3}, {1, 5}}, AYMJNP_47, results);
 
     for (auto result : results) {
         if (result < 0) {

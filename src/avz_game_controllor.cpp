@@ -12,6 +12,20 @@ APredication __AGameControllor::isSkipTick = []() -> bool {
     return false;
 };
 
+bool __AGameControllor::_CheckSkipTick()
+{
+    if (isAdvancedPaused) {
+        __aInternalGlobal.loggerPtr->Error("开启高级暂停或者暂停时不能启用跳帧");
+        return false;
+    }
+
+    if (isSkipTick()) {
+        __aInternalGlobal.loggerPtr->Error("请等待上一个跳帧条件达到后的下一帧再设定跳帧条件");
+        return false;
+    }
+
+    return true;
+}
 void __AGameControllor::SkipTick(int wave, int time)
 {
     SkipTick([=]() {

@@ -116,6 +116,7 @@ void AScript()
 
     for (auto wave : {4, 8, 13, 17}) {
         // 使用核
+        // 注意这个核不一定会稳定刷新
         AConnect(ATime(wave, 1150 - 200 - 298), [=] {
             if (ARangeIn(wave, {4, 17})) {
                 ACard({{ALILY_PAD, 3, 8}, {ADOOM_SHROOM, 3, 8}, {ACOFFEE_BEAN, 3, 8}});

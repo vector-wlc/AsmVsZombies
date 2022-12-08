@@ -4,8 +4,9 @@
 #include "avz_connector.h"
 #include "avz_global.h"
 #include "avz_tick_runner.h"
+#include <unordered_set>
 
-class ACobManager : public AStateHook {
+class ACobManager : public AOrderedStateHook<-1> {
     __ADeleteCopyAndMove(ACobManager);
 
 public:
@@ -45,6 +46,7 @@ public:
     };
 
 public:
+    ACobManager() = default;
     static constexpr int NO_EXIST_RECOVER_TIME = INT_MIN;
 
     // 发炮函数：用户自定义位置发射，屋顶修正飞行时间发炮.
@@ -180,23 +182,24 @@ protected:
             _lastestMsg.vecIndex = index;
         }
     }
-    void virtual BeforeScript() override;
-    void virtual EnterFight() override;
+    virtual void _BeforeScript() override;
+    virtual void _EnterFight() override;
 };
 
-class AItemCollector : public AStateHook,
+class AItemCollector : public AOrderedStateHook<-1>,
                        public ATickRunnerWithNoStart {
 
     __ADeleteCopyAndMove(AItemCollector);
 
 public:
+    AItemCollector() = default;
     void Start();
     void SetInterval(int timeInterval);
 
 protected:
     int _timeInterval = 10;
     void _Run();
-    virtual void EnterFight() override;
+    virtual void _EnterFight() override;
 };
 
 class AIceFiller : public ATickRunnerWithNoStart {
@@ -209,6 +212,7 @@ protected:
     void _Run();
 
 public:
+    AIceFiller() = default;
     // 重置冰卡
     // *** 注意：该函数需要使用在 start 函数之后才能生效
     // *** 使用示例
@@ -250,6 +254,7 @@ protected:
     void _UseSeed(int seedIndex, int row, float col, bool isNeedShovel);
 
 public:
+    APlantFixer() = default;
     // 重置植物修补位置
     // *** 使用示例：
     // SetList({{2, 3},{3, 4}})-------位置被重置为{2，3}，{3，4}

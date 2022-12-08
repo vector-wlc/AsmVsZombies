@@ -7,7 +7,7 @@
 #ifndef __AVZ_MEMORY_H__
 #define __AVZ_MEMORY_H__
 
-#include "avz_global.h"
+#include "avz_state_hook.h"
 
 __ANodiscard inline AMainObject* AGetMainObject() { return __aInternalGlobal.mainObject; }
 
@@ -123,14 +123,14 @@ void ASetWaveZombies(int wave, const std::vector<int>& zombieType);
 // }
 __ANodiscard bool* AGetZombieTypeList();
 
-class __AGameSpeedManager : public AStateHook {
+class __AGameSpeedManager : public AOrderedStateHook<-1> {
 public:
     static void Set(float x);
 
 protected:
     int _oriTickMs = 10;
-    virtual void BeforeScript() override;
-    virtual void ExitFight() override;
+    virtual void _BeforeScript() override;
+    virtual void _ExitFight() override;
 };
 
 // 设置游戏倍速
@@ -144,7 +144,7 @@ inline void ASetGameSpeed(float x)
 }
 
 // 女仆秘籍
-class AMaidCheats : public AStateHook {
+class AMaidCheats : public AOrderedStateHook<-1> {
 public:
     // 召唤舞伴
     // 舞王不前进且每帧尝试召唤舞伴
@@ -175,11 +175,14 @@ public:
     }
 
 protected:
-    virtual void ExitFight() override
+    virtual void _ExitFight() override
     {
         Stop();
     }
 };
+
+// 判断游戏是否暂停
+bool AGameIsPaused();
 
 inline __AGameSpeedManager __agsm; // AStateHook
 inline AMaidCheats __amc;          // AStateHook

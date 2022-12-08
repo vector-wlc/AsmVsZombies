@@ -4,14 +4,19 @@
  * @Date: 2022-11-10 15:28:33
  * @Description:
  */
-#include "avz_time_queue.h"
-#include "avz_connector.h"
+
+#include "libavz.h"
 
 void __AOperationQueueManager::_SetRefreshTime(int wave, int refreshTime)
 {
     auto queueIter = opQueueContainer.begin() + wave;
     queueIter->memRefreshTime = refreshTime;
     queueIter->calRefreshTime = refreshTime;
+
+    if (wave != 0) {
+        auto wavelength = queueIter->memRefreshTime - (queueIter - 1)->memRefreshTime;
+        __aInternalGlobal.loggerPtr->Info("下一波即将刷新，第 " + std::to_string(wave) + " 波的波长为 " + std::to_string(wavelength));
+    }
 
     auto nextQueueIter = queueIter + 1;
     while (nextQueueIter != opQueueContainer.end() && queueIter->wavelength != -1) {
@@ -77,6 +82,15 @@ void __AOperationQueueManager::UpdateRefreshTime()
 {
     auto mainObject = __aInternalGlobal.mainObject;
     int wave = mainObject->Wave();
+    if (wave == mainObject->TotalWave()) {
+        return;
+    }
+    static int64_t runFlag = -1;
+    auto gameClock = mainObject->GameClock();
+    if (runFlag == gameClock) { // 保证此函数下面的内容一帧只会运行一次
+        return;
+    }
+    runFlag = gameClock;
 
     auto operationQueueIter = opQueueContainer.begin() + wave;
 
@@ -85,7 +99,6 @@ void __AOperationQueueManager::UpdateRefreshTime()
     }
 
     int refreshCountdown = mainObject->RefreshCountdown();
-    int gameClock = mainObject->GameClock();
 
     if (wave == 0) { // 第一波
         _SetRefreshTime(wave, refreshCountdown + gameClock);
@@ -137,36 +150,12 @@ void __AOperationQueueManager::AssumeWavelength(const std::vector<ATime>& lst)
         }
         auto&& timeQueue = opQueueContainer[time.wave - 1];
         timeQueue.wavelength = time.time;
-        auto tmpOp = [time, &timeQueue]() {
-            auto&& pattern = __aInternalGlobal.loggerPtr->GetPattern();
-            auto currentRefreshTime = timeQueue.memRefreshTime;
-            auto nextRefreshTime = opQueueContainer[time.wave].memRefreshTime;
-            std::string str;
-            if (nextRefreshTime == __AOperationQueue::UNINIT) { // 下波的实际时间还未到
-                str = "但实际刷新点还未知";
-            } else {
-                auto trueWavelength = nextRefreshTime - currentRefreshTime;
-                if (trueWavelength != timeQueue.wavelength) {
-                    str = "但实际波长为" + std::to_string(trueWavelength);
-                    // 将已经设置的 calRefreshTime 设置回 UNINIT
-                    auto totalWave = opQueueContainer.size() - 2;
-                    for (int wave = time.wave; wave < totalWave; ++wave) {
-                        opQueueContainer[time.wave].calRefreshTime = __AOperationQueue::UNINIT;
-                    }
-                }
-            }
-
-            if (!str.empty()) {
-                __aInternalGlobal.loggerPtr->Error(
-                    "AssumeWavelength : 您第 " +       //
-                        pattern + " 波假定的波长为 " + //
-                        pattern + ", " + str,
-                    time.wave, timeQueue.wavelength);
-            }
-        };
+        if (timeQueue.calRefreshTime != __AOperationQueue::UNINIT) {
+            opQueueContainer[time.wave].calRefreshTime = timeQueue.calRefreshTime + time.time;
+        }
 
         // 本波的波长只有到了下波才知道
-        AConnect(ATime(time.wave + 1, -199), std::move(tmpOp));
+        AConnect(ATime(time.wave + 1, -200), [wave = time.wave] { _CheckAssumeWavelength(wave); });
     }
 }
 
@@ -211,13 +200,58 @@ bool __AOperationQueueManager::_CheckWavelength(const ATime& time)
     return true;
 }
 
-void __AOperationQueueManager::BeforeScript()
+void __AOperationQueueManager::_CheckAssumeWavelength(int wave)
+{
+    auto&& currentTimeQueue = opQueueContainer[wave - 1];
+    auto&& nextTimeQueue = opQueueContainer[wave];
+    auto currentRefreshTime = currentTimeQueue.memRefreshTime;
+    auto nextRefreshTime = nextTimeQueue.memRefreshTime;
+    std::string str;
+    if (nextRefreshTime == __AOperationQueue::UNINIT) { // 下波的实际时间还未到
+        // 计算当前僵尸的血量
+        int currentHp = 0;
+        for (auto&& zombie : aAliveZombieFilter) {
+            if (zombie.AtWave() == wave - 1 && //
+                !ARangeIn(zombie.Type(), {ABACKUP_DANCER, ABUNGEE_ZOMBIE})) {
+                currentHp += zombie.Hp() + zombie.OneHp() + zombie.TwoHp() / 5;
+            }
+        }
+
+        int refreshHp = __aInternalGlobal.mainObject->ZombieRefreshHp();
+        int totalHp = __aInternalGlobal.mainObject->MRef<int>(0x5598);
+        float refreshRatio = float(totalHp - currentHp) / (totalHp - refreshHp);
+
+        str = "但下一波僵尸尚未刷新，目前僵尸总血量为 " + std::to_string(currentHp) //
+            + " 刷新血量为 " + std::to_string(refreshHp)
+            + " 刷新进度为 " + std::to_string(refreshRatio);
+    } else {
+        auto trueWavelength = nextRefreshTime - currentRefreshTime;
+        if (trueWavelength != currentTimeQueue.wavelength) {
+            str = "但实际波长为" + std::to_string(trueWavelength);
+        }
+    }
+
+    if (!str.empty()) { // str 不为空说明有错误
+        // 将已经设置的 calRefreshTime 设置回 UNINIT
+        auto totalWave = opQueueContainer.size() - 2;
+        for (int waveIter = wave; waveIter < totalWave; ++waveIter) {
+            opQueueContainer[waveIter].calRefreshTime = __AOperationQueue::UNINIT;
+        }
+
+        __aInternalGlobal.loggerPtr->Error(
+            "AssumeWavelength : 您第 "
+            + std::to_string(wave) + " 波假定的波长为 "
+            + std::to_string(currentTimeQueue.wavelength) + ", " + str);
+    }
+}
+
+void __AOperationQueueManager::_BeforeScript()
 {
     opQueueContainer.clear();
     opQueueContainer.resize(__aInternalGlobal.mainObject->TotalWave());
 }
 
-void __AOperationQueueManager::EnterFight()
+void __AOperationQueueManager::_EnterFight()
 {
     UpdateRefreshTime();
     startTime = ANowTime();
@@ -225,17 +259,24 @@ void __AOperationQueueManager::EnterFight()
 
 int ANowTime(int wave)
 {
+    static int depth = 0;
+    if (depth != 0) { // 此函数不能有递归
+        return __AOperationQueue::UNINIT;
+    }
+    ++depth;
     auto maxWave = __AOperationQueueManager::opQueueContainer.size();
     if (wave <= 0 || wave > maxWave) {
         auto&& pattern = __aInternalGlobal.loggerPtr->GetPattern();
+        // 此处会造成递归调用
         __aInternalGlobal.loggerPtr->Error("ANowTime 输入参数范围 [1, " + pattern + //
                 "], 您输入的参数为 " + pattern + ", 已经超出了此范围",
             maxWave, wave);
+        --depth;
         return __AOperationQueue::UNINIT;
     }
     auto refreshTime = __AOperationQueueManager::opQueueContainer[wave - 1].calRefreshTime;
-    if (refreshTime == __AOperationQueue::UNINIT) {
-        return __AOperationQueue::UNINIT;
-    }
-    return __aInternalGlobal.mainObject->GameClock() - refreshTime;
+    --depth;
+    return refreshTime == __AOperationQueue::UNINIT //
+        ? __AOperationQueue::UNINIT
+        : __aInternalGlobal.mainObject->GameClock() - refreshTime;
 }

@@ -35,7 +35,7 @@ void AShovel(int row, float col, bool pumpkin)
         y += 40;
     }
     auto&& pattern = __aInternalGlobal.loggerPtr->GetPattern();
-    __aInternalGlobal.loggerPtr->Info("Shovel (" + pattern + ", " + pattern + ")\n", row, col);
+    __aInternalGlobal.loggerPtr->Info("Shovel (" + pattern + ", " + pattern + ")", row, col);
     AAsm::ShovelPlant(x, y);
     AAsm::ReleaseMouse();
 }

@@ -2,6 +2,8 @@
 #include "avz_asm.h"
 #include "avz_click.h"
 #include "avz_logger.h"
+#include "avz_script.h"
+#include <unordered_set>
 
 std::vector<int> __ACardManager::_selectCardVec;
 std::unordered_map<int, int> __ACardManager::_seedNameToIndexMap;
@@ -9,7 +11,7 @@ AMainObject* __ACardManager::_mainObject;
 APvzBase* __ACardManager::_pvzBase;
 int __ACardManager::_selectInterval = 17;
 
-void __ACardManager::EnterFight()
+void __ACardManager::_EnterFight()
 {
     _seedNameToIndexMap.clear();
     _mainObject = __aInternalGlobal.mainObject;
@@ -123,6 +125,7 @@ void __ACardManager::SelectCards(const std::vector<int>& lst, int selectInterval
     }
 
     _selectCardVec = lst;
+    AWaitForFight();
 }
 
 APlant* __ACardManager::_BasicCard(int seedIndex, int row, float col)

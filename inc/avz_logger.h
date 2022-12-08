@@ -13,8 +13,6 @@
 #include <fstream>
 #include <sstream>
 
-#undef ERROR
-
 enum class ALogLevel {
     INFO,
     DEBUG,
@@ -150,7 +148,7 @@ protected:
 };
 
 template <>
-class ALogger<AConsole> : public AAbstractLogger, public AStateHook {
+class ALogger<AConsole> : public AAbstractLogger, public AOrderedStateHook<-1> {
 public:
     // 设置显示颜色
     // *** 使用示例:
@@ -169,8 +167,8 @@ protected:
     };
     static bool _isAllocateConsole;
     virtual void _Output(ALogLevel level, std::string&& str) override;
-    virtual void BeforeScript() override;
-    virtual void ExitFight() override;
+    virtual void _BeforeScript() override;
+    virtual void _ExitFight() override;
 };
 
 template <>

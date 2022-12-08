@@ -17,22 +17,20 @@ public:
     static bool isExit;
     static const char* const STR_GAME_RET_MAIN_UI;
     static AReloadMode scriptReloadMode;
-    static int waitUntilDepth;
+    static int blockDepth;
+    static ATime blockTime;
 
+    static bool Init();
     static void LoadScript();
     static void RunScript();
     static void Run();
     static void ScriptHook();
     static void WaitUntil(int wave, int time);
+    static void WaitForFight();
 };
 
 // 阻塞运行直到达到目标时间点
 // *** AWaitUntil 停止阻塞的时间点是设定的时间点的下一帧
-// 例如 AWaitUntil(150, 1); int time = NowTime(1)
-// 此时 time 的值是 151
-// *** return : 阻塞是否正常结束
-// ture 阻塞正常结束
-// false 阻塞异常结束
 inline void AWaitUntil(int wave, int time)
 {
     __AScriptManager::WaitUntil(wave, time);
@@ -46,6 +44,12 @@ inline void AWaitUntil(int wave, int time)
 inline void ASetReloadMode(AReloadMode reloadMode)
 {
     __AScriptManager::scriptReloadMode = reloadMode;
+}
+
+// 等待游戏进入战斗界面释放阻塞
+inline void AWaitForFight()
+{
+    __AScriptManager::WaitForFight();
 }
 
 #endif

@@ -188,7 +188,7 @@ void __AStaticPainter::DrawEveryTick()
     }
 }
 
-void __AStaticPainter::BeforeScript()
+void __AStaticPainter::_BeforeScript()
 {
     if (!draw.IsOpen3dAcceleration()) {
         return;
@@ -200,7 +200,7 @@ void __AStaticPainter::BeforeScript()
     *(uint32_t*)0x676968 = (uint32_t)&AsmDraw;
 }
 
-void __AStaticPainter::ExitFight()
+void __AStaticPainter::_ExitFight()
 {
     if (!draw.IsOpen3dAcceleration()) {
         return;

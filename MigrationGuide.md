@@ -6,6 +6,17 @@
 -->
 ## 版本迁移文档
 
+### 221124 2.0.0 preview -> 2.0.0 221208
+
+1. AStateHook 的四个虚函数的名字发生了变化
+
+```C++
+BeforeScript() -> _BeforeScript()  
+AfterScript() -> _AfterScript()  
+EnterFight() -> _EnterFight()  
+ExitFight() -> _ExitFight()  
+```
+
 ### 221001 -> 221124 2.0.0 preview
 
 1. 这是一个重大更新，使用 221124  2.0.0 preview 需要重新下载新的环境开发包

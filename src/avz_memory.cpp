@@ -139,15 +139,15 @@ bool AIsZombieExist(int type, int row)
 void ASetPlantActiveTime(APlantType plantType, int delayTime)
 {
     auto activeTime = ANowTime();
-    activeTime.time += delayTime - 95;
+    activeTime.time += delayTime - 10;
     auto tmp = [=]() {
         // 这里不做植物类型检测
         auto plant = __aInternalGlobal.mainObject->PlantArray();
         for (int index = 0; index < __aInternalGlobal.mainObject->PlantCountMax();
              ++index, ++plant) {
             if (!plant->IsDisappeared() && !plant->IsCrushed() && plant->Type() == plantType && plant->State() == 2) {
-                if (std::abs(plant->ExplodeCountdown() - 95) < 3) {
-                    plant->ExplodeCountdown() = 95;
+                if (std::abs(plant->ExplodeCountdown() - 10) < 10) {
+                    plant->ExplodeCountdown() = 10;
                 } else {
                     __aInternalGlobal.loggerPtr->Error("ASetPlantActiveTime 不允许修改的生效时间超过 3cs");
                 }
@@ -243,12 +243,12 @@ bool* AGetZombieTypeList()
     return __aInternalGlobal.mainObject->ZombieTypeList();
 }
 
-void __AGameSpeedManager::BeforeScript()
+void __AGameSpeedManager::_BeforeScript()
 {
     _oriTickMs = __aInternalGlobal.pvzBase->TickMs();
 }
 
-void __AGameSpeedManager::ExitFight()
+void __AGameSpeedManager::_ExitFight()
 {
     __aInternalGlobal.pvzBase->TickMs() = _oriTickMs;
 }
@@ -262,4 +262,12 @@ void __AGameSpeedManager::Set(float x)
     }
     int ms = int(10 / x + 0.5);
     __aInternalGlobal.pvzBase->TickMs() = ms;
+}
+
+bool AGameIsPaused()
+{
+    if (!__aInternalGlobal.pvzBase->MainObject()) {
+        return false;
+    }
+    return __aInternalGlobal.mainObject->GamePaused();
 }

@@ -8,7 +8,7 @@
 #ifndef __AVZ_PAINTER_H__
 #define __AVZ_PAINTER_H__
 
-#include "avz_global.h"
+#include "avz_state_hook.h"
 #include <d3d.h>
 #include <list>
 #include <unordered_map>
@@ -134,7 +134,7 @@ public:
     bool IsOpen3dAcceleration();
 };
 
-class __AStaticPainter : public AStateHook {
+class __AStaticPainter : public AOrderedStateHook<-1> {
 public:
     struct DrawInfo {
         ARect rect;
@@ -174,14 +174,15 @@ public:
     static std::vector<std::vector<int>> posDict;
 
 protected:
-    virtual void BeforeScript() override;
-    virtual void ExitFight() override;
+    virtual void _BeforeScript() override;
+    virtual void _ExitFight() override;
 };
 
 class APainter {
     __ADeleteCopyAndMove(APainter);
 
 public:
+    APainter() = default;
     // 设置字体
     // 使用示例
     // SetFont("黑体") ------ 将字体设置为黑体

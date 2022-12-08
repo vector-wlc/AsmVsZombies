@@ -11,4 +11,5 @@ debug
 /*.zip
 .cache
 extension
+bin
 

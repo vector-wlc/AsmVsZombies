@@ -10,6 +10,7 @@
 #include "avz_click.h"
 #include "avz_memory.h"
 #include <algorithm>
+#include <unordered_set>
 
 ////////////////////////////////////////
 //  ACobManager
@@ -28,14 +29,14 @@ ACobManager::RoofFlyTime ACobManager::_flyTimeData[8] = {
     {511, 373},
 };
 
-void ACobManager::BeforeScript()
+void ACobManager::_BeforeScript()
 {
     _sequentialMode = TIME;
     _next = 0;
     _lockSet.clear();
 }
 
-void ACobManager::EnterFight()
+void ACobManager::_EnterFight()
 {
     AutoGetList();
 }
@@ -458,7 +459,7 @@ std::vector<int> ACobManager::RoofFire(const std::vector<APosition>& lst)
 //  ItemCollector
 ////////////////////////////////////////
 
-void AItemCollector::EnterFight()
+void AItemCollector::_EnterFight()
 {
     AItemCollector::Start();
 }

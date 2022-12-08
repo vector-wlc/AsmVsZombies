@@ -68,7 +68,7 @@ void ALogger<AMsgBox>::_Output(ALogLevel level, std::string&& str)
 
 bool ALogger<AConsole>::_isAllocateConsole = false;
 
-void ALogger<AConsole>::BeforeScript()
+void ALogger<AConsole>::_BeforeScript()
 {
     if (!_isAllocateConsole && AllocConsole()) {
         _isAllocateConsole = true;
@@ -78,7 +78,7 @@ void ALogger<AConsole>::BeforeScript()
     }
 }
 
-void ALogger<AConsole>::ExitFight()
+void ALogger<AConsole>::_ExitFight()
 {
     fclose(stdout);
     if (_isAllocateConsole) {

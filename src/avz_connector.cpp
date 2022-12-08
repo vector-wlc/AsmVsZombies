@@ -40,7 +40,7 @@ std::vector<ATimeConnectHandle> AConnect(const ATime& time, const ARelOp& reOp)
     return ret;
 }
 
-void __AConnectVec::ExitFight()
+void __AConnectVec::_ExitFight()
 {
     for (auto tick : tickVec) {
         delete tick;
