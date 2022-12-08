@@ -120,16 +120,18 @@ struct ARelOp {
 
     template <typename Rhs>
         requires std::is_convertible_v<Rhs, ARelOp>
-    friend ARelOp operator+=(ARelOp& lhs, Rhs&& rhs)
+    friend ARelOp& operator+=(ARelOp& lhs, Rhs&& rhs)
     {
         lhs._Add(std::forward<Rhs>(rhs));
+        return lhs;
     }
 
     template <typename Rhs>
         requires std::is_convertible_v<Rhs, AOperation>
-    friend ARelOp operator+=(ARelOp& lhs, Rhs&& rhs)
+    friend ARelOp& operator+=(ARelOp& lhs, Rhs&& rhs)
     {
         lhs.OpVec.emplace_back(0, std::forward<Rhs>(rhs));
+        return lhs;
     }
 
 protected:
