@@ -28,7 +28,7 @@ void APainter::SetTextColor(DWORD color)
 
 DWORD APainter::GetRectColor()
 {
-    return _textColor;
+    return _rectColor;
 }
 
 void APainter::SetRectColor(DWORD color)
@@ -38,7 +38,7 @@ void APainter::SetRectColor(DWORD color)
 
 DWORD APainter::GetTextColor()
 {
-    return _rectColor;
+    return _textColor;
 }
 
 void APainter::Draw(const ARect& rect, int duration)

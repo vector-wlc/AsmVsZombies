@@ -139,15 +139,15 @@ void __AScriptManager::Run()
         if (exceMsg != STR_GAME_RET_MAIN_UI) {
             isExit = true;
             exceMsg += " || AvZ has stopped working !!!";
+            __aInternalGlobal.loggerPtr->Info(exceMsg.c_str());
+        } else {
+            // 当递归深度为 0 和 scriptReloadMode > 0 时, 才能重置 isLoaded
+            isLoaded = !(int(scriptReloadMode) > 0 && blockDepth == 0);
+            isExit = isLoaded;
+            __aInternalGlobal.loggerPtr->Info(exceMsg.c_str());
+            __AStateHookManager::RunAllExitFight();
         }
-        exceMsg += '\n';
-        __aInternalGlobal.loggerPtr->Info(exceMsg.c_str());
 
-        __AStateHookManager::RunAllExitFight();
-
-        // 当递归深度为 0 和 scriptReloadMode > 0 时, 才能重置 isLoaded
-        isLoaded = !(int(scriptReloadMode) > 0 && blockDepth == 0);
-        isExit = isLoaded;
     } catch (...) {
         __aInternalGlobal.loggerPtr->Error("脚本触发了一个未知的异常\n");
         isExit = true;

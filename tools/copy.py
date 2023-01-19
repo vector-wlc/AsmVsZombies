@@ -9,7 +9,7 @@ import shutil
 import os
 import time
 
-dst = "H:/Game/PvZ/AvZTest/AsmVsZombies/"
+dst = "D:/AsmVsZombies/"
 
 # 更新 AvZ 安装目录的文件
 for dir in ["inc", "src"]:

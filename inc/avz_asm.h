@@ -93,6 +93,18 @@ public:
 
     __ANodiscard static int GridToOrdinate(int row, int col);
 
+    // 放置一个植物
+    // PutPlant(1, 1, ANGT_30) ----- 在2行2列放置一个南瓜头
+    static APlant* PutPlant(int row, int col, APlantType type);
+
+    // 放置一个僵尸
+    // PutZombie(1, 1, APJ_0) ----- 在2行2列放置一个普通僵尸
+    static AZombie* PutZombie(int row, int col, AZombieType type);
+
+    static void RemovePlant(APlant* plant);
+
+    static void RemoveZombie(AZombie* zombie);
+
 protected:
     static void _ClickScene();
 
@@ -111,6 +123,8 @@ protected:
     static void _ChooseImitatorCard();
 
     static void _GetPlantRejectType();
+
+    static void _RemovePlant();
 };
 
 #endif

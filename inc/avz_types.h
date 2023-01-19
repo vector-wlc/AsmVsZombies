@@ -33,6 +33,8 @@ concept __AIsOperation = std::is_convertible_v<T, AOperation>;
 template <typename T>
 concept __AIsNumber = std::is_integral_v<T> || std::is_floating_point_v<T>;
 
+#define __ANodiscardRelOp [[nodiscard("ARelOp 需要配合 AConnect 使用")]]
+
 struct ARelOp {
     struct ReOp {
         int relativeTime;
@@ -51,41 +53,41 @@ struct ARelOp {
     };
     std::vector<ReOp> OpVec;
 
-    ARelOp(ARelOp&& rhs)
+    __ANodiscardRelOp ARelOp(ARelOp&& rhs)
         : OpVec(std::move(rhs.OpVec))
     {
     }
 
-    ARelOp(const ARelOp& rhs)
+    __ANodiscardRelOp ARelOp(const ARelOp& rhs)
         : OpVec(rhs.OpVec)
     {
     }
 
-    explicit ARelOp(int relativeTime, AOperation&& operation)
+    __ANodiscardRelOp explicit ARelOp(int relativeTime, AOperation&& operation)
     {
         OpVec.emplace_back(relativeTime, std::move(operation));
     }
-    explicit ARelOp(int relativeTime, const AOperation& operation)
+    __ANodiscardRelOp explicit ARelOp(int relativeTime, const AOperation& operation)
     {
         OpVec.emplace_back(relativeTime, operation);
     }
-    explicit ARelOp(int relativeTime, ARelOp&& reOp)
+    __ANodiscardRelOp explicit ARelOp(int relativeTime, ARelOp&& reOp)
     {
         for (auto&& op : reOp.OpVec) {
             OpVec.emplace_back(relativeTime + op.relativeTime, std::move(op.operation));
         }
     }
-    explicit ARelOp(int relativeTime, const ARelOp& reOp)
+    __ANodiscardRelOp explicit ARelOp(int relativeTime, const ARelOp& reOp)
     {
         for (auto&& op : reOp.OpVec) {
             OpVec.emplace_back(relativeTime + op.relativeTime, op.operation);
         }
     }
-    ARelOp(AOperation&& op)
+    __ANodiscardRelOp ARelOp(AOperation&& op)
         : ARelOp(0, std::move(op))
     {
     }
-    ARelOp(const AOperation& op)
+    __ANodiscardRelOp ARelOp(const AOperation& op)
         : ARelOp(0, op)
     {
     }
@@ -93,7 +95,7 @@ struct ARelOp {
     // ARelativeOp + ARelativeOp
     template <typename Lhs, typename Rhs>
         requires std::is_convertible_v<Lhs, ARelOp> && std::is_convertible_v<Rhs, ARelOp>
-    friend ARelOp operator+(Lhs&& lhs, Rhs&& rhs)
+    __ANodiscard friend ARelOp operator+(Lhs&& lhs, Rhs&& rhs)
     {
         ARelOp tmpReOp(std::forward<Lhs>(lhs));
         tmpReOp._Add(std::forward<Rhs>(rhs));
@@ -103,7 +105,7 @@ struct ARelOp {
     // ARelativeOp + AOperation
     template <typename Lhs, typename Rhs>
         requires std::is_convertible_v<Lhs, ARelOp> && std::is_convertible_v<Rhs, AOperation>
-    friend ARelOp operator+(Lhs&& lhs, Rhs&& rhs)
+    __ANodiscard friend ARelOp operator+(Lhs&& lhs, Rhs&& rhs)
     {
         ARelOp tmpReOp(std::forward<Lhs>(lhs));
         tmpReOp.OpVec.emplace_back(0, std::forward<Rhs>(rhs));
@@ -113,7 +115,7 @@ struct ARelOp {
     // AOperation + ARelativeOp
     template <typename Lhs, typename Rhs>
         requires std::is_convertible_v<Lhs, AOperation> && std::is_convertible_v<Rhs, ARelOp>
-    friend ARelOp operator+(Lhs&& lhs, Rhs&& rhs)
+    __ANodiscard friend ARelOp operator+(Lhs&& lhs, Rhs&& rhs)
     {
         return std::forward<Rhs>(rhs) + std::forward<Lhs>(lhs);
     }
@@ -149,6 +151,8 @@ protected:
         }
     }
 };
+
+#undef __ANodiscardRelOp
 
 #define __ADeleteCopyAndMove(ClassName)              \
 public:                                              \

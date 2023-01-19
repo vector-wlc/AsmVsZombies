@@ -75,7 +75,7 @@ protected:
 // };
 //
 // auto callback = [=]() {
-//     ShowErrorNotInQueue("春哥无了，嘤嘤嘤");
+//     // 写春哥没了的提示代码，比如用一个 ALogger 显示信息
 // };
 //
 // ASkipTick(condition, callback);

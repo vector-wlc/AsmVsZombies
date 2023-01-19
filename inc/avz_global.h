@@ -80,4 +80,10 @@ inline void ASetInternalLogger(AAbstractLogger& logger)
     __aInternalGlobal.loggerPtr = &logger;
 }
 
+// 注意这个函数返回的是对象指针
+inline AAbstractLogger* AGetInternalLogger()
+{
+    return __aInternalGlobal.loggerPtr;
+}
+
 #endif

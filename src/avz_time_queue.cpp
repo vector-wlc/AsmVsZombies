@@ -34,6 +34,10 @@ __AOperationQueueManager::Push(const ATime& time, __ABoolOperation&& timeOp)
 {
     if (time.wave < startTime.wave || //
         (time.wave == startTime.wave && time.time < startTime.time)) {
+        __aInternalGlobal.loggerPtr->Info("当前连接时间 ("
+            + std::to_string(time.wave) + ", " + std::to_string(time.time)
+            + ") 小于开始时间 (" + std::to_string(time.wave) + ", " + std::to_string(time.time)
+            + "), 因此未建立连接");
         return std::nullopt;
     }
 
@@ -249,6 +253,7 @@ void __AOperationQueueManager::_BeforeScript()
 {
     opQueueContainer.clear();
     opQueueContainer.resize(__aInternalGlobal.mainObject->TotalWave());
+    startTime = ATime(__AOperationQueue::UNINIT, __AOperationQueue::UNINIT);
 }
 
 void __AOperationQueueManager::_EnterFight()

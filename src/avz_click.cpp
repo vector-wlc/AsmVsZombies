@@ -8,6 +8,7 @@
 #include "avz_click.h"
 #include "avz_asm.h"
 #include "avz_global.h"
+#include "avz_memory.h"
 
 void AClickSeed(int seed_index)
 {
@@ -24,15 +25,12 @@ void ALeftClick(int x, int y)
 void AShovel(int row, float col, bool pumpkin)
 {
     AAsm::ReleaseMouse();
-    ALeftClick(50 * 13, 70);
 
     int x = 0;
     int y = 0;
-    col = int(col + 0.5);
     AGridToCoordinate(row, col, x, y);
-
     if (pumpkin) {
-        y += 40;
+        y += 25;
     }
     auto&& pattern = __aInternalGlobal.loggerPtr->GetPattern();
     __aInternalGlobal.loggerPtr->Info("Shovel (" + pattern + ", " + pattern + ")", row, col);

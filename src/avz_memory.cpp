@@ -271,3 +271,13 @@ bool AGameIsPaused()
     }
     return __aInternalGlobal.mainObject->GamePaused();
 }
+
+// 移除植物函数
+void ARemovePlant(int row, int col, APlantType type)
+{
+    int idx = AGetPlantIndex(row, col, type);
+    if (idx < 0) {
+        return;
+    }
+    AAsm::RemovePlant(idx + AGetMainObject()->PlantArray());
+}

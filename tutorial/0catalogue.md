@@ -57,3 +57,7 @@
 
 * [终章](./25end.md)
 
+* [(附加) 两仪键控](./26liang_yi.md)
+
+* [(附加) 两仪键控脚本](./27fourth_tas_script.md)
+

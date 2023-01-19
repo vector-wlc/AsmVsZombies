@@ -54,4 +54,9 @@ protected:
     std::string msg_;
 };
 
+// 通过抛出异常的形式让脚本立即停止运行
+inline void ATerminate(const std::string& reason = "unknown")
+{
+    throw AException("终止脚本运行，附加信息 : " + reason);
+}
 #endif

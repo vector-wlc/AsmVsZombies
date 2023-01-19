@@ -713,7 +713,7 @@ protected:
 public:
     // 返回卡槽中的卡牌个数
     // 注意：此函数不能迭代使用！！！
-    // 只能这样使用：auto seed_count = GetMainObject()->seedArray()->count();
+    // 只能这样使用：auto seedCount = AGetMainObject()->SeedArray()->Count();
     __ANodiscard int& Count() noexcept
     {
         return MRef<int>(0x24);

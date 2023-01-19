@@ -184,6 +184,9 @@ protected:
 // 判断游戏是否暂停
 bool AGameIsPaused();
 
+// 移除植物函数
+void ARemovePlant(int row, int col, APlantType type);
+
 inline __AGameSpeedManager __agsm; // AStateHook
 inline AMaidCheats __amc;          // AStateHook
 #endif
