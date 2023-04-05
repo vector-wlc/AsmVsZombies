@@ -1,8 +1,6 @@
 #ifndef __AVZ_SMART_H__
 #define __AVZ_SMART_H__
 
-#include "avz_connector.h"
-#include "avz_global.h"
 #include "avz_tick_runner.h"
 #include <unordered_set>
 
@@ -136,6 +134,13 @@ public:
     int RoofFire(int row, float col);
     std::vector<int> RoofFire(const std::vector<APosition>& lst);
 
+    // 发炮函数 屋顶炮 CD 恢复自动发炮
+    // *** 使用示例：
+    // RecoverRoofFire(2,9)----------------炮击二行，九列
+    // RecoverRoofFire({{2, 9}, {5, 9}})-----炮击二行，九列，五行，九列
+    int RecoverRoofFire(int row, float col);
+    std::vector<int> RecoverRoofFire(const std::vector<APosition>& lst);
+
     // 重置炮列表
     // *** 使用示例:
     // SetList({{3, 1},{4, 1},{3, 3},{4, 3}})-------经典四炮
@@ -144,6 +149,36 @@ public:
     // 自动填充炮列表
     // *** 注意：此函数无条件将场地上的所有炮填充至此炮列表
     void AutoGetList();
+
+    // 得到可用的炮的内存指针
+    // *** 注意: 如果没有炮可用返回 nullptr
+    // *** 使用示例
+    // auto cobPtr = GetUsablePtr() ---- 得到可用的炮的内存指针
+    __ANodiscard APlant* GetUsablePtr();
+
+    // 得到可用的屋顶炮的内存指针
+    // 需要提供炮射击的列数
+    // 如果没有炮可用返回 nullptr
+    // *** 使用示例
+    // auto cobPtr = GetRoofUsablePtr(9) ---- 得到发往九列可用的屋顶炮的内存指针
+    __ANodiscard APlant* GetRoofUsablePtr(float col);
+
+    // 得到恢复时间最短的炮的内存指针
+    // *** 注意: 如果发生内部错误返回 nullptr
+    // *** 使用示例
+    // auto cobPtr = GetRecoverPtr() ---- 得到恢复时间最短的炮的内存指针
+    __ANodiscard APlant* GetRecoverPtr();
+
+    // 得到恢复时间最短的屋顶炮的内存指针
+    // *** 注意: 如果发生内部错误返回 nullptr
+    // *** 使用示例
+    // auto cobPtr = GetRoofRecoverPtr(9) ---- 得到发往九列恢复时间最短的屋顶炮的内存指针
+    __ANodiscard APlant* GetRoofRecoverPtr(float col);
+
+    // 获取屋顶炮飞行时间
+    // *** 使用示例:
+    // GetRoofFlyTime(1, 7) ----- 得到 1 列屋顶炮发往 7 列飞行时间
+    static int GetRoofFlyTime(int cobCol, float dropCol);
 
 protected:
     static std::unordered_set<int> _lockSet; // 锁定的炮
@@ -155,14 +190,15 @@ protected:
     int _sequentialMode = true;  // 顺序模式
     LastestMsg _lastestMsg;      // 最近一颗发炮的信息
 
-    // 得到炮的恢复时间
-    static int _GetRecoverTime(int index);
     // 基础发炮函数
     static void _BasicFire(int cobIndex, int dropRow, float dropCol);
-    // 获取屋顶炮飞行时间
-    static int _GetRoofFlyTime(int cobCol, float dropCol);
+
     // 延迟发炮
     static void _DelayFire(int delayTime, int cobIndex, int row, float col);
+
+    // 恢复发炮
+    int _RecoverBasicFire(int row, float col, bool isRoof);
+
     // 得到炮列表中的炮恢复时间
     // return NO_EXIST_RECOVER_TIME :  can't find cob index
     int _GetRecoverTimeVec();
@@ -172,7 +208,7 @@ protected:
     // 第二个参数用于 RoofFire
     // 返回 >=0 下一门炮可用且意义为该门炮剩余的恢复时间
     // 返回 NO_EXIST_RECOVER_TIME 下一门炮不可用
-    int _UpdateNextCob(bool isDelay = false, float dropCol = -1);
+    int _UpdateNextCob(bool isDelay = false, float dropCol = -1, bool isShowError = true);
 
     // 更新最近发炮的信息
     void _UpdateLastestMsg(int fireTime, int index)
@@ -182,12 +218,15 @@ protected:
             _lastestMsg.vecIndex = index;
         }
     }
+
+    // 得到可用的炮的指针
+    // 如果没有炮可用返回 nullptr
+    __ANodiscard APlant* _BasicGetPtr(bool isRecover, float col);
     virtual void _BeforeScript() override;
     virtual void _EnterFight() override;
 };
 
-class AItemCollector : public AOrderedStateHook<-1>,
-                       public ATickRunnerWithNoStart {
+class AItemCollector : public ATickRunnerWithNoStart {
 
     __ADeleteCopyAndMove(AItemCollector);
 
@@ -249,7 +288,7 @@ protected:
     int _coffeeSeedIdx;
     std::vector<int> _seedIdxVec;
     std::vector<AGrid> _gridLst;
-    void _getSeedList();
+    void _GetSeedList();
     void _Run();
     void _UseSeed(int seedIndex, int row, float col, bool isNeedShovel);
 

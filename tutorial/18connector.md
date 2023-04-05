@@ -106,12 +106,24 @@ AConnect('Q', [] {
 除了最基础的 AConnect(ATime(1, 1), []{}) 这种调用方式，对于时间连接 AConnect 还有下面几种方式
 
 ```C++
+// AConnect(ATime, bool Func) 形式
+// 在当前时间点 100cs 之后开始不断尝试种植小喷菇, 直到小喷菇种植成功
+// 这里的 ANowDelayTime 会返回一个 ATime 对象
+AConnect(ANowDelayTime(100), [] {
+    if (AIsSeedUsable(AXPG_8)) {
+        ACard(AXPG_8, 1, 1);
+        return false;
+    }
+    return true;
+});
+```
+
+```C++
 #include <avz.h>
 
 // 使用 ARelOp 可让操作从操作轴变为效果轴
 ARelOp EffectFire(int row, float col)
 {
-
     return ARelOp(-373, [=] { aCobManager.Fire(row, col); });
 }
 

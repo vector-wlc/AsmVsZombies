@@ -61,13 +61,19 @@ inline void ASelectCards(const std::vector<int>& lst, int selectInterval = 17)
 }
 
 // 根据卡片名称得到卡片索引
-// *** 注意：卡片索引从 0 开始
+// *** 注意：卡片索引从 0 开始, 不存在返回 -1
 // *** 使用示例：
 // AGetCardIndex(AICE_SHROOM) ---- 得到寒冰菇的卡片索引
 __ANodiscard inline int AGetCardIndex(APlantType plantType)
 {
     return __ACardManager::GetCardIndex(plantType);
 }
+
+// 根据卡片名称得到卡片指针
+// // *** 注意：不存在返回 nullptr
+// *** 使用示例：
+// AGetCardIndex(AICE_SHROOM) ---- 得到寒冰菇的卡片指针
+__ANodiscard inline ASeed* AGetCardPtr(APlantType plantType);
 
 // 用卡函数
 // *** 注意：ACard 不支持根据卡槽位置用卡的多张调用形式

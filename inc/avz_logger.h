@@ -7,7 +7,6 @@
 #ifndef __AVZ_LOGGER_H__
 #define __AVZ_LOGGER_H__
 
-#include "avz_global.h"
 #include "avz_painter.h"
 #include <deque>
 #include <fstream>
@@ -20,7 +19,7 @@ enum class ALogLevel {
     ERROR,
 };
 
-class AAbstractLogger {
+class AAbstractLogger : public AOrderedStateHook<-1> {
 public:
     __ANodiscard const std::string& GetPattern() const { return _pattern; }
 
@@ -77,7 +76,7 @@ protected:
         "WARNING",
         "ERROR",
     };
-
+    virtual void _BeforeScript() override;
     virtual void _Output(ALogLevel level, std::string&& str) = 0;
 
     template <typename T>
@@ -142,13 +141,20 @@ public:
     {
     }
 
+    // 清除文件中的所有内容
+    // return true: 清除成功
+    // return false: 清除失败
+    bool Clear();
+
 protected:
+    virtual void _ExitFight() override;
     std::string _fileName;
+    std::wofstream _outFile;
     virtual void _Output(ALogLevel level, std::string&& str) override;
 };
 
 template <>
-class ALogger<AConsole> : public AAbstractLogger, public AOrderedStateHook<-1> {
+class ALogger<AConsole> : public AAbstractLogger {
 public:
     // 设置显示颜色
     // *** 使用示例:
@@ -159,13 +165,9 @@ public:
     }
 
 protected:
-    uint32_t _color[4] = {
-        FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_BLUE, // white
-        FOREGROUND_GREEN,                                    // green
-        FOREGROUND_RED | FOREGROUND_GREEN,                   // yellow
-        FOREGROUND_RED,                                      // red
-    };
+    uint32_t _color[4];
     static bool _isAllocateConsole;
+    HANDLE _handle = nullptr;
     virtual void _Output(ALogLevel level, std::string&& str) override;
     virtual void _BeforeScript() override;
     virtual void _ExitFight() override;
@@ -201,17 +203,12 @@ public:
     }
 
 protected:
-    uint32_t _color[4] = {
-        AArgb(0xff, 0xff, 0xff, 0xff), // white
-        AArgb(0xff, 0, 0xff, 0),       // green
-        AArgb(0xff, 0xff, 0xff, 0),    // yellow
-        AArgb(0xff, 0xff, 0, 0),       // red
-    };
-
+    uint32_t _color[4];
     APainter _painter;
     int _remainTime = 500; // 控制显示的持续时间
     int _lastestDisplayedTime = -1;
     APixel _pixelDisplay = {10, 500};
+    virtual void _BeforeScript() override;
     virtual void _Output(ALogLevel level, std::string&& str) override;
 };
 

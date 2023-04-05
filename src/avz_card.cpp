@@ -2,6 +2,7 @@
 #include "avz_asm.h"
 #include "avz_click.h"
 #include "avz_logger.h"
+#include "avz_memory.h"
 #include "avz_script.h"
 #include <unordered_set>
 
@@ -141,9 +142,9 @@ APlant* __ACardManager::_BasicCard(int seedIndex, int row, float col)
 
     AAsm::ReleaseMouse();
     auto seed = _mainObject->SeedArray() + seedIndex - 1;
-    if (!seed->IsUsable()) {
+    if (!AIsSeedUsable(seed)) {
         __aInternalGlobal.loggerPtr->Error(
-            "Card : 第 " + pattern + " 张卡片还有 " + pattern + " cs 才能使用",
+            "Card : 第 " + pattern + " 张卡片还有 " + pattern + " cs 才能使用或者阳光不足",
             seedIndex, seed->InitialCd() - seed->Cd() + 1); // PvZ计算问题导致+1
         return nullptr;
     }
@@ -173,7 +174,7 @@ APlant* __ACardManager::_BasicCard(int seedIndex, const std::vector<APosition>& 
 
     AAsm::ReleaseMouse();
     auto seed = _mainObject->SeedArray() + seedIndex - 1;
-    if (!seed->IsUsable()) {
+    if (!AIsSeedUsable(seed)) {
         __aInternalGlobal.loggerPtr->Error(
             "Card : 第 " + pattern + " 张卡片还有 " + pattern + "cs 才能使用", seedIndex,
             seed->InitialCd() - seed->Cd() + 1); // PvZ计算问题导致+1
@@ -211,6 +212,12 @@ int __ACardManager::GetCardIndex(APlantType plantType)
     } else {
         return it->second;
     }
+}
+
+__ANodiscard ASeed* AGetCardPtr(APlantType plantType)
+{
+    auto index = __ACardManager::GetCardIndex(plantType);
+    return index < 0 ? nullptr : AGetMainObject()->SeedArray() + index;
 }
 
 APlant* __ACardManager::Card(int seedIndex, int row, float col)

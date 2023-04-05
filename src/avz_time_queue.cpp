@@ -9,7 +9,7 @@
 
 void __AOperationQueueManager::_SetRefreshTime(int wave, int refreshTime)
 {
-    auto queueIter = opQueueContainer.begin() + wave;
+    auto queueIter = container.begin() + wave;
     queueIter->memRefreshTime = refreshTime;
     queueIter->calRefreshTime = refreshTime;
 
@@ -19,14 +19,14 @@ void __AOperationQueueManager::_SetRefreshTime(int wave, int refreshTime)
     }
 
     auto nextQueueIter = queueIter + 1;
-    while (nextQueueIter != opQueueContainer.end() && queueIter->wavelength != -1) {
+    while (nextQueueIter != container.end() && queueIter->wavelength != -1) {
         nextQueueIter->calRefreshTime = queueIter->calRefreshTime + queueIter->wavelength;
         ++queueIter;
         ++nextQueueIter;
     }
 }
 
-__AOperationQueueManager::OperationQueueContainer __AOperationQueueManager::opQueueContainer;
+__AOperationQueueManager::Container __AOperationQueueManager::container;
 ATime __AOperationQueueManager::startTime; // 脚本设定的开始时间
 
 std::optional<__ATimeIter>
@@ -48,7 +48,7 @@ __AOperationQueueManager::Push(const ATime& time, __ABoolOperation&& timeOp)
         return std::nullopt; // 无法控制这种操作的运行状态
     }
 
-    auto&& queue = opQueueContainer[time.wave - 1].queue;
+    auto&& queue = container[time.wave - 1].queue;
     auto ret = queue.emplace(time.time, std::move(timeOp));
     auto&& pattern = __aInternalGlobal.loggerPtr->GetPattern();
     __aInternalGlobal.loggerPtr->Info("建立 时间-操作 [" + pattern + ", " + pattern + "] 连接成功",
@@ -59,9 +59,9 @@ __AOperationQueueManager::Push(const ATime& time, __ABoolOperation&& timeOp)
 void __AOperationQueueManager::RunOperation()
 {
     int nowTime = __aInternalGlobal.mainObject->GameClock();
-    auto totalWave = opQueueContainer.size();
+    auto totalWave = container.size();
     for (int wave = 1; wave <= totalWave; ++wave) {
-        auto&& opQueue = opQueueContainer[wave - 1];
+        auto&& opQueue = container[wave - 1];
         if (opQueue.calRefreshTime == __AOperationQueue::UNINIT || opQueue.queue.empty()) { // 本波还未到达或者本波没有操作
             continue;
         }
@@ -96,7 +96,7 @@ void __AOperationQueueManager::UpdateRefreshTime()
     }
     runFlag = gameClock;
 
-    auto operationQueueIter = opQueueContainer.begin() + wave;
+    auto operationQueueIter = container.begin() + wave;
 
     if (operationQueueIter->memRefreshTime != __AOperationQueue::UNINIT) { // 已经读取过的不再读取
         return;
@@ -134,8 +134,11 @@ void __AOperationQueueManager::SetWavelength(const std::vector<ATime>& lst)
         if (!_CheckWavelength(time)) {
             continue;
         }
-        auto&& timeQueue = opQueueContainer[time.wave - 1];
+        auto&& timeQueue = container[time.wave - 1];
         timeQueue.wavelength = time.time;
+        if (timeQueue.calRefreshTime != __AOperationQueue::UNINIT) {
+            container[time.wave].calRefreshTime = timeQueue.calRefreshTime + time.time;
+        }
         auto setRefresh = [time]() {
             __aInternalGlobal.mainObject->ZombieRefreshHp() = 0;
             __aInternalGlobal.mainObject->RefreshCountdown() = time.time - 1;
@@ -152,10 +155,10 @@ void __AOperationQueueManager::AssumeWavelength(const std::vector<ATime>& lst)
         if (!_CheckWavelength(time)) {
             continue;
         }
-        auto&& timeQueue = opQueueContainer[time.wave - 1];
+        auto&& timeQueue = container[time.wave - 1];
         timeQueue.wavelength = time.time;
         if (timeQueue.calRefreshTime != __AOperationQueue::UNINIT) {
-            opQueueContainer[time.wave].calRefreshTime = timeQueue.calRefreshTime + time.time;
+            container[time.wave].calRefreshTime = timeQueue.calRefreshTime + time.time;
         }
 
         // 本波的波长只有到了下波才知道
@@ -165,40 +168,32 @@ void __AOperationQueueManager::AssumeWavelength(const std::vector<ATime>& lst)
 
 void __AOperationQueueManager::_PrintLog(const ATime& time, int nowTime)
 {
-    auto&& pattern = __aInternalGlobal.loggerPtr->GetPattern();
     if (nowTime > time.time) {
-        __aInternalGlobal.loggerPtr->Warning("时间-操作 [" + pattern + ", " + pattern + //
-                "] 但是现在时间已到 [" + pattern + ", " + pattern + "]",                //
-            time.wave, time.time, time.wave, nowTime);
+        __aInternalGlobal.loggerPtr->Warning("时间-操作 [" + std::to_string(time.wave) + ", " + std::to_string(time.time) + //
+            "] 但是现在时间已到 [" + std::to_string(time.wave) + ", " + std::to_string(nowTime) + "]");
     }
-
-    __aInternalGlobal.loggerPtr->Info("运行 时间-操作 [" + pattern + ", " + pattern + "]",
-        time.wave, time.time);
+    __aInternalGlobal.loggerPtr->Info("运行 时间-操作 [" + std::to_string(time.wave) + ", " + std::to_string(time.time) + "]");
 }
 
 bool __AOperationQueueManager::_CheckWavelength(const ATime& time)
 {
-    auto&& pattern = __aInternalGlobal.loggerPtr->GetPattern();
     if (time.wave < 1 || ARangeIn(time.wave, {9, 19, 20}) || time.wave > 20) {
         __aInternalGlobal.loggerPtr->Error(
             "您当前设定的 wave 参数为 " + //
-                pattern + ", 超出有效范围",
-            time.wave);
+            std::to_string(time.wave) + ", 超出有效范围");
         return false;
     }
 
     if (time.time < 601 || time.time > 2510) {
         __aInternalGlobal.loggerPtr->Error(
-            "您当前设定的第 " + pattern             //
-                + " 波 的 time 参数为 " + pattern + //
-                ", 超出有效范围",
-            time.wave, time.time);
+            "您当前设定的第 " + std::to_string(time.wave)         //
+            + " 波 的 time 参数为 " + std::to_string(time.time) + //
+            ", 超出有效范围");
         return false;
     }
 
-    if (opQueueContainer[time.wave - 1].wavelength != -1) {
-        __aInternalGlobal.loggerPtr->Error("您第 " + __aInternalGlobal.loggerPtr->GetPattern() + " 波已经设置过波长，不允许再次设置",
-            time.wave);
+    if (container[time.wave - 1].wavelength != -1) {
+        __aInternalGlobal.loggerPtr->Error("您第 " + std::to_string(time.wave) + " 波已经设置过波长，不允许再次设置");
         return false;
     }
     return true;
@@ -206,8 +201,8 @@ bool __AOperationQueueManager::_CheckWavelength(const ATime& time)
 
 void __AOperationQueueManager::_CheckAssumeWavelength(int wave)
 {
-    auto&& currentTimeQueue = opQueueContainer[wave - 1];
-    auto&& nextTimeQueue = opQueueContainer[wave];
+    auto&& currentTimeQueue = container[wave - 1];
+    auto&& nextTimeQueue = container[wave];
     auto currentRefreshTime = currentTimeQueue.memRefreshTime;
     auto nextRefreshTime = nextTimeQueue.memRefreshTime;
     std::string str;
@@ -237,9 +232,9 @@ void __AOperationQueueManager::_CheckAssumeWavelength(int wave)
 
     if (!str.empty()) { // str 不为空说明有错误
         // 将已经设置的 calRefreshTime 设置回 UNINIT
-        auto totalWave = opQueueContainer.size() - 2;
+        auto totalWave = container.size() - 2;
         for (int waveIter = wave; waveIter < totalWave; ++waveIter) {
-            opQueueContainer[waveIter].calRefreshTime = __AOperationQueue::UNINIT;
+            container[waveIter].calRefreshTime = __AOperationQueue::UNINIT;
         }
 
         __aInternalGlobal.loggerPtr->Error(
@@ -251,8 +246,8 @@ void __AOperationQueueManager::_CheckAssumeWavelength(int wave)
 
 void __AOperationQueueManager::_BeforeScript()
 {
-    opQueueContainer.clear();
-    opQueueContainer.resize(__aInternalGlobal.mainObject->TotalWave());
+    container.clear();
+    container.resize(__aInternalGlobal.mainObject->TotalWave());
     startTime = ATime(__AOperationQueue::UNINIT, __AOperationQueue::UNINIT);
 }
 
@@ -269,7 +264,7 @@ int ANowTime(int wave)
         return __AOperationQueue::UNINIT;
     }
     ++depth;
-    auto maxWave = __AOperationQueueManager::opQueueContainer.size();
+    auto maxWave = __AOperationQueueManager::container.size();
     if (wave <= 0 || wave > maxWave) {
         auto&& pattern = __aInternalGlobal.loggerPtr->GetPattern();
         // 此处会造成递归调用
@@ -279,7 +274,7 @@ int ANowTime(int wave)
         --depth;
         return __AOperationQueue::UNINIT;
     }
-    auto refreshTime = __AOperationQueueManager::opQueueContainer[wave - 1].calRefreshTime;
+    auto refreshTime = __AOperationQueueManager::container[wave - 1].calRefreshTime;
     --depth;
     return refreshTime == __AOperationQueue::UNINIT //
         ? __AOperationQueue::UNINIT

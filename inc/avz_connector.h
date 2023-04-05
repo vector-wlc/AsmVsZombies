@@ -7,8 +7,6 @@
 #ifndef __AVZ_CONNECTOR_H__
 #define __AVZ_CONNECTOR_H__
 
-#include "avz_global.h"
-#include "avz_logger.h"
 #include "avz_tick_runner.h"
 #include "avz_time_queue.h"
 
@@ -78,13 +76,21 @@ public:
     {
         _connectPtr->Stop();
     }
-    bool isPaused()
+    bool IsPaused()
     {
-        return _connectPtr->isPaused();
+        return _connectPtr->IsPaused();
     }
-    bool isStopped()
+    bool IsStopped()
     {
-        return _connectPtr->isStopped();
+        return _connectPtr->IsStopped();
+    }
+    __ADeprecated bool isStopped()
+    {
+        return IsStopped();
+    }
+    __ADeprecated bool isPaused()
+    {
+        return IsPaused();
     }
 
 protected:
@@ -108,6 +114,17 @@ protected:
 //         aCobManager.Fire({{2, 9}, {5, 9}});
 //     });
 //     timeHandle.Stop(); // 让上面这个连接失效
+//
+//
+//     // 在当前时间点 100cs 之后开始不断尝试种植小喷菇, 直到小喷菇种植成功
+//     // 这里的 ANowDelayTime 会返回一个 ATime 对象
+//     AConnect(ANowDelayTime(100), [] {
+//         if (AIsSeedUsable(AXPG_8)) {
+//             ACard(AXPG_8, 1, 1);
+//             return false;
+//         }
+//         return true;
+//     });
 //
 //
 //     // 按下 0 键弹出一个窗口, 显示 hello, 注意 0 是单引号
@@ -142,6 +159,19 @@ ATimeConnectHandle AConnect(const ATime& time, Op&& op)
     return ATimeConnectHandle(timeIter, time);
 }
 
+template <typename Sess>
+    requires __AIsPredication<Sess>
+ATimeConnectHandle AConnect(const ATime& time, Sess&& func)
+{
+    return AConnect(time, [func = std::forward<Sess>(func)]() mutable {
+        auto tickRunner = std::make_shared<ATickRunner>();
+        tickRunner->Start([func = std::move(func), tickRunner] {
+            if(!func()) {
+                tickRunner->Stop();
+            } }, false);
+    });
+}
+
 std::vector<ATimeConnectHandle> AConnect(const ATime& time, ARelOp&& reOp);
 std::vector<ATimeConnectHandle> AConnect(const ATime& time, const ARelOp& reOp);
 
@@ -149,19 +179,18 @@ template <typename Pre, typename Op>
     requires __AIsPredication<Pre> && __AIsOperation<Op>
 AConnectHandle AConnect(Pre&& pre, Op&& op, bool isInGlobal = false)
 {
-    static __AConnectVec vec;
+    extern __AConnectVec __aConnectVec;
     auto tick = new ATickRunnerWithNoStart([pre = std::forward<Pre>(pre), op = std::forward<Op>(op)]() mutable {
         if (pre()) {
             op();
         }
     },
         isInGlobal);
-    vec.tickVec.push_back(tick);
+    __aConnectVec.tickVec.push_back(tick);
     return tick;
 }
 
 class __AKeyManager : public AOrderedStateHook<-1> {
-
 public:
     enum KeyState {
         VALID,

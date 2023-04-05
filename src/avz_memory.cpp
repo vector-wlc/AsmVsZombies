@@ -6,7 +6,9 @@
  */
 #include "avz_memory.h"
 #include "avz_asm.h"
+#include "avz_card.h"
 #include "avz_connector.h"
+#include "avz_smart.h"
 
 // 返回鼠标所在行
 int AMouseRow()
@@ -47,6 +49,12 @@ int AGetSeedIndex(int type, bool imitator)
     return -1;
 }
 
+ASeed* AGetSeedPtr(int type, bool imitator)
+{
+    auto idx = AGetSeedIndex(type, imitator);
+    return idx < 0 ? nullptr : AGetMainObject()->SeedArray() + idx;
+}
+
 int AGetPlantIndex(int row, int col, int type)
 {
     auto plant = __aInternalGlobal.mainObject->PlantArray();
@@ -68,6 +76,12 @@ int AGetPlantIndex(int row, int col, int type)
         }
     }
     return -1; // 没有符合要求的植物返回-1
+}
+
+APlant* AGetPlantPtr(int row, int col, int type)
+{
+    auto idx = AGetPlantIndex(row, col, type);
+    return idx < 0 ? nullptr : AGetMainObject()->PlantArray() + idx;
 }
 
 void AGetPlantIndices(const std::vector<AGrid>& lstIn, int type,
@@ -107,6 +121,23 @@ std::vector<int> AGetPlantIndices(const std::vector<AGrid>& lst, int type)
     std::vector<int> indexs;
     AGetPlantIndices(lst, type, indexs);
     return indexs;
+}
+
+void AGetPlantPtrs(const std::vector<AGrid>& lstIn, int type, std::vector<APlant*>& ptrsOut)
+{
+    auto plantArray = AGetMainObject()->PlantArray();
+    auto indexs = AGetPlantIndices(lstIn, type);
+    ptrsOut.clear();
+    for (auto&& index : indexs) {
+        ptrsOut.push_back(index < 0 ? nullptr : plantArray + index);
+    }
+}
+
+std::vector<APlant*> AGetPlantPtrs(const std::vector<AGrid>& lst, int type)
+{
+    std::vector<APlant*> ptrs;
+    AGetPlantPtrs(lst, type, ptrs);
+    return ptrs;
 }
 
 bool AIsZombieExist(int type, int row)
@@ -280,4 +311,79 @@ void ARemovePlant(int row, int col, APlantType type)
         return;
     }
     AAsm::RemovePlant(idx + AGetMainObject()->PlantArray());
+}
+
+__ANodiscard int AGetSeedSunVal(APlantType type)
+{
+    int intType = int(type);
+    if (type >= AM_PEASHOOTER) {
+        intType -= AM_PEASHOOTER;
+    }
+    struct SeedSunVal : APvzStruct {
+        uint8_t data[0x24];
+    };
+    auto seedSunArray = (SeedSunVal*)(0x69F2C0);
+    return *(int*)(seedSunArray + intType);
+}
+
+// 检查卡片是否能用
+__ANodiscard bool AIsSeedUsable(APlantType type)
+{
+    auto idx = AGetCardIndex(type);
+    if (idx == -1) {
+        return false;
+    }
+    auto seed = AGetMainObject()->SeedArray() + idx;
+    if (!seed->IsUsable()) {
+        return false;
+    }
+    auto sunVal = AGetSeedSunVal(type);
+    return AGetMainObject()->Sun() >= sunVal;
+}
+
+// 检查卡片是否能用
+__ANodiscard bool AIsSeedUsable(ASeed* seed)
+{
+    if (!seed->IsUsable()) {
+        return false;
+    }
+    int type = seed->Type();
+    if (type == AIMITATOR) {
+        type = seed->ImitatorType();
+    }
+    auto sunVal = AGetSeedSunVal(APlantType(type));
+    return AGetMainObject()->Sun() >= sunVal;
+}
+
+// 得到炮的恢复时间
+// index 为玉米加农炮的内存索引
+__ANodiscard int AGetCobRecoverTime(int index)
+{
+    if (index < 0 || index > AGetMainObject()->PlantCountMax()) {
+        __aInternalGlobal.loggerPtr->Error("AGetCobRecoverTime(int) 参数值为:" + std::to_string(index) + ", 不合法");
+        return ACobManager::NO_EXIST_RECOVER_TIME;
+    }
+    return AGetCobRecoverTime(AGetMainObject()->PlantArray() + index);
+}
+
+__ANodiscard int AGetCobRecoverTime(APlant* cob)
+{
+    if (cob == nullptr || cob->IsDisappeared() || cob->Type() != ACOB_CANNON) {
+        __aInternalGlobal.loggerPtr->Error("AGetCobRecoverTime(APlant*) 参数值不合法");
+        return ACobManager::NO_EXIST_RECOVER_TIME;
+    }
+    auto animationMemory = __aInternalGlobal.pvzBase->AnimationMain()->AnimationOffset()->AnimationArray() + cob->AnimationCode();
+
+    switch (cob->State()) {
+    case 35:
+        return 125 + cob->StateCountdown();
+    case 36:
+        return int(125 * (1 - animationMemory->CirculationRate()) + 0.5) + 1;
+    case 37:
+        return 0;
+    case 38:
+        return 3125 + int(350 * (1 - animationMemory->CirculationRate()) + 0.5);
+    default:
+        return ACobManager::NO_EXIST_RECOVER_TIME;
+    }
 }

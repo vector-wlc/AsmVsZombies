@@ -7,6 +7,8 @@
 
 #include "avz_connector.h"
 
+__AConnectVec __aConnectVec;
+
 void ATimeConnectHandle::Stop()
 {
     if (_iter) {
@@ -67,7 +69,7 @@ __AKeyManager::KeyState __AKeyManager::ToVaildKey(AKey& key)
         return UNKNOWN;
     }
     auto iter = _keyMap.find(key);
-    if (iter == _keyMap.end() || iter->second.isStopped()) {
+    if (iter == _keyMap.end() || iter->second.IsStopped()) {
         return VALID;
     } else {
         __aInternalGlobal.loggerPtr->Error("按键 : " + //

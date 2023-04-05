@@ -103,7 +103,7 @@ ASkipTick(condition);
 ```C++
 auto condition = [=]() {
     std::vector<int> results;
-    GetPlantIndices({{1, 3}, {1, 5}}, AYMJNP_47, results);
+    AGetPlantIndices({{1, 3}, {1, 5}}, AYMJNP_47, results);
 
     for (auto result : results) {
         if (result < 0) {

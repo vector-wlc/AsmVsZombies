@@ -1,5 +1,17 @@
 ## 更新日志
 
+* 开放 `ACobManager::GetRoofFlyTime` 得到屋顶炮的飞行时间
+* 新增 `ACobManager::GetUsablePtr` 和 `ACobManager::GetRoofUsablePtr` 分别得到目前的可用的炮的内存指针
+* 新增 `ACobManager::GetRecoverPtr` 和 `ACobManager::GetRoofRecoverPtr` 分别得到恢复时间最短的炮的内存指针
+* 新增 `AConnect` 调用形式: AConnect(ATime, bool Func), 意思为当时间到达之后不断运行 func, 直到 func 返回 false
+* 新增 `AGetCobRecoverTime` 得到炮的恢复时间
+* 修复了 `ATickRunner` 控制错误的问题
+* 修正了 `IsStopped` `IsPaused` 的拼写错误问题, 并且之前的标识符被标记为 `Deprecated`
+* 修复了 `ALogger` 状态未被重置的问题
+* 修复了 `ALogger<AFile>` 的乱码问题
+* 新增 `AGetAnimationArray` 直接获取动画数组
+* 当阳光不够时，不再种植植物，并且新增 `AIsSeedUsable` 函数获取卡片是否可用
+
 AvZ 2.1.0 2023_01_19
 
 * 新增 PvZ 内置函数：删除、放置植物、僵尸函数，

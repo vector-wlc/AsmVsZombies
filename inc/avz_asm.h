@@ -81,7 +81,7 @@ public:
 
     static void ClearObjectMemory();
 
-    static void GameExit();
+    static void CheckFightExit();
 
     static void KillZombiesPreview();
 
@@ -105,25 +105,20 @@ public:
 
     static void RemoveZombie(AZombie* zombie);
 
+    __ADeprecated static void* SaveToMemory();
+    __ADeprecated static void LoadFromMemory(void*& p);
+    __ADeprecated static void FreeMemory(void*& p);
+
 protected:
     static void _ClickScene();
-
     static void _Click();
-
     static void _MouseClick();
-
     static void _ShootPao();
-
     static void _PlantCard();
-
     static void _ShovelPlant();
-
     static void _ChooseCard();
-
     static void _ChooseImitatorCard();
-
     static void _GetPlantRejectType();
-
     static void _RemovePlant();
 };
 

@@ -7,23 +7,23 @@
 
 # 目录
 
-* [起步](./1start.md)
+* [起步](./01start.md)
 
-* [Hello AsmVsZombies](./2hello_avz.md)
+* [Hello AsmVsZombies](./02hello_avz.md)
 
-* [编码风格](./3coding_style.md)
+* [编码风格](./03coding_style.md)
 
-* [载入脚本模式(挂机函数)](./4reload_mode.md)
+* [载入脚本模式(挂机函数)](./04reload_mode.md)
 
-* [卡片相关](./5card_shovel.md)
+* [卡片相关](./05card_shovel.md)
 
-* [时间管理: 阻塞](./6wait_until.md)
+* [时间管理: 阻塞](./06wait_until.md)
 
-* [时间管理: 连接](./7connect_time.md)
+* [时间管理: 连接](./07connect_time.md)
 
-* [炮管理类——初步](./8cob_manager_1.md)
+* [炮管理类——初步](./08cob_manager_1.md)
 
-* [第一个键控脚本](./9first_tas_script.md)
+* [第一个键控脚本](./09first_tas_script.md)
 
 * [自动操作类](./10ice_filler.md)
 

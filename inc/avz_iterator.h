@@ -75,7 +75,8 @@ struct __AFilterTrait<ASeed> {
     }
     __ANodiscard static __APredicateT<ASeed> GetAlivePredicate()
     {
-        return [](ASeed* ptr) -> bool { return ptr->IsUsable(); };
+        bool AIsSeedUsable(ASeed * seed);
+        return [](ASeed* ptr) -> bool { return AIsSeedUsable(ptr); };
     }
 };
 

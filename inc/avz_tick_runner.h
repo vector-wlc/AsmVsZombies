@@ -8,199 +8,178 @@
 #define __AVZ_TICK_RUNNER_H__
 
 #include "avz_logger.h"
-#include "avz_memory.h"
 
 struct __ATickOperation {
     AOperation operation;
     bool isInGlobal;
     bool isRunning = true;
+    int idx = 0;
 
-    __ATickOperation(AOperation&& opertaion, bool isInGlobal)
-        : operation(std::move(opertaion))
+    template <typename Op>
+        requires __AIsOperation<Op>
+    __ATickOperation(Op&& opertaion, bool isInGlobal, int idx)
+        : operation(std::forward<Op>(opertaion))
         , isInGlobal(isInGlobal)
+        , idx(idx)
     {
     }
 
     __ATickOperation(__ATickOperation&& rhs)
     {
         this->operation = std::move(rhs.operation);
-        this->isInGlobal = rhs.isInGlobal;
+        __CopyOthers(std::move(rhs));
     }
 
     __ATickOperation& operator=(__ATickOperation&& rhs)
     {
         this->operation = std::move(rhs.operation);
-        this->isInGlobal = rhs.isInGlobal;
+        __CopyOthers(std::move(rhs));
         return *this;
     }
 
     __ATickOperation& operator=(const __ATickOperation& rhs)
     {
         this->operation = rhs.operation;
-        this->isInGlobal = rhs.isInGlobal;
+        __CopyOthers(rhs);
         return *this;
+    }
+
+private:
+    template <typename T>
+    void __CopyOthers(T&& rhs)
+    {
+        this->isInGlobal = rhs.isInGlobal;
+        this->isRunning = rhs.isRunning;
+        this->idx = rhs.idx;
     }
 };
 
 class __ATickManager : public AOrderedStateHook<INT_MIN> {
-protected:
-    int _idx = INT_MAX;
-    bool _isPaused = false;
-    bool _isRunning = false;
-
 public:
     using Queue = std::vector<__ATickOperation>;
-    static Queue queue;
 
-    static void RunAll();
-    static void RunOnlyInGlobal();
+    void RunAll();
+    void RunOnlyInGlobal();
 
     template <typename Op>
         requires __AIsOperation<Op>
-    void Start(Op&& operation, bool isInGlobal)
+    int Add(Op&& operation, bool isInGlobal)
     {
-        if (_isRunning) {
-            __aInternalGlobal.loggerPtr->Error("ATickRunner 不允许同时运行两个操作");
+        auto retIdx = _nextIdx;
+        if (_nextIdx < _queue.size()) { // 直接用之前的缓存，不必开新空间
+            _queue[_nextIdx].isInGlobal = isInGlobal;
+            _queue[_nextIdx].isRunning = true;
+            _queue[_nextIdx].operation = std::forward<Op>(operation);
+            std::swap(_queue[_nextIdx].idx, _nextIdx);
+        } else { // 需要新的空间
+            _queue.emplace_back(
+                __ATickOperation(std::forward<Op>(operation), isInGlobal, _nextIdx));
+            ++_nextIdx;
         }
-        _isRunning = true;
-        _isPaused = false;
-        auto&& tmp = [this, operation = std::forward<Op>(operation)]() mutable {
-            if (!_isPaused && !AGameIsPaused()) {
-                operation();
-            }
-        };
-        queue.emplace_back(__ATickOperation(std::move(tmp), isInGlobal));
-        _idx = queue.size() - 1;
+        __aInternalGlobal.loggerPtr->Info("增加 ID 为 " + std::to_string(retIdx) + " 的帧运行");
+        return retIdx;
     }
-
-    void Pause() noexcept
-    {
-        _isPaused = true;
-    }
-
-    bool isPaused() const noexcept
-    {
-        return _isPaused;
-    }
-
-    void GoOn() noexcept
-    {
-        _isPaused = false;
-    }
-
-    void Stop() noexcept
-    {
-        if (_idx < queue.size()) {
-            queue[_idx].isRunning = false;
-        }
-        _isRunning = false;
-    }
-
-    bool isStopped() const noexcept
-    {
-        return !_isRunning;
-    }
+    __ATickOperation& At(int idx) { return _queue[idx]; }
+    void Remove(int idx);
 
 protected:
-    virtual void _BeforeScript() override
-    {
-        if (!queue.empty()) {
-            queue.clear();
-        }
-        _isRunning = false;
-        _isPaused = false;
-    }
+    virtual void _BeforeScript() override;
+    int _nextIdx;
+    Queue _queue;
 };
 
-class ATickRunner {
+class ATickRunner : public AOrderedStateHook<-1> {
+protected:
+    int _idx = -1;
+
 public:
     ATickRunner() = default;
     explicit ATickRunner(AOperation&& operation, bool isInGlobal = false)
     {
-        _tickManager.Start(std::move(operation), isInGlobal);
+        Start(std::move(operation), isInGlobal);
     }
     explicit ATickRunner(const AOperation& operation, bool isInGlobal = false)
     {
-        _tickManager.Start(operation, isInGlobal);
+        Start(operation, isInGlobal);
     }
 
     // Start 第一个参数为每帧要运行的函数
     // Start 第二个参数为运行方式
     // 运行方式为 true 时, 在选卡界面和高级暂停时都生效, 反之不生效
-    template <class Func>
-    void Start(Func&& func, bool isInGlobal = false)
+    template <typename Op>
+        requires __AIsOperation<Op>
+    void Start(Op&& operation, bool isInGlobal = false)
     {
-        _tickManager.Start(std::forward<Func>(func), isInGlobal);
+        if (_idx != -1) {
+            __aInternalGlobal.loggerPtr->Error("ATickRunner 不允许同时运行两个操作");
+        }
+        auto&& tmp = [operation = std::forward<Op>(operation)]() mutable {
+            operation();
+        };
+        _idx = __aInternalGlobal.tickManager->Add(std::move(tmp), isInGlobal);
     }
 
     void Pause() noexcept
     {
-        _tickManager.Pause();
+        __aInternalGlobal.tickManager->At(_idx).isRunning = false;
     }
 
-    bool isPaused() const noexcept
+    bool IsPaused() const noexcept
     {
-        return _tickManager.isPaused();
+        return !__aInternalGlobal.tickManager->At(_idx).isRunning;
     }
 
     void GoOn() noexcept
     {
-        _tickManager.GoOn();
+        __aInternalGlobal.tickManager->At(_idx).isRunning = true;
     }
 
     void Stop() noexcept
     {
-        _tickManager.Stop();
+        __aInternalGlobal.tickManager->Remove(_idx);
+        _idx = -1;
     }
 
-    bool isStopped() const noexcept
+    bool IsStopped() const noexcept
     {
-        return _tickManager.isStopped();
+        return _idx == -1;
+    }
+
+    __ADeprecated bool isStopped() const noexcept
+    {
+        return IsStopped();
+    }
+    __ADeprecated bool isPaused() const noexcept
+    {
+        return IsPaused();
     }
 
 protected:
-    __ATickManager _tickManager;
+    virtual void _BeforeScript() override
+    {
+        _idx = -1;
+    }
 };
 
-class ATickRunnerWithNoStart {
+class ATickRunnerWithNoStart : protected ATickRunner {
 public:
     ATickRunnerWithNoStart() = default;
     explicit ATickRunnerWithNoStart(AOperation&& operation, bool isInGlobal = false)
     {
-        _tickManager.Start(std::move(operation), isInGlobal);
+        Start(std::move(operation), isInGlobal);
     }
     explicit ATickRunnerWithNoStart(const AOperation& operation, bool isInGlobal = false)
     {
-        _tickManager.Start(operation, isInGlobal);
+        Start(operation, isInGlobal);
     }
 
-    void Pause() noexcept
-    {
-        _tickManager.Pause();
-    }
-
-    bool isPaused() const noexcept
-    {
-        return _tickManager.isPaused();
-    }
-
-    void GoOn() noexcept
-    {
-        _tickManager.GoOn();
-    }
-
-    void Stop() noexcept
-    {
-        _tickManager.Stop();
-    }
-
-    bool isStopped() const noexcept
-    {
-        return _tickManager.isStopped();
-    }
-
-protected:
-    __ATickManager _tickManager;
+    using ATickRunner::GoOn;
+    using ATickRunner::IsPaused;
+    using ATickRunner::isPaused;
+    using ATickRunner::IsStopped;
+    using ATickRunner::isStopped;
+    using ATickRunner::Pause;
+    using ATickRunner::Stop;
 };
 
 #endif

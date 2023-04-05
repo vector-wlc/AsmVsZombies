@@ -1,15 +1,14 @@
 
 build
-script/test
 /*.cpp
 tools/downloader/.vs
 tools/downloader/Debug
 tools/downloader/Release
 tools/downloader/downloader/Debug
 tools/downloader/downloader/Release
-debug
 /*.zip
 .cache
 extension
 bin
-
+debug
+.vs

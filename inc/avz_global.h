@@ -66,11 +66,13 @@ void ALimitValue(T& value, T min_v, T max_v)
 }
 
 class AAbstractLogger;
+class __ATickManager;
 
 struct __AInternalGlobal {
     AMainObject* mainObject;
     APvzBase* pvzBase;
     AAbstractLogger* loggerPtr;
+    __ATickManager* tickManager;
 };
 
 extern __AInternalGlobal __aInternalGlobal;

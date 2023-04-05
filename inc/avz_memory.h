@@ -13,6 +13,8 @@ __ANodiscard inline AMainObject* AGetMainObject() { return __aInternalGlobal.mai
 
 __ANodiscard inline APvzBase* AGetPvzBase() { return __aInternalGlobal.pvzBase; }
 
+__ANodiscard inline AAnimation* AGetAnimationArray() { return __aInternalGlobal.pvzBase->AnimationMain()->AnimationOffset()->AnimationArray(); }
+
 // 返回鼠标所在行
 __ANodiscard int AMouseRow();
 
@@ -25,12 +27,24 @@ __ANodiscard float AMouseCol();
 // AGetSeedIndex(16, true)-------获得模仿者荷叶的卡槽对象序列
 __ANodiscard int AGetSeedIndex(int type, bool imitator = false);
 
+// 获取指定类型植物的卡槽对象指针
+// AGetSeedIndex(16)------------获得荷叶的卡槽对象指针
+// AGetSeedIndex(16, true)-------获得模仿者荷叶的卡槽对象指针
+__ANodiscard ASeed* AGetSeedPtr(int type, bool imitator = false);
+
 // 得到指定位置和类型的植物对象序列
 // 当参数type为默认值-1时该函数无视南瓜花盆荷叶
 // *** 使用示例：
 // GetPlantIndex(3, 4)------如果三行四列有除南瓜花盆荷叶之外的植物时，返回该植物的对象序列，否则返回-1
 // GetPlantIndex(3, 4, 47)---如果三行四列有春哥，返回其对象序列，如果有其他植物，返回-2，否则返回-1
 __ANodiscard int AGetPlantIndex(int row, int col, int type = -1);
+
+// 得到指定位置和类型的植物对象指针
+// 当参数type为默认值-1时该函数无视南瓜花盆荷叶
+// *** 使用示例：
+// GetPlantIndex(3, 4)------如果三行四列有除南瓜花盆荷叶之外的植物时，返回该植物的指针，否则返回 nullptr
+// GetPlantIndex(3, 4, 47)---如果三行四列有春哥，返回该春哥的指针，否则返回 nullptr
+__ANodiscard APlant* AGetPlantPtr(int row, int col, int type = -1);
 
 // 得到一组指定位置的植物的对象序列
 // 参数1：填写一组指定位置
@@ -40,6 +54,14 @@ __ANodiscard int AGetPlantIndex(int row, int col, int type = -1);
 void AGetPlantIndices(const std::vector<AGrid>& lstIn, int type, std::vector<int>& indexsOut);
 __ANodiscard std::vector<int> AGetPlantIndices(const std::vector<AGrid>& lst, int type);
 
+// 得到一组指定位置的植物的对象指针
+// 参数1：填写一组指定位置
+// 参数2：填写指定类型
+// 参数3(可不写)：得到对象序列，此函数按照位置的顺序填写对象指针
+// *** 注意：如果没有植物填写 nullptr
+void AGetPlantPtrs(const std::vector<AGrid>& lstIn, int type, std::vector<APlant*>& ptrsOut);
+__ANodiscard std::vector<APlant*> AGetPlantPtrs(const std::vector<AGrid>& lst, int type);
+
 // 检查僵尸是否存在
 // *** 使用示例
 // AIsZombieExist()-------检查场上是否存在僵尸
@@ -47,6 +69,14 @@ __ANodiscard std::vector<int> AGetPlantIndices(const std::vector<AGrid>& lst, in
 // AIsZombieExist(-1,4)-----检查第四行是否有僵尸存在
 // AIsZombieExist(23,4)-----检查第四行是否有巨人僵尸存在
 __ANodiscard bool AIsZombieExist(int type, int row = -1);
+
+__ANodiscard int AGetSeedSunVal(APlantType type);
+
+// 检查卡片是否能用
+__ANodiscard bool AIsSeedUsable(APlantType type);
+
+// 检查卡片是否能用
+__ANodiscard bool AIsSeedUsable(ASeed* seed);
 
 // 卡片精准生效
 // *** 注意此函数不允许大幅度修正生效时间，如果修改的时间与真实值超过 2cs，则会报错
@@ -186,6 +216,16 @@ bool AGameIsPaused();
 
 // 移除植物函数
 void ARemovePlant(int row, int col, APlantType type);
+
+// 得到炮的恢复时间
+// index 为玉米加农炮的内存索引
+// 返回 ACobManager::NO_EXIST_RECOVER_TIME 代表该玉米炮不存在
+__ANodiscard int AGetCobRecoverTime(int index);
+
+// 得到炮的恢复时间
+// cob 为玉米加农炮的内存指针
+// 返回 ACobManager::NO_EXIST_RECOVER_TIME 代表该玉米炮不存在
+__ANodiscard int AGetCobRecoverTime(APlant* cob);
 
 inline __AGameSpeedManager __agsm; // AStateHook
 inline AMaidCheats __amc;          // AStateHook

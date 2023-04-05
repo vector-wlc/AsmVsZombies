@@ -5,6 +5,7 @@
 #include "avz_exception.h"
 #include "avz_game_controllor.h"
 #include "avz_logger.h"
+#include "avz_memory.h"
 #include "avz_tick_runner.h"
 #include "avz_time_queue.h"
 
@@ -87,7 +88,7 @@ void __AScriptManager::RunScript()
 
     if (__AGameControllor::isAdvancedPaused || gameUi != 3) {
         // 运行全局 TickRunner
-        __ATickManager::RunOnlyInGlobal();
+        __aInternalGlobal.tickManager->RunOnlyInGlobal();
     }
 
     if (__AGameControllor::isAdvancedPaused) {
@@ -117,7 +118,7 @@ void __AScriptManager::RunScript()
 
     isBlockable = false;
     __AOperationQueueManager::RunOperation();
-    __ATickManager::RunAll();
+    __aInternalGlobal.tickManager->RunAll();
     isBlockable = true;
 }
 
@@ -147,7 +148,6 @@ void __AScriptManager::Run()
             __aInternalGlobal.loggerPtr->Info(exceMsg.c_str());
             __AStateHookManager::RunAllExitFight();
         }
-
     } catch (...) {
         __aInternalGlobal.loggerPtr->Error("脚本触发了一个未知的异常\n");
         isExit = true;
@@ -178,7 +178,7 @@ void __AScriptManager::ScriptHook()
         __aInternalGlobal.pvzBase->MjClock() += 1;
         AAsm::GameFightLoop();
         AAsm::ClearObjectMemory();
-        AAsm::GameExit();
+        AAsm::CheckFightExit();
     }
 }
 

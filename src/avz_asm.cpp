@@ -15,7 +15,7 @@ static int __y;
 static int __key;
 static int __rank;
 static int __index;
-static int __card_type;
+static int __cardType;
 static int __row;
 static int __col;
 static int __reject_type;
@@ -23,6 +23,9 @@ static APlant* __plant;
 static AZombie* __zombie;
 static int __type;
 static int __imitatorType;
+static void* __p;
+static DWORD __board;
+static DWORD __levelprop;
 
 void AAsm::ClickScene(AMainObject* level, int x, int y, int key)
 {
@@ -73,22 +76,22 @@ void AAsm::ShovelPlant(int x, int y)
 }
 
 // 选择卡片
-void AAsm::ChooseCard(int card_type)
+void AAsm::ChooseCard(int cardType)
 {
-    __card_type = card_type;
+    __cardType = cardType;
     _ChooseCard();
 }
 
 // 选择模仿者卡片
-void AAsm::ChooseImitatorCard(int card_type)
+void AAsm::ChooseImitatorCard(int cardType)
 {
-    __card_type = card_type;
+    __cardType = cardType;
     _ChooseImitatorCard();
 }
 
-int AAsm::GetPlantRejectType(int card_type, int row, int col)
+int AAsm::GetPlantRejectType(int cardType, int row, int col)
 {
-    __card_type = card_type;
+    __cardType = cardType;
     __row = row;
     __col = col;
     _GetPlantRejectType();
@@ -216,7 +219,7 @@ void AAsm::SetImprovePerformance(bool is_improve_performance)
     *(bool*)(0x6a66f4) = !is_improve_performance;
 }
 
-void AAsm::GameExit()
+void AAsm::CheckFightExit()
 {
 #ifdef __MINGW32__
     __asm__ __volatile__(
@@ -547,9 +550,9 @@ void AAsm::_ChooseCard()
         "movl $0x6A9EC0, %%eax;"
         "movl (%%eax), %%eax;"
         "movl 0x774(%%eax), %%eax;"
-        "movl %[__card_type], %%edx;"
+        "movl %[__cardType], %%edx;"
         "shll $0x4, %%edx;"
-        "subl %[__card_type], %%edx;"
+        "subl %[__cardType], %%edx;"
         "shll $0x2, %%edx;"
         "addl $0xa4, %%edx;"
         "addl %%eax, %%edx;"
@@ -558,7 +561,7 @@ void AAsm::_ChooseCard()
         "calll *%%ecx;"
 
         :
-        : [__card_type] "m"(__card_type)
+        : [__cardType] "m"(__cardType)
         : "esp", "ebp", "eax", "ecx", "edx");
 #else
     __asm {
@@ -566,9 +569,9 @@ void AAsm::_ChooseCard()
         mov eax,0x6A9EC0
         mov eax,[eax]
         mov eax,[eax+0x774]
-        mov edx, __card_type
+        mov edx, __cardType
         shl edx,0x4
-        sub edx, __card_type
+        sub edx, __cardType
         shl edx,0x2
         add edx,0xA4
         add edx,eax
@@ -593,7 +596,7 @@ void AAsm::_ChooseImitatorCard()
         "movl $0x0, 0x0C09(%%eax);"
         "movl $0x0, 0x0C0A(%%eax);"
         "movl $0x0, 0x0C0B(%%eax);"
-        "movl %[__card_type], %%edx;"
+        "movl %[__cardType], %%edx;"
         "movl %%edx, 0x0C18(%%eax);"
         "movl $0x0, 0x0C19(%%eax);"
         "movl $0x0, 0x0C1A(%%eax);"
@@ -613,7 +616,7 @@ void AAsm::_ChooseImitatorCard()
         "calll *%%edx;"
 
         :
-        : [__card_type] "m"(__card_type)
+        : [__cardType] "m"(__cardType)
         : "esp", "ebp", "eax", "ecx", "edx", "ebx");
 #else
     __asm {
@@ -646,7 +649,7 @@ void AAsm::_GetPlantRejectType()
     __asm__ __volatile__(
 
         "movl %[__row], %%eax;"
-        "pushl %[__card_type];"
+        "pushl %[__cardType];"
         "pushl %[__col];"
         "movl $0x6A9EC0, %%ebx;"
         "movl (%%ebx), %%ebx;"
@@ -657,13 +660,13 @@ void AAsm::_GetPlantRejectType()
         "movl %%eax, %[__reject_type];"
 
         :
-        : [__card_type] "m"(__card_type), [__row] "m"(__row), [__col] "m"(__col), [__reject_type] "m"(__reject_type)
+        : [__cardType] "m"(__cardType), [__row] "m"(__row), [__col] "m"(__col), [__reject_type] "m"(__reject_type)
         : "esp", "ebp", "eax", "ecx", "ebx", "edx");
 #else
     __asm {
         pushad
         esi row
-        push __card_type
+        push __cardType
         push col
         push 6A9EC0+768
         call 40E020
@@ -906,14 +909,109 @@ void AAsm::RemoveZombie(AZombie* zombie)
         "movl %[__zombie], %%ecx;"
         "movl $0x5302f0, %%edx;"
         "calll *%%edx;"
-
         :
         : [__zombie] "m"(__zombie)
         : "esp", "ebp", "edx", "ecx");
 #else
     __asm {
-        ecx zombie*
+        ecx zombie
         call 5302F0
     }
 #endif
+}
+
+void* AAsm::SaveToMemory()
+{
+    __p = malloc(0x24);
+    memset(__p, 0, 0x24);
+    __board = (DWORD)AGetMainObject();
+
+#ifdef __MINGW32__
+    __asm__ __volatile__(
+        "movl %[__p], %%eax;"
+        "pushl %[__board];"
+        "movl $0x4819D0, %%ecx;"
+        "calll *%%ecx;"
+        "addl $0x4, %%esp;"
+        :
+        : [__p] "m"(__p), [__board] "m"(__board)
+        : "esp", "ebp", "eax", "ecx");
+#else
+    __asm {
+		mov eax,p
+		push board
+		mov ecx, 0x4819D0
+		call ecx
+    }
+#endif
+
+    ((bool*)__p)[0x21] = 1;
+    return __p;
+}
+
+void AAsm::FreeMemory(void*& p)
+{
+    if (!p) {
+        return;
+    }
+#ifdef __MINGW32__
+    __asm__ __volatile__(
+        "movl %[p], %%ecx;"
+        "movl $0x5D60C0, %%eax;"
+        "calll *%%eax;"
+        :
+        : [p] "m"(p)
+        : "esp", "ebp", "eax", "ecx");
+#else
+    __asm {
+		mov ecx,p
+		mov eax,0x5D60C0
+		call eax
+    }
+#endif
+    free(p);
+    p = nullptr;
+}
+
+void AAsm::LoadFromMemory(void*& p)
+{
+    if (!p) {
+        return;
+    }
+    __p = p;
+    __levelprop = ((DWORD***)nullptr)[0x6A9EC0 / 4][0x768 / 4][0x160 / 4];
+
+#ifdef __MINGW32__
+    __asm__ __volatile__(
+        "movl %[__levelprop], %%edi;"
+        "movl $0x429E50, %%eax;"
+        "calll *%%eax;"
+
+        "movl %[__p], %%eax;"
+        "movl 0x6a9ec0,%%edi;"
+        "movl 0x768(%%edi), %%edi;"
+        "pushl %%edi;"
+        "movl $0x4819D0, %%ecx;"
+        "calll *%%ecx;"
+        "movl $0x481CE0, %%eax;"
+        "calll *%%eax;"
+        "addl $0x4, %%esp;"
+        :
+        : [__p] "m"(__p), [__board] "m"(__board), [__levelprop] "m"(__levelprop)
+        : "esp", "ebp", "eax", "ecx", "edi", "ebx");
+#else
+    __asm {
+		mov edi, levelprop
+		mov eax, 0x429E50
+		call eax
+		mov eax,p
+		push board
+		mov ecx,0x4819D0
+		call ecx
+		mov edi,board
+		mov eax,0x481CE0
+		call eax
+    }
+#endif
+    FreeMemory(p);
 }

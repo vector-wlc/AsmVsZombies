@@ -497,4 +497,4 @@ DemoC 的状态钩后面，那么只需要写成 `AAfterHook<Demo, DemoB, DemoC>
 但是这无所谓了，既然都一样了，那也就是不计较这两者的相对运行顺序了，比如 __AOperationQueueManager 和 __ATickManager，
 这两个的状态钩谁先运行都行，反正两者互不干扰，好了这就是 AStateHook 的全部内容了，希望大家能够理解。
 
- 
+[目录](./0catalogue.md)

@@ -2,13 +2,15 @@
  * @coding: utf-8
  * @Author: vector-wlc
  * @Date: 2020-02-06 10:22:46
- * @Description: CLASS FireOperator
+ * @Description: CLASS ACobManager
  */
 #include "avz_smart.h"
 #include "avz_asm.h"
 #include "avz_card.h"
 #include "avz_click.h"
+#include "avz_connector.h"
 #include "avz_memory.h"
+#include "avz_time_queue.h"
 #include <algorithm>
 #include <unordered_set>
 
@@ -41,42 +43,19 @@ void ACobManager::_EnterFight()
     AutoGetList();
 }
 
-// 得到炮的恢复时间
-int ACobManager::_GetRecoverTime(int index)
-{
-    auto cob = __aInternalGlobal.mainObject->PlantArray() + index;
-    if (cob->IsDisappeared() || cob->Type() != ACOB_CANNON) {
-        return NO_EXIST_RECOVER_TIME;
-    }
-    auto animationMemory = __aInternalGlobal.pvzBase->AnimationMain()->AnimationOffset()->AnimationArray() + cob->AnimationCode();
-
-    switch (cob->State()) {
-    case 35:
-        return 125 + cob->StateCountdown();
-    case 36:
-        return int(125 * (1 - animationMemory->CirculationRate()) + 0.5) + 1;
-    case 37:
-        return 0;
-    case 38:
-        return 3125 + int(350 * (1 - animationMemory->CirculationRate()) + 0.5);
-    default:
-        return NO_EXIST_RECOVER_TIME;
-    }
-}
-
 // 获取屋顶炮飞行时间
-int ACobManager::_GetRoofFlyTime(int cobCol, float dropCol)
+int ACobManager::GetRoofFlyTime(int cobCol, float dropCol)
 {
     // 得到落点对应的横坐标
-    int drop_x = static_cast<int>(dropCol * 80);
+    int dropX = static_cast<int>(dropCol * 80);
     // 得到该列炮最小飞行时间对应的最小的横坐标
-    int min_drop_x = _flyTimeData[cobCol - 1].minDropX;
+    int minDropX = _flyTimeData[cobCol - 1].minDropX;
     // 得到最小的飞行时间
-    int min_fly_time = _flyTimeData[cobCol - 1].minFlyTime;
+    int minFlyTime = _flyTimeData[cobCol - 1].minFlyTime;
     // 返回飞行时间
-    return (drop_x >= min_drop_x
-            ? min_fly_time
-            : (min_fly_time + 1 - (drop_x - (min_drop_x - 1)) / 32));
+    return (dropX >= minDropX
+            ? minFlyTime
+            : (minFlyTime + 1 - (dropX - (minDropX - 1)) / 32));
 }
 
 void ACobManager::_BasicFire(int cobIdx, int dropRow, float dropCol)
@@ -117,7 +96,7 @@ void ACobManager::RawFire(int cobRow, int cobCol, int dropRow, float dropCol)
         return;
     }
 
-    int recoverTime = _GetRecoverTime(index);
+    int recoverTime = AGetCobRecoverTime(index);
     if (recoverTime > 0) {
         __aInternalGlobal.loggerPtr->Error("位于 (" + pattern + ", " + pattern + ") 的炮还有 " + pattern + " cs 恢复",
             cobRow,
@@ -150,8 +129,8 @@ void ACobManager::RawRoofFire(int cobRow, int cobCol, int dropRow, float dropCol
         return;
     }
 
-    int recoverTime = _GetRecoverTime(index);
-    int delayTime = 387 - _GetRoofFlyTime(cobCol, dropCol);
+    int recoverTime = AGetCobRecoverTime(index);
+    int delayTime = 387 - GetRoofFlyTime(cobCol, dropCol);
     if (recoverTime > delayTime) {
         __aInternalGlobal.loggerPtr->Error("位于 (" + pattern + ", " + pattern + ") 的炮还有 " + pattern + " cs 恢复",
             cobRow,
@@ -182,14 +161,14 @@ void ACobManager::Plant(int row, int col)
             if (AGetPlantIndex(row, tCol, AKERNEL_PULT) != -1) {
                 continue;
             }
-            auto seed_memory = __aInternalGlobal.mainObject->SeedArray() + ymtseedIdx;
-            if (!seed_memory->IsUsable()) {
+            auto seedPtr = __aInternalGlobal.mainObject->SeedArray() + ymtseedIdx;
+            if (!AIsSeedUsable(seedPtr)) {
                 return;
             }
             ACard(ymtseedIdx + 1, row, tCol);
         }
-        auto seed_memory = __aInternalGlobal.mainObject->SeedArray() + ymjnpSeedIdx;
-        if (!seed_memory->IsUsable()) {
+        auto seedPtr = __aInternalGlobal.mainObject->SeedArray() + ymjnpSeedIdx;
+        if (!AIsSeedUsable(seedPtr)) {
             return;
         }
         ACard(ymjnpSeedIdx + 1, row, col);
@@ -200,7 +179,6 @@ void ACobManager::Plant(int row, int col)
 // 用户重置炮列表
 void ACobManager::SetList(const std::vector<AGrid>& lst)
 {
-    auto&& pattern = __aInternalGlobal.loggerPtr->GetPattern();
     _next = 0;
     // 重置炮列表
     _gridVec = lst;
@@ -210,9 +188,8 @@ void ACobManager::SetList(const std::vector<AGrid>& lst)
     while (idxIter != _indexVec.end()) {
         if ((*idxIter) < 0) {
             __aInternalGlobal.loggerPtr->Error(
-                "resetFireList : 请检查 (" + pattern + ", " + pattern + ") 位置是否为炮",
-                gridIter->row,
-                gridIter->col);
+                "resetFireList : 请检查 (" + std::to_string(gridIter->row)
+                + ", " + std::to_string(gridIter->col) + ") 位置是否为炮");
             return;
         }
 
@@ -294,76 +271,105 @@ void ACobManager::FixLatest()
 
 int ACobManager::_GetRecoverTimeVec()
 {
-    auto&& pattern = __aInternalGlobal.loggerPtr->GetPattern();
-    int time = _GetRecoverTime(_indexVec[_next]);
+    int time = AGetCobRecoverTime(_indexVec[_next]);
     if (time == NO_EXIST_RECOVER_TIME) {
         int index = AGetPlantIndex(
             _gridVec[_next].row, _gridVec[_next].col, ACOB_CANNON);
-        if (index < 0) // 找不到本来位置的炮
-        {
-            __aInternalGlobal.loggerPtr->Error("请检查位于 (" + pattern + ", " + pattern + ") 的第 " + pattern + " 门炮是否存在",
-                _gridVec[_next].row,
-                _gridVec[_next].col,
-                _next + 1);
+        if (index < 0) { // 找不到本来位置的炮
+            __aInternalGlobal.loggerPtr->Error("请检查位于 (" + std::to_string(_gridVec[_next].row)
+                + ", " + std::to_string(_gridVec[_next].col) + ") 的第 " + std::to_string(_next + 1) + " 门炮是否存在");
             return NO_EXIST_RECOVER_TIME;
         }
         _indexVec[_next] = index;
-        time = _GetRecoverTime(_indexVec[_next]);
+        time = AGetCobRecoverTime(_indexVec[_next]);
     }
     return time;
 }
 
-int ACobManager::_UpdateNextCob(bool isDelayFire, float dropCol)
+APlant* ACobManager::_BasicGetPtr(bool isRecover, float col)
 {
-    int recoverTime = 0xFFFF;
-    if (_sequentialMode == TIME) {
-        int time;
-        int _tmpNext = _next;
-        // 遍历整个炮列表
-        for (int i = 0; i < _indexVec.size(); ++i, Skip(1)) {
-            // 被锁定的炮不允许发射
-            if (_lockSet.find(_indexVec[_next]) != _lockSet.end()) {
-                continue;
-            }
+    int tmpIdx = _next;
+    auto _tmpSeqMode = _sequentialMode;
+    _sequentialMode = TIME;
+    auto ret = _UpdateNextCob(isRecover, col, false);
+    _next = tmpIdx;
+    _sequentialMode = _tmpSeqMode;
+    return ret == NO_EXIST_RECOVER_TIME ? nullptr : AGetMainObject()->PlantArray() + _indexVec[_next];
+}
 
-            time = _GetRecoverTimeVec();
-            if (time == NO_EXIST_RECOVER_TIME) {
-                return NO_EXIST_RECOVER_TIME;
-            }
-            int roof_offset_time = dropCol < 0 ? 0 : (387 - _GetRoofFlyTime(_gridVec[_next].col, dropCol));
-            time -= roof_offset_time;
-            if (time <= 0) { // 这里返回 roof_offset_time 目的是直接让 RoofFire 使用, 对于普通的炮, roof_offset_time 一直为 0
-                return roof_offset_time;
-            }
-            if (recoverTime > time) {
-                recoverTime = time;
-                _tmpNext = _next;
-            }
+APlant* ACobManager::GetUsablePtr()
+{
+    return _BasicGetPtr(false, -1);
+}
+
+APlant* ACobManager::GetRoofUsablePtr(float col)
+{
+    if (col < 0 || col > 10) {
+        __aInternalGlobal.loggerPtr->Error("ACobManager::GetNextRoofUsable 参数溢出, 范围为 [0, 10]");
+        col = -1;
+    }
+    return _BasicGetPtr(false, col);
+}
+
+__ANodiscard APlant* ACobManager::GetRecoverPtr()
+{
+    return _BasicGetPtr(true, -1);
+}
+
+__ANodiscard APlant* ACobManager::GetRoofRecoverPtr(float col)
+{
+    if (col < 0 || col > 10) {
+        __aInternalGlobal.loggerPtr->Error("ACobManager::GetNextRoofUsable 参数溢出, 范围为 [0, 10]");
+        col = -1;
+    }
+    return _BasicGetPtr(true, col);
+}
+
+int ACobManager::_UpdateNextCob(bool isDelayFire, float dropCol, bool isShowError)
+{
+    int minRecoverTime = 0xFFFF;
+    int recoverTime;
+    // 此变量用于选择最短时间内可用的炮
+    int _tmpNext = _next;
+    // 要迭代的次数
+    // 对于时间模式, 需要迭代整个炮列表
+    // 对于空间模式, 需要迭代一次
+    int iterCnt = _sequentialMode == TIME ? _indexVec.size() : 1;
+    // 开始遍历
+    for (int i = 0; i < iterCnt; ++i, Skip(1)) {
+        // 被锁定的炮不允许发射
+        if (_lockSet.find(_indexVec[_next]) != _lockSet.end()) {
+            continue;
         }
-
-        _next = _tmpNext;
-    } else { // SPACE
         recoverTime = _GetRecoverTimeVec();
-        if (recoverTime <= 0) {
-            return recoverTime;
+        if (recoverTime == NO_EXIST_RECOVER_TIME) {
+            return NO_EXIST_RECOVER_TIME;
+        }
+        int roofOffsetTime = dropCol < 0 ? 0 : (387 - GetRoofFlyTime(_gridVec[_next].col, dropCol));
+        recoverTime -= roofOffsetTime;
+        if (recoverTime <= 0) { // 这里返回 roofOffsetTime 目的是直接让 RoofFire 使用, 对于普通的炮, roofOffsetTime 一直为 0
+            return roofOffsetTime;
+        }
+        if (minRecoverTime > recoverTime) {
+            minRecoverTime = recoverTime;
+            _tmpNext = _next;
         }
     }
+    _next = _tmpNext;
 
     // 以上的判断条件已经解决炮是否存在以及炮当前时刻是否能用的问题
     // 如果炮当前时刻不能使用但是为 RecoverFire 时则不会报错，
     // 并返回恢复时间
     if (isDelayFire) {
-        return recoverTime;
+        return minRecoverTime;
     }
-    auto&& pattern = __aInternalGlobal.loggerPtr->GetPattern();
-    std::string error_str = (_sequentialMode == TIME ? "TIME 模式 : 未找到能够发射的炮，"
-                                                     : "SPACE 模式 : ");
-    error_str += "位于 (" + pattern + ", " + pattern + ") 的第 " + pattern + " 门炮还有 " + pattern + "cs 恢复";
-    __aInternalGlobal.loggerPtr->Error(std::move(error_str),
-        _gridVec[_next].row,
-        _gridVec[_next].col,
-        _next + 1,
-        recoverTime);
+    if (isShowError) {
+        std::string error_str = (_sequentialMode == TIME ? "TIME 模式 : 未找到能够发射的炮，"
+                                                         : "SPACE 模式 : ");
+        error_str += "位于 (" + std::to_string(_gridVec[_next].row) + ", " + std::to_string(_gridVec[_next].col) + ") 的第 "
+            + std::to_string(_next + 1) + " 门炮还有 " + std::to_string(minRecoverTime) + "cs 恢复";
+        __aInternalGlobal.loggerPtr->Error(std::move(error_str));
+    }
     return NO_EXIST_RECOVER_TIME;
 }
 
@@ -394,13 +400,14 @@ std::vector<int> ACobManager::Fire(const std::vector<APosition>& lst)
     return vec;
 }
 
-int ACobManager::RecoverFire(int row, float col)
+// 恢复发炮
+int ACobManager::_RecoverBasicFire(int row, float col, bool isRoof)
 {
     if (_gridVec.size() == 0) {
         __aInternalGlobal.loggerPtr->Error("RecoverFire : 您尚未为此炮列表分配炮");
         return -1;
     }
-    int delayTime = _UpdateNextCob(true);
+    int delayTime = _UpdateNextCob(true, isRoof ? col : -1);
     if (delayTime == NO_EXIST_RECOVER_TIME) {
         return -1;
     }
@@ -412,11 +419,16 @@ int ACobManager::RecoverFire(int row, float col)
     return tmpNext;
 }
 
+int ACobManager::RecoverFire(int row, float col)
+{
+    return _RecoverBasicFire(row, col, false);
+}
+
 std::vector<int> ACobManager::RecoverFire(const std::vector<APosition>& lst)
 {
     std::vector<int> vec;
     for (const auto& each : lst) {
-        vec.push_back(RecoverFire(each.row, each.col));
+        vec.push_back(_RecoverBasicFire(each.row, each.col, false));
     }
     return vec;
 }
@@ -455,6 +467,25 @@ std::vector<int> ACobManager::RoofFire(const std::vector<APosition>& lst)
     return vec;
 }
 
+int ACobManager::RecoverRoofFire(int row, float col)
+{
+    int scene = __aInternalGlobal.mainObject->Scene();
+    if (scene != 4 && scene != 5) {
+        __aInternalGlobal.loggerPtr->Error("RecoverRoofFire : RecoverRoofFire 函数只适用于 RE 与 ME ");
+        return -1;
+    }
+    return _RecoverBasicFire(row, col, true);
+}
+
+std::vector<int> ACobManager::RecoverRoofFire(const std::vector<APosition>& lst)
+{
+    std::vector<int> vec;
+    for (const auto& each : lst) {
+        vec.push_back(RecoverRoofFire(each.row, each.col));
+    }
+    return vec;
+}
+
 ////////////////////////////////////////
 //  ItemCollector
 ////////////////////////////////////////
@@ -476,7 +507,7 @@ void AItemCollector::SetInterval(int timeInterval)
 
 void AItemCollector::Start()
 {
-    _tickManager.Start([this] {
+    ATickRunner::Start([this] {
         _Run();
     },
         false);
@@ -561,7 +592,7 @@ void AIceFiller::Start(const std::vector<AGrid>& lst)
     }
     _coffeeSeedIdx = AGetSeedIndex(ACOFFEE_BEAN);
     _fillIceGridVec = lst;
-    _tickManager.Start([this]() { _Run(); }, false);
+    ATickRunner::Start([this]() { _Run(); }, false);
 }
 
 void AIceFiller::_Run()
@@ -579,7 +610,7 @@ void AIceFiller::_Run()
     for (iceSeedIdxIter = _iceSeedIdxVec.begin();
          iceSeedIdxIter != _iceSeedIdxVec.end(); ++iceSeedIdxIter) {
         seed = __aInternalGlobal.mainObject->SeedArray() + *iceSeedIdxIter;
-        if (!seed->IsUsable()) {
+        if (!AIsSeedUsable(seed)) {
             continue;
         }
         if (!isGetIdxs) {
@@ -665,7 +696,7 @@ void APlantFixer::_UseSeed(int seed_index, int row, float col,
     }
 }
 
-void APlantFixer::_getSeedList()
+void APlantFixer::_GetSeedList()
 {
     _seedIdxVec.clear();
     int seed_index;
@@ -699,14 +730,14 @@ void APlantFixer::Start(int plantType, const std::vector<AGrid>& lst,
 
     _plantType = plantType;
     _fixHp = fixHp;
-    _getSeedList();
+    _GetSeedList();
     // 如果没有给出列表信息
     if (lst.size() == 0) {
         AutoGetList();
     } else {
         _gridLst = lst;
     }
-    _tickManager.Start([this]() { _Run(); }, false);
+    ATickRunner::Start([this]() { _Run(); }, false);
 }
 
 void APlantFixer::_Run()
@@ -729,8 +760,8 @@ void APlantFixer::_Run()
         if (_coffeeSeedIdx == -1) {
             return;
         }
-        auto coffee_seed = __aInternalGlobal.mainObject->SeedArray() + _coffeeSeedIdx;
-        if (!coffee_seed->IsUsable()) {
+        auto coffeeSeed = __aInternalGlobal.mainObject->SeedArray() + _coffeeSeedIdx;
+        if (!AIsSeedUsable(coffeeSeed)) {
             return;
         }
     }
@@ -738,7 +769,7 @@ void APlantFixer::_Run()
     do {
         auto seedMemory = __aInternalGlobal.mainObject->SeedArray();
         seedMemory += *usableSeedIndexIter;
-        if (seedMemory->IsUsable()) {
+        if (AIsSeedUsable(seedMemory)) {
             break;
         }
         ++usableSeedIndexIter;

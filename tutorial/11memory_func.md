@@ -6,6 +6,26 @@
 -->
 # 实用内存函数
 
+## 女仆秘籍
+```C++
+
+// 召唤舞伴
+// 舞王不前进且每帧尝试召唤舞伴
+AMaidCheats::CallPartner();
+// 跳舞
+// 舞王不前进且不会召唤舞伴
+AMaidCheats::Dancing();
+
+// 保持前进
+// 舞王一直前进
+AMaidCheats::Move();
+
+// 停止女仆秘籍
+// 恢复游戏原样
+AMaidCheats::Stop()
+ 
+```
+
 ## 设定植物精准生效函数
 
 ```C++

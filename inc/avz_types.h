@@ -14,8 +14,8 @@
 #include <string>
 #include <vector>
 
-#define __ADeprecated [[deprecated]]
-#define __ANodiscard [[nodiscard]]
+#define __ADeprecated [[deprecated("此功能已弃用, 请尽量不要使用此功能")]]
+#define __ANodiscard [[nodiscard("不要丢弃此函数的返回值")]]
 
 using ARetVoidFuncPtr = void (*)();
 using ARetBoolFunc = std::function<bool()>;
@@ -28,7 +28,8 @@ template <typename T>
 concept __AIsPredication = std::is_convertible_v<T, APredication>;
 
 template <typename T>
-concept __AIsOperation = std::is_convertible_v<T, AOperation>;
+concept __AIsOperation = std::is_convertible_v<T, AOperation> && !
+std::is_convertible_v<T, APredication>;
 
 template <typename T>
 concept __AIsNumber = std::is_integral_v<T> || std::is_floating_point_v<T>;

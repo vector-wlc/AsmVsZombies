@@ -24,7 +24,7 @@ aCobManager.SetSequentialMode(ACobManager::SAPCE);
 ## 空间使用模式
 空间使用模式一旦开启，炮管理类对象将会完全按照 `SetList` 中写的顺序进行发射，这样带来的好处就是我们每时每刻都知道炮发到了哪个位置，但是有个明显的缺点就是当解中含有铲种炮时，会带来比较烦人的炮序调整。
 
-在文章的最后，再给大家介绍两个炮序调整函数 `Skip` 和 `SetNext`
+在文章的最后，再给大家介绍几个函数 `Skip`, `SetNext`, `GetNextUsable`, `GetNextRoofUsable` 和 `GetRoofFlyTime`
 ```C++
 // 跳过炮列表中的两门炮
 aCobManager.Skip(2);
@@ -34,6 +34,24 @@ aCobManager.SetNext(2, 3);
 
 // 将炮列表中的第一门炮设置为下一门即将发射的炮
 aCobManager.SetNext(1);
+
+// 以下几个函数不仅仅可以用于炮序排布
+// 他们可以得到更加详细的炮的状态
+
+// 得到可用的炮的内存指针
+auto cobPtr = GetUsablePtr() 
+
+// 得到发往九列可用的屋顶炮的内存指针
+auto cobPtr = GetRoofUsablePtr(9) 
+
+// 得到恢复时间最短的炮的内存指针
+auto cobPtr = GetRecoverPtr() 
+
+// 得到发往九列恢复时间最短的屋顶炮的内存指针
+auto cobPtr = GetRoofRecoverPtr(9) 
+
+// 得到 1 列屋顶炮发往 7 列飞行时间
+auto flyTime = ACobManager::GetRoofFlyTime(1, 7);
 ```
 
 **注意，虽然调整炮序函数和空间使用模式是绝配，但是并不意味着在时间使用模式下不能用；

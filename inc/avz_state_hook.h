@@ -53,10 +53,10 @@ protected:
     bool _isRunEnterFight = false;
     bool _isRunExitFight = false;
 
-    // 此函数会在 本框架 基本内存信息初始化完成后且调用 void Script() 之前运行
+    // 此函数会在 本框架 基本内存信息初始化完成后且调用 void AScript() 之前运行
     virtual void _BeforeScript() { }
 
-    // 此函数会在 本框架 调用 void Script() 之后运行
+    // 此函数会在 本框架 调用 void AScript() 之后运行
     virtual void _AfterScript() { }
 
     // 此函数会在游戏进入战斗界面后立即运行

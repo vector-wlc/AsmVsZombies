@@ -26,9 +26,11 @@ bool Process::OpenByWindow(const wchar_t* class_name, const wchar_t* window_name
         CloseHandle(handle);
     }
     hwnd = FindWindowW(class_name, window_name);
-
     while (hwnd == nullptr) {
-        MessageBoxW(NULL, L"您是否未打开游戏? (注意必须是英文原版，steam 版也是不可以的！)", L"Warning", MB_ICONWARNING);
+        auto ret = MessageBoxW(NULL, L"您是否未打开游戏? (注意必须是英文原版，steam 版也是不可以的！) \n 点击确定继续尝试注入，点击取消关闭注入", L"Warning", MB_ICONWARNING | MB_OK | MB_OKCANCEL);
+        if (ret == 2) {
+            return false;
+        }
         hwnd = FindWindowW(class_name, window_name);
     }
 

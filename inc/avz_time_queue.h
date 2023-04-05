@@ -75,8 +75,8 @@ using __ATimeIter = __AOperationQueue::RunOrderQueue::iterator;
 
 class __AOperationQueueManager : public AOrderedStateHook<INT_MIN> {
 public:
-    using OperationQueueContainer = std::vector<__AOperationQueue>;
-    static OperationQueueContainer opQueueContainer;
+    using Container = std::vector<__AOperationQueue>;
+    static Container container;
     static ATime startTime; // 脚本设定的开始时间
     static std::optional<__ATimeIter> Push(const ATime& time, __ABoolOperation&& timeOp);
     static void UpdateRefreshTime();
