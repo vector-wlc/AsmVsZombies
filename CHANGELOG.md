@@ -1,5 +1,7 @@
 ## 更新日志
 
+AvZ 2.2.6 2023_04_05
+
 * 开放 `ACobManager::GetRoofFlyTime` 得到屋顶炮的飞行时间
 * 新增 `ACobManager::GetUsablePtr` 和 `ACobManager::GetRoofUsablePtr` 分别得到目前的可用的炮的内存指针
 * 新增 `ACobManager::GetRecoverPtr` 和 `ACobManager::GetRoofRecoverPtr` 分别得到恢复时间最短的炮的内存指针

@@ -271,8 +271,12 @@ void ACobManager::FixLatest()
 
 int ACobManager::_GetRecoverTimeVec()
 {
-    int time = AGetCobRecoverTime(_indexVec[_next]);
-    if (time == NO_EXIST_RECOVER_TIME) {
+    auto mainObject = AGetMainObject();
+    int cobIdx = _indexVec[_next];
+    auto cobPtr = mainObject->PlantArray() + cobIdx;
+    if (cobIdx < 0 || cobIdx >= mainObject->PlantCountMax()
+        || cobPtr->Type() != ACOB_CANNON
+        || cobPtr->IsDisappeared() || cobPtr->IsCrushed()) {
         int index = AGetPlantIndex(
             _gridVec[_next].row, _gridVec[_next].col, ACOB_CANNON);
         if (index < 0) { // 找不到本来位置的炮
@@ -281,9 +285,8 @@ int ACobManager::_GetRecoverTimeVec()
             return NO_EXIST_RECOVER_TIME;
         }
         _indexVec[_next] = index;
-        time = AGetCobRecoverTime(_indexVec[_next]);
     }
-    return time;
+    return AGetCobRecoverTime(_indexVec[_next]);
 }
 
 APlant* ACobManager::_BasicGetPtr(bool isRecover, float col)

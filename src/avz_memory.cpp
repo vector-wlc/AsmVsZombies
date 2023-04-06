@@ -359,7 +359,7 @@ __ANodiscard bool AIsSeedUsable(ASeed* seed)
 // index 为玉米加农炮的内存索引
 __ANodiscard int AGetCobRecoverTime(int index)
 {
-    if (index < 0 || index > AGetMainObject()->PlantCountMax()) {
+    if (index < 0 || index >= AGetMainObject()->PlantCountMax()) {
         __aInternalGlobal.loggerPtr->Error("AGetCobRecoverTime(int) 参数值为:" + std::to_string(index) + ", 不合法");
         return ACobManager::NO_EXIST_RECOVER_TIME;
     }
