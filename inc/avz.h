@@ -10,4 +10,14 @@
 
 #include "libavz.h"
 
+void AScript();
+
+#define ACoScript()      \
+    __ARealScript();     \
+    void AScript()       \
+    {                    \
+        __ARealScript(); \
+    }                    \
+    auto __ARealScript()->decltype(__ARealScript())
+
 #endif

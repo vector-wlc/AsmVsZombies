@@ -7,7 +7,7 @@
 #ifndef __LIBAVZ_H__
 #define __LIBAVZ_H__
 
-#define __AVZ_VERSION__ 230405
+#define __AVZ_VERSION__ 230501
 
 #include "avz_asm.h"
 #include "avz_card.h"
@@ -21,7 +21,7 @@
 #include "avz_smart.h"
 #include "avz_time_queue.h"
 #include "avz_connector.h"
-#include "avz_replay.h"
+#include "avz_coroutine.h"
 
 // #include "avz_tick_runner.h"
 // #include "avz_global.h"

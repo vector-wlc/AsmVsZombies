@@ -17,7 +17,7 @@
 
 * [卡片相关](./05card_shovel.md)
 
-* [时间管理: 阻塞](./06wait_until.md)
+* [时间管理: 阻塞](./06co_await.md)
 
 * [时间管理: 连接](./07connect_time.md)
 
@@ -43,21 +43,23 @@
 
 * [连接再探](./18connector.md)
 
-* [游戏控制函数](./19game_controllor.md)
+* [阻塞再探](./19coroutine.md)
 
-* [对象过滤迭代器](./20iterator.md)
+* [游戏控制函数](./20game_controllor.md)
 
-* [帧运行](./21tick_runner.md)
+* [对象过滤迭代器](./21iterator.md)
 
-* [绘制类](./22painter.md)
+* [帧运行](./22tick_runner.md)
 
-* [日志功能](./23logger.md)
+* [绘制类](./23painter.md)
 
-* [状态钩](./24state_hook.md)
+* [日志功能](./24logger.md)
 
-* [终章](./25end.md)
+* [状态钩](./25state_hook.md)
 
-* [(附加) 两仪键控](./26liang_yi.md)
+* [内存读取](./26read_memory.md)
 
-* [(附加) 两仪键控脚本](./27fourth_tas_script.md)
+* [(附加) 两仪键控](./27liang_yi.md)
+
+* [(附加) 两仪键控脚本](./28fourth_tas_script.md)
 

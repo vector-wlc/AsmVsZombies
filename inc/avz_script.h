@@ -15,7 +15,6 @@ public:
     static bool isBlockable;
     static bool isLoaded;
     static bool isExit;
-    static const char* const STR_GAME_RET_MAIN_UI;
     static AReloadMode scriptReloadMode;
     static int blockDepth;
     static ATime blockTime;
@@ -31,7 +30,7 @@ public:
 
 // 阻塞运行直到达到目标时间点
 // *** AWaitUntil 停止阻塞的时间点是设定的时间点的下一帧
-inline void AWaitUntil(int wave, int time)
+[[deprecated("请使用 ACoroutine ACoScript() 和 co_await ATime() 代替此函数")]] inline void AWaitUntil(int wave, int time)
 {
     __AScriptManager::WaitUntil(wave, time);
 }

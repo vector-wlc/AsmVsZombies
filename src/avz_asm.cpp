@@ -525,7 +525,7 @@ void AAsm::_ShovelPlant()
 
         :
         : [__x] "m"(__x), [__y] "m"(__y)
-        : "esp", "ebp", "eax", "ecx", "ebx", "edi");
+        : "esp", "ebp", "eax", "ecx", "ebx", "edi", "edx");
 #else
     __asm {
         pushad
@@ -736,7 +736,6 @@ int AAsm::GridToOrdinate(int row, int col)
     __col = col;
 #ifdef __MINGW32__
     __asm__ __volatile__(
-
         "movl 0x6A9EC0, %%ebx;"
         "movl 0x768(%%ebx), %%ebx;"
         "movl %[__col], %%ecx;"
@@ -744,10 +743,9 @@ int AAsm::GridToOrdinate(int row, int col)
         "movl $0x41C740, %%edx;"
         "calll *%%edx;"
         "movl %%eax, %[__y];"
-
         :
         : [__col] "m"(__col), [__row] "m"(__row), [__y] "m"(__y)
-        : "esp", "ebp", "eax", "ecx", "edx", "edx");
+        : "esp", "ebp", "eax", "ecx", "ebx", "edx");
 #else
     __asm {
         ebx 6A9EC0+768
@@ -998,7 +996,7 @@ void AAsm::LoadFromMemory(void*& p)
         "addl $0x4, %%esp;"
         :
         : [__p] "m"(__p), [__board] "m"(__board), [__levelprop] "m"(__levelprop)
-        : "esp", "ebp", "eax", "ecx", "edi", "ebx");
+        : "esp", "ebp", "eax", "ecx", "edi");
 #else
     __asm {
 		mov edi, levelprop

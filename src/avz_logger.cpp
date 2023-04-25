@@ -6,6 +6,7 @@
  */
 #include "avz_logger.h"
 #include "avz_time_queue.h"
+#include "avz_memory.h"
 
 void AAbstractLogger::_BeforeScript()
 {
@@ -20,7 +21,6 @@ std::string AAbstractLogger::_CreatHeader(ALogLevel level)
     }
     std::string header = _headerStyle;
     auto nowTime = ANowTime();
-
     auto idx = header.find(_pattern + "time");
     if (idx != std::string::npos) {
         header.replace(idx, _pattern.size() + 4, std::to_string(nowTime.time));
@@ -112,13 +112,8 @@ void ALogger<AMsgBox>::_Output(ALogLevel level, std::string&& str)
 
 bool ALogger<AConsole>::_isAllocateConsole = false;
 
-void ALogger<AConsole>::_BeforeScript()
+ALogger<AConsole>::ALogger()
 {
-    AAbstractLogger::_BeforeScript();
-    _color[0] = FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_BLUE; // white
-    _color[1] = FOREGROUND_GREEN;                                    // green
-    _color[2] = FOREGROUND_RED | FOREGROUND_GREEN;                   // yellow
-    _color[3] = FOREGROUND_RED;                                      // red
     if (!_isAllocateConsole && AllocConsole()) {
         _isAllocateConsole = true;
         SetConsoleTitle(TEXT("AConsole"));
@@ -129,11 +124,21 @@ void ALogger<AConsole>::_BeforeScript()
     _handle = GetStdHandle(STD_OUTPUT_HANDLE);
 }
 
-void ALogger<AConsole>::_ExitFight()
+ALogger<AConsole>::~ALogger()
 {
     fclose(stdout);
     if (_isAllocateConsole) {
         _isAllocateConsole = false;
         FreeConsole();
     }
+}
+
+void ALogger<AConsole>::_BeforeScript()
+{
+    AAbstractLogger::_BeforeScript();
+    _color[0] = FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_BLUE; // white
+    _color[1] = FOREGROUND_GREEN;                                    // green
+    _color[2] = FOREGROUND_RED | FOREGROUND_GREEN;                   // yellow
+    _color[3] = FOREGROUND_RED;                                      // red
+    Info("\n=================================\n脚本开始运行\n=================================");
 }

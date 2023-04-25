@@ -7,7 +7,8 @@
 # 对象过滤迭代器 
 
 
-在对植物僵尸的数组进行遍历时，我们常常需要使用以下语句
+在对植物僵尸的数组进行遍历时，我们常常需要使用以下语句，关于下面的 AGetMainObject 是什么，
+需要查看 [内存读取] 教程。
 ```C++
 int zombieTotal = AGetMainObject()->ZombieTotal();
 auto zombieArray = AGetMainObject()->ZombieArray();

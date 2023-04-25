@@ -32,6 +32,13 @@ ATime __AOperationQueueManager::startTime; // 脚本设定的开始时间
 std::optional<__ATimeIter>
 __AOperationQueueManager::Push(const ATime& time, __ABoolOperation&& timeOp)
 {
+    if (time.wave < 1 || time.wave > 20) {
+        __aInternalGlobal.loggerPtr->Error(
+            "您连接设定的 wave 参数为 " + //
+            std::to_string(time.wave) + ", 超出有效范围");
+        return std::nullopt;
+    }
+
     if (time.wave < startTime.wave || //
         (time.wave == startTime.wave && time.time < startTime.time)) {
         __aInternalGlobal.loggerPtr->Info("当前连接时间 ("
@@ -50,9 +57,8 @@ __AOperationQueueManager::Push(const ATime& time, __ABoolOperation&& timeOp)
 
     auto&& queue = container[time.wave - 1].queue;
     auto ret = queue.emplace(time.time, std::move(timeOp));
-    auto&& pattern = __aInternalGlobal.loggerPtr->GetPattern();
-    __aInternalGlobal.loggerPtr->Info("建立 时间-操作 [" + pattern + ", " + pattern + "] 连接成功",
-        time.wave, time.time);
+    __aInternalGlobal.loggerPtr->Info("建立 时间-操作 [" + std::to_string(time.wave)
+        + ", " + std::to_string(time.time) + "] 连接成功");
     return ret;
 }
 
@@ -248,7 +254,7 @@ void __AOperationQueueManager::_BeforeScript()
 {
     container.clear();
     container.resize(__aInternalGlobal.mainObject->TotalWave());
-    startTime = ATime(__AOperationQueue::UNINIT, __AOperationQueue::UNINIT);
+    startTime = ATime(1, __AOperationQueue::UNINIT);
 }
 
 void __AOperationQueueManager::_EnterFight()
@@ -259,6 +265,9 @@ void __AOperationQueueManager::_EnterFight()
 
 int ANowTime(int wave)
 {
+    if (AGetPvzBase()->GameUi() != 3) {
+        return __AOperationQueue::UNINIT;
+    }
     static int depth = 0;
     if (depth != 0) { // 此函数不能有递归
         return __AOperationQueue::UNINIT;

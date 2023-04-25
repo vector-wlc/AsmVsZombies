@@ -6,10 +6,10 @@
 -->
 # 连接再探
 
-本页教程将说明 AConnect 函数的所有用法，AConnect 是本框架的核心功能之一，希望大家能够熟练的运用。
+本页教程将说明 AConnect 函数的所有用法，希望大家能够熟练的运用。
 
 
-## 连接按键和 bool Func()
+## 连接按键和 bool Functor()
 ```C++
 
 // *** 使用示例:
@@ -42,7 +42,7 @@ void AScript()
         keyHandle = AConnect('0', [] { logger.Info("world"); }); // 此时 keyHandle 重新有效
     });
 
-    // AConnect 第一个参数还可传入一个 bool Func(), 如果此函数返回 true, 则会执行后面的操作
+    // AConnect 第一个参数还可传入一个 bool Functor(), 如果此函数返回 true, 则会执行后面的操作
     // 这个示例就是游戏每 10 秒钟显示一个 world 的窗口
     AConnect([] { return AGetMainObject()->GameClock() % 1000 == 0; }, [] { logger.Info("world"); });
 }
@@ -103,20 +103,10 @@ AConnect('Q', [] {
     AConnect(ANowDelayTime(100), [] { ACard(1, 1, 1); });
 });
 ```
-除了最基础的 AConnect(ATime(1, 1), []{}) 这种调用方式，对于时间连接 AConnect 还有下面几种方式
 
-```C++
-// AConnect(ATime, bool Func) 形式
-// 在当前时间点 100cs 之后开始不断尝试种植小喷菇, 直到小喷菇种植成功
-// 这里的 ANowDelayTime 会返回一个 ATime 对象
-AConnect(ANowDelayTime(100), [] {
-    if (AIsSeedUsable(AXPG_8)) {
-        ACard(AXPG_8, 1, 1);
-        return false;
-    }
-    return true;
-});
-```
+## ARelOp (相对操作)
+
+这个东西是为了高度抽象时间操作组合用的，你可以使用它来组合时间和操作来使得脚本编写更加偏向于人的思考方式。
 
 ```C++
 #include <avz.h>

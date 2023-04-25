@@ -13,7 +13,6 @@ bool __AScriptManager::isBlocked = false;
 bool __AScriptManager::isBlockable = true;
 bool __AScriptManager::isLoaded = false;
 bool __AScriptManager::isExit = false;
-const char* const __AScriptManager::STR_GAME_RET_MAIN_UI = "game return main ui";
 AReloadMode __AScriptManager::scriptReloadMode = AReloadMode::NONE;
 int __AScriptManager::blockDepth = 0;
 ATime __AScriptManager::blockTime;
@@ -137,7 +136,7 @@ void __AScriptManager::Run()
     } catch (AException& exce) {
         std::string exceMsg = "catch exception: ";
         exceMsg += exce.what();
-        if (exceMsg != STR_GAME_RET_MAIN_UI) {
+        if (exceMsg != ASTR_GAME_RET_MAIN_UI) {
             isExit = true;
             exceMsg += " || AvZ has stopped working !!!";
             __aInternalGlobal.loggerPtr->Info(exceMsg.c_str());
@@ -202,7 +201,7 @@ void __AScriptManager::WaitForFight()
 
     if (!__aInternalGlobal.pvzBase->MainObject()) {
         --blockDepth;
-        throw AException(STR_GAME_RET_MAIN_UI);
+        AExitFight();
     }
     __AOperationQueueManager::UpdateRefreshTime(); // 刷新一次
     __AStateHookManager::RunAllEnterFight();
@@ -240,7 +239,7 @@ void __AScriptManager::WaitUntil(int wave, int time)
         AAsm::GameSleepLoop();
         if (!__aInternalGlobal.pvzBase->MainObject()) {
             --blockDepth;
-            throw AException(STR_GAME_RET_MAIN_UI);
+            AExitFight();
         }
         __AOperationQueueManager::UpdateRefreshTime(); // 实时刷新当前时间
     }

@@ -1,5 +1,14 @@
 ## 更新日志
 
+AvZ 2.3.3 2023_05_01
+
+* 新增内存读取和协程阻塞教程
+* 修复了几个汇编函数的 bug
+* 增加对坐标转换的范围检查
+* 新增入口函数 `ACoroutine ACoScript()`, 此入口函数内可以使用协程阻塞 co_await
+* 增加了 C++20 协程, 现在阻塞更加实用, 并弃用 `AWaitUntil`
+* `ALogger<AConsole>` 现在退出战斗界面不会消失, 重新注入会消失
+
 AvZ 2.2.6 2023_04_05
 
 * 开放 `ACobManager::GetRoofFlyTime` 得到屋顶炮的飞行时间

@@ -35,6 +35,7 @@ protected:
     static int _selectInterval;
     static APlant* _BasicCard(int seedIndex, int row, float col);
     static APlant* _BasicCard(int seedIndex, const std::vector<APosition>& lst);
+    static bool _Check(int seedIndex);
     virtual void _EnterFight() override;
 };
 

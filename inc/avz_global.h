@@ -54,6 +54,9 @@ __ANodiscard auto AFindSameEle(std::vector<Ele>& container, const Ele& ele_) -> 
 }
 
 template <typename T>
+concept __AIsNumber = std::is_integral_v<T> || std::is_floating_point_v<T>;
+
+template <typename T>
     requires __AIsNumber<T>
 void ALimitValue(T& value, T min_v, T max_v)
 {

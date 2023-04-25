@@ -319,11 +319,7 @@ __ANodiscard int AGetSeedSunVal(APlantType type)
     if (type >= AM_PEASHOOTER) {
         intType -= AM_PEASHOOTER;
     }
-    struct SeedSunVal : APvzStruct {
-        uint8_t data[0x24];
-    };
-    auto seedSunArray = (SeedSunVal*)(0x69F2C0);
-    return *(int*)(seedSunArray + intType);
+    return MRef<int>(0x69F2C0 + 0x24 * intType);
 }
 
 // 检查卡片是否能用

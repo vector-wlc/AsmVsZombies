@@ -23,7 +23,7 @@
 ```C++
 #include <avz.h>
 
-void AScript()
+ACoroutine ACoScript()
 {
     ASetZombies({
         ACG_3,  // 撑杆
@@ -50,38 +50,38 @@ void AScript()
         APUFF_SHROOM,  // 小喷菇
     });
 
-    AWaitUntil(1, -599);
+    co_await ATime(1, -599);
     aCobManager.AutoGetList();
 
     for (int wave = 1; wave < 21; ++wave) {
         if (wave == 10) {
             // wave 10 的附加操作
             // 樱桃消延迟
-            AWaitUntil(wave, 341 - 373);
+            co_await ATime(wave, 341 - 373);
             aCobManager.Fire({{2, 9}, {5, 9}});
-            AWaitUntil(wave, 341 - 100);
+            co_await ATime(wave, 341 - 100);
             ACard(ACHERRY_BOMB, 2, 9);
         } else if (wave == 20) {
             // wave 20 的附加操作
             // 咆哮珊瑚(炮消)
-            AWaitUntil(wave, 250 - 378);
+            co_await ATime(wave, 250 - 378);
             aCobManager.Fire(4, 7.625);
-            AWaitUntil(wave, 341 - 373);
+            co_await ATime(wave, 341 - 373);
             aCobManager.Fire({{2, 9}, {5, 9}});
             // wave 20 的附加操作
             // 收尾发四门炮
-            AWaitUntil(wave, 300);
+            co_await ATime(wave, 300);
             aCobManager.RecoverFire({{2, 9}, {5, 9}, {2, 9}, {5, 9}});
         } else {
             // P6
             // 主体节奏
-            AWaitUntil(wave, 341 - 373);
+            co_await ATime(wave, 341 - 373);
             aCobManager.Fire({{2, 9}, {5, 9}});
 
             // wave 9 19 的附加操作
             // 收尾发四门炮
             if (wave == 19 || wave == 9) {
-                AWaitUntil(wave, 300);
+                co_await ATime(wave, 300);
                 aCobManager.RecoverFire({{2, 9}, {5, 9}, {2, 9}, {5, 9}});
             }
         }

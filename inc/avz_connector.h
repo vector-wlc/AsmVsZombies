@@ -97,6 +97,127 @@ protected:
     ATickRunnerWithNoStart* _connectPtr;
 };
 
+#define __ANodiscardRelOp [[nodiscard("ARelOp 需要配合 AConnect 使用")]]
+
+struct ARelOp {
+    struct ReOp {
+        int relativeTime;
+        AOperation operation;
+        ReOp(int relativeTime, AOperation&& operation)
+            : relativeTime(relativeTime)
+            , operation(std::move(operation))
+        {
+        }
+
+        ReOp(int relativeTime, const AOperation& operation)
+            : relativeTime(relativeTime)
+            , operation(operation)
+        {
+        }
+    };
+    std::vector<ReOp> OpVec;
+
+    __ANodiscardRelOp ARelOp(ARelOp&& rhs)
+        : OpVec(std::move(rhs.OpVec))
+    {
+    }
+
+    __ANodiscardRelOp ARelOp(const ARelOp& rhs)
+        : OpVec(rhs.OpVec)
+    {
+    }
+
+    __ANodiscardRelOp explicit ARelOp(int relativeTime, AOperation&& operation)
+    {
+        OpVec.emplace_back(relativeTime, std::move(operation));
+    }
+    __ANodiscardRelOp explicit ARelOp(int relativeTime, const AOperation& operation)
+    {
+        OpVec.emplace_back(relativeTime, operation);
+    }
+    __ANodiscardRelOp explicit ARelOp(int relativeTime, ARelOp&& reOp)
+    {
+        for (auto&& op : reOp.OpVec) {
+            OpVec.emplace_back(relativeTime + op.relativeTime, std::move(op.operation));
+        }
+    }
+    __ANodiscardRelOp explicit ARelOp(int relativeTime, const ARelOp& reOp)
+    {
+        for (auto&& op : reOp.OpVec) {
+            OpVec.emplace_back(relativeTime + op.relativeTime, op.operation);
+        }
+    }
+    __ANodiscardRelOp ARelOp(AOperation&& op)
+        : ARelOp(0, std::move(op))
+    {
+    }
+    __ANodiscardRelOp ARelOp(const AOperation& op)
+        : ARelOp(0, op)
+    {
+    }
+
+    // ARelativeOp + ARelativeOp
+    template <typename Lhs, typename Rhs>
+        requires std::is_convertible_v<Lhs, ARelOp> && std::is_convertible_v<Rhs, ARelOp>
+    __ANodiscard friend ARelOp operator+(Lhs&& lhs, Rhs&& rhs)
+    {
+        ARelOp tmpReOp(std::forward<Lhs>(lhs));
+        tmpReOp._Add(std::forward<Rhs>(rhs));
+        return tmpReOp;
+    }
+
+    // ARelativeOp + AOperation
+    template <typename Lhs, typename Rhs>
+        requires std::is_convertible_v<Lhs, ARelOp> && __AIsOperation<Rhs>
+    __ANodiscard friend ARelOp operator+(Lhs&& lhs, Rhs&& rhs)
+    {
+        ARelOp tmpReOp(std::forward<Lhs>(lhs));
+        tmpReOp.OpVec.emplace_back(0, std::forward<Rhs>(rhs));
+        return tmpReOp;
+    }
+
+    // AOperation + ARelativeOp
+    template <typename Lhs, typename Rhs>
+        requires __AIsOperation<Lhs> && std::is_convertible_v<Rhs, ARelOp>
+    __ANodiscard friend ARelOp operator+(Lhs&& lhs, Rhs&& rhs)
+    {
+        return std::forward<Rhs>(rhs) + std::forward<Lhs>(lhs);
+    }
+
+    template <typename Rhs>
+        requires std::is_convertible_v<Rhs, ARelOp>
+    friend ARelOp& operator+=(ARelOp& lhs, Rhs&& rhs)
+    {
+        lhs._Add(std::forward<Rhs>(rhs));
+        return lhs;
+    }
+
+    template <typename Rhs>
+        requires std::is_convertible_v<Rhs, AOperation>
+    friend ARelOp& operator+=(ARelOp& lhs, Rhs&& rhs)
+    {
+        lhs.OpVec.emplace_back(0, std::forward<Rhs>(rhs));
+        return lhs;
+    }
+
+protected:
+    void _Add(ARelOp&& rhs)
+    {
+        for (auto&& op : rhs.OpVec) {
+            OpVec.emplace_back(op.relativeTime, std::move(op.operation));
+        }
+    }
+
+    void _Add(const ARelOp& rhs)
+    {
+        for (auto&& op : rhs.OpVec) {
+            OpVec.emplace_back(op.relativeTime, op.operation);
+        }
+    }
+};
+
+#undef __ANodiscardRelOp
+
 // 创建一条连接, 连接创建成功之后会返回一个类型为 AConnectHandle 的对象作为连接控制器
 // *** 特别注意：如果连接创建失败, 连接控制器将被赋值为 nullptr. 并且时间连接没有返回值
 // AConnect 最后一个参数为运行方式

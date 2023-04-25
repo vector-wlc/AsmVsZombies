@@ -13,7 +13,10 @@ __ANodiscard inline AMainObject* AGetMainObject() { return __aInternalGlobal.mai
 
 __ANodiscard inline APvzBase* AGetPvzBase() { return __aInternalGlobal.pvzBase; }
 
-__ANodiscard inline AAnimation* AGetAnimationArray() { return __aInternalGlobal.pvzBase->AnimationMain()->AnimationOffset()->AnimationArray(); }
+__ANodiscard inline AAnimation* AGetAnimationArray()
+{
+    return __aInternalGlobal.pvzBase->AnimationMain()->AnimationOffset()->AnimationArray();
+}
 
 // 返回鼠标所在行
 __ANodiscard int AMouseRow();

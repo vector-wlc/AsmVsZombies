@@ -59,4 +59,12 @@ inline void ATerminate(const std::string& reason = "unknown")
 {
     throw AException("终止脚本运行，附加信息 : " + reason);
 }
+
+constexpr const char* ASTR_GAME_RET_MAIN_UI = "game return main ui";
+
+// 通过抛出异常的形式通知 AvZ 游戏退出了战斗界面
+inline void AExitFight()
+{
+    throw AException(ASTR_GAME_RET_MAIN_UI);
+}
 #endif

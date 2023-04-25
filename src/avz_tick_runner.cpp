@@ -9,16 +9,22 @@
 
 void __ATickManager::RunAll()
 {
+    if (AGameIsPaused()) {
+        return;
+    }
     for (int idx = 0; idx < _queue.size(); ++idx) { // 不用这种遍历如果中途新增了元素可能会访问非法内存
-        if (_queue[idx].isRunning && !AGameIsPaused()) {
+        if (_queue[idx].isRunning) {
             _queue[idx].operation();
         }
     }
 }
 void __ATickManager::RunOnlyInGlobal()
 {
+    if (AGameIsPaused()) {
+        return;
+    }
     for (int idx = 0; idx < _queue.size(); ++idx) { // 不用这种遍历如果中途新增了元素可能会访问非法内存
-        if (_queue[idx].isInGlobal && _queue[idx].isRunning && !AGameIsPaused()) {
+        if (_queue[idx].isInGlobal && _queue[idx].isRunning) {
             _queue[idx].operation();
         }
     }
@@ -43,3 +49,14 @@ void __ATickManager::_BeforeScript()
 }
 
 __ATickManager __aTickManager;
+
+void ATickRunner::Stop() noexcept
+{
+    // 卸载脚本行为会触发 Stop，
+    // 此时不应该做任何事
+    if (IsStopped() || !ARangeIn(AGetPvzBase()->GameUi(), {2, 3})) {
+        return;
+    }
+    __aInternalGlobal.tickManager->Remove(_idx);
+    _idx = -1;
+}

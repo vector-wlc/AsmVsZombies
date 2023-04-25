@@ -14,9 +14,6 @@
 #include <string>
 #include <vector>
 
-#define __ADeprecated [[deprecated("此功能已弃用, 请尽量不要使用此功能")]]
-#define __ANodiscard [[nodiscard("不要丢弃此函数的返回值")]]
-
 using ARetVoidFuncPtr = void (*)();
 using ARetBoolFunc = std::function<bool()>;
 using ARetVoidFunc = std::function<void()>;
@@ -29,132 +26,10 @@ concept __AIsPredication = std::is_convertible_v<T, APredication>;
 
 template <typename T>
 concept __AIsOperation = std::is_convertible_v<T, AOperation> && !
-std::is_convertible_v<T, APredication>;
+__AIsPredication<T>;
 
-template <typename T>
-concept __AIsNumber = std::is_integral_v<T> || std::is_floating_point_v<T>;
-
-#define __ANodiscardRelOp [[nodiscard("ARelOp 需要配合 AConnect 使用")]]
-
-struct ARelOp {
-    struct ReOp {
-        int relativeTime;
-        AOperation operation;
-        ReOp(int relativeTime, AOperation&& operation)
-            : relativeTime(relativeTime)
-            , operation(std::move(operation))
-        {
-        }
-
-        ReOp(int relativeTime, const AOperation& operation)
-            : relativeTime(relativeTime)
-            , operation(operation)
-        {
-        }
-    };
-    std::vector<ReOp> OpVec;
-
-    __ANodiscardRelOp ARelOp(ARelOp&& rhs)
-        : OpVec(std::move(rhs.OpVec))
-    {
-    }
-
-    __ANodiscardRelOp ARelOp(const ARelOp& rhs)
-        : OpVec(rhs.OpVec)
-    {
-    }
-
-    __ANodiscardRelOp explicit ARelOp(int relativeTime, AOperation&& operation)
-    {
-        OpVec.emplace_back(relativeTime, std::move(operation));
-    }
-    __ANodiscardRelOp explicit ARelOp(int relativeTime, const AOperation& operation)
-    {
-        OpVec.emplace_back(relativeTime, operation);
-    }
-    __ANodiscardRelOp explicit ARelOp(int relativeTime, ARelOp&& reOp)
-    {
-        for (auto&& op : reOp.OpVec) {
-            OpVec.emplace_back(relativeTime + op.relativeTime, std::move(op.operation));
-        }
-    }
-    __ANodiscardRelOp explicit ARelOp(int relativeTime, const ARelOp& reOp)
-    {
-        for (auto&& op : reOp.OpVec) {
-            OpVec.emplace_back(relativeTime + op.relativeTime, op.operation);
-        }
-    }
-    __ANodiscardRelOp ARelOp(AOperation&& op)
-        : ARelOp(0, std::move(op))
-    {
-    }
-    __ANodiscardRelOp ARelOp(const AOperation& op)
-        : ARelOp(0, op)
-    {
-    }
-
-    // ARelativeOp + ARelativeOp
-    template <typename Lhs, typename Rhs>
-        requires std::is_convertible_v<Lhs, ARelOp> && std::is_convertible_v<Rhs, ARelOp>
-    __ANodiscard friend ARelOp operator+(Lhs&& lhs, Rhs&& rhs)
-    {
-        ARelOp tmpReOp(std::forward<Lhs>(lhs));
-        tmpReOp._Add(std::forward<Rhs>(rhs));
-        return tmpReOp;
-    }
-
-    // ARelativeOp + AOperation
-    template <typename Lhs, typename Rhs>
-        requires std::is_convertible_v<Lhs, ARelOp> && std::is_convertible_v<Rhs, AOperation>
-    __ANodiscard friend ARelOp operator+(Lhs&& lhs, Rhs&& rhs)
-    {
-        ARelOp tmpReOp(std::forward<Lhs>(lhs));
-        tmpReOp.OpVec.emplace_back(0, std::forward<Rhs>(rhs));
-        return tmpReOp;
-    }
-
-    // AOperation + ARelativeOp
-    template <typename Lhs, typename Rhs>
-        requires std::is_convertible_v<Lhs, AOperation> && std::is_convertible_v<Rhs, ARelOp>
-    __ANodiscard friend ARelOp operator+(Lhs&& lhs, Rhs&& rhs)
-    {
-        return std::forward<Rhs>(rhs) + std::forward<Lhs>(lhs);
-    }
-
-    template <typename Rhs>
-        requires std::is_convertible_v<Rhs, ARelOp>
-    friend ARelOp& operator+=(ARelOp& lhs, Rhs&& rhs)
-    {
-        lhs._Add(std::forward<Rhs>(rhs));
-        return lhs;
-    }
-
-    template <typename Rhs>
-        requires std::is_convertible_v<Rhs, AOperation>
-    friend ARelOp& operator+=(ARelOp& lhs, Rhs&& rhs)
-    {
-        lhs.OpVec.emplace_back(0, std::forward<Rhs>(rhs));
-        return lhs;
-    }
-
-protected:
-    void _Add(ARelOp&& rhs)
-    {
-        for (auto&& op : rhs.OpVec) {
-            OpVec.emplace_back(op.relativeTime, std::move(op.operation));
-        }
-    }
-
-    void _Add(const ARelOp& rhs)
-    {
-        for (auto&& op : rhs.OpVec) {
-            OpVec.emplace_back(op.relativeTime, op.operation);
-        }
-    }
-};
-
-#undef __ANodiscardRelOp
-
+#define __ADeprecated [[deprecated("此功能已弃用, 请尽量不要使用此功能")]]
+#define __ANodiscard [[nodiscard("不要丢弃此函数的返回值")]]
 #define __ADeleteCopyAndMove(ClassName)              \
 public:                                              \
     ClassName(ClassName&&) = delete;                 \

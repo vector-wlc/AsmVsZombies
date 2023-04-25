@@ -48,9 +48,17 @@ void AShovel(const std::vector<AShovelPosition>& lst)
 // 将格子转换成坐标
 void AGridToCoordinate(int row, float col, int& x, int& y)
 {
+    int gameUi = AGetPvzBase()->GameUi();
+    int maxRow = (gameUi == 2 || gameUi == 3) ? 6 : 5;
+    if (row > maxRow || row < 1 || col > 9.999 || col < 0.001) {
+        AGetInternalLogger()->Error("您输入的格子位置参数 : ("
+                + std::to_string(row) + ", " + AGetInternalLogger()->GetPattern()
+                + ") 已溢出, 已帮您自动调整为边界值",
+            col);
+    }
     x = 80 * col;
     ALimitValue(x, 0, 800);
-    ALimitValue(row, 1, 6);
+    ALimitValue(row, 1, maxRow);
     int tCol = int(col + 0.5);
     ALimitValue(tCol, 1, 9);
     y = AAsm::GridToOrdinate(row - 1, tCol - 1) + 40;

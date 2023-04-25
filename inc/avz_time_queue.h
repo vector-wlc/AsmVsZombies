@@ -8,6 +8,7 @@
 #define __AVZ_TIME_QUEUE_H__
 #include "avz_global.h"
 #include "avz_logger.h"
+#include "avz_memory.h"
 #include <map>
 #include <optional>
 
@@ -96,11 +97,10 @@ protected:
 // 得到当前游戏的波数
 __ANodiscard inline int ANowWave()
 {
-    int nowWave = __aInternalGlobal.mainObject->Wave();
-    if (nowWave == 0) {
+    if (AGetPvzBase()->GameUi() != 3) {
         return 1;
     }
-    return nowWave;
+    return std::max(AGetMainObject()->Wave(), 1);
 }
 
 // 得到当前时间，读取失败返回 INT_MIN

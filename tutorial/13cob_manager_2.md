@@ -17,7 +17,7 @@
 ACobManager windCob; // 风炮
 ACobManager groudCob; // 平地炮
 
-void Script(){
+void AScript(){
  
 }
 ```

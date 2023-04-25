@@ -26,6 +26,24 @@ struct AAnimationOffset; // 动画地址偏移
 struct AAnimation;       // 动画
 struct ACardSlot;        // 卡槽
 
+template <typename T>
+__ANodiscard T& MRef(uintptr_t addr) noexcept
+{
+    return *(T*)(addr);
+}
+
+template <typename T>
+__ANodiscard T* MPtr(uintptr_t addr) noexcept
+{
+    return *(T**)(addr);
+}
+
+template <typename T>
+__ANodiscard T MVal(uintptr_t addr) noexcept
+{
+    return (T)(addr);
+}
+
 class APvzStruct {
     __ADeleteCopyAndMove(APvzStruct);
 

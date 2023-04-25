@@ -156,6 +156,8 @@ protected:
 template <>
 class ALogger<AConsole> : public AAbstractLogger {
 public:
+    ALogger();
+    ~ALogger();
     // 设置显示颜色
     // *** 使用示例:
     // SetColor(ALogLevel::INFO, FOREGROUND_BLUE) ------ 将 INFO 等级的显示颜色设置为蓝色
@@ -170,7 +172,6 @@ protected:
     HANDLE _handle = nullptr;
     virtual void _Output(ALogLevel level, std::string&& str) override;
     virtual void _BeforeScript() override;
-    virtual void _ExitFight() override;
 };
 
 template <>

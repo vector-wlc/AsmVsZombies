@@ -45,7 +45,7 @@ ACobManager CobCol3;
 ACobManager CobCol5;
 ACobManager CobCol7;
 
-void Script(){
+void AScript(){
     // 为其分配炮
     CobCol1.SetList({{1, 1}, {2, 1}, {3, 1}, {3, 1}, {5, 1}});
     CobCol3.SetList({{1, 3}, {2, 3}, {3, 3}, {3, 3}, {5, 3}});
@@ -63,7 +63,7 @@ ACobManager CobCol5;
 ACobManager CobCol7;
 ACobManager CobCol35; // 两用炮
 
-void Script(){
+void AScript(){
     // 为其分配炮
     CobCol1.SetList({{1, 1}, {2, 1}, {3, 1}, {3, 1}, {5, 1}});
     CobCol3.SetList({{1, 3}, {2, 3}, {3, 3}, {3, 3}, {5, 3}});

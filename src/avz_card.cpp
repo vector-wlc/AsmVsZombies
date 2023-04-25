@@ -129,29 +129,35 @@ void __ACardManager::SelectCards(const std::vector<int>& lst, int selectInterval
     AWaitForFight();
 }
 
-APlant* __ACardManager::_BasicCard(int seedIndex, int row, float col)
+bool __ACardManager::_Check(int seedIndex)
 {
-    auto&& pattern = __aInternalGlobal.loggerPtr->GetPattern();
     auto seedCount = _mainObject->SeedArray()->Count();
     if (seedIndex > seedCount || seedIndex < 1) {
         __aInternalGlobal.loggerPtr->Error(
-            "Card : 您填写的参数 " + pattern + " 已溢出，请检查卡片名字是否错写为单引号",
-            seedIndex);
-        return nullptr;
+            "Card : 您填写的参数 " + std::to_string(seedIndex) + " 已溢出");
+        return false;
     }
 
     AAsm::ReleaseMouse();
     auto seed = _mainObject->SeedArray() + seedIndex - 1;
     if (!AIsSeedUsable(seed)) {
         __aInternalGlobal.loggerPtr->Error(
-            "Card : 第 " + pattern + " 张卡片还有 " + pattern + " cs 才能使用或者阳光不足",
-            seedIndex, seed->InitialCd() - seed->Cd() + 1); // PvZ计算问题导致+1
+            "Card : 第 " + std::to_string(seedIndex) + " 张卡片还有 "
+            + std::to_string(seed->InitialCd() - seed->Cd() + 1) // PvZ计算问题导致+1
+            + " cs 才能使用或者阳光不足");
+        return false;
+    }
+    return true;
+}
+
+APlant* __ACardManager::_BasicCard(int seedIndex, int row, float col)
+{
+    if (!_Check(seedIndex)) {
         return nullptr;
     }
-
-    __aInternalGlobal.loggerPtr->Info("Plant Card (" + pattern + ") to (" + //
-            pattern + ", " + pattern + ")",
-        seedIndex, row, col);
+    __aInternalGlobal.loggerPtr->Info("Plant Card (" + std::to_string(seedIndex) + ") to ("
+            + std::to_string(row) + ", " + AGetInternalLogger()->GetPattern() + ")",
+        col);
     int x;
     int y;
     col = int(col + 0.5);
@@ -165,22 +171,9 @@ APlant* __ACardManager::_BasicCard(int seedIndex, int row, float col)
 
 APlant* __ACardManager::_BasicCard(int seedIndex, const std::vector<APosition>& lst)
 {
-    auto&& pattern = __aInternalGlobal.loggerPtr->GetPattern();
-    auto seedCount = _mainObject->SeedArray()->Count();
-    if (seedIndex > seedCount || seedIndex < 1) {
-        __aInternalGlobal.loggerPtr->Error("Card : 您填写的参数 " + pattern + " 已溢出", seedIndex);
+    if (!_Check(seedIndex)) {
         return nullptr;
     }
-
-    AAsm::ReleaseMouse();
-    auto seed = _mainObject->SeedArray() + seedIndex - 1;
-    if (!AIsSeedUsable(seed)) {
-        __aInternalGlobal.loggerPtr->Error(
-            "Card : 第 " + pattern + " 张卡片还有 " + pattern + "cs 才能使用", seedIndex,
-            seed->InitialCd() - seed->Cd() + 1); // PvZ计算问题导致+1
-        return nullptr;
-    }
-    AAsm::ReleaseMouse();
 
     int x = 0;
     int y = 0;
@@ -190,9 +183,10 @@ APlant* __ACardManager::_BasicCard(int seedIndex, const std::vector<APosition>& 
     for (const auto& crood : lst) {
         col = int(crood.col + 0.5);
         AGridToCoordinate(crood.row, col, x, y);
-        __aInternalGlobal.loggerPtr->Info(
-            "Try Plant Card (" + pattern + ") to (" + pattern + ", " + pattern + ")", seedIndex,
-            crood.row, crood.col);
+        AGetInternalLogger()->Info(
+            "Try Plant Card (" + std::to_string(seedIndex) + ") to ("
+                + std::to_string(crood.row) + ", " + AGetInternalLogger()->GetPattern() + ")",
+            crood.col);
         AAsm::PlantCard(x, y, seedIndex - 1);
         if (currentIdx != mainObject->PlantNext()) {
             return mainObject->PlantArray() + currentIdx;
@@ -209,9 +203,8 @@ int __ACardManager::GetCardIndex(APlantType plantType)
     if (it == _seedNameToIndexMap.end()) {
         __aInternalGlobal.loggerPtr->Error("你没有选择卡片代号为 " + pattern + " 的植物", plantType);
         return -1;
-    } else {
-        return it->second;
     }
+    return it->second;
 }
 
 __ANodiscard ASeed* AGetCardPtr(APlantType plantType)

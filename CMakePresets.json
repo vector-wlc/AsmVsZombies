@@ -6,11 +6,14 @@
       "description": "面向具有 Visual Studio 开发环境的 Windows。",
       "hidden": true,
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/",
+      "binaryDir": "${sourceDir}/build/${presetName}",
       "installDir": "${sourceDir}/build/install/${presetName}",
       "cacheVariables": {
         "CMAKE_C_COMPILER": "clang",
-        "CMAKE_CXX_COMPILER": "clang++"
+        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_CXX_FLAGS_RELEASE": "-O2 -DNDEBUG",
+        "CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-O2 -g -DNDEBUG"
+
       },
       "condition": {
         "type": "equals",
@@ -35,8 +38,15 @@
       "name": "x86-release",
       "displayName": "x86 Release",
       "description": "用 Visual Studio 开发环境定向到 Windows (32 位)。(Release)",
-      "inherits": "x86-debug",
+      "inherits": "windows-base",
       "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+    {
+      "name": "x86-reldebug",
+      "displayName": "x86 Release",
+      "description": "用 Visual Studio 开发环境定向到 Windows (32 位)。(RelWithDebInfo)",
+      "inherits": "windows-base",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "RelWithDebInfo" }
     }
   ]
 }

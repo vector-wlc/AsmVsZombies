@@ -12,7 +12,7 @@
 struct __ATickOperation {
     AOperation operation;
     bool isInGlobal;
-    bool isRunning = true;
+    bool isRunning;
     int idx = 0;
 
     template <typename Op>
@@ -20,6 +20,7 @@ struct __ATickOperation {
     __ATickOperation(Op&& opertaion, bool isInGlobal, int idx)
         : operation(std::forward<Op>(opertaion))
         , isInGlobal(isInGlobal)
+        , isRunning(true)
         , idx(idx)
     {
     }
@@ -27,13 +28,13 @@ struct __ATickOperation {
     __ATickOperation(__ATickOperation&& rhs)
     {
         this->operation = std::move(rhs.operation);
-        __CopyOthers(std::move(rhs));
+        __CopyOthers(rhs);
     }
 
     __ATickOperation& operator=(__ATickOperation&& rhs)
     {
         this->operation = std::move(rhs.operation);
-        __CopyOthers(std::move(rhs));
+        __CopyOthers(rhs);
         return *this;
     }
 
@@ -45,8 +46,7 @@ struct __ATickOperation {
     }
 
 private:
-    template <typename T>
-    void __CopyOthers(T&& rhs)
+    void __CopyOthers(const __ATickOperation& rhs)
     {
         this->isInGlobal = rhs.isInGlobal;
         this->isRunning = rhs.isRunning;
@@ -94,6 +94,7 @@ protected:
 
 public:
     ATickRunner() = default;
+    ~ATickRunner() { Stop(); }
     explicit ATickRunner(AOperation&& operation, bool isInGlobal = false)
     {
         Start(std::move(operation), isInGlobal);
@@ -110,13 +111,11 @@ public:
         requires __AIsOperation<Op>
     void Start(Op&& operation, bool isInGlobal = false)
     {
-        if (_idx != -1) {
+        if (!IsStopped()) {
             __aInternalGlobal.loggerPtr->Error("ATickRunner 不允许同时运行两个操作");
+            return;
         }
-        auto&& tmp = [operation = std::forward<Op>(operation)]() mutable {
-            operation();
-        };
-        _idx = __aInternalGlobal.tickManager->Add(std::move(tmp), isInGlobal);
+        _idx = __aInternalGlobal.tickManager->Add(std::forward<Op>(operation), isInGlobal);
     }
 
     void Pause() noexcept
@@ -134,11 +133,7 @@ public:
         __aInternalGlobal.tickManager->At(_idx).isRunning = true;
     }
 
-    void Stop() noexcept
-    {
-        __aInternalGlobal.tickManager->Remove(_idx);
-        _idx = -1;
-    }
+    void Stop() noexcept;
 
     bool IsStopped() const noexcept
     {
