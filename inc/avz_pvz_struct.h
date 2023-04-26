@@ -27,19 +27,19 @@ struct AAnimation;       // 动画
 struct ACardSlot;        // 卡槽
 
 template <typename T>
-__ANodiscard T& MRef(uintptr_t addr) noexcept
+__ANodiscard T& AMRef(uintptr_t addr) noexcept
 {
     return *(T*)(addr);
 }
 
 template <typename T>
-__ANodiscard T* MPtr(uintptr_t addr) noexcept
+__ANodiscard T* AMPtr(uintptr_t addr) noexcept
 {
     return *(T**)(addr);
 }
 
 template <typename T>
-__ANodiscard T MVal(uintptr_t addr) noexcept
+__ANodiscard T AMVal(uintptr_t addr) noexcept
 {
     return (T)(addr);
 }

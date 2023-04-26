@@ -319,7 +319,7 @@ __ANodiscard int AGetSeedSunVal(APlantType type)
     if (type >= AM_PEASHOOTER) {
         intType -= AM_PEASHOOTER;
     }
-    return MRef<int>(0x69F2C0 + 0x24 * intType);
+    return AMRef<int>(0x69F2C0 + 0x24 * intType);
 }
 
 // 检查卡片是否能用

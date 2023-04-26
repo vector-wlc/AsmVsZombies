@@ -59,7 +59,9 @@ ALogger<AConsole> console;
 
 void AScript()
 {
-    int tickInterval = MPtr<APvzStruct>(0x6A9EC0)->MRef<int>(0x454);
+    // 注意第一个函数是带 A 的，因为是全局函数
+    // 后续就不用带了
+    int tickInterval = AMPtr<APvzStruct>(0x6A9EC0)->MRef<int>(0x454);
     console.Info(std::to_string(tickInterval));
 }
 ```
@@ -73,7 +75,7 @@ void AScript()
 你会发现黑色的控制台打印了一个10，这是什么意思呢，意思就是 PvZ 一帧的时长是 10ms，也就是
 1cs，芜湖，确实读对了！那么上面的代码是啥意思呢，咱们继续解释，想一下咱们之前找到的那两个地址，454 和 6A9EC0，
 注意，我们之前说了 6A9EC0 是 454 的爸爸，所以要想得到 454 的值，就先得获取 6A9EC0，
-因此 `MPtr<APvzStruct>(0x6A9EC0)` 就是获取 6A9EC0 是啥，
+因此 `AMPtr<APvzStruct>(0x6A9EC0)` 就是获取 6A9EC0 是啥，
 那么现在需要解释一下 `MPtr` 是啥，它实际上就是获取指针表中下一层偏移的意思，
 **它适用于该地址下面还有孩子的情况**，0x6A9EC0 这个地址下面明显有大量的孩子，所以使用
 MPtr 来读，然后 `<APvzStruct>` 是啥？首先 `<>` 在 C++ 中代表模板的实例化，也就是说，
@@ -110,7 +112,7 @@ MPtr 来读，然后 `<APvzStruct>` 是啥？首先 `<>` 在 C++ 中代表模板
 还有要注意的一点是，你发现 45DEE0 这个地址前面没有竖线，这咋读？
 很简单这么读: 
 ```C++
-MRef<uint16_t>(0x45DEE0);
+AMRef<uint16_t>(0x45DEE0);
 ```
 好了说了这么多，咱们读个现在关卡内的阳光数吧
 搜索指针表找到 5560
@@ -137,7 +139,7 @@ ALogger<AConsole> console;
 
 void AScript()
 {
-    int sunVal = MPtr<APvzStruct>(0x6A9EC0)->MPtr<APvzStruct>(0x768)->MRef<int>(0x5560);
+    int sunVal = AMPtr<APvzStruct>(0x6A9EC0)->MPtr<APvzStruct>(0x768)->MRef<int>(0x5560);
     console.Info(std::to_string(sunVal));
 }
 ```
@@ -162,7 +164,7 @@ ALogger<AConsole> console;
 
 void AScript()
 {
-    int x = MPtr<APvzStruct>(0x6A9EC0)
+    int x = AMPtr<APvzStruct>(0x6A9EC0)
                 ->MPtr<APvzStruct>(0x768)
                 ->MPtr<APvzStruct>(0xAC)
                 ->MRef<int>(0x8);
@@ -182,7 +184,7 @@ ALogger<AConsole> console;
 
 void AScript()
 {
-    int x = MPtr<APvzStruct>(0x6A9EC0)
+    int x = AMPtr<APvzStruct>(0x6A9EC0)
                 ->MPtr<APvzStruct>(0x768)
                 ->MPtr<APvzStruct>(0xAC + 0x14C * 1)
                 ->MRef<int>(0x8);
@@ -199,7 +201,7 @@ ALogger<AConsole> console;
 
 void AScript()
 {
-    int x = MPtr<APvzStruct>(0x6A9EC0)
+    int x = AMPtr<APvzStruct>(0x6A9EC0)
                 ->MPtr<APvzStruct>(0x768)
                 ->MPtr<APvzStruct>(0xAC)
                 ->MRef<int>(0x8 + 0x14C * 1);
@@ -225,11 +227,11 @@ ALogger<AConsole> console;
 
 void AScript()
 {
-    int plantArraySize = MPtr<APvzStruct>(0x6A9EC0)
+    int plantArraySize = AMPtr<APvzStruct>(0x6A9EC0)
                              ->MPtr<APvzStruct>(0x768)
                              ->MRef<int>(0xB0);
     for (int i = 0; i < plantArraySize; ++i) {
-        int x = MPtr<APvzStruct>(0x6A9EC0)
+        int x = AMPtr<APvzStruct>(0x6A9EC0)
                     ->MPtr<APvzStruct>(0x768)
                     ->MPtr<APvzStruct>(0xAC)
                     ->MRef<int>(0x8 + 0x14C * i);
@@ -267,12 +269,12 @@ struct Plant : public APvzStruct {
 
 void AScript()
 {
-    int plantArraySize = MPtr<APvzStruct>(0x6A9EC0)
+    int plantArraySize = AMPtr<APvzStruct>(0x6A9EC0)
                              ->MPtr<APvzStruct>(0x768)
                              ->MRef<int>(0xB0);
     // 强转为 Plant 类型的指针
     // 这样咱们就可以用 C/C++ 数组的读取方式了
-    auto plantArray = (Plant*)(MPtr<APvzStruct>(0x6A9EC0)
+    auto plantArray = (Plant*)(AMPtr<APvzStruct>(0x6A9EC0)
                                    ->MPtr<APvzStruct>(0x768)
                                    ->MPtr<APvzStruct>(0xAC));
     for (int i = 0; i < plantArraySize; ++i) {
@@ -294,10 +296,10 @@ struct Plant : public APvzStruct {
 
 void AScript()
 {
-    int plantArraySize = MPtr<APvzStruct>(0x6A9EC0)
+    int plantArraySize = AMPtr<APvzStruct>(0x6A9EC0)
                              ->MPtr<APvzStruct>(0x768)
                              ->MRef<int>(0xB0);
-    auto plantArray = (Plant*)(MPtr<APvzStruct>(0x6A9EC0)
+    auto plantArray = (Plant*)(AMPtr<APvzStruct>(0x6A9EC0)
                                    ->MPtr<APvzStruct>(0x768)
                                    ->MPtr<APvzStruct>(0xAC));
     for (int i = 0; i < plantArraySize; ++i) {
@@ -325,10 +327,10 @@ struct Plant : public APvzStruct {
 
 void AScript()
 {
-    int plantArraySize = MPtr<APvzStruct>(0x6A9EC0)
+    int plantArraySize = AMPtr<APvzStruct>(0x6A9EC0)
                              ->MPtr<APvzStruct>(0x768)
                              ->MRef<int>(0xB0);
-    auto plantArray = (Plant*)(MPtr<APvzStruct>(0x6A9EC0)
+    auto plantArray = (Plant*)(AMPtr<APvzStruct>(0x6A9EC0)
                                    ->MPtr<APvzStruct>(0x768)
                                    ->MPtr<APvzStruct>(0xAC));
     for (int i = 0; i < plantArraySize; ++i) {
@@ -349,7 +351,7 @@ void AScript()
 {
     // 原来的值是 10，也就是游戏一帧的时长是 10ms， 现在改成 1，也就是游戏一帧的时长是 1ms
     // 因此实现了 10 倍速
-    MPtr<APvzStruct>(0x6A9EC0)->MRef<int>(0x454) = 1;
+    AMPtr<APvzStruct>(0x6A9EC0)->MRef<int>(0x454) = 1;
 }
 ```
 好了这次没有意外，一运行游戏确实是 10 倍速了，函数 `ASetGameSpeed` 就是这么做的。
