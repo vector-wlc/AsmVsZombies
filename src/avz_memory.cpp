@@ -34,7 +34,7 @@ float AMouseCol()
 
 int AGetSeedIndex(int type, bool imitator)
 {
-    auto seed = __aInternalGlobal.mainObject->SeedArray();
+    auto seed = AGetMainObject()->SeedArray();
     int cnt = seed->Count();
     for (int index = 0; index < cnt; ++index, ++seed) {
         if (imitator) {
@@ -57,25 +57,28 @@ ASeed* AGetSeedPtr(int type, bool imitator)
 
 int AGetPlantIndex(int row, int col, int type)
 {
-    auto plant = __aInternalGlobal.mainObject->PlantArray();
-    int plantCntMax = __aInternalGlobal.mainObject->PlantCountMax();
+    auto plant = AGetMainObject()->PlantArray();
+    int plantCntMax = AGetMainObject()->PlantCountMax();
     for (int i = 0; i < plantCntMax; ++i, ++plant) {
         if ((!plant->IsDisappeared()) && (!plant->IsCrushed()) && (plant->Row() + 1 == row) && (plant->Col() + 1 == col)) {
             int plantType = plant->Type();
             if (type == -1) {
-                // 如果植物存在	且不为南瓜花盆荷叶
-                if ((plantType != 16) && (plantType != 30) && (plantType != 33))
+                // 如果植物存在	且不为南瓜花盆荷叶咖啡豆
+                if ((plantType != APUMPKIN) && (plantType != AFLOWER_POT)
+                    && (plantType != ALILY_PAD) && (plantType != ACOFFEE_BEAN)) {
                     return i; // 返回植物的对象序列
+                }
             } else {
                 if (plantType == type) {
                     return i;
-                } else if (type != 16 && type != 30 && type != 33 && plantType != 16 && plantType != 30 && plantType != 33) {
+                } else if (type != APUMPKIN && type != AFLOWER_POT && type != ALILY_PAD && type != ACOFFEE_BEAN
+                    && plantType != APUMPKIN && plantType != AFLOWER_POT && plantType != ALILY_PAD && plantType != ACOFFEE_BEAN) {
                     return -2;
                 }
             }
         }
     }
-    return -1; // 没有符合要求的植物返回-1
+    return -1; // 没有符合要求的植物返回 -1
 }
 
 APlant* AGetPlantPtr(int row, int col, int type)
@@ -87,11 +90,11 @@ APlant* AGetPlantPtr(int row, int col, int type)
 void AGetPlantIndices(const std::vector<AGrid>& lstIn, int type,
     std::vector<int>& indexsOut)
 {
-    auto plant = __aInternalGlobal.mainObject->PlantArray();
+    auto plant = AGetMainObject()->PlantArray();
     indexsOut.assign(lstIn.size(), -1);
     AGrid grid;
 
-    for (int index = 0; index < __aInternalGlobal.mainObject->PlantCountMax();
+    for (int index = 0; index < AGetMainObject()->PlantCountMax();
          ++index, ++plant) {
         if (plant->IsCrushed() || plant->IsDisappeared()) {
             continue;
@@ -108,7 +111,8 @@ void AGetPlantIndices(const std::vector<AGrid>& lstIn, int type,
             for (const auto& ele : itVec) {
                 indexsOut[ele - lstIn.begin()] = index;
             }
-        } else if (type != 16 && type != 30 && type != 33 && plantType != 16 && plantType != 30 && plantType != 33) {
+        } else if (type != APUMPKIN && type != AFLOWER_POT && type != ALILY_PAD && type != ACOFFEE_BEAN
+            && plantType != APUMPKIN && plantType != AFLOWER_POT && plantType != ALILY_PAD && plantType != ACOFFEE_BEAN) {
             for (const auto& ele : itVec) {
                 indexsOut[ele - lstIn.begin()] = -2;
             }
@@ -142,8 +146,8 @@ std::vector<APlant*> AGetPlantPtrs(const std::vector<AGrid>& lst, int type)
 
 bool AIsZombieExist(int type, int row)
 {
-    auto zombie = __aInternalGlobal.mainObject->ZombieArray();
-    int zombieCntMax = __aInternalGlobal.mainObject->ZombieTotal();
+    auto zombie = AGetMainObject()->ZombieArray();
+    int zombieCntMax = AGetMainObject()->ZombieTotal();
     for (int i = 0; i < zombieCntMax; ++i, ++zombie) {
         if (zombie->IsExist() && !zombie->IsDead()) {
             if (type < 0 && row < 0) {
@@ -173,8 +177,8 @@ void ASetPlantActiveTime(APlantType plantType, int delayTime)
     activeTime.time += delayTime - 10;
     auto tmp = [=]() {
         // 这里不做植物类型检测
-        auto plant = __aInternalGlobal.mainObject->PlantArray();
-        for (int index = 0; index < __aInternalGlobal.mainObject->PlantCountMax();
+        auto plant = AGetMainObject()->PlantArray();
+        for (int index = 0; index < AGetMainObject()->PlantCountMax();
              ++index, ++plant) {
             if (!plant->IsDisappeared() && !plant->IsCrushed() && plant->Type() == plantType && plant->State() == 2) {
                 if (std::abs(plant->ExplodeCountdown() - 10) < 10) {
@@ -194,7 +198,7 @@ void AUpdateZombiesPreview()
     // 去掉当前画面上的僵尸
     AAsm::KillZombiesPreview();
     // 重新生成僵尸
-    __aInternalGlobal.mainObject->SelectCardUi_m()->IsCreatZombie() = false;
+    AGetMainObject()->SelectCardUi_m()->IsCreatZombie() = false;
 }
 
 void ASetZombies(const std::vector<int>& zombieType)
@@ -216,20 +220,20 @@ void ASetZombies(const std::vector<int>& zombieType)
             zombieTypeVec.push_back(type);
         }
     }
-    auto zombieList = __aInternalGlobal.mainObject->ZombieList();
+    auto zombieList = AGetMainObject()->ZombieList();
     for (int index = 0; index < 1000; ++index, ++zombieList) {
         (*zombieList) = zombieTypeVec[index % zombieTypeVec.size()];
     }
 
     // 生成旗帜
     for (auto index : {450, 950}) {
-        (*(__aInternalGlobal.mainObject->ZombieList() + index)) = AQZ_1;
+        (*(AGetMainObject()->ZombieList() + index)) = AQZ_1;
     }
 
     if (isHasBungee) {
         // 生成蹦极
         for (auto index : {451, 452, 453, 454, 951, 952, 953, 954}) {
-            (*(__aInternalGlobal.mainObject->ZombieList() + index)) = ABJ_20;
+            (*(AGetMainObject()->ZombieList() + index)) = ABJ_20;
         }
     }
 
@@ -251,27 +255,27 @@ void ASetWaveZombies(int wave, const std::vector<int>& zombieType)
             zombieTypeVec.push_back(type);
         }
     }
-    auto zombieList = __aInternalGlobal.mainObject->ZombieList() + (wave - 1) * 50;
+    auto zombieList = AGetMainObject()->ZombieList() + (wave - 1) * 50;
     for (int index = 0; index < 50; ++index, ++zombieList) {
         (*zombieList) = zombieTypeVec[index % zombieTypeVec.size()];
     }
 
     // 生成旗帜
     for (auto index : {450, 950}) {
-        (*(__aInternalGlobal.mainObject->ZombieList() + index)) = AQZ_1;
+        (*(AGetMainObject()->ZombieList() + index)) = AQZ_1;
     }
 
     if (isHasBungee) {
         // 生成蹦极
         for (auto index : {451, 452, 453, 454, 951, 952, 953, 954}) {
-            (*(__aInternalGlobal.mainObject->ZombieList() + index)) = ABJ_20;
+            (*(AGetMainObject()->ZombieList() + index)) = ABJ_20;
         }
     }
 }
 
 bool* AGetZombieTypeList()
 {
-    return __aInternalGlobal.mainObject->ZombieTypeList();
+    return AGetMainObject()->ZombieTypeList();
 }
 
 void __AGameSpeedManager::_BeforeScript()
@@ -300,26 +304,55 @@ bool AGameIsPaused()
     if (!__aInternalGlobal.pvzBase->MainObject()) {
         return false;
     }
-    return __aInternalGlobal.mainObject->GamePaused();
+    return AGetMainObject()->GamePaused();
 }
 
-// 移除植物函数
-void ARemovePlant(int row, int col, APlantType type)
+void ARemovePlant(int row, float col, const std::vector<int>& priority)
 {
-    int idx = AGetPlantIndex(row, col, type);
-    if (idx < 0) {
-        return;
+    int tmpCol = int(col + 0.5);
+    int plantTotal = AGetMainObject()->PlantTotal();
+    auto plantArray = AGetMainObject()->PlantArray();
+    std::vector<APlant*> plantVec;
+
+    for (int i = 0; i < plantTotal; ++i) {
+        if (!plantArray[i].IsCrushed() && !plantArray[i].IsDisappeared()
+            && plantArray[i].Row() == row - 1 && plantArray[i].Col() == tmpCol - 1) {
+            plantVec.push_back(&plantArray[i]);
+        }
     }
-    AAsm::RemovePlant(idx + AGetMainObject()->PlantArray());
+
+    for (auto priType : priority) {
+        for (auto plant : plantVec) {
+            int plantType = plant->Type();
+            if (priType == plantType
+                || (priType == -1 && plantType != APUMPKIN && plantType != AFLOWER_POT
+                    && plantType != ALILY_PAD && plantType != ACOFFEE_BEAN)) {
+                AAsm::RemovePlant(plant);
+                return;
+            }
+        }
+    }
+}
+
+void ARemovePlant(int row, float col, int type)
+{
+    if (type == -1) {
+        ARemovePlant(row, col, {-1, APUMPKIN, AFLOWER_POT, ALILY_PAD, ACOFFEE_BEAN});
+    } else {
+        ARemovePlant(row, col, {type, -1, APUMPKIN, AFLOWER_POT, ALILY_PAD, ACOFFEE_BEAN});
+    }
 }
 
 __ANodiscard int AGetSeedSunVal(APlantType type)
 {
-    int intType = int(type);
-    if (type >= AM_PEASHOOTER) {
-        intType -= AM_PEASHOOTER;
-    }
-    return AMRef<int>(0x69F2C0 + 0x24 * intType);
+    int intType = int(type) % AM_PEASHOOTER;
+    int intIType = int(type) - AM_PEASHOOTER;
+    return AAsm::GetSeedSunVal(intType, intIType);
+}
+
+__ANodiscard int AGetSeedSunVal(ASeed* seed)
+{
+    return seed == nullptr ? -1 : AAsm::GetSeedSunVal(seed->Type(), seed->ImitatorType());
 }
 
 // 检查卡片是否能用
@@ -329,26 +362,16 @@ __ANodiscard bool AIsSeedUsable(APlantType type)
     if (idx == -1) {
         return false;
     }
-    auto seed = AGetMainObject()->SeedArray() + idx;
-    if (!seed->IsUsable()) {
-        return false;
-    }
-    auto sunVal = AGetSeedSunVal(type);
-    return AGetMainObject()->Sun() >= sunVal;
+    return AAsm::IsSeedUsable(AGetMainObject()->SeedArray() + idx);
 }
 
 // 检查卡片是否能用
 __ANodiscard bool AIsSeedUsable(ASeed* seed)
 {
-    if (!seed->IsUsable()) {
+    if (seed == nullptr) {
         return false;
     }
-    int type = seed->Type();
-    if (type == AIMITATOR) {
-        type = seed->ImitatorType();
-    }
-    auto sunVal = AGetSeedSunVal(APlantType(type));
-    return AGetMainObject()->Sun() >= sunVal;
+    return AAsm::IsSeedUsable(seed);
 }
 
 // 得到炮的恢复时间

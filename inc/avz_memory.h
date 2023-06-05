@@ -36,16 +36,16 @@ __ANodiscard int AGetSeedIndex(int type, bool imitator = false);
 __ANodiscard ASeed* AGetSeedPtr(int type, bool imitator = false);
 
 // 得到指定位置和类型的植物对象序列
-// 当参数type为默认值-1时该函数无视南瓜花盆荷叶
+// 当参数type为默认值-1时该函数无视南瓜花盆荷叶咖啡豆
 // *** 使用示例：
-// GetPlantIndex(3, 4)------如果三行四列有除南瓜花盆荷叶之外的植物时，返回该植物的对象序列，否则返回-1
+// GetPlantIndex(3, 4)------如果三行四列有除南瓜花盆荷叶咖啡豆之外的植物时，返回该植物的对象序列，否则返回-1
 // GetPlantIndex(3, 4, 47)---如果三行四列有春哥，返回其对象序列，如果有其他植物，返回-2，否则返回-1
 __ANodiscard int AGetPlantIndex(int row, int col, int type = -1);
 
 // 得到指定位置和类型的植物对象指针
-// 当参数type为默认值-1时该函数无视南瓜花盆荷叶
+// 当参数type为默认值-1时该函数无视南瓜花盆荷叶咖啡豆
 // *** 使用示例：
-// GetPlantIndex(3, 4)------如果三行四列有除南瓜花盆荷叶之外的植物时，返回该植物的指针，否则返回 nullptr
+// GetPlantIndex(3, 4)------如果三行四列有除南瓜花盆荷叶咖啡豆之外的植物时，返回该植物的指针，否则返回 nullptr
 // GetPlantIndex(3, 4, 47)---如果三行四列有春哥，返回该春哥的指针，否则返回 nullptr
 __ANodiscard APlant* AGetPlantPtr(int row, int col, int type = -1);
 
@@ -74,6 +74,8 @@ __ANodiscard std::vector<APlant*> AGetPlantPtrs(const std::vector<AGrid>& lst, i
 __ANodiscard bool AIsZombieExist(int type, int row = -1);
 
 __ANodiscard int AGetSeedSunVal(APlantType type);
+
+__ANodiscard int AGetSeedSunVal(ASeed* seed);
 
 // 检查卡片是否能用
 __ANodiscard bool AIsSeedUsable(APlantType type);
@@ -218,7 +220,14 @@ protected:
 bool AGameIsPaused();
 
 // 移除植物函数
-void ARemovePlant(int row, int col, APlantType type);
+// 优先删除 非 南瓜、花盆、荷叶、咖啡豆的植物， 如果需要优先删除以上四种植物，需要在第三个参数上指定
+// 使用示例:
+// ARemovePlant(1, 2) ---- 删除位于 (1, 2) 的植物，优先删除非 南瓜、花盆、荷叶、咖啡豆
+// ARemovePlant(1, 2, APUMPKIN) ---- 优先删除位于 (1, 2) 的南瓜头
+// ARemovePlant(1, 2, {APUMPKIN, AFLOWER_POT})  ---- 优先删除位于 (1, 2) 的南瓜头，如果该位置没有南瓜头，则尝试删除花盆
+//                                                   如果该位置依然没有花盆，则什么都不做
+void ARemovePlant(int row, float col, const std::vector<int>& priority);
+void ARemovePlant(int row, float col, int type = -1);
 
 // 得到炮的恢复时间
 // index 为玉米加农炮的内存索引

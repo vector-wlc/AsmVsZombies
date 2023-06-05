@@ -32,7 +32,7 @@ ATime __AOperationQueueManager::startTime; // 脚本设定的开始时间
 std::optional<__ATimeIter>
 __AOperationQueueManager::Push(const ATime& time, __ABoolOperation&& timeOp)
 {
-    if (time.wave < 1 || time.wave > 20) {
+    if (time.wave < 1 || time.wave > container.size()) {
         __aInternalGlobal.loggerPtr->Error(
             "您连接设定的 wave 参数为 " + //
             std::to_string(time.wave) + ", 超出有效范围");
@@ -183,7 +183,12 @@ void __AOperationQueueManager::_PrintLog(const ATime& time, int nowTime)
 
 bool __AOperationQueueManager::_CheckWavelength(const ATime& time)
 {
-    if (time.wave < 1 || ARangeIn(time.wave, {9, 19, 20}) || time.wave > 20) {
+    int totalWave = container.size();
+    std::vector<int> bigWave;
+    for (int i = 9; i < totalWave; i += 10) {
+        bigWave.push_back(i);
+    }
+    if (time.wave < 1 || ARangeIn(time.wave, bigWave) || time.wave >= totalWave) {
         __aInternalGlobal.loggerPtr->Error(
             "您当前设定的 wave 参数为 " + //
             std::to_string(time.wave) + ", 超出有效范围");

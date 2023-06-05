@@ -378,10 +378,12 @@ void AAsm::_Click()
 
 void AAsm::_MouseClick()
 {
-
+    int curX = AGetPvzBase()->MouseWindow()->MouseAbscissa();
+    int curY = AGetPvzBase()->MouseWindow()->MouseOrdinate();
 #ifdef __MINGW32__
     __asm__ __volatile__(
 
+        // mouse down
         "pushl %[__x];"
         "movl %[__y], %%eax;"
         "movl %[__key], %%ebx;"
@@ -389,6 +391,7 @@ void AAsm::_MouseClick()
         "movl 0x320(%%ecx), %%ecx;"
         "movl $0x539390, %%edx;"
         "calll *%%edx;"
+        // mouse up
         "pushl %[__key];"
         "pushl %[__x];"
         "movl 0x6a9ec0, %%eax;"
@@ -396,9 +399,15 @@ void AAsm::_MouseClick()
         "movl %[__y], %%ebx;"
         "movl $0x5392e0, %%edx;"
         "calll *%%edx;"
-
+        // mouse move
+        "movl 0x6a9ec0, %%edx;"
+        "movl 0x320(%%edx), %%edx;"
+        "movl %[curX], %%eax;"
+        "movl %[curY], %%ecx;"
+        "movl $0x5394A0, %%ebx;"
+        "calll *%%ebx;"
         :
-        : [__x] "m"(__x), [__y] "m"(__y), [__key] "m"(__key)
+        : [__x] "m"(__x), [__y] "m"(__y), [curX] "m"(curX), [curY] "m"(curY), [__key] "m"(__key)
         : "esp", "ebp", "eax", "ebx", "ecx", "edx");
 #else
     __asm {
@@ -842,9 +851,9 @@ APlant* AAsm::PutPlant(int row, int col, APlantType type)
     __type = int(type);
 
     __imitatorType = -1;
-    if (__type > 48) {
-        __imitatorType = __type - 49;
-        __type = 48;
+    if (__type >= AM_PEASHOOTER) {
+        __imitatorType = __type - AM_PEASHOOTER;
+        __type = AIMITATOR;
     }
 #ifdef __MINGW32__
     __asm__ __volatile__(
@@ -1012,4 +1021,78 @@ void AAsm::LoadFromMemory(void*& p)
     }
 #endif
     FreeMemory(p);
+}
+
+bool AAsm::IsSeedUsable(ASeed* seed)
+{
+    uint8_t* ptr = (uint8_t*)seed;
+    ptr += 0x28;
+    int ret = 0;
+#ifdef __MINGW32__
+    __asm__ __volatile__(
+        "movl %[ptr], %%esi;"
+        "movl $0x488500, %%ebx;"
+        "calll *%%ebx;"
+        "movl %%eax, %[ret];"
+        :
+        : [ptr] "m"(ptr), [ret] "m"(ret)
+        : "esp", "ebp", "esi", "eax", "ebx");
+#else
+    __asm
+    {
+        esi &card
+        call 488500
+        ret al
+    }
+#endif
+
+    return *((bool*)(&ret));
+}
+
+int AAsm::GetSeedSunVal(int type, int iType)
+{
+    int ret = 0;
+#ifdef __MINGW32__
+    __asm__ __volatile__(
+        "movl %[type], %%eax;"
+        "movl %[iType], %%edx;"
+        "movl 0x6a9ec0,%%edi;"
+        "movl 0x768(%%edi), %%edi;"
+        "movl $0x41DAE0, %%ebx;"
+        "calll *%%ebx;"
+        "movl %%eax, %[ret];"
+        :
+        : [type] "m"(type), [iType] "m"(iType), [ret] "m"(ret)
+        : "esp", "ebp", "edi", "eax", "ebx", "edx");
+#else
+    __asm
+    {
+        eax type
+        edx immitator type
+        edi 6A9EC0+768
+        call 41DAE0
+    }
+#endif
+
+    return ret;
+}
+
+void AAsm::UpdateMousePos()
+{
+#ifdef __MINGW32__
+    __asm__ __volatile__(
+        "movl 0x6a9ec0,%%eax;"
+        "movl 0x768(%%eax), %%eax;"
+        "movl $0x40EAB0, %%ebx;"
+        "calll *%%ebx;"
+        :
+        :
+        : "esp", "ebp", "eax", "ebx");
+#else
+    __asm
+    {
+        eax 6A9EC0+768
+        call 40EAB0
+    }
+#endif
 }

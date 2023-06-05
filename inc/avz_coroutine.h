@@ -1,14 +1,12 @@
 #ifndef __AVZ_COROUTINE_H__
 #define __AVZ_COROUTINE_H__
 
-#include "avz_types.h"
 #include <coroutine>
 #include <unordered_set>
 #include "avz_state_hook.h"
-#include "avz_logger.h"
-#include "avz_tick_runner.h"
+#include "avz_time_queue.h"
 
-class __ACoHandleManager : public AOrderedStateHook<-1> {
+class __ACoHandleManager : public AOrderedStateHook<-10> {
 public:
     static void Add(std::coroutine_handle<> handle)
     {
@@ -25,24 +23,9 @@ protected:
     virtual void _ExitFight() override;
 };
 
-struct ACoroutine {
-    struct promise_type {
-        auto get_return_object() { return ACoroutine {}; }
-        auto initial_suspend() { return std::suspend_never {}; }
-        auto final_suspend() noexcept
-        {
-            AGetInternalLogger()->Info("协程退出");
-            return std::suspend_never {};
-        }
-        void unhandled_exception() { }
-        void return_void() { }
-    };
-};
-
-inline __ACoHandleManager __aCoHandleManager;
-
 class __AWait {
 public:
+    __AWait() = default;
     __AWait(const ATime& time)
         : _time(time)
     {
@@ -55,26 +38,124 @@ public:
         , _predication(std::forward<Func>(func))
     {
     }
-    bool await_ready() const { return false; }
+    bool await_ready() const
+    {
+        return false;
+    }
     void await_resume();
     void await_suspend(std::coroutine_handle<> handle);
 
 private:
     ATime _time;
     APredication _predication;
-    ATickRunner _tickRunner;
 };
 
-template <typename Func>
-    requires __AIsPredication<Func>
-inline auto operator co_await(Func&& func)
-{
-    return __AWait(std::forward<Func>(func));
-}
+#define __ACoNodiscard [[nodiscard("\n裸启动协程会导致内存访问错误问题, 请使用以下方式安全启动协程 " \
+                                   "\n1. 立即启动 : ACoLaunch(协程函数名);"                                              \
+                                   "\n2. 连接启动 : AConnect(时间/条件, 协程函数名)")]]
 
-inline auto operator co_await(const ATime& time)
-{
-    return __AWait(time);
-}
+struct __ACoNodiscard ACoroutine {
+
+#undef __ACoNodiscard
+    struct promise_type {
+        std::shared_ptr<std::function<ACoroutine()>> ptr;
+        __AWait await_transform(int delayTime)
+        {
+            return ANowDelayTime(delayTime);
+        }
+        __AWait await_transform(const ATime& time)
+        {
+            return time;
+        }
+        template <typename Func>
+            requires __AIsPredication<Func>
+        __AWait await_transform(Func&& func)
+        {
+            return std::forward<Func>(func);
+        }
+        auto get_return_object()
+        {
+            return ACoroutine {std::coroutine_handle<promise_type>::from_promise(*this)};
+        }
+        auto initial_suspend()
+        {
+            return std::suspend_always {};
+        }
+        auto final_suspend() noexcept
+        {
+            return std::suspend_never {};
+        }
+        void unhandled_exception() { }
+        void return_void() { }
+        ~promise_type()
+        {
+            AGetInternalLogger()->Info("协程退出");
+        }
+    };
+
+    ACoroutine(std::coroutine_handle<promise_type> handle)
+        : _handle(handle)
+    {
+    }
+
+    void SetPtr(std::shared_ptr<std::function<ACoroutine()>>& ptr)
+    {
+        _handle.promise().ptr = ptr;
+        _handle.resume();
+    }
+
+protected:
+    std::coroutine_handle<promise_type> _handle;
+};
+
+inline __ACoHandleManager __aCoHandleManager;
+
+using ACoroutineOp = std::function<ACoroutine()>;
+
+template <typename T>
+concept __AIsCoroutineOp = std::is_convertible_v<T, ACoroutineOp> && __ACheckRet<T, ACoroutine>;
+
+// 判断此类型是协程函数或者普通函数
+template <typename T>
+concept __AIsCoOpOrOp = __AIsCoroutineOp<T> || __AIsOperation<T>;
+
+class ACoFunctor {
+public:
+    template <typename Op>
+        requires __AIsCoroutineOp<Op>
+    ACoFunctor(Op&& op)
+    {
+        _functor = std::make_shared<ACoroutineOp>(std::forward<Op>(op));
+    }
+
+    ACoFunctor(ACoFunctor&& rhs)
+        : _functor(std::move(rhs._functor))
+    {
+    }
+
+    ACoFunctor(const ACoFunctor& rhs)
+        : _functor(rhs._functor)
+    {
+    }
+
+    ACoFunctor& operator=(ACoFunctor&& rhs)
+    {
+        this->_functor = std::move(rhs._functor);
+        return *this;
+    }
+
+    ACoFunctor& operator=(ACoFunctor& rhs)
+    {
+        this->_functor = rhs._functor;
+        return *this;
+    }
+
+    void operator()();
+
+protected:
+    std::shared_ptr<ACoroutineOp> _functor = nullptr;
+};
+
+#define ACoLaunch(...) ACoFunctor {__VA_ARGS__}()
 
 #endif

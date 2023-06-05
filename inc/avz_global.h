@@ -23,7 +23,7 @@ __ANodiscard std::wstring AStrToWstr(const std::string& input);
 // *** 函数功能：判断数字范围
 // *** 使用示例：
 // RangeIn(wave, {1,2,3})------如果波数在 1 2 3 范围里返回 true
-__ANodiscard bool ARangeIn(int num, std::initializer_list<int> lst);
+__ANodiscard bool ARangeIn(int num, const std::vector<int>& lst);
 
 // 寻找 vector 中相同的元素，返回其迭代器
 template <typename Ele>

@@ -21,12 +21,14 @@ using APredication = ARetBoolFunc;
 using AOperation = ARetVoidFunc;
 using AKey = uint32_t;
 
-template <typename T>
-concept __AIsPredication = std::is_convertible_v<T, APredication>;
+template <typename Functor, typename Ret>
+concept __ACheckRet = std::is_same_v<decltype(std::declval<Functor>()()), Ret>;
 
 template <typename T>
-concept __AIsOperation = std::is_convertible_v<T, AOperation> && !
-__AIsPredication<T>;
+concept __AIsOperation = std::is_convertible_v<T, AOperation> && __ACheckRet<T, void>;
+
+template <typename T>
+concept __AIsPredication = std::is_convertible_v<T, APredication> && __ACheckRet<T, bool>;
 
 #define __ADeprecated [[deprecated("此功能已弃用, 请尽量不要使用此功能")]]
 #define __ANodiscard [[nodiscard("不要丢弃此函数的返回值")]]

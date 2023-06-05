@@ -25,9 +25,9 @@ void __ACardManager::_EnterFight()
         for (int i = 0; i < seedCount; ++i, ++seed) {
             seedType = seed->Type();
             // 如果是模仿者卡片
-            if (seedType == 48) {
+            if (seedType == AIMITATOR) {
                 seedType = seed->ImitatorType();
-                seedInfo.first = seedType + 49;
+                seedInfo.first = seedType + AM_PEASHOOTER;
                 seedInfo.second = i;
             } else { // if(seed_info != 48)
                 seedInfo.first = seedType;
@@ -58,8 +58,8 @@ void __ACardManager::ChooseSingleCard()
     }
 
     if (iter != _selectCardVec.end()) {
-        if (*iter >= 49) {
-            AAsm::ChooseImitatorCard(*iter - 49);
+        if (*iter >= AM_PEASHOOTER) {
+            AAsm::ChooseImitatorCard(*iter - AM_PEASHOOTER);
         } else {
             AAsm::ChooseCard(*iter);
         }
@@ -104,7 +104,7 @@ void __ACardManager::SelectCards(const std::vector<int>& lst, int selectInterval
     std::unordered_set<int> repetitiveTypeSet;
     bool isImitatorSelected = false;
     for (const auto& cardType : lst) {
-        if (cardType > 87) {
+        if (cardType > AM_MELON_PULT) {
             __aInternalGlobal.loggerPtr->Error("您选择的代号为 " + pattern + " 的卡片在 PvZ 中不存在",
                 cardType);
             return;

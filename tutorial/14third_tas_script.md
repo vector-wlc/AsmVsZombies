@@ -28,18 +28,6 @@ ACobManager groudCob;
 
 void AScript()
 {
-    ASelectCards({
-        AICE_SHROOM,   // 寒冰菇
-        AM_ICE_SHROOM, // 模仿寒冰菇
-        ACOFFEE_BEAN,  // 咖啡豆
-        ADOOM_SHROOM,  // 毁灭菇
-        AFLOWER_POT,   // 花盆
-        ASQUASH,       // 倭瓜
-        ACHERRY_BOMB,  // 樱桃炸弹
-        ABLOVER,       // 三叶草
-        APUMPKIN,      // 南瓜头
-        APUFF_SHROOM,  // 小喷菇
-    });
     ASetZombies({
         AHY_32,
         ABY_23,
@@ -52,6 +40,18 @@ void AScript()
         ALZ_2,
         APJ_0,
         ABJ_20,
+    });
+    ASelectCards({
+        AICE_SHROOM,   // 寒冰菇
+        AM_ICE_SHROOM, // 模仿寒冰菇
+        ACOFFEE_BEAN,  // 咖啡豆
+        ADOOM_SHROOM,  // 毁灭菇
+        AFLOWER_POT,   // 花盆
+        ASQUASH,       // 倭瓜
+        ACHERRY_BOMB,  // 樱桃炸弹
+        ABLOVER,       // 三叶草
+        APUMPKIN,      // 南瓜头
+        APUFF_SHROOM,  // 小喷菇
     });
 
     AConnect(ATime(1, -599), [] {

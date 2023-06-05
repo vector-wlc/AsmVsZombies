@@ -74,7 +74,7 @@ __ANodiscard inline int AGetCardIndex(APlantType plantType)
 // // *** 注意：不存在返回 nullptr
 // *** 使用示例：
 // AGetCardIndex(AICE_SHROOM) ---- 得到寒冰菇的卡片指针
-__ANodiscard inline ASeed* AGetCardPtr(APlantType plantType);
+__ANodiscard ASeed* AGetCardPtr(APlantType plantType);
 
 // 用卡函数
 // *** 注意：ACard 不支持根据卡槽位置用卡的多张调用形式

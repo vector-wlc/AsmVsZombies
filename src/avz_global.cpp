@@ -13,7 +13,7 @@
 
 __AInternalGlobal __aInternalGlobal;
 
-bool ARangeIn(int num, std::initializer_list<int> lst)
+bool ARangeIn(int num, const std::vector<int>& lst)
 {
     for (auto _num : lst) {
         if (_num == num) {

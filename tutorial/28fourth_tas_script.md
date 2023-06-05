@@ -20,22 +20,17 @@
 
 ## script.cpp
 ```C++
-/*
- * @Coding: utf-8
- * @Author: vector-wlc
- * @Date: 2023-01-02 10:36:03
- * @Description: 此脚本并不能保证任何成功率，并且目前不能挂机，主要演示如何使用 AvZ 编写无炮键控脚本
- */
+ 
 #include "processor.h"
 
-#if __AVZ_VERSION__ < 230501
-#error "此脚本需要 AvZ2 2.3.3 230501 版本才能运行"
+#if __AVZ_VERSION__ < 230601
+#error "此脚本需要 AvZ2 2.4.2 230601 版本才能运行"
 #endif
 
 Processor processor;
 ATickRunner tickRunner;
 
-ACoroutine AScript()
+void AScript()
 {
     ASetZombies({ATT_4, AHY_32, ABY_23, AGL_7, ABC_12, AXC_15, AQQ_16, AQS_11, AKG_17, APJ_0, AHT_14, ABJ_20, ATL_22, AWW_8});
     ASelectCards({AHY_16, ANGT_30, AHBG_14, AM_HBG_14, AHMG_15, AYTZD_2, AHBLJ_20, AWG_17, AXPG_8, ASYC_27}, 1);
@@ -105,7 +100,6 @@ ACoroutine AScript()
     AConnect(ATime(20, 2500), [] {
         processor.UseIce();
     });
-    co_return;
 }
 ```
 
@@ -114,7 +108,7 @@ ACoroutine AScript()
 #ifndef __JUDGE_H__
 #define __JUDGE_H__
 
-#include "libavz.h"
+#include <avz.h>
 
 // 包含一些伤害判定功能
 // 其中部分功能取自 https://github.com/Rottenham/avz-testing/blob/main/inc/avz_testing.h
@@ -333,7 +327,6 @@ protected:
 ```
 
 ## processor.h
-
 ```C++
 #ifndef __PROCESSOR_H__
 #define __PROCESSOR_H__
@@ -540,61 +533,67 @@ public:
     }
 
     // 使用辣椒
-    ACoroutine UseJalapeno()
+    void UseJalapeno()
     {
         // co_await bool Functor() 用法
         // 只要 Functor() 不 return true, Functor 就会一直被执行
         // 并且此协程会一直被阻塞
-        co_await [this] {
-            if (!_jalapenoSeed->IsUsable() || _bloverActiveCd > 0) {
-                return false;
-            }
-            Observe();
-            auto grid = _GenJalapenoGrid();
-            if (!_IsAshPlantable(grid.row, grid.col)) {
-                return false;
-            }
-            _PauseCard(AJALAPENO, grid.row, grid.col);
-            _jalapenoRow = -1;
-            return true;
-        };
+        ACoLaunch([this]() -> ACoroutine {
+            co_await [this] {
+                if (!_jalapenoSeed->IsUsable() || _bloverActiveCd > 0) {
+                    return false;
+                }
+                Observe();
+                auto grid = _GenJalapenoGrid();
+                if (!_IsAshPlantable(grid.row, grid.col)) {
+                    return false;
+                }
+                _PauseCard(AJALAPENO, grid.row, grid.col);
+                _jalapenoRow = -1;
+                return true;
+            };
+        });
     }
 
     // 使用樱桃
-    ACoroutine UseCherry()
+    void UseCherry()
     {
         // co_await bool Functor() 用法
         // 只要 Functor() 不 return true, Functor 就会一直被执行
         // 并且此协程会一直被阻塞
-        co_await [this] {
-            if (!_cherrySeed->IsUsable() || _bloverActiveCd > 0) {
-                return false;
-            }
-            Observe();
-            auto grid = _GenCherryGrid();
-            if (!_IsAshPlantable(grid.row, grid.col)) {
-                return false;
-            }
-            _otherPainter.Draw(AText("樱桃种植在:" + std::to_string(grid.row + 1) + "行" + std::to_string(grid.col + 1) + "列", 300, 0), 1200);
-            _PauseCard(ACHERRY_BOMB, grid.row, grid.col);
-            return true;
-        };
+        ACoLaunch([this]() -> ACoroutine {
+            co_await [this] {
+                if (!_cherrySeed->IsUsable() || _bloverActiveCd > 0) {
+                    return false;
+                }
+                Observe();
+                auto grid = _GenCherryGrid();
+                if (!_IsAshPlantable(grid.row, grid.col)) {
+                    return false;
+                }
+                _otherPainter.Draw(AText("樱桃种植在:" + std::to_string(grid.row + 1) + "行" + std::to_string(grid.col + 1) + "列", 300, 0), 1200);
+                _PauseCard(ACHERRY_BOMB, grid.row, grid.col);
+                return true;
+            };
+        });
     }
 
     // 使用核
-    ACoroutine UseDoom()
+    void UseDoom()
     {
         static auto iter = _doomGridVec.begin();
         if (AGetMainObject()->Wave() == 2) {
             iter = _doomGridVec.begin();
         }
-        co_await [this] {
-            return _doomSeed->IsUsable() && _lilySeed->IsUsable() && //
-                AAsm::GetPlantRejectType(AHY_16, iter->row - 1, iter->col - 1) == AAsm::NIL;
-        };
-        ACard(ALILY_PAD, iter->row, iter->col);
-        _PauseCard(ADOOM_SHROOM, iter->row - 1, iter->col - 1);
-        ++iter;
+        ACoLaunch([this]() -> ACoroutine {
+            co_await [this] {
+                return _doomSeed->IsUsable() && _lilySeed->IsUsable() && //
+                    AAsm::GetPlantRejectType(AHY_16, iter->row - 1, iter->col - 1) == AAsm::NIL;
+            };
+            ACard(ALILY_PAD, iter->row, iter->col);
+            _PauseCard(ADOOM_SHROOM, iter->row - 1, iter->col - 1);
+            ++iter;
+        });
     }
 
     // 使用冰
@@ -1048,42 +1047,47 @@ protected:
     }
 
     // 使用蓝冰
-    ACoroutine _UseBlueIce()
+    void _UseBlueIce()
     {
-        co_await [this] {
-            if (!_blueIceSeed->IsUsable() || _bloverActiveCd > 0) {
-                return false;
-            }
-            Observe();
-            auto grid = _GenTemporaryGrid();
-            if (grid.row < 0 || !_IsFodderPlantable(grid.row, grid.col)) {
-                grid = _GenPlantableGrid();
-            }
-
+        ACoLaunch([this]() -> ACoroutine {
+            AGrid grid;
+            co_await [this, &grid] {
+                if (!_blueIceSeed->IsUsable() || _bloverActiveCd > 0) {
+                    return false;
+                }
+                Observe();
+                grid = _GenTemporaryGrid();
+                if (grid.row < 0 || !_IsFodderPlantable(grid.row, grid.col)) {
+                    grid = _GenPlantableGrid();
+                }
+                return true;
+            };
             aPainter.Draw(AText("使用蓝冰", 0, 20), 500);
             _PauseCard(AICE_SHROOM, grid.row, grid.col);
-            return true;
-        };
+        });
     }
 
     // 使用白冰
-    ACoroutine _UseWhiteIce()
+    void _UseWhiteIce()
     {
-        co_await [this] {
-            if (!_whiteIceSeed->IsUsable() || _bloverActiveCd > 0) {
-                return false;
-            }
-            if (AAsm::GetPlantRejectType(AHBG_14, _whiteIceGrid.row, _whiteIceGrid.col) != AAsm::NIL) {
-                // 没有荷叶
-                if (!_lilySeed->IsUsable()) {
+        ACoLaunch([this]() -> ACoroutine {
+            co_await [this] {
+                if (!_whiteIceSeed->IsUsable() || _bloverActiveCd > 0) {
                     return false;
                 }
-                ACard(AHY_16, _whiteIceGrid.row + 1, _whiteIceGrid.col + 1);
-            }
+                if (AAsm::GetPlantRejectType(AHBG_14, _whiteIceGrid.row, _whiteIceGrid.col) != AAsm::NIL) {
+                    // 没有荷叶
+                    if (!_lilySeed->IsUsable()) {
+                        return false;
+                    }
+                    ACard(AHY_16, _whiteIceGrid.row + 1, _whiteIceGrid.col + 1);
+                }
+                return true;
+            };
+
             aPainter.Draw(AText("使用白冰", 0, 20), 500);
             ACard(AM_ICE_SHROOM, _whiteIceGrid.row + 1, _whiteIceGrid.col + 1);
-            return true;
-        };
+        });
     }
 
     // 存储红眼僵尸的分布情况

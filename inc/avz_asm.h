@@ -105,6 +105,10 @@ public:
 
     static void RemoveZombie(AZombie* zombie);
 
+    static bool IsSeedUsable(ASeed* seed);
+    static int GetSeedSunVal(int type, int iType);
+    static void UpdateMousePos();
+
     __ADeprecated static void* SaveToMemory();
     __ADeprecated static void LoadFromMemory(void*& p);
     __ADeprecated static void FreeMemory(void*& p);

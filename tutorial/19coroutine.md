@@ -38,8 +38,11 @@ ACoroutine Func2()
 void AScript()
 {
     AWaitForFight();
-    Func1();
-    Func2();
+    // 协程需要使用 ACoLaunch 或者 AConnect 启动
+    // ACoLaunch 是立即启动协程
+    // AConnect 是按照设定的时间或者条件启动协程
+    ACoLaunch(Func1);
+    ACoLaunch(Func2);
 }
 ```
 
@@ -78,7 +81,7 @@ void AScript()
 {
     AWaitForFight();
     ASetInternalLogger(console);
-    Func1();
+    ACoLaunch(Func1);
 }
 ```
 

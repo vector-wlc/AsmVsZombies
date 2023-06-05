@@ -8,6 +8,7 @@
 #define __AVZ_TICK_RUNNER_H__
 
 #include "avz_logger.h"
+#include "avz_coroutine.h"
 
 struct __ATickOperation {
     AOperation operation;
@@ -63,30 +64,41 @@ public:
 
     template <typename Op>
         requires __AIsOperation<Op>
-    int Add(Op&& operation, bool isInGlobal)
+    int Add(Op&& op, bool isInGlobal)
     {
         auto retIdx = _nextIdx;
         if (_nextIdx < _queue.size()) { // 直接用之前的缓存，不必开新空间
             _queue[_nextIdx].isInGlobal = isInGlobal;
             _queue[_nextIdx].isRunning = true;
-            _queue[_nextIdx].operation = std::forward<Op>(operation);
+            _queue[_nextIdx].operation = std::forward<Op>(op);
             std::swap(_queue[_nextIdx].idx, _nextIdx);
         } else { // 需要新的空间
             _queue.emplace_back(
-                __ATickOperation(std::forward<Op>(operation), isInGlobal, _nextIdx));
+                __ATickOperation(std::forward<Op>(op), isInGlobal, _nextIdx));
             ++_nextIdx;
         }
         __aInternalGlobal.loggerPtr->Info("增加 ID 为 " + std::to_string(retIdx) + " 的帧运行");
         return retIdx;
     }
+
+    template <typename Op>
+        requires __AIsCoroutineOp<Op>
+    int Add(Op&& op, bool isInGlobal)
+    {
+        return this->Add(ACoFunctor(std::forward<Op>(op)), isInGlobal);
+    }
+
     __ATickOperation& At(int idx) { return _queue[idx]; }
     void Remove(int idx);
 
 protected:
     virtual void _BeforeScript() override;
+    bool _isClearing = false;
     int _nextIdx;
     Queue _queue;
 };
+
+inline __ATickManager __aTickManager;
 
 class ATickRunner : public AOrderedStateHook<-1> {
 protected:
@@ -95,20 +107,18 @@ protected:
 public:
     ATickRunner() = default;
     ~ATickRunner() { Stop(); }
-    explicit ATickRunner(AOperation&& operation, bool isInGlobal = false)
+    template <typename Op>
+        requires __AIsCoOpOrOp<Op>
+    explicit ATickRunner(Op&& op, bool isInGlobal = false)
     {
-        Start(std::move(operation), isInGlobal);
-    }
-    explicit ATickRunner(const AOperation& operation, bool isInGlobal = false)
-    {
-        Start(operation, isInGlobal);
+        Start(std::forward<Op>(op), isInGlobal);
     }
 
     // Start 第一个参数为每帧要运行的函数
     // Start 第二个参数为运行方式
     // 运行方式为 true 时, 在选卡界面和高级暂停时都生效, 反之不生效
     template <typename Op>
-        requires __AIsOperation<Op>
+        requires __AIsCoOpOrOp<Op>
     void Start(Op&& operation, bool isInGlobal = false)
     {
         if (!IsStopped()) {
@@ -159,13 +169,11 @@ protected:
 class ATickRunnerWithNoStart : protected ATickRunner {
 public:
     ATickRunnerWithNoStart() = default;
-    explicit ATickRunnerWithNoStart(AOperation&& operation, bool isInGlobal = false)
+    template <typename Op>
+        requires __AIsCoOpOrOp<Op>
+    explicit ATickRunnerWithNoStart(Op&& op, bool isInGlobal = false)
     {
-        Start(std::move(operation), isInGlobal);
-    }
-    explicit ATickRunnerWithNoStart(const AOperation& operation, bool isInGlobal = false)
-    {
-        Start(operation, isInGlobal);
+        Start(std::forward<Op>(op), isInGlobal);
     }
 
     using ATickRunner::GoOn;

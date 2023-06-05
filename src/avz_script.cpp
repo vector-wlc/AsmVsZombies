@@ -35,7 +35,6 @@ bool __AScriptManager::Init()
 
     isBlocked = true;
     static ALogger<AMsgBox> logger;
-    logger.SetLevel({ALogLevel::ERROR, ALogLevel::WARNING});
     __aInternalGlobal.loggerPtr = &logger;
     __AStateHookManager::Init();
     return true;
@@ -84,7 +83,6 @@ void __AScriptManager::LoadScript()
 void __AScriptManager::RunScript()
 {
     int gameUi = __aInternalGlobal.pvzBase->GameUi();
-
     if (__AGameControllor::isAdvancedPaused || gameUi != 3) {
         // 运行全局 TickRunner
         __aInternalGlobal.tickManager->RunOnlyInGlobal();

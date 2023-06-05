@@ -255,8 +255,8 @@ public:
     // 重置冰卡
     // *** 注意：该函数需要使用在 start 函数之后才能生效
     // *** 使用示例
-    // SetIceSeedList({ICE_SHROOM}) ------ 只使用原版冰
-    // SetIceSeedList({M_ICE_SHROOM, ICE_SHROOM}) ----- 优先使用模仿冰，再使用原版冰
+    // SetIceSeedList({AICE_SHROOM}) ------ 只使用原版冰
+    // SetIceSeedList({AM_ICE_SHROOM, AICE_SHROOM}) ----- 优先使用模仿冰，再使用原版冰
     void SetIceSeedList(const std::vector<int>& lst);
 
     // 重置存冰位置
@@ -309,9 +309,9 @@ public:
     // 第二个参数不填默认全场
     // 第三个参数不填默认植物血量为150以下时修补
     // *** 使用示例：
-    // Start(23)-------修补全场的高坚果
-    // Start(30,{{1,3},{2,3}})-----修补位置为{1，3}，{2，3}位置的南瓜头
-    // Start(3,{{1,3},{2,3}},300)------修补位置为{1，3}，{2，3}位置的坚果，血量降至300开始修补
+    // Start(AGJG_23)-------修补全场的高坚果
+    // Start(APUMPKIN, {{1,3},{2,3}})-----修补位置为{1，3}，{2，3}位置的南瓜头
+    // Start(AJG_3,{{1,3},{2,3}},300)------修补位置为{1，3}，{2，3}位置的坚果，血量降至300开始修补
     void Start(int plantType, const std::vector<AGrid>& lst = {}, int fixHp = 150);
 
     // 重置修补血量

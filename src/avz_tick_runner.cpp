@@ -32,6 +32,9 @@ void __ATickManager::RunOnlyInGlobal()
 
 void __ATickManager::Remove(int idx)
 {
+    if (_isClearing) {
+        return;
+    }
     if (idx >= _queue.size() || idx < 0) {
         __aInternalGlobal.loggerPtr->Error("无法移除 ID 为 " + std::to_string(idx) + " 的帧运行");
         return;
@@ -44,11 +47,13 @@ void __ATickManager::Remove(int idx)
 void __ATickManager::_BeforeScript()
 {
     __aInternalGlobal.tickManager = this;
-    _nextIdx = 0;
+    _isClearing = true;
+    // 这里可能会调用 __ATickManager::Remove
+    // 所以要标识 _isClearing
     _queue.clear();
+    _isClearing = false;
+    _nextIdx = 0;
 }
-
-__ATickManager __aTickManager;
 
 void ATickRunner::Stop() noexcept
 {

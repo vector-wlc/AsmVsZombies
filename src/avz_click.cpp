@@ -34,6 +34,10 @@ void AShovel(int row, float col, bool pumpkin)
     }
     auto&& pattern = __aInternalGlobal.loggerPtr->GetPattern();
     __aInternalGlobal.loggerPtr->Info("Shovel (" + pattern + ", " + pattern + ")", row, col);
+    // 点击十次防止收集物干扰
+    for (int i = 0; i < 10; ++i) {
+        ALeftClick(x, y);
+    }
     AAsm::ShovelPlant(x, y);
     AAsm::ReleaseMouse();
 }

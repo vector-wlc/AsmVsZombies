@@ -280,8 +280,6 @@ int ACobManager::_GetRecoverTimeVec()
         int index = AGetPlantIndex(
             _gridVec[_next].row, _gridVec[_next].col, ACOB_CANNON);
         if (index < 0) { // 找不到本来位置的炮
-            __aInternalGlobal.loggerPtr->Error("请检查位于 (" + std::to_string(_gridVec[_next].row)
-                + ", " + std::to_string(_gridVec[_next].col) + ") 的第 " + std::to_string(_next + 1) + " 门炮是否存在");
             return NO_EXIST_RECOVER_TIME;
         }
         _indexVec[_next] = index;
@@ -333,7 +331,7 @@ int ACobManager::_UpdateNextCob(bool isDelayFire, float dropCol, bool isShowErro
     int minRecoverTime = 0xFFFF;
     int recoverTime;
     // 此变量用于选择最短时间内可用的炮
-    int _tmpNext = _next;
+    int tmpNext = _next;
     // 要迭代的次数
     // 对于时间模式, 需要迭代整个炮列表
     // 对于空间模式, 需要迭代一次
@@ -345,20 +343,22 @@ int ACobManager::_UpdateNextCob(bool isDelayFire, float dropCol, bool isShowErro
             continue;
         }
         recoverTime = _GetRecoverTimeVec();
+        // 炮不存在直接跳过
         if (recoverTime == NO_EXIST_RECOVER_TIME) {
-            return NO_EXIST_RECOVER_TIME;
+            continue;
         }
         int roofOffsetTime = dropCol < 0 ? 0 : (387 - GetRoofFlyTime(_gridVec[_next].col, dropCol));
         recoverTime -= roofOffsetTime;
-        if (recoverTime <= 0) { // 这里返回 roofOffsetTime 目的是直接让 RoofFire 使用, 对于普通的炮, roofOffsetTime 一直为 0
+        // 这里返回 roofOffsetTime 目的是直接让 RoofFire 使用, 对于普通的炮, roofOffsetTime 一直为 0
+        if (recoverTime <= 0) {
             return roofOffsetTime;
         }
         if (minRecoverTime > recoverTime) {
             minRecoverTime = recoverTime;
-            _tmpNext = _next;
+            tmpNext = _next;
         }
     }
-    _next = _tmpNext;
+    _next = tmpNext;
 
     // 以上的判断条件已经解决炮是否存在以及炮当前时刻是否能用的问题
     // 如果炮当前时刻不能使用但是为 RecoverFire 时则不会报错，
@@ -572,7 +572,7 @@ void AIceFiller::SetIceSeedList(const std::vector<int>& lst)
     _iceSeedIdxVec.clear();
     int iceIdx = 0;
     for (const auto& seedType : lst) {
-        iceIdx = AGetSeedIndex(AICE_SHROOM, seedType / 49);
+        iceIdx = AGetSeedIndex(AICE_SHROOM, seedType / AM_PEASHOOTER);
         if (iceIdx == -1) {
             __aInternalGlobal.loggerPtr->Error(
                 "resetIceSeedList : 您貌似没有选择对应的冰卡");
@@ -600,41 +600,29 @@ void AIceFiller::Start(const std::vector<AGrid>& lst)
 
 void AIceFiller::_Run()
 {
-    static auto seed = __aInternalGlobal.mainObject->SeedArray();
-    static std::vector<int> icePlantIdxVec;
-    static decltype(icePlantIdxVec.begin()) icePlantIdxIter;
-    static decltype(_iceSeedIdxVec.begin()) iceSeedIdxIter;
-    static decltype(_fillIceGridVec.begin()) fillIceGridIter;
-    static bool isGetIdxs = false;
+    ASeed* seed = nullptr;
+    auto iceSeedIdxIter = _iceSeedIdxVec.begin();
+    for (; iceSeedIdxIter != _iceSeedIdxVec.end(); ++iceSeedIdxIter) {
+        auto tmpSeed = AGetMainObject()->SeedArray() + *iceSeedIdxIter;
+        if (AIsSeedUsable(tmpSeed)) {
+            seed = tmpSeed;
+            break;
+        }
+    }
+    if (seed == nullptr) {
+        return;
+    }
 
-    isGetIdxs = false;
-    fillIceGridIter = _fillIceGridVec.begin();
-
-    for (iceSeedIdxIter = _iceSeedIdxVec.begin();
-         iceSeedIdxIter != _iceSeedIdxVec.end(); ++iceSeedIdxIter) {
-        seed = __aInternalGlobal.mainObject->SeedArray() + *iceSeedIdxIter;
-        if (!AIsSeedUsable(seed)) {
+    for (auto fillIceGridIter = _fillIceGridVec.begin();
+         fillIceGridIter != _fillIceGridVec.end();
+         ++fillIceGridIter) {
+        if (AAsm::GetPlantRejectType(AICE_SHROOM, fillIceGridIter->row - 1, fillIceGridIter->col - 1) != AAsm::NIL) {
             continue;
         }
-        if (!isGetIdxs) {
-            AGetPlantIndices(_fillIceGridVec, AICE_SHROOM, icePlantIdxVec);
-            icePlantIdxIter = icePlantIdxVec.begin();
-            isGetIdxs = true;
-        }
-
-        for (; icePlantIdxIter != icePlantIdxVec.end();
-             ++fillIceGridIter, ++icePlantIdxIter) {
-            if ((*icePlantIdxIter) == -1) {
-                if (AAsm::GetPlantRejectType(AICE_SHROOM, fillIceGridIter->row - 1, fillIceGridIter->col - 1) != AAsm::NIL) {
-                    continue;
-                }
-                ACard(*iceSeedIdxIter + 1, fillIceGridIter->row,
-                    fillIceGridIter->col);
-                ++fillIceGridIter;
-                ++icePlantIdxIter;
-                break;
-            }
-        }
+        ACard(*iceSeedIdxIter + 1, fillIceGridIter->row,
+            fillIceGridIter->col);
+        ++fillIceGridIter;
+        break;
     }
 }
 
@@ -664,7 +652,6 @@ void AIceFiller::Coffee()
             return;
         }
     } while (fillGridIter != _fillIceGridVec.begin());
-
     __aInternalGlobal.loggerPtr->Error("coffee : 未找到可用的存冰");
 }
 
@@ -691,7 +678,9 @@ void APlantFixer::_UseSeed(int seed_index, int row, float col,
     bool isNeedShovel)
 {
     if (isNeedShovel) {
-        AShovel(row, col, _plantType == APUMPKIN);
+        // {_plantType, _plantType} 会转成 std::vector
+        // 但是 {_plantType} 会转成 int
+        ARemovePlant(row, col, {_plantType, _plantType});
     }
     ACard(seed_index + 1, row, col);
     if (_isUseCoffee) {
@@ -702,15 +691,15 @@ void APlantFixer::_UseSeed(int seed_index, int row, float col,
 void APlantFixer::_GetSeedList()
 {
     _seedIdxVec.clear();
-    int seed_index;
-    seed_index = AGetSeedIndex(_plantType);
-    if (-1 != seed_index) {
-        _seedIdxVec.push_back(seed_index);
+    int seedIndex;
+    seedIndex = AGetSeedIndex(_plantType);
+    if (-1 != seedIndex) {
+        _seedIdxVec.push_back(seedIndex);
     }
-    seed_index = AGetSeedIndex(_plantType, true);
+    seedIndex = AGetSeedIndex(_plantType, true);
 
-    if (-1 != seed_index) {
-        _seedIdxVec.push_back(seed_index);
+    if (-1 != seedIndex) {
+        _seedIdxVec.push_back(seedIndex);
     }
     if (_seedIdxVec.size() == 0) {
         __aInternalGlobal.loggerPtr->Error("您没有选择修补该植物的卡片！");
@@ -745,16 +734,7 @@ void APlantFixer::Start(int plantType, const std::vector<AGrid>& lst,
 
 void APlantFixer::_Run()
 {
-    static std::vector<int> plantIdxVec;
-    static AGrid needPlantGrid; // 记录要使用植物的格子
-    static int minHp;           // 记录要使用植物的格子
-    static bool isSeedUsed;     // 种子是否被使用
-    static decltype(_seedIdxVec.begin()) usableSeedIndexIter;
-    static decltype(plantIdxVec.begin()) plantIdxIter;
-    static decltype(_gridLst.begin()) gridIter;
-
-    usableSeedIndexIter = _seedIdxVec.begin();
-
+    auto usableSeedIndexIter = _seedIdxVec.begin();
     if (usableSeedIndexIter == _seedIdxVec.end()) {
         return;
     }
@@ -782,14 +762,12 @@ void APlantFixer::_Run()
     if (usableSeedIndexIter == _seedIdxVec.end()) {
         return;
     }
-    AGetPlantIndices(_gridLst, _plantType, plantIdxVec);
-
-    isSeedUsed = false;
-    needPlantGrid.row = needPlantGrid.col = 0; // 格子信息置零
-    minHp = _fixHp;                            // 最小生命值重置
-
-    for (gridIter = _gridLst.begin(), plantIdxIter = plantIdxVec.begin();
-         gridIter != _gridLst.end(); ++gridIter, ++plantIdxIter) {
+    auto plantIdxVec = AGetPlantIndices(_gridLst, _plantType);
+    AGrid needPlantGrid = {0, 0};
+    int minHp = _fixHp;
+    auto gridIter = _gridLst.begin();
+    auto plantIdxIter = plantIdxVec.begin();
+    for (; gridIter != _gridLst.end(); ++gridIter, ++plantIdxIter) {
         // 如果此处存在除植物类植物的植物
         if (*plantIdxIter == -2) {
             continue;
@@ -799,26 +777,23 @@ void APlantFixer::_Run()
             if (AAsm::GetPlantRejectType(_plantType, gridIter->row - 1, gridIter->col - 1) != AAsm::NIL) {
                 continue;
             }
-
             _UseSeed((*usableSeedIndexIter), gridIter->row, gridIter->col,
                 false);
-            isSeedUsed = true;
-            break;
-        } else {
-            auto plant = __aInternalGlobal.mainObject->PlantArray();
-            plant += *plantIdxIter;
-            int plantHp = plant->Hp();
-            // 如果当前生命值低于最小生命值，记录下来此植物的信息
-            if (plantHp < minHp) {
-                minHp = plantHp;
-                needPlantGrid.row = gridIter->row;
-                needPlantGrid.col = gridIter->col;
-            }
+            return;
+        }
+        auto plant = __aInternalGlobal.mainObject->PlantArray();
+        plant += *plantIdxIter;
+        int plantHp = plant->Hp();
+        // 如果当前生命值低于最小生命值，记录下来此植物的信息
+        if (plantHp < minHp) {
+            minHp = plantHp;
+            needPlantGrid.row = gridIter->row;
+            needPlantGrid.col = gridIter->col;
         }
     }
 
     // 如果有需要修补的植物且植物卡片能用则进行种植
-    if (needPlantGrid.row && !isSeedUsed) {
+    if (needPlantGrid.row) {
         // 种植植物
         _UseSeed((*usableSeedIndexIter), needPlantGrid.row,
             needPlantGrid.col, true);

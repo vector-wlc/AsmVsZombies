@@ -217,6 +217,7 @@ template <>
 class ALogger<AMsgBox> : public AAbstractLogger {
 protected:
     virtual void _Output(ALogLevel level, std::string&& str) override;
+    virtual void _BeforeScript() override;
 };
 
 #endif

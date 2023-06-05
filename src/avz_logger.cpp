@@ -4,14 +4,17 @@
  * @Date: 2022-11-10 19:29:18
  * @Description:
  */
-#include "avz_logger.h"
-#include "avz_time_queue.h"
-#include "avz_memory.h"
+#include "libavz.h"
 
 void AAbstractLogger::_BeforeScript()
 {
     _pattern = "#";
     _headerStyle = "[#wave, #time][#level]";
+#define _ASTR(s) #s
+#define ASTR(s) _ASTR(s)
+    Info("\n=================================\n框架版本: " ASTR(__AVZ_VERSION__) "\n脚本开始运行\n=================================");
+#undef _ASTR
+#undef ASTR
 }
 
 std::string AAbstractLogger::_CreatHeader(ALogLevel level)
@@ -95,7 +98,6 @@ void ALogger<APvzGui>::_Output(ALogLevel level, std::string&& str)
 }
 void ALogger<APvzGui>::_BeforeScript()
 {
-    AAbstractLogger::_BeforeScript();
     _color[0] = AArgb(0xff, 0xff, 0xff, 0xff); // white
     _color[1] = AArgb(0xff, 0, 0xff, 0);       // green
     _color[2] = AArgb(0xff, 0xff, 0xff, 0);    // yellow
@@ -103,11 +105,18 @@ void ALogger<APvzGui>::_BeforeScript()
     _remainTime = 500;                         // 控制显示的持续时间
     _lastestDisplayedTime = -1;
     _pixelDisplay = {10, 500};
+    AAbstractLogger::_BeforeScript();
 }
 
 void ALogger<AMsgBox>::_Output(ALogLevel level, std::string&& str)
 {
     MessageBoxW(nullptr, AStrToWstr(str).c_str(), L"AMsgBox", MB_OK);
+}
+
+void ALogger<AMsgBox>::_BeforeScript()
+{
+    SetLevel({ALogLevel::ERROR, ALogLevel::WARNING});
+    AAbstractLogger::_BeforeScript();
 }
 
 bool ALogger<AConsole>::_isAllocateConsole = false;
@@ -126,8 +135,8 @@ ALogger<AConsole>::ALogger()
 
 ALogger<AConsole>::~ALogger()
 {
-    fclose(stdout);
     if (_isAllocateConsole) {
+        fclose(stdout);
         _isAllocateConsole = false;
         FreeConsole();
     }
@@ -135,10 +144,9 @@ ALogger<AConsole>::~ALogger()
 
 void ALogger<AConsole>::_BeforeScript()
 {
-    AAbstractLogger::_BeforeScript();
     _color[0] = FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_BLUE; // white
     _color[1] = FOREGROUND_GREEN;                                    // green
     _color[2] = FOREGROUND_RED | FOREGROUND_GREEN;                   // yellow
     _color[3] = FOREGROUND_RED;                                      // red
-    Info("\n=================================\n脚本开始运行\n=================================");
+    AAbstractLogger::_BeforeScript();
 }

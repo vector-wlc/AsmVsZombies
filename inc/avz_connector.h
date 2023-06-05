@@ -7,8 +7,8 @@
 #ifndef __AVZ_CONNECTOR_H__
 #define __AVZ_CONNECTOR_H__
 
+#include "avz_coroutine.h"
 #include "avz_tick_runner.h"
-#include "avz_time_queue.h"
 
 class __AConnectVec : public AOrderedStateHook<-1> {
 public:
@@ -103,18 +103,24 @@ struct ARelOp {
     struct ReOp {
         int relativeTime;
         AOperation operation;
-        ReOp(int relativeTime, AOperation&& operation)
+
+        template <typename Op>
+            requires __AIsOperation<Op>
+        ReOp(int relativeTime, Op&& op)
             : relativeTime(relativeTime)
-            , operation(std::move(operation))
+            , operation(std::forward<Op>(op))
         {
         }
 
-        ReOp(int relativeTime, const AOperation& operation)
+        template <typename Op>
+            requires __AIsCoroutineOp<Op>
+        ReOp(int relativeTime, Op&& op)
             : relativeTime(relativeTime)
-            , operation(operation)
+            , operation(ACoFunctor(std::forward<Op>(op)))
         {
         }
     };
+
     std::vector<ReOp> OpVec;
 
     __ANodiscardRelOp ARelOp(ARelOp&& rhs)
@@ -127,14 +133,20 @@ struct ARelOp {
     {
     }
 
-    __ANodiscardRelOp explicit ARelOp(int relativeTime, AOperation&& operation)
+    template <typename Op>
+        requires __AIsCoOpOrOp<Op>
+    __ANodiscardRelOp explicit ARelOp(int relativeTime, Op&& op)
     {
-        OpVec.emplace_back(relativeTime, std::move(operation));
+        OpVec.emplace_back(relativeTime, std::forward<Op>(op));
     }
-    __ANodiscardRelOp explicit ARelOp(int relativeTime, const AOperation& operation)
+
+    template <typename Op>
+        requires __AIsCoOpOrOp<Op>
+    __ANodiscardRelOp explicit ARelOp(Op&& op)
+        : ARelOp(0, std::forward<Op>(op))
     {
-        OpVec.emplace_back(relativeTime, operation);
     }
+
     __ANodiscardRelOp explicit ARelOp(int relativeTime, ARelOp&& reOp)
     {
         for (auto&& op : reOp.OpVec) {
@@ -146,14 +158,6 @@ struct ARelOp {
         for (auto&& op : reOp.OpVec) {
             OpVec.emplace_back(relativeTime + op.relativeTime, op.operation);
         }
-    }
-    __ANodiscardRelOp ARelOp(AOperation&& op)
-        : ARelOp(0, std::move(op))
-    {
-    }
-    __ANodiscardRelOp ARelOp(const AOperation& op)
-        : ARelOp(0, op)
-    {
     }
 
     // ARelativeOp + ARelativeOp
@@ -168,7 +172,7 @@ struct ARelOp {
 
     // ARelativeOp + AOperation
     template <typename Lhs, typename Rhs>
-        requires std::is_convertible_v<Lhs, ARelOp> && __AIsOperation<Rhs>
+        requires std::is_convertible_v<Lhs, ARelOp> && __AIsCoOpOrOp<Rhs>
     __ANodiscard friend ARelOp operator+(Lhs&& lhs, Rhs&& rhs)
     {
         ARelOp tmpReOp(std::forward<Lhs>(lhs));
@@ -178,7 +182,7 @@ struct ARelOp {
 
     // AOperation + ARelativeOp
     template <typename Lhs, typename Rhs>
-        requires __AIsOperation<Lhs> && std::is_convertible_v<Rhs, ARelOp>
+        requires __AIsCoOpOrOp<Lhs> && std::is_convertible_v<Rhs, ARelOp>
     __ANodiscard friend ARelOp operator+(Lhs&& lhs, Rhs&& rhs)
     {
         return std::forward<Rhs>(rhs) + std::forward<Lhs>(lhs);
@@ -193,7 +197,7 @@ struct ARelOp {
     }
 
     template <typename Rhs>
-        requires std::is_convertible_v<Rhs, AOperation>
+        requires __AIsCoOpOrOp<Rhs>
     friend ARelOp& operator+=(ARelOp& lhs, Rhs&& rhs)
     {
         lhs.OpVec.emplace_back(0, std::forward<Rhs>(rhs));
@@ -280,6 +284,13 @@ ATimeConnectHandle AConnect(const ATime& time, Op&& op)
     return ATimeConnectHandle(timeIter, time);
 }
 
+template <typename Op>
+    requires __AIsCoroutineOp<Op>
+ATimeConnectHandle AConnect(const ATime& time, Op&& op)
+{
+    return AConnect(time, ACoFunctor(std::forward<Op>(op)));
+}
+
 template <typename Sess>
     requires __AIsPredication<Sess>
 ATimeConnectHandle AConnect(const ATime& time, Sess&& func)
@@ -309,6 +320,13 @@ AConnectHandle AConnect(Pre&& pre, Op&& op, bool isInGlobal = false)
         isInGlobal);
     __aConnectVec.tickVec.push_back(tick);
     return tick;
+}
+
+template <typename Pre, typename Op>
+    requires __AIsPredication<Pre> && __AIsCoroutineOp<Op>
+AConnectHandle AConnect(Pre&& pre, Op&& op, bool isInGlobal = false)
+{
+    return AConnect(std::forward<Pre>(pre), ACoFunctor(std::forward<Op>(op)), isInGlobal);
 }
 
 class __AKeyManager : public AOrderedStateHook<-1> {
@@ -341,15 +359,14 @@ protected:
 inline __AKeyManager __akm; // AStateHook
 
 template <typename Op>
-    requires __AIsOperation<Op>
+    requires __AIsCoOpOrOp<Op>
 AConnectHandle AConnect(AKey key, Op&& op)
 {
     if (__AKeyManager::ToVaildKey(key) != __AKeyManager::VALID) {
         return nullptr;
     }
-
     auto keyFunc = [key]() -> bool {
-        static auto pvzHandle = FindWindowW(L"MainWindow", L"Plants vs. Zombies");
+        auto pvzHandle = AGetPvzBase()->MRef<HWND>(0x350);
         return ((GetAsyncKeyState(key) & 0x8001) == 0x8001 && //
             GetForegroundWindow() == pvzHandle);              // 检测 pvz 是否为顶层窗口
     };
