@@ -59,7 +59,9 @@
 
 * [内存读取](./26read_memory.md)
 
-* [(附加) 两仪键控](./27liang_yi.md)
+* [回放](./27replay.md)
 
-* [(附加) 两仪键控脚本](./28fourth_tas_script.md)
+* [(附加) 两仪键控](./28liang_yi.md)
+
+* [(附加) 两仪键控脚本](./29fourth_tas_script.md)
 

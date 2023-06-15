@@ -67,6 +67,7 @@ void __AScriptManager::LoadScript()
     }
 
     __AStateHookManager::RunAllExitFight();
+    ASetAdvancedPause(false);
 
     if (scriptReloadMode != AReloadMode::MAIN_UI_OR_FIGHT_UI) {
         // 如果战斗界面不允许重新注入则等待回主界面
@@ -82,13 +83,16 @@ void __AScriptManager::LoadScript()
 
 void __AScriptManager::RunScript()
 {
+
     int gameUi = __aInternalGlobal.pvzBase->GameUi();
-    if (__AGameControllor::isAdvancedPaused || gameUi != 3) {
+    if (__AGameControllor::isAdvancedPaused
+        || __aInternalGlobal.isReplay
+        || gameUi != 3) {
         // 运行全局 TickRunner
         __aInternalGlobal.tickManager->RunOnlyInGlobal();
     }
 
-    if (__AGameControllor::isAdvancedPaused) {
+    if (__AGameControllor::isAdvancedPaused || __aInternalGlobal.isReplay) {
         return;
     }
 
@@ -109,6 +113,7 @@ void __AScriptManager::RunScript()
     if (runFlag == gameClock) { // 保证此函数下面的内容一帧只会运行一次
         return;
     }
+
     runFlag = gameClock;
     __AStateHookManager::RunAllEnterFight();
     __AOperationQueueManager::UpdateRefreshTime();
@@ -160,7 +165,8 @@ void __AScriptManager::ScriptHook()
     AAsm::GameTotalLoop();
 
     while (__AGameControllor::isSkipTick() //
-        && __aInternalGlobal.pvzBase->MainObject()) {
+        && __aInternalGlobal.pvzBase->MainObject()
+        && !__aInternalGlobal.isReplay) {
         Run();
         if (__AGameControllor::isAdvancedPaused) {
             return;

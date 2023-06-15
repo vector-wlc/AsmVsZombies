@@ -239,6 +239,26 @@ __ANodiscard int AGetCobRecoverTime(int index);
 // 返回 ACobManager::NO_EXIST_RECOVER_TIME 代表该玉米炮不存在
 __ANodiscard int AGetCobRecoverTime(APlant* cob);
 
+enum class ARowType {
+    NONE = 0, // 不能种植，不出僵尸
+    LAND = 1, // 陆地
+    POOL = 2, // 水池
+    UNSODDED, // 不能种植，出僵尸
+};
+
+class AFieldInfo : public AOrderedStateHook<-2> {
+public:
+    int nRows;           // 目前游戏中使用的行数
+    int rowHeight;       // 一行有多高
+    ARowType rowType[7]; // 每行的类型
+    bool isNight;        // 是否是夜晚
+    bool isRoof;         // 是否是屋顶
+
+protected:
+    virtual void _BeforeScript() override;
+};
+
+inline AFieldInfo aFieldInfo;      // AStateHook
 inline __AGameSpeedManager __agsm; // AStateHook
 inline AMaidCheats __amc;          // AStateHook
 #endif

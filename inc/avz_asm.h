@@ -10,6 +10,8 @@
 #include "avz_pvz_struct.h"
 #include "avz_types.h"
 
+#define ASaveAllRegister "esp", "ebp", "eax", "ebx", "ecx", "edx", "esi", "edi"
+
 // 使用汇编代码调用 PvZ 游戏内部的函数
 class AAsm {
 
@@ -108,6 +110,15 @@ public:
     static bool IsSeedUsable(ASeed* seed);
     static int GetSeedSunVal(int type, int iType);
     static void UpdateMousePos();
+
+    static void MakePvzString(const char* str, void* strObj);
+    static void FreePvzString(void* strObj);
+    static void MakeNewBoard();
+    static void LoadGame(const std::string& file);
+    static void SaveGame(const std::string& file);
+    static bool CanSpawnZombies(int row);
+    static bool IsNight();
+    static bool IsRoof();
 
     __ADeprecated static void* SaveToMemory();
     __ADeprecated static void LoadFromMemory(void*& p);

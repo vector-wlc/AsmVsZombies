@@ -76,6 +76,7 @@ struct __AInternalGlobal {
     APvzBase* pvzBase;
     AAbstractLogger* loggerPtr;
     __ATickManager* tickManager;
+    bool isReplay = false;
 };
 
 extern __AInternalGlobal __aInternalGlobal;

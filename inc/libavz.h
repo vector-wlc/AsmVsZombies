@@ -22,6 +22,7 @@
 #include "avz_time_queue.h"
 #include "avz_connector.h"
 #include "avz_coroutine.h"
+#include "avz_replay.h"
 
 // #include "avz_tick_runner.h"
 // #include "avz_global.h"

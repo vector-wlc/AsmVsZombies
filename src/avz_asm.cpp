@@ -7,6 +7,7 @@
 
 #include "avz_asm.h"
 #include "avz_memory.h"
+#include <filesystem>
 
 static AMainObject* __level;
 static AMouseWindow* __mw;
@@ -101,7 +102,6 @@ int AAsm::GetPlantRejectType(int cardType, int row, int col)
 void AAsm::GameFightLoop()
 {
 
-#ifdef __MINGW32__
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%ecx;"
         "movl 0x768(%%ecx), %%ecx;"
@@ -109,66 +109,33 @@ void AAsm::GameFightLoop()
         "calll *%%eax;"
         :
         :
-        : "esp", "ebp", "eax", "ecx");
-#else
-    __asm
-    {
-        popad
-        movl ecx, [0x6a9ec0]
-        movl ecx, [ecx+0x768]
-        mov eax, 0x415d40 
-        call eax
-
-        popal
-    }
-#endif
+        : ASaveAllRegister);
 }
 
 void AAsm::GameTotalLoop()
 {
-#ifdef __MINGW32__
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%ecx;"
         "movl $0x452650, %%eax;"
         "calll *%%eax;"
         :
         :
-        : "esp", "ebp", "eax", "ecx");
-#else
-    __asm
-    {
-        popad
-        movl ecx, [0x6a9ec0]
-        mov eax, 0x452650 
-        call eax
-
-        popal
-    }
-#endif
+        : ASaveAllRegister);
 }
 
 void AAsm::GameSleepLoop()
 {
-#ifdef __MINGW32__
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%ecx;"
         "movl $0x453a50, %%eax;"
         "calll *%%eax;"
         :
         :
-        : "esp", "ebp", "eax", "ecx");
-#else
-    __asm
-    {
-        mov ecx 6A9EC0
-        call 0x453a50
-    }
-#endif
+        : ASaveAllRegister);
 }
 
 void AAsm::ClearObjectMemory()
 {
-#ifdef __MINGW32__
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%ebx;"
         "movl 0x768(%%ebx), %%esi;"
@@ -182,21 +149,11 @@ void AAsm::ClearObjectMemory()
         "calll *%%eax;"
         :
         :
-        : "esp", "ebp", "eax", "ebx", "esi");
-#else
-    __asm
-    {
-        mov esi 6A9EC0+768
-        call 41BAD0
-        push 6A9EC0+820
-        call 445680
-    }
-#endif
+        : ASaveAllRegister);
 }
 
 void AAsm::KillZombiesPreview()
 {
-#ifdef __MINGW32__
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%ebx;"
         "movl 0x768(%%ebx), %%ebx;"
@@ -204,14 +161,7 @@ void AAsm::KillZombiesPreview()
         "calll *%%eax;"
         :
         :
-        : "esp", "ebp", "eax", "ebx");
-#else
-    __asm
-    {
-        mov ebx 6A9EC0+768
-        call 0x40df70
-    }
-#endif
+        : ASaveAllRegister);
 }
 
 void AAsm::SetImprovePerformance(bool is_improve_performance)
@@ -221,26 +171,17 @@ void AAsm::SetImprovePerformance(bool is_improve_performance)
 
 void AAsm::CheckFightExit()
 {
-#ifdef __MINGW32__
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%eax;"
         "movl $0x4524f0, %%ecx;"
         "calll *%%ecx;"
         :
         :
-        : "esp", "ebp", "eax", "ecx");
-#else
-    __asm
-    {
-        mov eax 6A9EC0
-        call 0x4524f0
-    }
-#endif
+        : ASaveAllRegister);
 }
 
 void AAsm::SaveData()
 {
-#ifdef __MINGW32__
     __asm__ __volatile__(
 
         "movl 0x6a9ec0, %%eax;"
@@ -251,23 +192,11 @@ void AAsm::SaveData()
 
         :
         :
-        : "esp", "ebp", "eax");
-#else
-    __asm {
-        pushad
-        mov eax,[0x6a9ec0]
-        mov eax,[eax+0x768]
-        push eax
-        mov eax,0x408c30
-        call eax
-        popad
-    }
-#endif
+        : ASaveAllRegister);
 }
 
 void AAsm::LoadData()
 {
-#ifdef __MINGW32__
     __asm__ __volatile__(
 
         "movl 0x6a9ec0, %%eax;"
@@ -277,22 +206,11 @@ void AAsm::LoadData()
 
         :
         :
-        : "esp", "ebp", "eax");
-#else
-    __asm {
-        pushad
-        mov eax,[0x6a9ec0]
-        push eax
-        mov eax,0x44f7a0
-        call eax
-        popad
-    }
-#endif
+        : ASaveAllRegister);
 }
 
 void AAsm::Rock()
 {
-#ifdef __MINGW32__
     __asm__ __volatile__(
 
         "movl 0x6a9ec0, %%ebx;"
@@ -305,20 +223,7 @@ void AAsm::Rock()
 
         :
         :
-        : "esp", "ebp", "eax", "ebx", "esi", "edi");
-#else
-    __asm {
-        pushad
-        mov ebx,[0x6a9ec0]
-        mov ebx,[ebx+0x774]
-        mov eax,0x486d20
-        mov esi,[0x6a9ec0]
-        mov edi,0x1
-        mov ebp,0x1
-        call eax
-        popad
-    }
-#endif
+        : ASaveAllRegister);
 }
 
 void AAsm::_ClickScene()
@@ -326,7 +231,6 @@ void AAsm::_ClickScene()
     if ((*(APvzBase**)0x6a9ec0)->GameUi() != 3) {
         return;
     }
-#ifdef __MINGW32__
     __asm__ __volatile__(
         "pushl %0;"
         "pushl %1;"
@@ -336,22 +240,11 @@ void AAsm::_ClickScene()
         "calll *%%eax;"
         :
         : "m"(__key), "m"(__y), "m"(__x), "m"(__level)
-        : "esp", "ebp", "eax", "ecx");
-#else
-    __asm {
-        push __key
-        push __y
-        push __x
-        mov ecx, __level
-        mov eax, 0x411f20
-        call eax
-    }
-#endif
+        : ASaveAllRegister);
 }
 
 void AAsm::_Click()
 {
-#ifdef __MINGW32__
     __asm__ __volatile__(
         "pushl %0;"
         "movl %1, %%ebx;"
@@ -361,26 +254,13 @@ void AAsm::_Click()
         "calll *%%edx;"
         :
         : "m"(__x), "m"(__key), "m"(__y), "m"(__mw)
-        : "esp", "ebp", "eax", "ebx", "ecx", "edx");
-#else
-    __asm {
-		push ebx;
-		push __x;
-		mov ebx, __key;
-		mov eax, __y;
-		mov ecx, __mw;
-		mov edx, 0x539390;
-		call edx;
-		pop ebx;
-    }
-#endif
+        : ASaveAllRegister);
 }
 
 void AAsm::_MouseClick()
 {
     int curX = AGetPvzBase()->MouseWindow()->MouseAbscissa();
     int curY = AGetPvzBase()->MouseWindow()->MouseOrdinate();
-#ifdef __MINGW32__
     __asm__ __volatile__(
 
         // mouse down
@@ -408,32 +288,11 @@ void AAsm::_MouseClick()
         "calll *%%ebx;"
         :
         : [__x] "m"(__x), [__y] "m"(__y), [curX] "m"(curX), [curY] "m"(curY), [__key] "m"(__key)
-        : "esp", "ebp", "eax", "ebx", "ecx", "edx");
-#else
-    __asm {
-        pushad
-        push __x
-        mov eax,__y
-        mov ebx,__key
-        mov ecx,[0x6a9ec0]
-        mov ecx,[ecx+0x320]
-        mov edx,0x539390
-        call edx
-        push __key
-        push __x
-        mov eax,[0x6a9ec0]
-        mov eax,[eax+0x320]
-        mov ebx,__y
-        mov edx,0x5392e0
-        call edx
-        popad
-    }
-#endif
+        : ASaveAllRegister);
 }
 void AAsm::_ShootPao()
 {
 
-#ifdef __MINGW32__
     __asm__ __volatile__(
 
         "movl 0x6a9ec0, %%eax;"
@@ -449,28 +308,11 @@ void AAsm::_ShootPao()
 
         :
         : [__x] "m"(__x), [__y] "m"(__y), [__rank] "m"(__rank)
-        : "esp", "ebp", "eax", "ecx", "edi", "edx");
-#else
-    __asm {
-        pushad
-        mov eax,[0x6a9ec0]
-        mov edi,[eax+0x768]
-        mov eax,[edi+0xac]
-        mov ecx,0x14c
-        imul ecx,%[__rank]
-        add eax,ecx
-        push %[__x]
-        push %[__y]
-        mov edx,0x466d50
-        call edx
-        popad
-    }
-#endif
+        : ASaveAllRegister);
 }
 void AAsm::_PlantCard()
 {
 
-#ifdef __MINGW32__
     __asm__ __volatile__(
 
         "movl 0x6a9ec0, %%eax;"
@@ -492,35 +334,11 @@ void AAsm::_PlantCard()
 
         :
         : [__x] "m"(__x), [__y] "m"(__y), [__index] "m"(__index)
-        : "esp", "ebp", "eax", "ecx", "edi", "edx");
-#else
-    __asm {
-        pushad
-        mov eax,[6A9EC0]
-        mov eax,[eax+768]
-        push __y
-        push __x
-        push eax
-        mov eax,[eax+144]
-        mov ecx,__rank
-        imul ecx,50
-        add eax,28
-        add eax,ecx
-        push eax
-        mov ecx,488590
-        call ecx
-        mov ecx,1
-        mov eax,40FD30
-        call eax
-        popad
-
-    }
-#endif
+        : ASaveAllRegister);
 }
 void AAsm::_ShovelPlant()
 {
 
-#ifdef __MINGW32__
     __asm__ __volatile__(
 
         "pushl $0x6;"
@@ -534,26 +352,10 @@ void AAsm::_ShovelPlant()
 
         :
         : [__x] "m"(__x), [__y] "m"(__y)
-        : "esp", "ebp", "eax", "ecx", "ebx", "edi", "edx");
-#else
-    __asm {
-        pushad
-        push 6
-        push 1
-        mov ecx __y
-        mov edx __x
-        mov eax,[6A9EC0]
-        mov eax,[eax+768]
-        mov ebx,411060
-        call ebx
-        popad
-
-    }
-#endif
+        : ASaveAllRegister);
 }
 void AAsm::_ChooseCard()
 {
-#ifdef __MINGW32__
     __asm__ __volatile__(
 
         "movl $0x6A9EC0, %%eax;"
@@ -571,30 +373,11 @@ void AAsm::_ChooseCard()
 
         :
         : [__cardType] "m"(__cardType)
-        : "esp", "ebp", "eax", "ecx", "edx");
-#else
-    __asm {
-        pushad
-        mov eax,0x6A9EC0
-        mov eax,[eax]
-        mov eax,[eax+0x774]
-        mov edx, __cardType
-        shl edx,0x4
-        sub edx, __cardType
-        shl edx,0x2
-        add edx,0xA4
-        add edx,eax
-        push edx
-        mov ecx,0x486030
-        call ecx
-        popad
-    }
-#endif
+        : ASaveAllRegister);
 }
 void AAsm::_ChooseImitatorCard()
 {
 
-#ifdef __MINGW32__
     __asm__ __volatile__(
 
         "movl $0x6A9EC0, %%eax;"
@@ -626,35 +409,11 @@ void AAsm::_ChooseImitatorCard()
 
         :
         : [__cardType] "m"(__cardType)
-        : "esp", "ebp", "eax", "ecx", "edx", "ebx");
-#else
-    __asm {
-        pushad
-        mov eax, 0x6A9EC0
-        mov eax, [eax]
-        mov eax, [eax + 0x774]
-        mov dword ptr[eax + 0x0C08], 0x3
-        mov dword ptr[eax + 0x0C18], __cardType
-        lea ecx, [eax + 0xBE4]
-        mov edx, [eax + 0xA0]
-        mov ebx, [edx + 0x8]
-        mov[ecx], ebx
-        mov ebx, [edx + 0xC]
-        mov[ecx + 0x4], ebx
-        push eax
-        push ecx
-        mov edx, 0x486030
-        call edx
-        mov edx, 0x4866E0
-        call edx
-        popad
-    }
-#endif
+        : ASaveAllRegister);
 }
 
 void AAsm::_GetPlantRejectType()
 {
-#ifdef __MINGW32__
     __asm__ __volatile__(
 
         "movl %[__row], %%eax;"
@@ -670,24 +429,11 @@ void AAsm::_GetPlantRejectType()
 
         :
         : [__cardType] "m"(__cardType), [__row] "m"(__row), [__col] "m"(__col), [__reject_type] "m"(__reject_type)
-        : "esp", "ebp", "eax", "ecx", "ebx", "edx");
-#else
-    __asm {
-        pushad
-        esi row
-        push __cardType
-        push col
-        push 6A9EC0+768
-        call 40E020
-        mov __reject_type, eax
-        popad
-    }
-#endif
+        : ASaveAllRegister);
 }
 
 void AAsm::ReleaseMouse()
 {
-#ifdef __MINGW32__
     __asm__ __volatile__(
 
         "movl 0x6A9EC0, %%eax;"
@@ -697,22 +443,13 @@ void AAsm::ReleaseMouse()
 
         :
         :
-        : "esp", "ebp", "eax", "edx");
-#else
-    __asm {
-        pushad
-        eax 6A9EC0+768
-        call 40CD80
-        popad
-    }
-#endif
+        : ASaveAllRegister);
 }
 
 int AAsm::GridToAbscissa(int row, int col)
 {
     __row = row;
     __col = col;
-#ifdef __MINGW32__
     __asm__ __volatile__(
 
         "movl 0x6A9EC0, %%ecx;"
@@ -725,17 +462,8 @@ int AAsm::GridToAbscissa(int row, int col)
 
         :
         : [__col] "m"(__col), [__row] "m"(__row), [__x] "m"(__x)
-        : "esp", "ebp", "eax", "ecx", "esi", "edx");
-#else
-    __asm {
-        ecx 6A9EC0+768
-        eax col(int)
-        esi row(int)
-        call 41C680
-        x eax(int)
-    }
+        : ASaveAllRegister);
 
-#endif
     return __x;
 }
 
@@ -743,7 +471,6 @@ int AAsm::GridToOrdinate(int row, int col)
 {
     __row = row;
     __col = col;
-#ifdef __MINGW32__
     __asm__ __volatile__(
         "movl 0x6A9EC0, %%ebx;"
         "movl 0x768(%%ebx), %%ebx;"
@@ -754,17 +481,8 @@ int AAsm::GridToOrdinate(int row, int col)
         "movl %%eax, %[__y];"
         :
         : [__col] "m"(__col), [__row] "m"(__row), [__y] "m"(__y)
-        : "esp", "ebp", "eax", "ecx", "ebx", "edx");
-#else
-    __asm {
-        ebx 6A9EC0+768
-        ecx col(int)
-        eax row(int)
-        call 41C740
-        y eax(int)
-    }
+        : ASaveAllRegister);
 
-#endif
     return __y;
 }
 
@@ -775,7 +493,6 @@ AZombie* AAsm::PutZombie(int row, int col, AZombieType type)
     __row = row;
     __col = col;
     __index = int(type);
-#ifdef __MINGW32__
     __asm__ __volatile__(
         "movl %[__row], %%eax;"
         "pushl %[__col];"
@@ -787,57 +504,10 @@ AZombie* AAsm::PutZombie(int row, int col, AZombieType type)
         "calll *%%edx;"
         :
         : [__row] "g"(__row), [__col] "g"(__col), [__index] "g"(__index)
-        : "esp", "ebp", "eax", "ecx", "edx");
-#else
-    __asm {
-        pushad
-        mov eax,x
-        push y
-        push index
-        mov ecx,[6A9EC0]
-        mov ecx,[ecx+768]
-        mov ecx,[ecx+160]
-        mov edx,42A0F0
-        call edx
-        popad
-    }
-#endif
+        : ASaveAllRegister);
+
     return zombieArray + num;
 }
-
-// AZombie* AAsm::PutZombie(int row, int col, AZombieType type)
-// {
-//     auto zombieArray = AGetMainObject()->ZombieArray();
-//     auto num = AGetMainObject()->ZombieNext();
-//     __wave = AGetMainObject()->Wave();
-//     __row = row;
-//     __col = col;
-//     __index = int(type);
-// #ifdef __MINGW32__
-//     __asm__ __volatile__(
-//
-//         "pushl %[__row];"
-//         "pushl %[__index];"
-//         "movl %[__wave],%%ebx;"
-//         "movl 0x6a9ec0,%%ecx;"
-//         "movl 0x768(%%ecx), %%eax;"
-//         "movl $0x40DDC0, %%edx;"
-//         "calll *%%edx;"
-//
-//         :
-//         : [__row] "g"(__row), [__index] "g"(__index), [__wave] "g"(__wave)
-//         :);
-// #else
-//     __asm {
-//         push row
-//         push type
-//         ebx wave
-//         eax 6A9EC0+768
-//         call 40DDC0
-//     }
-// #endif
-//     return zombieArray + num;
-// }
 
 APlant* AAsm::PutPlant(int row, int col, APlantType type)
 {
@@ -855,7 +525,6 @@ APlant* AAsm::PutPlant(int row, int col, APlantType type)
         __imitatorType = __type - AM_PEASHOOTER;
         __type = AIMITATOR;
     }
-#ifdef __MINGW32__
     __asm__ __volatile__(
 
         "pushl %[__imitatorType];"
@@ -870,25 +539,14 @@ APlant* AAsm::PutPlant(int row, int col, APlantType type)
 
         :
         : [__imitatorType] "m"(__imitatorType), [__type] "m"(__type), [__row] "m"(__row), [__col] "m"(__col)
-        : "esp", "ebp", "eax", "ecx", "edi", "edx");
-#else
-    __asm
-    {
-        push immitaterType
-        push type
-        push col
-        push 6A9EC0 + 768
-        eax row
-        call 40D120
-    }
-#endif
+        : ASaveAllRegister);
+
     return plantArray + num;
 }
 
 void AAsm::RemovePlant(APlant* plant)
 {
     __plant = plant;
-#ifdef __MINGW32__
     __asm__ __volatile__(
 
         "pushl %[__plant];"
@@ -897,20 +555,12 @@ void AAsm::RemovePlant(APlant* plant)
 
         :
         : [__plant] "m"(__plant)
-        : "esp", "ebp", "edx");
-#else
-    __asm {
-        push plant;
-        call 4679B0;
-    }
-
-#endif
+        : ASaveAllRegister);
 }
 
 void AAsm::RemoveZombie(AZombie* zombie)
 {
     __zombie = zombie;
-#ifdef __MINGW32__
     __asm__ __volatile__(
 
         "movl %[__zombie], %%ecx;"
@@ -918,13 +568,7 @@ void AAsm::RemoveZombie(AZombie* zombie)
         "calll *%%edx;"
         :
         : [__zombie] "m"(__zombie)
-        : "esp", "ebp", "edx", "ecx");
-#else
-    __asm {
-        ecx zombie
-        call 5302F0
-    }
-#endif
+        : ASaveAllRegister);
 }
 
 void* AAsm::SaveToMemory()
@@ -933,7 +577,6 @@ void* AAsm::SaveToMemory()
     memset(__p, 0, 0x24);
     __board = (DWORD)AGetMainObject();
 
-#ifdef __MINGW32__
     __asm__ __volatile__(
         "movl %[__p], %%eax;"
         "pushl %[__board];"
@@ -942,15 +585,7 @@ void* AAsm::SaveToMemory()
         "addl $0x4, %%esp;"
         :
         : [__p] "m"(__p), [__board] "m"(__board)
-        : "esp", "ebp", "eax", "ecx");
-#else
-    __asm {
-		mov eax,p
-		push board
-		mov ecx, 0x4819D0
-		call ecx
-    }
-#endif
+        : ASaveAllRegister);
 
     ((bool*)__p)[0x21] = 1;
     return __p;
@@ -961,21 +596,15 @@ void AAsm::FreeMemory(void*& p)
     if (!p) {
         return;
     }
-#ifdef __MINGW32__
+    __p = p;
     __asm__ __volatile__(
-        "movl %[p], %%ecx;"
+        "movl %[__p], %%ecx;"
         "movl $0x5D60C0, %%eax;"
         "calll *%%eax;"
         :
-        : [p] "m"(p)
-        : "esp", "ebp", "eax", "ecx");
-#else
-    __asm {
-		mov ecx,p
-		mov eax,0x5D60C0
-		call eax
-    }
-#endif
+        : [__p] "m"(__p)
+        : ASaveAllRegister);
+
     free(p);
     p = nullptr;
 }
@@ -988,7 +617,6 @@ void AAsm::LoadFromMemory(void*& p)
     __p = p;
     __levelprop = ((DWORD***)nullptr)[0x6A9EC0 / 4][0x768 / 4][0x160 / 4];
 
-#ifdef __MINGW32__
     __asm__ __volatile__(
         "movl %[__levelprop], %%edi;"
         "movl $0x429E50, %%eax;"
@@ -1005,21 +633,8 @@ void AAsm::LoadFromMemory(void*& p)
         "addl $0x4, %%esp;"
         :
         : [__p] "m"(__p), [__board] "m"(__board), [__levelprop] "m"(__levelprop)
-        : "esp", "ebp", "eax", "ecx", "edi");
-#else
-    __asm {
-		mov edi, levelprop
-		mov eax, 0x429E50
-		call eax
-		mov eax,p
-		push board
-		mov ecx,0x4819D0
-		call ecx
-		mov edi,board
-		mov eax,0x481CE0
-		call eax
-    }
-#endif
+        : ASaveAllRegister);
+
     FreeMemory(p);
 }
 
@@ -1028,7 +643,6 @@ bool AAsm::IsSeedUsable(ASeed* seed)
     uint8_t* ptr = (uint8_t*)seed;
     ptr += 0x28;
     int ret = 0;
-#ifdef __MINGW32__
     __asm__ __volatile__(
         "movl %[ptr], %%esi;"
         "movl $0x488500, %%ebx;"
@@ -1036,15 +650,7 @@ bool AAsm::IsSeedUsable(ASeed* seed)
         "movl %%eax, %[ret];"
         :
         : [ptr] "m"(ptr), [ret] "m"(ret)
-        : "esp", "ebp", "esi", "eax", "ebx");
-#else
-    __asm
-    {
-        esi &card
-        call 488500
-        ret al
-    }
-#endif
+        : ASaveAllRegister);
 
     return *((bool*)(&ret));
 }
@@ -1052,7 +658,6 @@ bool AAsm::IsSeedUsable(ASeed* seed)
 int AAsm::GetSeedSunVal(int type, int iType)
 {
     int ret = 0;
-#ifdef __MINGW32__
     __asm__ __volatile__(
         "movl %[type], %%eax;"
         "movl %[iType], %%edx;"
@@ -1063,23 +668,13 @@ int AAsm::GetSeedSunVal(int type, int iType)
         "movl %%eax, %[ret];"
         :
         : [type] "m"(type), [iType] "m"(iType), [ret] "m"(ret)
-        : "esp", "ebp", "edi", "eax", "ebx", "edx");
-#else
-    __asm
-    {
-        eax type
-        edx immitator type
-        edi 6A9EC0+768
-        call 41DAE0
-    }
-#endif
+        : ASaveAllRegister);
 
     return ret;
 }
 
 void AAsm::UpdateMousePos()
 {
-#ifdef __MINGW32__
     __asm__ __volatile__(
         "movl 0x6a9ec0,%%eax;"
         "movl 0x768(%%eax), %%eax;"
@@ -1087,12 +682,160 @@ void AAsm::UpdateMousePos()
         "calll *%%ebx;"
         :
         :
-        : "esp", "ebp", "eax", "ebx");
-#else
-    __asm
-    {
-        eax 6A9EC0+768
-        call 40EAB0
+        : ASaveAllRegister);
+}
+
+void AAsm::MakePvzString(const char* str, void* strObj)
+{
+    __asm__ __volatile__(
+        "movl %[str], %%ecx;"
+        "pushl %%ecx;"
+        "movl %[strObj], %%ecx;"
+        "movl $0x404450, %%eax;"
+        "calll *%%eax;"
+        :
+        : [str] "m"(str), [strObj] "m"(strObj)
+        : ASaveAllRegister);
+}
+
+void AAsm::FreePvzString(void* strObj)
+{
+    __asm__ __volatile__(
+
+        "movl %[strObj], %%ecx;"
+        "movl $0x404420, %%eax;"
+        "calll *%%eax;"
+
+        :
+        : [strObj] "m"(strObj)
+        : ASaveAllRegister);
+}
+
+void AAsm::MakeNewBoard()
+{
+    int scene = AGetMainObject()->Scene();
+    __asm__ __volatile__(
+        "movl 0x6a9ec0, %%ecx;"
+        "movl $0x44F5F0, %%eax;"
+        "calll *%%eax;"
+        :
+        :
+        : ASaveAllRegister);
+    __aInternalGlobal.mainObject = AGetPvzBase()->MainObject();
+    AGetMainObject()->Scene() = scene;
+}
+
+void AAsm::LoadGame(const std::string& file)
+{
+    uint8_t pvzStr[28] = {0};
+    void* tmpPtr = pvzStr;
+
+    // 此函数需要根据场景调用不同的函数
+    // 如果没有切换场景，调用 LawnLoadGame 481FE0
+    // 如果切换场景，调用 LoadGame 408DE0
+    int scene = AGetMainObject()->Scene();
+
+    MakePvzString(file.c_str(), &pvzStr);
+    __asm__ __volatile__(
+        // LawnLoadGame
+        "pushl %[tmpPtr];"
+        "movl 0x6a9ec0, %%ecx;"
+        "movl 0x768(%%ecx), %%ecx;"
+        "movl $0x481FE0, %%eax;"
+        "calll *%%eax;"
+        "addl $0x4, %%esp;"
+        :
+        : [tmpPtr] "m"(tmpPtr)
+        : ASaveAllRegister);
+
+    if (scene != AGetMainObject()->Scene()) {
+        __asm__ __volatile__(
+            // LoadGame
+            "movl %[tmpPtr], %%eax;"
+            "movl 0x6a9ec0, %%edi;"
+            "movl 0x768(%%edi), %%edi;"
+            "movl $0x408DE0, %%ecx;"
+            "calll *%%ecx;"
+            :
+            : [tmpPtr] "m"(tmpPtr)
+            : ASaveAllRegister);
     }
-#endif
+
+    __asm__ __volatile__(
+        // continue board
+        "movl $0, %%eax;"
+        "movl 0x6a9ec0, %%ecx;"
+        "movl 0x768(%%ecx), %%ecx;"
+        "movl $0x4127A0, %%ebx;"
+        "calll *%%ebx;"
+
+        :
+        : [tmpPtr] "m"(tmpPtr)
+        : ASaveAllRegister);
+
+    FreePvzString(&pvzStr);
+}
+
+void AAsm::SaveGame(const std::string& file)
+{
+    uint8_t pvzStr[28] = {0};
+    void* tmpPtr = &pvzStr;
+    MakePvzString(file.c_str(), &pvzStr);
+    __asm__ __volatile__(
+        "movl 0x6a9ec0, %%edi;"
+        "movl 0x768(%%edi), %%edi;"
+        "pushl %[tmpPtr];"
+        "movl $0x4820D0, %%ecx;"
+        "calll *%%ecx;"
+        "addl $0x4, %%esp;"
+        :
+        : [tmpPtr] "m"(tmpPtr)
+        : ASaveAllRegister);
+    FreePvzString(&pvzStr);
+}
+
+bool AAsm::CanSpawnZombies(int row)
+{
+    int ret;
+    __asm__ __volatile__(
+        "movl %[row], %%eax;"
+        "movl 0x6a9ec0, %%ecx;"
+        "movl 0x768(%%ecx), %%ecx;"
+        "movl $0x416110, %%edx;"
+        "calll *%%edx;"
+        "movl %%eax, %[ret];"
+        :
+        : [row] "m"(row), [ret] "m"(ret)
+        : "esp", "ebp", "eax", "ecx", "edx");
+    return ret & 0xff;
+}
+
+bool AAsm::IsNight()
+{
+    int ret;
+    __asm__ __volatile__(
+        "movl 0x6a9ec0, %%eax;"
+        "movl 0x768(%%eax), %%eax;"
+        "movl $0x41c010, %%ecx;"
+        "calll *%%ecx;"
+        "movl %%eax, %[ret];"
+        :
+        : [ret] "m"(ret)
+        : "esp", "ebp", "eax", "ecx");
+    return ret & 0xff;
+}
+
+bool AAsm::IsRoof()
+{
+    int ret;
+    __asm__ __volatile__(
+        "movl 0x6a9ec0, %%eax;"
+        "movl 0x768(%%eax), %%eax;"
+        "movl $0x41c0b0, %%ecx;"
+        "calll *%%ecx;"
+        "movl %%eax, %[ret];"
+        :
+        : [ret] "m"(ret)
+        : "esp", "ebp", "eax", "ecx");
+    return ret & 0xff;
 }

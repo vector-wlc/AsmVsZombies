@@ -304,7 +304,7 @@ bool AGameIsPaused()
     if (!__aInternalGlobal.pvzBase->MainObject()) {
         return false;
     }
-    return AGetMainObject()->GamePaused();
+    return AGetMainObject()->GamePaused() || AGetPvzBase()->MouseWindow()->TopWindow() != nullptr;
 }
 
 void ARemovePlant(int row, float col, const std::vector<int>& priority)
@@ -405,4 +405,23 @@ __ANodiscard int AGetCobRecoverTime(APlant* cob)
     default:
         return ACobManager::NO_EXIST_RECOVER_TIME;
     }
+}
+
+void AFieldInfo::_BeforeScript()
+{
+    rowHeight = AAsm::GridToOrdinate(1, 0) - AAsm::GridToOrdinate(0, 0);
+    rowType[0] = ARowType::NONE;
+    for (int i = 1; i <= 6; i++) {
+        rowType[i] = ARowType(AGetMainObject()->MRef<int>(0x5d8 + (i - 1) * 4));
+        if (rowType[i] == ARowType::NONE && AAsm::CanSpawnZombies(i - 1)) {
+            rowType[i] = ARowType::UNSODDED;
+        }
+    }
+    if (rowHeight == 100 && rowType[6] != ARowType::NONE) // AQE
+    {
+        rowType[6] = ARowType::UNSODDED;
+    }
+    isNight = AAsm::IsNight();
+    isRoof = AAsm::IsRoof();
+    nRows = 6 - std::count(rowType + 1, rowType + 7, ARowType::NONE);
 }

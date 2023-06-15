@@ -119,8 +119,8 @@ void ACobManager::RawFire(const std::vector<FireDrop>& lst)
 void ACobManager::RawRoofFire(int cobRow, int cobCol, int dropRow, float dropCol)
 {
     auto&& pattern = __aInternalGlobal.loggerPtr->GetPattern();
-    if (__aInternalGlobal.mainObject->Scene() != 4 && __aInternalGlobal.mainObject->Scene() != 5) {
-        __aInternalGlobal.loggerPtr->Error("RawRoofFire : RawRoofFire函数只适用于RE与ME");
+    if (!aFieldInfo.isRoof) {
+        __aInternalGlobal.loggerPtr->Error("RawRoofFire : RawRoofFire函数只适用于 RE 与 ME");
         return;
     }
     int index = AGetPlantIndex(cobRow, cobCol, ACOB_CANNON);
@@ -438,8 +438,7 @@ std::vector<int> ACobManager::RecoverFire(const std::vector<APosition>& lst)
 
 int ACobManager::RoofFire(int row, float col)
 {
-    int Scene = __aInternalGlobal.mainObject->Scene();
-    if (Scene != 4 && Scene != 5) {
+    if (!aFieldInfo.isRoof) {
         __aInternalGlobal.loggerPtr->Error("RoofFire : RoofFire函数只适用于 RE 与 ME ");
         return -1;
     }
@@ -472,8 +471,7 @@ std::vector<int> ACobManager::RoofFire(const std::vector<APosition>& lst)
 
 int ACobManager::RecoverRoofFire(int row, float col)
 {
-    int scene = __aInternalGlobal.mainObject->Scene();
-    if (scene != 4 && scene != 5) {
+    if (!aFieldInfo.isRoof) {
         __aInternalGlobal.loggerPtr->Error("RecoverRoofFire : RecoverRoofFire 函数只适用于 RE 与 ME ");
         return -1;
     }
