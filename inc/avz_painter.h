@@ -12,6 +12,8 @@
 #include <d3d.h>
 #include <list>
 #include <unordered_map>
+#include <unordered_set>
+#include <memory>
 
 struct __AGeoVertex {
     float __x, __y, __z, __rhw;
@@ -83,13 +85,23 @@ struct __ATexVertex {
     }
 };
 
-struct __ATextureNeedInfo {
-    IDirect3DDevice7* device = nullptr;
-    IDirectDraw7* ddraw = nullptr;
+struct __AD3dInfo {
+    static IDirect3DDevice7* device;
+    static IDirectDraw7* ddraw;
+};
+
+struct __ATextInfo : public __AD3dInfo {
     HFONT HFont;
     int fontW;
     int fontH;
     int fontG;
+};
+
+struct __ACursorInfo : public __AD3dInfo {
+    int type;
+    int width;
+    int height;
+    HCURSOR hCursor;
 };
 
 // 得到一个 ARGB 颜色, A 的意思是不透明度,  数值范围为 [0, 255]
@@ -109,32 +121,22 @@ class __ATexture {
     float u;
     float v;
     IDirectDrawSurface7* texture;
-    __ATextureNeedInfo* textNeedInfo;
+    __ATextInfo* textInfo = nullptr;
 
 public:
     ~__ATexture();
 
-    __ATexture(wchar_t chr, __ATextureNeedInfo* _textNeedInfo);
+    __ATexture(wchar_t chr, __ATextInfo* _textInfo);
+    __ATexture(__ACursorInfo* cursorInfo);
 
     void Draw(DWORD color, int x, int y) const;
 
-    IDirectDrawSurface7* createTextureSurface(int theWidth, int theHeight);
+    IDirectDrawSurface7* CreateTextureSurface(int theWidth, int theHeight);
 };
 
-class __ADraw {
-    IDirectDrawSurface7* _surface = nullptr;
+class __ABasicPainter : public AOrderedStateHook<-1> {
+    __ADeleteCopyAndMove(__ABasicPainter);
 
-public:
-    __ATextureNeedInfo textNeedInfo;
-    int fontSize = 20;
-    std::wstring fontName = L"宋体";
-    void DrawRect(int x, int y, int w, int h, DWORD color);
-    __ATextureNeedInfo* GetTextureNeedInfo();
-    bool Refresh();
-    bool IsOpen3dAcceleration();
-};
-
-class __AStaticPainter : public AOrderedStateHook<-1> {
 public:
     struct DrawInfo {
         ARect rect;
@@ -164,14 +166,42 @@ public:
         }
     };
 
+    // Hook
     static bool AsmDraw();
-    static bool IsOk();
     static void DrawEveryTick();
-    static void ClearFont();
-    static std::deque<DrawInfo> drawInfoQueue;
-    static __ADraw draw;
-    static std::unordered_map<wchar_t, __ATexture*> textureDict;
+
+    bool IsOk();
+    void ClearFont();
+    std::deque<DrawInfo> drawInfoQueue;
+    std::deque<std::pair<ACursor, int>> cursorQueue;
+    std::unordered_map<wchar_t, std::shared_ptr<__ATexture>> textureDict;
     static std::vector<std::vector<int>> posDict;
+
+    __ATextInfo textInfo;
+    int fontSize = 20;
+    std::wstring fontName = L"宋体";
+    void DrawRect(int x, int y, int w, int h, DWORD color);
+    void DrawStr(const std::wstring& text, int x, int y, DWORD color);
+    static void DrawCursor(int x, int y, int type); // 0: 普通的 1: 手
+    __ATextInfo* GetTextNeedInfo();
+    bool Refresh();
+    bool IsOpen3dAcceleration();
+
+    static std::unordered_set<__ABasicPainter*>& GetPainterSet()
+    {
+        static std::unordered_set<__ABasicPainter*> __;
+        return __;
+    }
+
+    __ABasicPainter()
+    {
+        GetPainterSet().insert(this);
+    }
+
+    ~__ABasicPainter()
+    {
+        GetPainterSet().erase(this);
+    }
 
 protected:
     virtual void _BeforeScript() override;
@@ -223,10 +253,11 @@ public:
     // Draw(ARect(100, 100, 200, 200), 100) ------ 在游戏画面(100, 100) 处绘制宽高为 (200, 200) 的矩形, 显示 100cs
     void Draw(const ARect& rect, int duration = 1);
     void Draw(const AText& posText, int duration = 1);
+    void Draw(const ACursor& cursor, int duration = 1);
 
 protected:
     DWORD _textColor = AArgb(0xff, 0, 0xff, 0xff);
     DWORD _rectColor = AArgb(0xaf, 0, 0, 0);
-    static __AStaticPainter _aStaticPainter; // 用于生成绘制的 hook
+    __ABasicPainter _basicPainter;
 };
 #endif

@@ -56,32 +56,32 @@ ASeh::~ASeh()
 
 long __stdcall ASeh::UnhandledExceptionFilter(LPEXCEPTION_POINTERS lpExceptPtr)
 {
-#ifndef __MINGW32__
-    __asm__ __volatile__(
-        "pushal;"
-        "movl $0x6A9EC0, %%eax;"
-        "movl (%%eax), %%ecx;"
-        "testl %%eax, %%ecx;"
-        "jzl end;"
-        "movl (%%ecx), %%eax;"
-        "movl 0x9c(%%eax), %%eax;"
-        "calll *%%eax;"
-        "end :"
-        "popal;")
-#else
-    // __asm {
-    // 	mov eax, 0x6a9ec0
-    // 	mov ecx, [eax]
-    // 	test ecx, ecx
-    // 	jz end
-    // 	mov eax, [ecx]
-    // 	mov eax, [eax + 0x9c]
-    // 	call eax
-    // 	end :
-    // }
-#endif
+    // #ifndef __MINGW32__
+    //     __asm__ __volatile__(
+    //         "pushal;"
+    //         "movl $0x6A9EC0, %%eax;"
+    //         "movl (%%eax), %%ecx;"
+    //         "testl %%eax, %%ecx;"
+    //         "jzl end;"
+    //         "movl (%%ecx), %%eax;"
+    //         "movl 0x9c(%%eax), %%eax;"
+    //         "calll *%%eax;"
+    //         "end :"
+    //         "popal;");
+    // #else
+    //     // __asm {
+    //     // 	mov eax, 0x6a9ec0
+    //     // 	mov ecx, [eax]
+    //     // 	test ecx, ecx
+    //     // 	jz end
+    //     // 	mov eax, [ecx]
+    //     // 	mov eax, [eax + 0x9c]
+    //     // 	call eax
+    //     // 	end :
+    //     // }
+    // #endif
 
-        DoHandleDebugEvent(lpExceptPtr);
+    DoHandleDebugEvent(lpExceptPtr);
     SetErrorMode(SEM_NOGPFAULTERRORBOX);
     return EXCEPTION_CONTINUE_SEARCH;
 }
@@ -107,7 +107,7 @@ void ASeh::DoHandleDebugEvent(LPEXCEPTION_POINTERS lpEP)
     for (auto&& p : msgTable)
         if (p.dwExceptionCode == lpEP->ExceptionRecord->ExceptionCode)
             szName = p.szMessage;
-    sprintf(globalBuffer, "Exception: %s (code 0x%x) at address %p in thread %x\r\n",
+    sprintf(globalBuffer, "Exception: %s (code 0x%lx) at address %p in thread %lx\r\n",
         szName, lpEP->ExceptionRecord->ExceptionCode, lpEP->ExceptionRecord->ExceptionAddress, GetCurrentThreadId());
     errorTitle += globalBuffer;
     DWORD section, offset;
@@ -116,7 +116,7 @@ void ASeh::DoHandleDebugEvent(LPEXCEPTION_POINTERS lpEP)
     errorTitle += GetFilename(globalBuffer);
     errorTitle += "\r\n";
     sprintf(globalBuffer,
-        "Logical Address: %04X:%08X\r\nEAX:%08X    ECX:%08X    EDX:%08X\r\nEBX:%08X    ESI:%08X    EDI:%08X\r\nEIP:%08X    ESP:%08X    EBP:%08X\r\nCS: %04X        SS: %04X        DS: %04X\r\nES: %04X        FS: %04X        GS: %04X\r\nFlags:%08X\r\n",
+        "Logical Address: %04lX:%08lX\r\nEAX:%08lX    ECX:%08lX    EDX:%08lX\r\nEBX:%08lX    ESI:%08lX    EDI:%08lX\r\nEIP:%08lX    ESP:%08lX    EBP:%08lX\r\nCS: %04lX        SS: %04lX        DS: %04lX\r\nES: %04lX        FS: %04lX        GS: %04lX\r\nFlags:%08lX\r\n",
         section, offset,
         lpEP->ContextRecord->Eax, lpEP->ContextRecord->Ecx, lpEP->ContextRecord->Edx,
         lpEP->ContextRecord->Ebx, lpEP->ContextRecord->Esi, lpEP->ContextRecord->Edi,
@@ -145,7 +145,7 @@ std::string ASeh::IntelWalk(PCONTEXT theContext, int theSkipCount)
         char szModule[MAX_PATH] = "";
         DWORD section = 0, offset = 0;
         GetLogicalAddress((PVOID)pc, szModule, sizeof(szModule), section, offset);
-        sprintf(globalBuffer, "%08X  %p  %04X:%08X  %s\r\n",
+        sprintf(globalBuffer, "%08lX  %p  %04lX:%08lX  %s\r\n",
             pc, pFrame, section, offset, GetFilename(szModule));
         dump += globalBuffer;
         pc = pFrame[1];
@@ -168,11 +168,11 @@ std::string ASeh::ImageHelpWalk(PCONTEXT theContext, int theSkipCount)
     sf.AddrStack.Mode = AddrModeFlat;
     sf.AddrFrame.Offset = theContext->Ebp;
     sf.AddrFrame.Mode = AddrModeFlat;
-    int level = 0;
+    // int level = 0;
     while (true) {
         if (!StackWalk(IMAGE_FILE_MACHINE_I386, GetCurrentProcess(), GetCurrentThread(), &sf, theContext, NULL, SymFunctionTableAccess, SymGetModuleBase, 0)) {
             if (DWORD lastErr = GetLastError()) {
-                sprintf(globalBuffer, "StackWalk failed (error %d)\r\n", lastErr);
+                sprintf(globalBuffer, "StackWalk failed (error %lu)\r\n", lastErr);
                 dump += globalBuffer;
             }
             break;
@@ -192,22 +192,22 @@ std::string ASeh::ImageHelpWalk(PCONTEXT theContext, int theSkipCount)
         if (SymGetSymFromAddr(GetCurrentProcess(), sf.AddrPC.Offset, &symDisplacement, pSymbol)) {
             char UDName[256];
             UnDecorateSymbolName(pSymbol->Name, UDName, 256, UNDNAME_NO_ALLOCATION_MODEL | UNDNAME_NO_ALLOCATION_LANGUAGE | UNDNAME_NO_MS_THISTYPE | UNDNAME_NO_ACCESS_SPECIFIERS | UNDNAME_NO_THISTYPE | UNDNAME_NO_MEMBER_TYPE | UNDNAME_NO_RETURN_UDT_MODEL | UNDNAME_NO_THROW_SIGNATURES | UNDNAME_NO_SPECIAL_SYMS);
-            len = sprintf(globalBuffer, "%08X  %08X  %hs+%X",
+            len = sprintf(globalBuffer, "%08lX  %08lX  %hs+%lX",
                 sf.AddrFrame.Offset, sf.AddrPC.Offset, UDName, symDisplacement);
         } else {
             char szModule[MAX_PATH];
             DWORD section = 0, offset = 0;
             GetLogicalAddress((PVOID)sf.AddrPC.Offset, szModule, sizeof(szModule), section, offset);
-            len = sprintf(globalBuffer, "%08X  %08X  %s:%04X:%08X",
+            len = sprintf(globalBuffer, "%08lX  %08lX  %s:%04lX:%08lX",
                 sf.AddrFrame.Offset, sf.AddrPC.Offset, GetFilename(szModule), section, offset);
         }
         dump += globalBuffer;
         if (len > 80)
             len = 0, dump += "\r\n";
         dump.append(80 - len, ' ');
-        sprintf(globalBuffer, "Params: %08X %08X %08X %08X\r\n", sf.Params[0], sf.Params[1], sf.Params[2], sf.Params[3]);
+        sprintf(globalBuffer, "Params: %08lX %08lX %08lX %08lX\r\n", sf.Params[0], sf.Params[1], sf.Params[2], sf.Params[3]);
         dump += globalBuffer;
-        level++;
+        // level++;
     }
     return dump;
 }
@@ -297,7 +297,7 @@ void ASeh::ShowErrorDialog(const char* theErrorTitle, const char* theErrorText)
     wndRect.top = 100;
     wndRect.right = 900;
     wndRect.bottom = 700;
-    BOOL worked = AdjustWindowRect(&wndRect, WS_CLIPCHILDREN | WS_POPUP | WS_BORDER | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX, FALSE);
+    // BOOL worked = AdjustWindowRect(&wndRect, WS_CLIPCHILDREN | WS_POPUP | WS_BORDER | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX, FALSE);
     int width = wndRect.right - wndRect.left, height = wndRect.bottom - wndRect.top;
     HWND HWnd = CreateWindowA("SEHWindow", "Error!",
         WS_CLIPCHILDREN | WS_POPUP | WS_BORDER | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,

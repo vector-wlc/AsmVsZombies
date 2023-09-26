@@ -72,11 +72,11 @@ class AAbstractLogger;
 class __ATickManager;
 
 struct __AInternalGlobal {
-    AMainObject* mainObject;
-    APvzBase* pvzBase;
-    AAbstractLogger* loggerPtr;
-    __ATickManager* tickManager;
-    bool isReplay = false;
+    AMainObject* mainObject = nullptr;
+    APvzBase* pvzBase = nullptr;
+    AAbstractLogger* loggerPtr = nullptr;
+    __ATickManager* tickInFight = nullptr;
+    __ATickManager* tickInGlobal = nullptr;
 };
 
 extern __AInternalGlobal __aInternalGlobal;
@@ -91,5 +91,30 @@ inline AAbstractLogger* AGetInternalLogger()
 {
     return __aInternalGlobal.loggerPtr;
 }
+
+#define __AMsgBox(msg) MessageBoxW(nullptr, (msg), L"AMsgBox", MB_OK);
+
+template <typename Var, typename Val>
+class AVarGuard {
+public:
+    AVarGuard(Var& var, Val val)
+        : _var(var)
+    {
+        _tmp = std::move(var);
+        _var = std::move(val);
+    }
+
+    AVarGuard(const AVarGuard&) = delete;
+    AVarGuard(AVarGuard&&) = delete;
+
+    ~AVarGuard()
+    {
+        _var = std::move(_tmp);
+    }
+
+protected:
+    Var _tmp;
+    Var& _var;
+};
 
 #endif

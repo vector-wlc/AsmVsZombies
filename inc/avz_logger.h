@@ -11,6 +11,7 @@
 #include <deque>
 #include <fstream>
 #include <sstream>
+#include <string_view>
 
 enum class ALogLevel {
     INFO,

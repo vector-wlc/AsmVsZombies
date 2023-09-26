@@ -38,7 +38,7 @@ BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 
     case DLL_PROCESS_DETACH:
         // detach from process
-        __AScriptManager::isExit = true;
+        __AScriptManager::var.isExit = true;
         Sleep(10);
         __AUninstallHook();
         break;

@@ -67,7 +67,7 @@ extern APlantFixer aPlantFixer;
 aPlantFixer.SetList({{2, 3}, {3, 4}});
 
 // 自动得到修补的位置列表
-aPlantFixer.AutoGetList();
+aPlantFixer.AutoSetList();
 
 // 修补全场的高坚果
 aPlantFixer.Start(GJG_23)

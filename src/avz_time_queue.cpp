@@ -7,7 +7,7 @@
 
 #include "libavz.h"
 
-void __AOperationQueueManager::_SetRefreshTime(int wave, int refreshTime)
+void __AOpQueueManager::_SetRefreshTime(int wave, int refreshTime)
 {
     auto queueIter = container.begin() + wave;
     queueIter->memRefreshTime = refreshTime;
@@ -26,11 +26,11 @@ void __AOperationQueueManager::_SetRefreshTime(int wave, int refreshTime)
     }
 }
 
-__AOperationQueueManager::Container __AOperationQueueManager::container;
-ATime __AOperationQueueManager::startTime; // 脚本设定的开始时间
+__AOpQueueManager::Container __AOpQueueManager::container;
+ATime __AOpQueueManager::startTime; // 脚本设定的开始时间
 
 std::optional<__ATimeIter>
-__AOperationQueueManager::Push(const ATime& time, __ABoolOperation&& timeOp)
+__AOpQueueManager::Push(const ATime& time, __ABoolOperation&& timeOp)
 {
     if (time.wave < 1 || time.wave > container.size()) {
         __aInternalGlobal.loggerPtr->Error(
@@ -62,7 +62,7 @@ __AOperationQueueManager::Push(const ATime& time, __ABoolOperation&& timeOp)
     return ret;
 }
 
-void __AOperationQueueManager::RunOperation()
+void __AOpQueueManager::RunOperation()
 {
     int nowTime = __aInternalGlobal.mainObject->GameClock();
     auto totalWave = container.size();
@@ -84,11 +84,16 @@ void __AOperationQueueManager::RunOperation()
 
             _PrintLog(ATime(wave, iter->first), queueNowTime);
             iter->second.operation();
+
+            auto gameUi = AMPtr<APvzBase>(0x6a9ec0)->GameUi();
+            if (gameUi != AAsm::PLAYING) {
+                return; // 在非战斗界面需要立即退出
+            }
         }
     }
 }
 
-void __AOperationQueueManager::UpdateRefreshTime()
+void __AOpQueueManager::UpdateRefreshTime()
 {
     auto mainObject = __aInternalGlobal.mainObject;
     int wave = mainObject->Wave();
@@ -134,7 +139,7 @@ void __AOperationQueueManager::UpdateRefreshTime()
     }
 }
 
-void __AOperationQueueManager::SetWavelength(const std::vector<ATime>& lst)
+void __AOpQueueManager::SetWavelength(const std::vector<ATime>& lst)
 {
     for (const auto& time : lst) {
         if (!_CheckWavelength(time)) {
@@ -155,7 +160,7 @@ void __AOperationQueueManager::SetWavelength(const std::vector<ATime>& lst)
     }
 }
 
-void __AOperationQueueManager::AssumeWavelength(const std::vector<ATime>& lst)
+void __AOpQueueManager::AssumeWavelength(const std::vector<ATime>& lst)
 {
     for (const auto& time : lst) {
         if (!_CheckWavelength(time)) {
@@ -172,7 +177,7 @@ void __AOperationQueueManager::AssumeWavelength(const std::vector<ATime>& lst)
     }
 }
 
-void __AOperationQueueManager::_PrintLog(const ATime& time, int nowTime)
+void __AOpQueueManager::_PrintLog(const ATime& time, int nowTime)
 {
     if (nowTime > time.time) {
         __aInternalGlobal.loggerPtr->Warning("时间-操作 [" + std::to_string(time.wave) + ", " + std::to_string(time.time) + //
@@ -181,7 +186,7 @@ void __AOperationQueueManager::_PrintLog(const ATime& time, int nowTime)
     __aInternalGlobal.loggerPtr->Info("运行 时间-操作 [" + std::to_string(time.wave) + ", " + std::to_string(time.time) + "]");
 }
 
-bool __AOperationQueueManager::_CheckWavelength(const ATime& time)
+bool __AOpQueueManager::_CheckWavelength(const ATime& time)
 {
     int totalWave = container.size();
     std::vector<int> bigWave;
@@ -210,7 +215,7 @@ bool __AOperationQueueManager::_CheckWavelength(const ATime& time)
     return true;
 }
 
-void __AOperationQueueManager::_CheckAssumeWavelength(int wave)
+void __AOpQueueManager::_CheckAssumeWavelength(int wave)
 {
     auto&& currentTimeQueue = container[wave - 1];
     auto&& nextTimeQueue = container[wave];
@@ -255,14 +260,14 @@ void __AOperationQueueManager::_CheckAssumeWavelength(int wave)
     }
 }
 
-void __AOperationQueueManager::_BeforeScript()
+void __AOpQueueManager::_BeforeScript()
 {
     container.clear();
     container.resize(__aInternalGlobal.mainObject->TotalWave());
     startTime = ATime(1, __AOperationQueue::UNINIT);
 }
 
-void __AOperationQueueManager::_EnterFight()
+void __AOpQueueManager::_EnterFight()
 {
     UpdateRefreshTime();
     startTime = ANowTime();
@@ -278,7 +283,7 @@ int ANowTime(int wave)
         return __AOperationQueue::UNINIT;
     }
     ++depth;
-    auto maxWave = __AOperationQueueManager::container.size();
+    auto maxWave = __AOpQueueManager::container.size();
     if (wave <= 0 || wave > maxWave) {
         auto&& pattern = __aInternalGlobal.loggerPtr->GetPattern();
         // 此处会造成递归调用
@@ -288,7 +293,7 @@ int ANowTime(int wave)
         --depth;
         return __AOperationQueue::UNINIT;
     }
-    auto refreshTime = __AOperationQueueManager::container[wave - 1].calRefreshTime;
+    auto refreshTime = __AOpQueueManager::container[wave - 1].calRefreshTime;
     --depth;
     return refreshTime == __AOperationQueue::UNINIT //
         ? __AOperationQueue::UNINIT

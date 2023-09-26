@@ -99,7 +99,8 @@ protected:
 
 #define __ANodiscardRelOp [[nodiscard("ARelOp 需要配合 AConnect 使用")]]
 
-struct ARelOp {
+class ARelOp {
+public:
     struct ReOp {
         int relativeTime;
         AOperation operation;
@@ -121,15 +122,14 @@ struct ARelOp {
         }
     };
 
-    std::vector<ReOp> OpVec;
-
     __ANodiscardRelOp ARelOp(ARelOp&& rhs)
-        : OpVec(std::move(rhs.OpVec))
+        : _opVec(std::move(rhs._opVec))
     {
+        rhs._opVec.clear();
     }
 
     __ANodiscardRelOp ARelOp(const ARelOp& rhs)
-        : OpVec(rhs.OpVec)
+        : _opVec(rhs._opVec)
     {
     }
 
@@ -137,7 +137,7 @@ struct ARelOp {
         requires __AIsCoOpOrOp<Op>
     __ANodiscardRelOp explicit ARelOp(int relativeTime, Op&& op)
     {
-        OpVec.emplace_back(relativeTime, std::forward<Op>(op));
+        _opVec.emplace_back(relativeTime, std::forward<Op>(op));
     }
 
     template <typename Op>
@@ -149,15 +149,37 @@ struct ARelOp {
 
     __ANodiscardRelOp explicit ARelOp(int relativeTime, ARelOp&& reOp)
     {
-        for (auto&& op : reOp.OpVec) {
-            OpVec.emplace_back(relativeTime + op.relativeTime, std::move(op.operation));
+        for (auto&& op : reOp._opVec) {
+            _opVec.emplace_back(relativeTime + op.relativeTime, std::move(op.operation));
         }
     }
     __ANodiscardRelOp explicit ARelOp(int relativeTime, const ARelOp& reOp)
     {
-        for (auto&& op : reOp.OpVec) {
-            OpVec.emplace_back(relativeTime + op.relativeTime, op.operation);
+        for (auto&& op : reOp._opVec) {
+            _opVec.emplace_back(relativeTime + op.relativeTime, op.operation);
         }
+    }
+
+    template <typename Op>
+        requires __AIsCoOpOrOp<Op>
+    ARelOp& operator=(Op&& op)
+    {
+        _opVec.clear();
+        _opVec.emplace_back(0, std::forward<Op>(op));
+        return *this;
+    }
+
+    ARelOp& operator=(const ARelOp& relOp)
+    {
+        _opVec = relOp._opVec;
+        return *this;
+    }
+
+    ARelOp& operator=(ARelOp&& relOp)
+    {
+        _opVec = std::move(relOp._opVec);
+        relOp._opVec.clear();
+        return *this;
     }
 
     // ARelativeOp + ARelativeOp
@@ -176,7 +198,7 @@ struct ARelOp {
     __ANodiscard friend ARelOp operator+(Lhs&& lhs, Rhs&& rhs)
     {
         ARelOp tmpReOp(std::forward<Lhs>(lhs));
-        tmpReOp.OpVec.emplace_back(0, std::forward<Rhs>(rhs));
+        tmpReOp._opVec.emplace_back(0, std::forward<Rhs>(rhs));
         return tmpReOp;
     }
 
@@ -200,24 +222,28 @@ struct ARelOp {
         requires __AIsCoOpOrOp<Rhs>
     friend ARelOp& operator+=(ARelOp& lhs, Rhs&& rhs)
     {
-        lhs.OpVec.emplace_back(0, std::forward<Rhs>(rhs));
+        lhs._opVec.emplace_back(0, std::forward<Rhs>(rhs));
         return lhs;
     }
+
+    const std::vector<ReOp>& GetOpVec() const { return _opVec; }
 
 protected:
     void _Add(ARelOp&& rhs)
     {
-        for (auto&& op : rhs.OpVec) {
-            OpVec.emplace_back(op.relativeTime, std::move(op.operation));
+        for (auto&& op : rhs._opVec) {
+            _opVec.emplace_back(op.relativeTime, std::move(op.operation));
         }
     }
 
     void _Add(const ARelOp& rhs)
     {
-        for (auto&& op : rhs.OpVec) {
-            OpVec.emplace_back(op.relativeTime, op.operation);
+        for (auto&& op : rhs._opVec) {
+            _opVec.emplace_back(op.relativeTime, op.operation);
         }
     }
+
+    std::vector<ReOp> _opVec;
 };
 
 #undef __ANodiscardRelOp
@@ -280,7 +306,7 @@ template <typename Op>
     requires __AIsOperation<Op>
 ATimeConnectHandle AConnect(const ATime& time, Op&& op)
 {
-    auto timeIter = __AOperationQueueManager::Push(time, __ABoolOperation(std::forward<Op>(op)));
+    auto timeIter = __AOpQueueManager::Push(time, __ABoolOperation(std::forward<Op>(op)));
     return ATimeConnectHandle(timeIter, time);
 }
 
@@ -309,7 +335,7 @@ std::vector<ATimeConnectHandle> AConnect(const ATime& time, const ARelOp& reOp);
 
 template <typename Pre, typename Op>
     requires __AIsPredication<Pre> && __AIsOperation<Op>
-AConnectHandle AConnect(Pre&& pre, Op&& op, bool isInGlobal = false)
+AConnectHandle AConnect(Pre&& pre, Op&& op, bool isInGlobal = false, int priority = 0)
 {
     extern __AConnectVec __aConnectVec;
     auto tick = new ATickRunnerWithNoStart([pre = std::forward<Pre>(pre), op = std::forward<Op>(op)]() mutable {
@@ -317,16 +343,16 @@ AConnectHandle AConnect(Pre&& pre, Op&& op, bool isInGlobal = false)
             op();
         }
     },
-        isInGlobal);
+        isInGlobal, priority);
     __aConnectVec.tickVec.push_back(tick);
     return tick;
 }
 
 template <typename Pre, typename Op>
     requires __AIsPredication<Pre> && __AIsCoroutineOp<Op>
-AConnectHandle AConnect(Pre&& pre, Op&& op, bool isInGlobal = false)
+AConnectHandle AConnect(Pre&& pre, Op&& op, bool isInGlobal = false, int priority = 0)
 {
-    return AConnect(std::forward<Pre>(pre), ACoFunctor(std::forward<Op>(op)), isInGlobal);
+    return AConnect(std::forward<Pre>(pre), ACoFunctor(std::forward<Op>(op)), isInGlobal, priority);
 }
 
 class __AKeyManager : public AOrderedStateHook<-1> {
@@ -360,7 +386,7 @@ inline __AKeyManager __akm; // AStateHook
 
 template <typename Op>
     requires __AIsCoOpOrOp<Op>
-AConnectHandle AConnect(AKey key, Op&& op)
+AConnectHandle AConnect(AKey key, Op&& op, int priority = 0)
 {
     if (__AKeyManager::ToVaildKey(key) != __AKeyManager::VALID) {
         return nullptr;
@@ -370,7 +396,7 @@ AConnectHandle AConnect(AKey key, Op&& op)
         return ((GetAsyncKeyState(key) & 0x8001) == 0x8001 && //
             GetForegroundWindow() == pvzHandle);              // 检测 pvz 是否为顶层窗口
     };
-    auto connectPtr = AConnect(std::move(keyFunc), std::forward<Op>(op), true);
+    auto connectPtr = AConnect(std::move(keyFunc), std::forward<Op>(op), true, priority);
     __AKeyManager::AddKey(key, connectPtr);
     return connectPtr;
 }

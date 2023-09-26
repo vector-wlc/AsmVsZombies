@@ -310,11 +310,10 @@ void AAsm::_ShootPao()
         : [__x] "m"(__x), [__y] "m"(__y), [__rank] "m"(__rank)
         : ASaveAllRegister);
 }
+
 void AAsm::_PlantCard()
 {
-
     __asm__ __volatile__(
-
         "movl 0x6a9ec0, %%eax;"
         "movl 0x768(%%eax), %%edi;"
         "pushl %[__y];"
@@ -734,7 +733,7 @@ void AAsm::LoadGame(const std::string& file)
     // 如果没有切换场景，调用 LawnLoadGame 481FE0
     // 如果切换场景，调用 LoadGame 408DE0
     int scene = AGetMainObject()->Scene();
-
+    MakeNewBoard();
     MakePvzString(file.c_str(), &pvzStr);
     __asm__ __volatile__(
         // LawnLoadGame
@@ -749,6 +748,7 @@ void AAsm::LoadGame(const std::string& file)
         : ASaveAllRegister);
 
     if (scene != AGetMainObject()->Scene()) {
+        MakeNewBoard();
         __asm__ __volatile__(
             // LoadGame
             "movl %[tmpPtr], %%eax;"
@@ -768,7 +768,6 @@ void AAsm::LoadGame(const std::string& file)
         "movl 0x768(%%ecx), %%ecx;"
         "movl $0x4127A0, %%ebx;"
         "calll *%%ebx;"
-
         :
         : [tmpPtr] "m"(tmpPtr)
         : ASaveAllRegister);
@@ -838,4 +837,69 @@ bool AAsm::IsRoof()
         : [ret] "m"(ret)
         : "esp", "ebp", "eax", "ecx");
     return ret & 0xff;
+}
+
+void AAsm::EnterGame(int gameMode)
+{
+    auto gameUi = AMPtr<APvzBase>(0x6a9ec0)->GameUi();
+    if (gameUi == LEVEL_INTRO || gameUi == PLAYING) {
+        return; // 在选卡界面或者战斗界面此函数无效
+    }
+
+    if (gameUi == 0 || gameUi == 1) {
+        if (gameUi == 0) { // 载入界面，需要直接删除载入界面进入主界面
+            __asm__ __volatile__(
+                "movl 0x6a9ec0, %%ecx;"
+                "movl $0x452CB0, %%ebx;"
+                "calll *%%ebx;"
+                :
+                :
+                : ASaveAllRegister);
+        }
+
+        __asm__ __volatile__( // 删除主界面
+            "movl 0x6a9ec0, %%esi;"
+            "movl $0x44F9E0, %%eax;"
+            "calll *%%eax;"
+            :
+            :
+            : ASaveAllRegister);
+    }
+
+    if (gameUi == 7) {        // 选项卡界面
+        __asm__ __volatile__( // 删除选项卡界面
+            "movl 0x6a9ec0, %%esi;"
+            "movl $0x44FD00, %%eax;"
+            "calll *%%eax;"
+            :
+            :
+            : ASaveAllRegister);
+    }
+
+    // 进入战斗或者选卡界面
+    bool ok = 1;
+    __asm__ __volatile__(
+        "push %[ok];"
+        "pushl %[gameMode];"
+        "movl 0x6a9ec0, %%esi;"
+        "movl $0x44f560, %%eax;"
+        "calll *%%eax;"
+        :
+        : [ok] "m"(ok), [gameMode] "m"(gameMode)
+        : ASaveAllRegister);
+}
+
+void AAsm::DoBackToMain()
+{
+    auto gameUi = AMPtr<APvzBase>(0x6a9ec0)->GameUi();
+    if (gameUi != PLAYING) {
+        return; // 在非战斗界面此函数无效
+    }
+    __asm__ __volatile__(
+        "movl 0x6a9ec0, %%eax;"
+        "movl $0x44FEB0, %%ebx;"
+        "calll *%%ebx;"
+        :
+        :
+        : ASaveAllRegister);
 }

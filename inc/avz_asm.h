@@ -67,10 +67,10 @@ public:
     // 是否可种卡片
     // 返回值意义查看 `enum PlantReject`
     // *** 使用示例:
-    // if(AAsm::GetPlantRejectType(XRK_1, 1, 1) == AAsm::NIL) { // NIL 表示可以种植物， 检查一下 2 行 2 列是否可以种植物
+    // if(AAsm::GetPlantRejectType(AXRK_1, 1, 1) == AAsm::NIL) { // NIL 表示可以种植物， 检查一下 2 行 2 列是否可以种植物
     //
     // }
-    __ANodiscard static int GetPlantRejectType(int card_type, int row, int col);
+    __ANodiscard static int GetPlantRejectType(int cardType, int row, int col);
 
     // 战斗界面刷新函数
     static void GameFightLoop();
@@ -119,6 +119,100 @@ public:
     static bool CanSpawnZombies(int row);
     static bool IsNight();
     static bool IsRoof();
+
+    enum GameMode {
+        ADVENTURE,
+        SURVIVAL_NORMAL_STAGE_1,
+        SURVIVAL_NORMAL_STAGE_2,
+        SURVIVAL_NORMAL_STAGE_3,
+        SURVIVAL_NORMAL_STAGE_4,
+        SURVIVAL_NORMAL_STAGE_5,
+        SURVIVAL_HARD_STAGE_1,
+        SURVIVAL_HARD_STAGE_2,
+        SURVIVAL_HARD_STAGE_3,
+        SURVIVAL_HARD_STAGE_4,
+        SURVIVAL_HARD_STAGE_5,
+        SURVIVAL_ENDLESS_STAGE_1,
+        SURVIVAL_ENDLESS_STAGE_2,
+        SURVIVAL_ENDLESS_STAGE_3,
+        SURVIVAL_ENDLESS_STAGE_4,
+        SURVIVAL_ENDLESS_STAGE_5,
+        CHALLENGE_WAR_AND_PEAS,
+        CHALLENGE_WALLNUT_BOWLING,
+        CHALLENGE_SLOT_MACHINE,
+        CHALLENGE_RAINING_SEEDS,
+        CHALLENGE_BEGHOULED,
+        CHALLENGE_INVISIGHOUL,
+        CHALLENGE_SEEING_STARS,
+        CHALLENGE_ZOMBIQUARIUM,
+        CHALLENGE_BEGHOULED_TWIST,
+        CHALLENGE_LITTLE_TROUBLE,
+        CHALLENGE_PORTAL_COMBAT,
+        CHALLENGE_COLUMN,
+        CHALLENGE_BOBSLED_BONANZA,
+        CHALLENGE_SPEED,
+        CHALLENGE_WHACK_A_ZOMBIE,
+        CHALLENGE_LAST_STAND,
+        CHALLENGE_WAR_AND_PEAS_2,
+        CHALLENGE_WALLNUT_BOWLING_2,
+        CHALLENGE_POGO_PARTY,
+        CHALLENGE_FINAL_BOSS,
+        CHALLENGE_ART_CHALLENGE_WALLNUT,
+        CHALLENGE_SUNNY_DAY,
+        CHALLENGE_RESODDED,
+        CHALLENGE_BIG_TIME,
+        CHALLENGE_ART_CHALLENGE_SUNFLOWER,
+        CHALLENGE_AIR_RAID,
+        CHALLENGE_ICE,
+        CHALLENGE_ZEN_GARDEN,
+        CHALLENGE_HIGH_GRAVITY,
+        CHALLENGE_GRAVE_DANGER,
+        CHALLENGE_SHOVEL,
+        CHALLENGE_STORMY_NIGHT,
+        CHALLENGE_BUNGEE_BLITZ,
+        CHALLENGE_SQUIRREL,
+        TREE_OF_WISDOM,
+        SCARY_POTTER_1,
+        SCARY_POTTER_2,
+        SCARY_POTTER_3,
+        SCARY_POTTER_4,
+        SCARY_POTTER_5,
+        SCARY_POTTER_6,
+        SCARY_POTTER_7,
+        SCARY_POTTER_8,
+        SCARY_POTTER_9,
+        SCARY_POTTER_ENDLESS,
+        PUZZLE_I_ZOMBIE_1,
+        PUZZLE_I_ZOMBIE_2,
+        PUZZLE_I_ZOMBIE_3,
+        PUZZLE_I_ZOMBIE_4,
+        PUZZLE_I_ZOMBIE_5,
+        PUZZLE_I_ZOMBIE_6,
+        PUZZLE_I_ZOMBIE_7,
+        PUZZLE_I_ZOMBIE_8,
+        PUZZLE_I_ZOMBIE_9,
+        PUZZLE_I_ZOMBIE_ENDLESS,
+        UPSELL,
+        INTRO,
+        NUM_GAME_MODES
+    };
+
+    // 进入游戏
+    static void EnterGame(int gameMode);
+
+    // 直接返回主界面
+    static void DoBackToMain();
+
+    enum GameScenes {
+        LOADING,
+        MENU,
+        LEVEL_INTRO,
+        PLAYING,
+        ZOMBIES_WON,
+        AWARD,
+        CREDIT,
+        CHALLENGE
+    };
 
     __ADeprecated static void* SaveToMemory();
     __ADeprecated static void LoadFromMemory(void*& p);

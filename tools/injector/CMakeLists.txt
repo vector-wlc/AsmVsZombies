@@ -7,5 +7,5 @@ add_executable(injector ${srcs})
 # 此条命令仅用于作者压缩 injector.exe，仅编译 injector 请注释这条命令
 add_custom_command( 
     TARGET injector POST_BUILD
-    COMMAND e:/upx/upx.exe ${PROJECT_SOURCE_DIR}/bin/injector.exe
+    COMMAND d:/upx/upx.exe ${PROJECT_SOURCE_DIR}/bin/injector.exe
 )

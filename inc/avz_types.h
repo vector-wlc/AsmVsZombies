@@ -137,6 +137,19 @@ struct AText {
     }
 };
 
+struct ACursor {
+    int x;
+    int y;
+    int type; // 0为指针 1 为手形
+    ACursor() = default;
+    explicit ACursor(int x, int y, int type = 0)
+        : x(x)
+        , y(y)
+        , type(type)
+    {
+    }
+};
+
 enum class AReloadMode {
     NONE,
     MAIN_UI,

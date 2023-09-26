@@ -11,7 +11,7 @@
 
 __ANodiscard inline AMainObject* AGetMainObject() { return __aInternalGlobal.mainObject; }
 
-__ANodiscard inline APvzBase* AGetPvzBase() { return __aInternalGlobal.pvzBase; }
+__ANodiscard inline APvzBase* AGetPvzBase() { return *(APvzBase**)0x6a9ec0; }
 
 __ANodiscard inline AAnimation* AGetAnimationArray()
 {

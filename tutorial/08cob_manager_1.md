@@ -26,7 +26,7 @@ aCobManager.SetList({{1, 2}, {2, 3}});
 对于上条语句的意思是将一行二列，二行三列的炮存到 aCobManager 对象中，此时 aCobManager 就知道了自己在发射炮的时候发哪里的炮了。
 
 ```C++
-aCobManager.AutoGetList();
+aCobManager.AutoSetList();
 ```
 上面这条语句是懒人专用，**他将场地上所有的炮自动全部载入这个对象的炮列表中**.
 

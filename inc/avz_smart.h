@@ -148,7 +148,15 @@ public:
 
     // 自动填充炮列表
     // *** 注意：此函数无条件将场地上的所有炮填充至此炮列表
-    void AutoGetList();
+    void AutoSetList();
+
+    // 自动填充炮列表
+    // *** 注意：此函数无条件将场地上的所有炮填充至此炮列表
+    // 此函数已弃用，请使用 AutoSetList();
+    __ADeprecated void AutoGetList()
+    {
+        AutoSetList();
+    }
 
     // 得到可用的炮的内存指针
     // *** 注意: 如果没有炮可用返回 nullptr
@@ -174,6 +182,26 @@ public:
     // *** 使用示例
     // auto cobPtr = GetRoofRecoverPtr(9) ---- 得到发往九列恢复时间最短的屋顶炮的内存指针
     __ANodiscard APlant* GetRoofRecoverPtr(float col);
+
+    // 得到恢复时间列表
+    // *** 使用示例
+    // auto lst = aCobManager.GetRecoverList();
+    // for (auto&& [ptr, recoverTime] : lst) {
+    //    // 这里应该写相应的处理代码
+    //    // 示例就打印一下算了
+    //    logger.Info("指针: #, 恢复时间: #", ptr, recoverTime);
+    // }
+    __ANodiscard std::vector<std::pair<APlant*, int>> GetRecoverList();
+
+    // 得到屋顶炮恢复时间列表
+    // *** 使用示例
+    // auto lst = aCobManager.GetRoofRecoverList(8); // 得到发往第九列的屋顶炮的恢复时间列表
+    // for (auto&& [ptr, recoverTime] : lst) {
+    //    // 这里应该写相应的处理代码
+    //    // 示例就打印一下算了
+    //    logger.Info("指针: #, 恢复时间: #", ptr, recoverTime);
+    // }
+    __ANodiscard std::vector<std::pair<APlant*, int>> GetRoofRecoverList(float col);
 
     // 获取屋顶炮飞行时间
     // *** 使用示例:
@@ -222,6 +250,12 @@ protected:
     // 得到可用的炮的指针
     // 如果没有炮可用返回 nullptr
     __ANodiscard APlant* _BasicGetPtr(bool isRecover, float col);
+
+    // 得到恢复时间列表
+    // *** 使用示例
+    // auto recoverList = GetRecoverList();
+    //
+    __ANodiscard std::vector<std::pair<APlant*, int>> _BasicGetRecoverList(float col);
     virtual void _BeforeScript() override;
     virtual void _EnterFight() override;
 };
@@ -301,8 +335,16 @@ public:
     {
         _gridLst = lst;
     }
+
     // 自动得到修补的位置列表
-    void AutoGetList();
+    void AutoSetList();
+
+    // 自动得到修补的位置列表
+    // 此函数已弃用，请使用 AutoSetList();
+    __ADeprecated void AutoGetList()
+    {
+        AutoSetList();
+    }
 
     // 线程开始工作，此函数开销较大，不建议多次调用
     // 第一个参数为植物类型

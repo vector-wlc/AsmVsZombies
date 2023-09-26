@@ -74,7 +74,7 @@ public:
 
 using __ATimeIter = __AOperationQueue::RunOrderQueue::iterator;
 
-class __AOperationQueueManager : public AOrderedStateHook<INT_MIN> {
+class __AOpQueueManager : public AOrderedStateHook<INT_MIN> {
 public:
     using Container = std::vector<__AOperationQueue>;
     static Container container;
@@ -140,7 +140,7 @@ __ANodiscard inline ATime ANowDelayTime(int delayTime)
 // ASetWavelength({ATime(1, 601), ATime(4, 1000)}) ----- 将第一波的波长设置为 601，将第四波的波长设置为 1000
 inline void ASetWavelength(const std::vector<ATime>& lst)
 {
-    __AOperationQueueManager::SetWavelength(lst);
+    __AOpQueueManager::SetWavelength(lst);
 }
 
 // 假定特定波的波长
@@ -152,9 +152,9 @@ inline void ASetWavelength(const std::vector<ATime>& lst)
 // AAssumeWavelength({ATime(1, 601), ATime(4, 1000)}) ----- 将第一波的波长假定为 601，将第四波的波长假定为 1000
 inline void AAssumeWavelength(const std::vector<ATime>& lst)
 {
-    __AOperationQueueManager::AssumeWavelength(lst);
+    __AOpQueueManager::AssumeWavelength(lst);
 }
 
-inline __AOperationQueueManager __oqm; // AStateHook
+inline __AOpQueueManager __oqm; // AStateHook
 
 #endif

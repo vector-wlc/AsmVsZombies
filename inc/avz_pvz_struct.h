@@ -26,46 +26,67 @@ struct AAnimationOffset; // 动画地址偏移
 struct AAnimation;       // 动画
 struct ACardSlot;        // 卡槽
 
-template <typename T>
-__ANodiscard T& AMRef(uintptr_t addr) noexcept
-{
-    return *(T*)(addr);
-}
-
-template <typename T>
-__ANodiscard T* AMPtr(uintptr_t addr) noexcept
-{
-    return *(T**)(addr);
-}
-
-template <typename T>
-__ANodiscard T AMVal(uintptr_t addr) noexcept
-{
-    return (T)(addr);
-}
-
 class APvzStruct {
     __ADeleteCopyAndMove(APvzStruct);
 
 public:
-    template <typename T>
+    template <typename T = APvzStruct>
     __ANodiscard T& MRef(uintptr_t addr) noexcept
     {
         return (T&)((uint8_t*)this)[addr];
     }
 
-    template <typename T>
+    template <typename T = APvzStruct>
     __ANodiscard T* MPtr(uintptr_t addr) noexcept
     {
         return *(T**)((uint8_t*)this + addr);
     }
 
-    template <typename T>
+    template <typename T = APvzStruct*>
     __ANodiscard T MVal(uintptr_t addr) noexcept
     {
         return (T)((uint8_t*)this + addr);
     }
+
+    template <typename T>
+    void Write(const std::vector<T>& vec)
+    {
+        std::copy(vec.begin(), vec.end(), (T*)this);
+    }
+
+    template <typename T, typename Iter>
+    void Write(Iter&& begin, Iter&& end)
+    {
+        std::copy(begin, end, (T*)this);
+    }
+
+    template <typename T>
+    __ANodiscard auto Read(std::size_t size)
+    {
+        std::vector<T> vec(size);
+        T* ptr = (T*)this;
+        std::copy(ptr, ptr + size, vec.begin());
+        return vec;
+    }
 };
+
+template <typename T = APvzStruct>
+__ANodiscard T& AMRef(uintptr_t addr) noexcept
+{
+    return *(T*)(addr);
+}
+
+template <typename T = APvzStruct>
+__ANodiscard T* AMPtr(uintptr_t addr) noexcept
+{
+    return *(T**)(addr);
+}
+
+template <typename T = APvzStruct*>
+__ANodiscard T AMVal(uintptr_t addr) noexcept
+{
+    return (T)(addr);
+}
 
 // 游戏基址
 struct APvzBase : public APvzStruct {

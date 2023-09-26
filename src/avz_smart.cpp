@@ -40,7 +40,7 @@ void ACobManager::_BeforeScript()
 
 void ACobManager::_EnterFight()
 {
-    AutoGetList();
+    AutoSetList();
 }
 
 // 获取屋顶炮飞行时间
@@ -200,7 +200,7 @@ void ACobManager::SetList(const std::vector<AGrid>& lst)
 
 // 自动填充炮列表
 // *** 注意：此函数无条件将场地上的所有炮填充至此炮列表
-void ACobManager::AutoGetList()
+void ACobManager::AutoSetList()
 {
     _gridVec.clear();
     _next = 0;
@@ -287,45 +287,6 @@ int ACobManager::_GetRecoverTimeVec()
     return AGetCobRecoverTime(_indexVec[_next]);
 }
 
-APlant* ACobManager::_BasicGetPtr(bool isRecover, float col)
-{
-    int tmpIdx = _next;
-    auto _tmpSeqMode = _sequentialMode;
-    _sequentialMode = TIME;
-    auto ret = _UpdateNextCob(isRecover, col, false);
-    _next = tmpIdx;
-    _sequentialMode = _tmpSeqMode;
-    return ret == NO_EXIST_RECOVER_TIME ? nullptr : AGetMainObject()->PlantArray() + _indexVec[_next];
-}
-
-APlant* ACobManager::GetUsablePtr()
-{
-    return _BasicGetPtr(false, -1);
-}
-
-APlant* ACobManager::GetRoofUsablePtr(float col)
-{
-    if (col < 0 || col > 10) {
-        __aInternalGlobal.loggerPtr->Error("ACobManager::GetNextRoofUsable 参数溢出, 范围为 [0, 10]");
-        col = -1;
-    }
-    return _BasicGetPtr(false, col);
-}
-
-__ANodiscard APlant* ACobManager::GetRecoverPtr()
-{
-    return _BasicGetPtr(true, -1);
-}
-
-__ANodiscard APlant* ACobManager::GetRoofRecoverPtr(float col)
-{
-    if (col < 0 || col > 10) {
-        __aInternalGlobal.loggerPtr->Error("ACobManager::GetNextRoofUsable 参数溢出, 范围为 [0, 10]");
-        col = -1;
-    }
-    return _BasicGetPtr(true, col);
-}
-
 int ACobManager::_UpdateNextCob(bool isDelayFire, float dropCol, bool isShowError)
 {
     int minRecoverTime = 0xFFFF;
@@ -374,6 +335,88 @@ int ACobManager::_UpdateNextCob(bool isDelayFire, float dropCol, bool isShowErro
         __aInternalGlobal.loggerPtr->Error(std::move(error_str));
     }
     return NO_EXIST_RECOVER_TIME;
+}
+
+APlant* ACobManager::_BasicGetPtr(bool isRecover, float col)
+{
+    int tmpIdx = _next;
+    auto _tmpSeqMode = _sequentialMode;
+    _sequentialMode = TIME;
+    auto ret = _UpdateNextCob(isRecover, col, false);
+    _next = tmpIdx;
+    _sequentialMode = _tmpSeqMode;
+    return ret == NO_EXIST_RECOVER_TIME ? nullptr : AGetMainObject()->PlantArray() + _indexVec[_next];
+}
+
+__ANodiscard std::vector<std::pair<APlant*, int>> ACobManager::_BasicGetRecoverList(float col)
+{
+    int iterCnt = _indexVec.size();
+    std::vector<std::pair<APlant*, int>> ret(iterCnt);
+    int tmpNext = _next;
+    _next = 0;
+    auto plantArray = AGetMainObject()->PlantArray();
+    // 开始遍历
+    for (int i = 0; i < iterCnt; ++i, Skip(1)) {
+        // 被锁定的炮不允许发射
+        if (_lockSet.find(_indexVec[_next]) != _lockSet.end()) {
+            ret[i].first = nullptr;
+            ret[i].second = -1;
+            continue;
+        }
+        ret[i].second = _GetRecoverTimeVec();
+        // 炮不存在直接跳过
+        if (ret[i].second == NO_EXIST_RECOVER_TIME) {
+            ret[i].first = nullptr;
+            continue;
+        }
+        ret[i].first = plantArray + _indexVec[i];
+        int roofOffsetTime = col < 0 ? 0 : (387 - GetRoofFlyTime(_gridVec[_next].col, col));
+        ret[i].second = std::max(0, ret[i].second - roofOffsetTime);
+    }
+    _next = tmpNext;
+    return ret;
+}
+
+APlant* ACobManager::GetUsablePtr()
+{
+    return _BasicGetPtr(false, -1);
+}
+
+APlant* ACobManager::GetRoofUsablePtr(float col)
+{
+    if (col < 0 || col > 10) {
+        __aInternalGlobal.loggerPtr->Error("ACobManager::GetNextRoofUsable 参数溢出, 范围为 [0, 10]");
+        col = -1;
+    }
+    return _BasicGetPtr(false, col);
+}
+
+__ANodiscard APlant* ACobManager::GetRecoverPtr()
+{
+    return _BasicGetPtr(true, -1);
+}
+
+__ANodiscard APlant* ACobManager::GetRoofRecoverPtr(float col)
+{
+    if (col < 0 || col > 10) {
+        __aInternalGlobal.loggerPtr->Error("ACobManager::GetNextRoofUsable 参数溢出, 范围为 [0, 10]");
+        col = -1;
+    }
+    return _BasicGetPtr(true, col);
+}
+
+__ANodiscard std::vector<std::pair<APlant*, int>> ACobManager::GetRecoverList()
+{
+    return _BasicGetRecoverList(-1);
+}
+
+__ANodiscard std::vector<std::pair<APlant*, int>> ACobManager::GetRoofRecoverList(float col)
+{
+    if (col < 0 || col > 10) {
+        __aInternalGlobal.loggerPtr->Error("ACobManager::GetRoofRecoverList 参数溢出, 范围为 [0, 10]");
+        col = -1;
+    }
+    return _BasicGetRecoverList(col);
 }
 
 // 发炮函数：单发
@@ -657,7 +700,7 @@ void AIceFiller::Coffee()
 //    PlantFixer
 /////////////////////////////////////////////////
 
-void APlantFixer::AutoGetList()
+void APlantFixer::AutoSetList()
 {
     _gridLst.clear();
     auto plant = __aInternalGlobal.mainObject->PlantArray();
@@ -723,7 +766,7 @@ void APlantFixer::Start(int plantType, const std::vector<AGrid>& lst,
     _GetSeedList();
     // 如果没有给出列表信息
     if (lst.size() == 0) {
-        AutoGetList();
+        AutoSetList();
     } else {
         _gridLst = lst;
     }

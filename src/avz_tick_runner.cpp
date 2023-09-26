@@ -7,50 +7,41 @@
 #include "avz_tick_runner.h"
 #include "avz_memory.h"
 
-void __ATickManager::RunAll()
+void __ATickManager::RunQueue()
 {
-    if (AGameIsPaused()) {
-        return;
-    }
-    for (int idx = 0; idx < _queue.size(); ++idx) { // 不用这种遍历如果中途新增了元素可能会访问非法内存
-        if (_queue[idx].isRunning) {
-            _queue[idx].operation();
-        }
-    }
-}
-void __ATickManager::RunOnlyInGlobal()
-{
-    if (AGameIsPaused()) {
-        return;
-    }
-    for (int idx = 0; idx < _queue.size(); ++idx) { // 不用这种遍历如果中途新增了元素可能会访问非法内存
-        if (_queue[idx].isInGlobal && _queue[idx].isRunning) {
-            _queue[idx].operation();
+    for (auto&& que : _priQue) {
+        // 不用这种遍历如果中途新增了元素可能会访问非法内存
+        for (int idx = 0; idx < que.size(); ++idx) {
+            if (que[idx].isRunning) {
+                que[idx].operation();
+            }
         }
     }
 }
 
-void __ATickManager::Remove(int idx)
+void __ATickManager::Remove(int priority, int idx)
 {
     if (_isClearing) {
         return;
     }
-    if (idx >= _queue.size() || idx < 0) {
-        __aInternalGlobal.loggerPtr->Error("无法移除 ID 为 " + std::to_string(idx) + " 的帧运行");
+    auto&& que = _priQue[_PriToIdx(priority)];
+    if (idx >= que.size() || idx < 0) {
+        AGetInternalLogger()->Error("无法移除优先级为 " + std::to_string(priority) + ", ID 为 " + std::to_string(idx) + " 的帧运行");
         return;
     }
-    __aInternalGlobal.loggerPtr->Info("移除 ID 为 " + std::to_string(idx) + " 的帧运行");
-    _queue[idx].isRunning = false;
-    std::swap(_queue[idx].idx, _nextIdx);
+    AGetInternalLogger()->Info("移除优先级为 " + std::to_string(priority) + ", ID 为 " + std::to_string(idx) + " 的帧运行");
+    que[idx].isRunning = false;
+    std::swap(que[idx].idx, _nextIdx);
 }
 
 void __ATickManager::_BeforeScript()
 {
-    __aInternalGlobal.tickManager = this;
     _isClearing = true;
     // 这里可能会调用 __ATickManager::Remove
     // 所以要标识 _isClearing
-    _queue.clear();
+    for (auto&& que : _priQue) {
+        que.clear();
+    }
     _isClearing = false;
     _nextIdx = 0;
 }
@@ -62,6 +53,6 @@ void ATickRunner::Stop() noexcept
     if (IsStopped() || !ARangeIn(AGetPvzBase()->GameUi(), {2, 3})) {
         return;
     }
-    __aInternalGlobal.tickManager->Remove(_idx);
+    _tickManager->Remove(_priority, _idx);
     _idx = -1;
 }

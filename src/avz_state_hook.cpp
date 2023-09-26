@@ -4,6 +4,7 @@ bool __AStateHookManager::_isRunBeforeScript = false;
 bool __AStateHookManager::_isRunAfterScript = false;
 bool __AStateHookManager::_isRunEnterFight = false;
 bool __AStateHookManager::_isRunExitFight = false;
+bool __AStateHookManager::_isRunAfterInject = false;
 
 void __AStateHookManager::Init()
 {
@@ -36,38 +37,22 @@ void __AStateHookManager::RunAllBeforeScript()
     }
 }
 
-void __AStateHookManager::RunAllAfterScript()
-{
-    if (_isRunAfterScript) {
-        return;
+#define GenerateStateHookManagerCode(FuncName)        \
+    void __AStateHookManager::RunAll##FuncName()      \
+    {                                                 \
+        if (_isRun##FuncName) {                       \
+            return;                                   \
+        }                                             \
+        _isRun##FuncName = true;                      \
+        for (auto&& stateHook : GetHookContainer()) { \
+            stateHook.second->Run##FuncName();        \
+        }                                             \
     }
-    _isRunAfterScript = true;
-    for (auto&& stateHook : GetHookContainer()) {
-        stateHook.second->RunAfterScript();
-    }
-}
 
-void __AStateHookManager::RunAllEnterFight()
-{
-    if (_isRunEnterFight) {
-        return;
-    }
-    _isRunEnterFight = true;
-    for (auto&& stateHook : GetHookContainer()) {
-        stateHook.second->RunEnterFight();
-    }
-}
-
-void __AStateHookManager::RunAllExitFight()
-{
-    if (_isRunExitFight) {
-        return;
-    }
-    _isRunExitFight = true;
-    for (auto&& stateHook : GetHookContainer()) {
-        stateHook.second->RunExitFight();
-    }
-}
+GenerateStateHookManagerCode(AfterScript);
+GenerateStateHookManagerCode(EnterFight);
+GenerateStateHookManagerCode(ExitFight);
+GenerateStateHookManagerCode(AfterInject);
 
 void __APublicStateHook::Init()
 {
@@ -77,34 +62,17 @@ void __APublicStateHook::Init()
     _isRunExitFight = false;
 }
 
-void __APublicStateHook::RunBeforeScript()
-{
-    if (!_isRunBeforeScript) {
-        _isRunBeforeScript = true;
-        _BeforeScript();
+#define GenerateStateHookCode(FuncName)      \
+    void __APublicStateHook::Run##FuncName() \
+    {                                        \
+        if (!_isRun##FuncName) {             \
+            _isRun##FuncName = true;         \
+            _##FuncName();                   \
+        }                                    \
     }
-}
 
-void __APublicStateHook::RunAfterScript()
-{
-    if (!_isRunAfterScript) {
-        _isRunAfterScript = true;
-        _AfterScript();
-    }
-}
-
-void __APublicStateHook::RunEnterFight()
-{
-    if (!_isRunEnterFight) {
-        _isRunEnterFight = true;
-        _EnterFight();
-    }
-}
-
-void __APublicStateHook::RunExitFight()
-{
-    if (!_isRunExitFight) {
-        _isRunExitFight = true;
-        _ExitFight();
-    }
-}
+GenerateStateHookCode(BeforeScript);
+GenerateStateHookCode(AfterScript);
+GenerateStateHookCode(EnterFight);
+GenerateStateHookCode(ExitFight);
+GenerateStateHookCode(AfterInject);

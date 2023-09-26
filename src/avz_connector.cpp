@@ -26,7 +26,7 @@ std::vector<ATimeConnectHandle> AConnect(const ATime& time, ARelOp&& reOp)
 {
     std::vector<ATimeConnectHandle> ret;
     int wave = time.wave;
-    for (auto&& op : reOp.OpVec) {
+    for (auto&& op : reOp.GetOpVec()) {
         ret.push_back(AConnect(ATime(wave, time.time + op.relativeTime), std::move(op.operation)));
     }
     return ret;
@@ -36,7 +36,7 @@ std::vector<ATimeConnectHandle> AConnect(const ATime& time, const ARelOp& reOp)
 {
     std::vector<ATimeConnectHandle> ret;
     int wave = time.wave;
-    for (auto&& op : reOp.OpVec) {
+    for (auto&& op : reOp.GetOpVec()) {
         ret.push_back(AConnect(ATime(wave, time.time + op.relativeTime), op.operation));
     }
     return ret;

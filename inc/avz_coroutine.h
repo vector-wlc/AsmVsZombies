@@ -38,10 +38,7 @@ public:
         , _predication(std::forward<Func>(func))
     {
     }
-    bool await_ready() const
-    {
-        return false;
-    }
+    bool await_ready() const { return false; }
     void await_resume();
     void await_suspend(std::coroutine_handle<> handle);
 

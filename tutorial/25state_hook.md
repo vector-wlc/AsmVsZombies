@@ -288,6 +288,7 @@ public:
     void RunAfterScript();
     void RunEnterFight();
     void RunExitFight();
+    void RunAfterInject();
 
     virtual ~__APublicStateHook()
     {
@@ -300,6 +301,7 @@ protected:
     bool _isRunAfterScript = false;
     bool _isRunEnterFight = false;
     bool _isRunExitFight = false;
+    bool _isRunAfterInject = false;
 
     // 此函数会在 本框架 基本内存信息初始化完成后且调用 void AScript() 之前运行
     virtual void _BeforeScript() { }
@@ -313,6 +315,11 @@ protected:
     // 此函数会在游戏退出战斗界面后立即运行
     // 特别注意: 如果用户从主界面进入选卡界面但是又立即退回主界面，此函数依然会运行
     virtual void _ExitFight() { }
+
+    // 此函数会在每次注入之后运行
+    // 注意此函数非常危险，此函数内不得使用任何 AvZ 的其他功能
+    // 因为 AvZ 的初始化发生在进入战斗界面或者选卡界面的时候
+    virtual void _AfterInject() { }
 };
 
 // hookOrder 默认为 0, 数值越小, AStateHook 越先运行
@@ -334,10 +341,10 @@ using AStateHook = AOrderedStateHook<0>;
 这个模板参数中的 runOrder 咱们先不分析是什么，反正咱们现在知道了 AOrderedStateHook 实际上是个壳子，
 真正的实现在 __APublicStateHook 里面，所以咱们先看 __APublicStateHook 中的 protected 成员函数，
 你会发现都是虚函数，而且你发现这个` virtual void _EnterFight() { }` 实际上就是 Demo 类中重载的那个函数，然后你会发现还有其他三个哥们和这个函数长得很一样，
-他们分别是 `_BeforeScript _AfterScript _ExitFight`，至于这些函数的作用，和 _EnterFight 是一致的，只不过本框架调用这几个函数的时机是有差别的，
+他们分别是 `_BeforeScript _AfterScript _ExitFight _AfterInject`，至于这些函数的作用，和 _EnterFight 是一致的，只不过本框架调用这几个函数的时机是有差别的，
 至于什么时候调用请看相应的注释。
 
-介绍完这四个函数之后，咱们再介绍上面的 `RunBeforeScript RunAfterScript RunEnterFight RunExitFight` 是干什么用的，
+介绍完这四个函数之后，咱们再介绍上面的 `RunBeforeScript RunAfterScript RunEnterFight RunExitFight RunAfterInject` 是干什么用的，
 比如咱们又来了一个 DemoA 类，然后 DemoA 类的 _EnterFight 的调用时机必须在 Demo 类的 _EnterFight 之后运行，
 那么如何保证这一点？就是使用上面这四个 Run 系列的函数，看下面的代码
 
@@ -408,7 +415,7 @@ void APublicStateHook::RunEnterFight()
 那么下次再调用这个 RunEnterFight 时，就不会再调用 _EnterFight 了，这样就有了只运行一次保证。
 
 对于第二个问题，为啥要套个壳子，那么咱们需要考虑，如果不套壳子会咋样？很明显，当用户使用 demo. 时， vscode 会有一个成员函数补全列表，
-此时因为 `RunBeforeScript RunAfterScript RunEnterFight RunExitFight` 为 public 函数，所以这四个函数也会被用户看到，
+此时因为 `RunBeforeScript RunAfterScript RunEnterFight RunExitFight RunAfterInject` 为 public 函数，所以这四个函数也会被用户看到，
 那么请问这四个函数应该被用户看到吗，很明显，不应该，而且用户看到了这四个函数是不是还会疑问一下，这是什么奇怪的函数，更有好奇宝宝甚至会调用这四个函数，
 很明显，这是我们万万不想的，本来就给使用者封装好了，根本不需要用户去调用，所以就有了 AStateHook 这个壳子。
 
@@ -446,7 +453,7 @@ class ACobManager : public AOrderedStateHook<-1> { // 运行顺序设置为 -1
 protected:
     virtual void _BeforeScript() override;
 
-    // 此函数会调用 AutoGetList 函数
+    // 此函数会调用 AutoSetList 函数
     // 所以本框架不写 SetList 也是可以的
     virtual void _EnterFight() override;
 };

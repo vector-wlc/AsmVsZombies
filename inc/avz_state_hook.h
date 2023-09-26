@@ -18,6 +18,7 @@ public:
     static void RunAllAfterScript();
     static void RunAllEnterFight();
     static void RunAllExitFight();
+    static void RunAllAfterInject();
     static void Init();
     __ANodiscard static HookContainer& GetHookContainer();
 
@@ -26,6 +27,7 @@ protected:
     static bool _isRunAfterScript;
     static bool _isRunEnterFight;
     static bool _isRunExitFight;
+    static bool _isRunAfterInject;
 };
 
 class __APublicStateHook {
@@ -40,6 +42,7 @@ public:
     void RunAfterScript();
     void RunEnterFight();
     void RunExitFight();
+    void RunAfterInject();
 
     virtual ~__APublicStateHook()
     {
@@ -52,6 +55,7 @@ protected:
     bool _isRunAfterScript = false;
     bool _isRunEnterFight = false;
     bool _isRunExitFight = false;
+    bool _isRunAfterInject = false;
 
     // 此函数会在 本框架 基本内存信息初始化完成后且调用 void AScript() 之前运行
     virtual void _BeforeScript() { }
@@ -65,6 +69,11 @@ protected:
     // 此函数会在游戏退出战斗界面后立即运行
     // 特别注意: 如果用户从主界面进入选卡界面但是又立即退回主界面，此函数依然会运行
     virtual void _ExitFight() { }
+
+    // 此函数会在每次注入之后运行
+    // 注意此函数非常危险，此函数内不得使用任何 AvZ 的其他功能
+    // 因为 AvZ 的初始化发生在进入战斗界面或者选卡界面的时候
+    virtual void _AfterInject() { }
 };
 
 // hookOrder 默认为 0, 数值越小, AStateHook 越先运行

@@ -1,28 +1,30 @@
 # 回放
 
+
+## 基本使用
 本框架的回放功能的对象名称为 `aReplay`， 当然你也可以使用类 `AReplay` 创建回放对象
 
 关键接口如下
 
 ```C++
-
 // 开始记录
 // 使用示例：
 // StartRecord(); ------- 开始记录，默认每 10 帧记录一次，默认从序号为 0 的存档开始记录
 // StartRecord(3, 4); ------- 开始记录，每 3 帧记录一次，并且从序号为 4 的存档开始记录
-void StartRecord(int interval = 10, int startIdx = 0);
+void StartRecord(int interval = 10, int64_t startIdx = 0);
 
 // 开始播放
 // 使用示例：
-// StartPlay(); -------- 开始播放，默认每 10 帧播放一帧，默认从第 0 帧开始播放，默认正向播放，
-// StartPlay(3, 100, AReplay::BACKWARD); -------- 开始播放，每 3 帧播放一帧，从第 100 帧开始播放，反向播放
-// StartPlay(3, 100, AReplay::FORWARD); -------- 开始播放，每 3 帧播放一帧，从第 100 帧开始播放，正向播放
-void StartPlay(int interval = 10, int startIdx = 0, Direction direction = FORWARD);
+// StartPlay(); -------- 开始播放，默认每 10 帧播放一帧，默认从第 0 帧开始播放
+// StartPlay(3, 100); -------- 开始播放，每 3 帧播放一帧，从第 100 帧开始播放
+void StartPlay(int interval = 10, int64_t startIdx = 0);
 
-// 播放设定的帧
+// 显示设定的帧
+// 注意: 对于播放模式，此函数会将播放的帧位设置为当前要显示的帧
+//      对于记录模式，此函数会将下一个记录的帧位设置为当前要显示的帧
 // 使用示例：
-// PlayOneTick(55) ----- 播放第 55 帧
-bool PlayOneTick(int tick);
+// ShowOneTick(55) ----- 显示第 55 帧
+bool ShowOneTick(int64_t tick);
 
 // 设定是否使用游戏的刷新函数补帧
 // 使用示例：
@@ -44,16 +46,46 @@ void SetInfoPos(int x, int y);
 // 设置存档文件的保存路径
 // 注意存档文件可能会非常大
 // 请注意硬盘的容量
-void SetSavePath(const std::string& path);
+void SetSaveDirPath(const std::string& path);
 
 // 设置最大保存帧数
-// 注意：如果不使用此函数，回访对象的默认值为 2000
+// 注意：如果不使用此函数，回放对象的默认值为 2000
 // 使用示例：
 // SetMaxSaveCnt(1000); ------- 最大保留 1000 帧存档
-void SetMaxSaveCnt(int maxSaveCnt) { _maxSaveCnt = maxSaveCnt; }
+void SetMaxSaveCnt(int64_t maxSaveCnt);
+
+// 设置每个包含有多少帧
+// 注意：如果不使用此函数，回放对象的默认值为 100
+// 使用示例：
+// SetPackTickCnt(100); ------- 每个包含有 100 帧存档
+void SetPackTickCnt(int packTickCnt);
 
 // 得到目前播放的帧位
-int GetPlayIdx() { return _playIdx; }
+int64_t GetPlayIdx() const { return _playIdx; }
+
+// 得到帧尾位置
+int64_t GetEndIdx() const { return _endIdx; }
+
+// 得到要记录的帧位
+// 实际上同 GetEndIdx()
+int64_t GetRecordIdx() const { return _endIdx; }
+
+// 得到帧头位置
+int64_t GetStartIdx() const { return _startIdx; }
+
+// 设置压缩对象
+void SetCompressor(AAbstractCompressor& compressor);
+
+// 此函数会立即保存当前 pvz 的状态
+// 当 回放对象 停止播放时会将 pvz 的状态恢复到此函数保存的状态
+void SavePvzState();
+
+void Pause();
+bool IsPaused();
+void GoOn();
+void Stop();
+State GetState() const { return _state; }
+APainter& GetPainter() { return _painter; }
 ```
 
 我们知道这些接口之后就看一下下面的这个示例
@@ -62,10 +94,11 @@ int GetPlayIdx() { return _playIdx; }
 ```C++
 #include <avz.h>
 
+AOnAfterInject(AEnterGame());
+
 void AScript()
 {
     // 阵型选择经典十二炮
-
     ASetReloadMode(AReloadMode::MAIN_UI_OR_FIGHT_UI);
     ASetZombies({
         ACG_3,  // 撑杆
@@ -97,7 +130,8 @@ void AScript()
     // 设置一下回放文件的存放路径
     // 这里改成自己机器上的路径
     // 可以配合 ImDisk 使用，体验更加
-    aReplay.SetSavePath("R:\\");
+    aReplay.SetSaveDirPath("R:\\");
+    aReplay.SetMaxSaveCnt(1000);
     aReplay.StartRecord();
 
     // 播放之前必须先 Stop
@@ -123,59 +157,28 @@ void AScript()
     // 播放下一帧
     AConnect('S', [] {
         aReplay.Pause();
-        aReplay.PlayOneTick(aReplay.GetPlayIdx() + 1);
+        aReplay.ShowOneTick(aReplay.GetPlayIdx() + 1);
     });
 
     // 播放上一帧
     AConnect('A', [] {
         aReplay.Pause();
-        aReplay.PlayOneTick(aReplay.GetPlayIdx() - 1);
+        aReplay.ShowOneTick(aReplay.GetPlayIdx() - 1);
     });
 
-    AConnect(ATime(1, -599), [] {
-        aCobManager.AutoGetList();
-    });
-
-    // P6
-    // 主体节奏
-    for (auto wave : {1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19}) {
-        AConnect(ATime(wave, 341 - 373), [] {
-            aCobManager.Fire({{2, 9}, {5, 9}});
-        });
-    }
-
-    // wave 9 19 20的附加操作
-    // 收尾发四门炮
-    for (auto wave : {9, 19, 20}) {
-        AConnect(ATime(wave, 300), [] {
-            aCobManager.RecoverFire({{2, 9}, {5, 9}, {2, 9}, {5, 9}});
-        });
-    }
-
-    // wave 10 的附加操作
-    // 樱桃消延迟
-    // 解决僵尸出生点靠右的问题
-    AConnect(ATime(10, 341 - 100), [] {
-        ACard(ACHERRY_BOMB, 2, 9);
-    });
-    AConnect(ATime(10, 341 - 373), [] {
-        aCobManager.Fire({{2, 9}, {5, 9}});
-    });
-
-    // wave 20 的附加操作
-    // 咆哮珊瑚(炮消)
-    // 解决僵尸出生点靠右的问题
-
-    AConnect(ATime(20, 250 - 378), [] {
-        aCobManager.Fire(4, 7.625);
-    });
-    AConnect(ATime(20, 341 - 373), [] {
-        aCobManager.Fire({{2, 9}, {5, 9}});
+    ASkipTick([] {
+        auto ptrs = AGetPlantPtrs({{1, 5}, {2, 5}, {5, 5}, {6, 5}}, AYMJNP_47);
+        for (auto ptr : ptrs) {
+            if (ptr == nullptr) {
+                return false;
+            }
+        }
+        return true;
     });
 }
 ```
 
-在上面这个示例中，回放配合跳帧，帮助我们很快的定位了阵型被破的原因，这就是回放的主要作用。
+在上面这个示例中，回放配合跳帧，帮助我们很快的定位了阵型被破的原因，这就是回放的主要作用，
 当然你也可以使用回放功能做更多其它的事情。
 
 下面再介绍一下回放功能的优化，因为回放功能本身是借助疯狂存档读档实现的，
@@ -211,5 +214,110 @@ https://sourceforge.net/projects/imdisk-toolkit/files/latest/download
 // 注意 ImDisk 用内存虚拟出来的硬盘电脑开关机数据会丢失，并且盘符可能会发生变化
 aReplay.SetSavePath("F:\\");
 ```
+
+## 压缩存档
+此功能不建议和跳帧联合使用，此功能是为了避免存档过大的问题，但是会消耗 CPU 的性能，
+所以它应用于 **原始倍速下进行录制的功能**，使用压缩功能，可以使得存档的体积大幅降低，
+使用示例如下
+
+```C++
+// 创建一个压缩对象
+// 这里使用 AvZ 封装好的 7z 压缩对象
+// 构造函数需要传进去 7z 可执行文件的路径
+A7zCompressor compressor("D:\\AsmVsZombies\\7z\\7z.exe");
+
+void AScript() {
+    // 将此压缩对象注册给 aReplay
+    aReplay.SetCompressor(compressor);
+
+    // 其他代码
+}
+
+```
+
+上述代码就完成了回放使用压缩的功能，如果觉得 AvZ 自带的 7z 压缩对象性能太低，可以自定义自己的压缩对象，
+需要做的东西就是继承压缩对象抽象类，其定义如下
+
+```C++
+class AAbstractCompressor {
+public:
+    struct Info {
+        std::string srcPath;
+        std::string dstPath;
+    };
+    void SetFilePath(const std::string& filePath) { _filePath = filePath; };
+    // 压缩文件
+    virtual void Compress(const std::string& srcPath) = 0;
+    // 解压文件
+    virtual void Decompress(const std::string& srcPath, const std::string& dstPath) = 0;
+    // 得到正在压缩的文件列表
+    virtual std::vector<std::string> GetCompressingList() = 0;
+    // 得到正在解压的文件列表
+    virtual std::vector<Info> GetDecompressingList() = 0;
+    // 得到已经压缩的文件列表，注意对象内部应该删除已经获取的文件列表
+    virtual std::vector<std::string> GetCompressedList() = 0;
+    // 得到已经解压的文件列表，注意对象内部应该删除已经获取的文件列表
+    virtual std::vector<Info> GetDecompressedList() = 0;
+    // 等待压缩任务做完
+    virtual void WaitForDone() = 0;
+    // 压缩对象是否正在工作
+    virtual bool IsWorking() = 0;
+    // 压缩对象是否能够正常工作
+    virtual bool IsOk() = 0;
+    virtual ~AAbstractCompressor() { }
+
+protected:
+    std::string _filePath = "areplay.7z";
+};
+
+```
+
+## 手动 TAS
+
+AvZ 的回放功能是支持逐帧手动 TAS 的，具体实现如下
+
+```C++
+#include <avz.h>
+
+AOnAfterInject(AEnterGame());
+
+A7zCompressor compressor("D:\\AsmVsZombies\\7z\\7z.exe");
+
+void AScript()
+{
+    ASetReloadMode(AReloadMode::MAIN_UI_OR_FIGHT_UI);
+
+    ASelectCards(
+        {
+            AICE_SHROOM,   // 寒冰菇
+            AM_ICE_SHROOM, // 模仿寒冰菇
+            ACOFFEE_BEAN,  // 咖啡豆
+            ADOOM_SHROOM,  // 毁灭菇
+            ALILY_PAD,     // 荷叶
+            ASQUASH,       // 倭瓜
+            ACHERRY_BOMB,  // 樱桃炸弹
+            ABLOVER,       // 三叶草
+            APUMPKIN,      // 南瓜头
+            APUFF_SHROOM,  // 小喷菇
+        },
+        1);
+
+    // 设置一下回放文件的存放路径
+    // 这里改成自己机器上的路径
+    // 可以配合 ImDisk 使用，体验更加
+    compressor.SetFilePath("R:\\test.7z");
+    aReplay.SetCompressor(compressor);
+    aReplay.SetSaveDirPath("R:\\");
+    aReplay.SetMaxSaveCnt(INT_MAX);
+    aReplay.StartRecord(10);
+
+    // 倒回去十帧
+    AConnect('Q', [] {
+        aReplay.ShowOneTick(aReplay.GetRecordIdx() - 10);
+    });
+}
+```
+
+当自己的手动操作失误的时候，可以按下 Q 键倒退 10 帧操作，这样就是手动 TAS 了，而且回放对象是一直记录着正常的操作。
 
 [目录](./0catalogue.md) 

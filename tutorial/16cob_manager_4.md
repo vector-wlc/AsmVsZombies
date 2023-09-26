@@ -52,6 +52,20 @@ auto cobPtr = GetRoofRecoverPtr(9)
 
 // 得到 1 列屋顶炮发往 7 列飞行时间
 auto flyTime = ACobManager::GetRoofFlyTime(1, 7);
+
+// 得到恢复时间列表
+// 这玩意的返回类型是 std::vector<std::pair<int, int>>
+// pair.first 为 APlant* 指针
+// pair.second 为 炮的恢复时间
+// 如果恢复时间为 -1，代表炮被锁了不可用
+// 如果恢复时间为 INT_MIN，代表炮消失了
+// 恢复时间 >= 0 为正常值
+auto lst = aCobManager.GetRecoverList();
+for (auto&& [ptr, recoverTime] : lst) {
+   // 这里应该写相应的处理代码
+   // 示例就打印一下算了
+   logger.Info("指针: #, 恢复时间: #", ptr, recoverTime);
+}
 ```
 
 **注意，虽然调整炮序函数和空间使用模式是绝配，但是并不意味着在时间使用模式下不能用；

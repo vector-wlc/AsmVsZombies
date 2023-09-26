@@ -85,6 +85,9 @@ __ANodiscard ASeed* AGetCardPtr(APlantType plantType);
 // ACard(1, {{2, 3}, {3, 4}})--------选取第1张卡片，优先放在2行,3列，其次放在3行,4列
 // 以下用卡片名称使用 Card,卡片名称为拼音首字母，具体参考图鉴
 // ACard({{CHERRY_BOMB, 2, 3}, {JALAPENO, 3, 4}})---------选取樱桃卡片，放在2行,3列，选取辣椒卡片，放在3行,4列
+// ACard({AHY_16, AHMG_15, AKFD_35, ANGT_30}, 2, 3) ----- 将荷叶，毁灭菇，咖啡豆，南瓜头放在二行三列
+// ACard({AHY_16, AHMG_15, AKFD_35, ANGT_30}, {{3, 2}, {3, 3}, {3, 4}}) ---- 将荷叶，毁灭菇，咖啡豆，南瓜头放在二行三列 三行三列 三行四列
+//                                                                           注意是先将第一颗植物尝试所有位置，在进行下一个植物的尝试
 inline std::vector<APlant*> ACard(const std::vector<ACardName>& lst)
 {
     return __ACardManager::Card(lst);
@@ -104,6 +107,28 @@ inline APlant* ACard(APlantType plantType, int row, float col)
 inline APlant* ACard(APlantType plantType, const std::vector<APosition>& lst)
 {
     return __ACardManager::Card(plantType, lst);
+}
+inline std::vector<APlant*> ACard(const std::vector<APlantType>& plantTypeVec, int row, float col)
+{
+    std::vector<APlant*> ret;
+    for (auto&& plantType : plantTypeVec) {
+        ret.push_back(__ACardManager::Card(plantType, row, col));
+    }
+    return ret;
+}
+inline std::vector<APlant*> ACard(const std::vector<APlantType>& plantTypeVec, const std::vector<APosition>& lst)
+{
+    std::vector<APlant*> ret;
+    for (auto&& plantType : plantTypeVec) {
+        for (auto&& pos : lst) {
+            auto ptr = __ACardManager::Card(plantType, pos.row, pos.col);
+            if (ptr != nullptr) {
+                ret.push_back(ptr);
+                break;
+            }
+        }
+    }
+    return ret;
 }
 
 #endif

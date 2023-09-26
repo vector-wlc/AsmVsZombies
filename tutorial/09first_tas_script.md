@@ -51,7 +51,7 @@ ACoroutine ACoScript()
     });
 
     co_await ATime(1, -599);
-    aCobManager.AutoGetList();
+    aCobManager.AutoSetList();
 
     for (int wave = 1; wave < 21; ++wave) {
         if (wave == 10) {
@@ -122,7 +122,7 @@ void AScript()
     });
 
     AConnect(ATime(1, -599), [] {
-        aCobManager.AutoGetList();
+        aCobManager.AutoSetList();
     });
 
     // P6

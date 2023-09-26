@@ -133,7 +133,7 @@ void AScript()
 {
     ASetZombies({ABY_23});
     AConnect(ATime(1, -599), [] {
-        aCobManager.AutoGetList();
+        aCobManager.AutoSetList();
     });
 
     // 在 (1, 400) 这个时间点炮落地和樱桃炸弹同时生效
