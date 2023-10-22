@@ -416,12 +416,14 @@ void AFieldInfo::_BeforeScript()
         if (rowType[i] == ARowType::NONE && AAsm::CanSpawnZombies(i - 1)) {
             rowType[i] = ARowType::UNSODDED;
         }
+        if (rowType[i] != ARowType::NONE) {
+            nRows = i;
+        }
     }
-    if (rowHeight == 100 && rowType[6] != ARowType::NONE) // AQE
-    {
+    if (rowHeight == 100 && rowType[6] != ARowType::NONE) { // AQE
         rowType[6] = ARowType::UNSODDED;
     }
     isNight = AAsm::IsNight();
     isRoof = AAsm::IsRoof();
-    nRows = 6 - std::count(rowType + 1, rowType + 7, ARowType::NONE);
+    //nRows = 6 - std::count(rowType + 1, rowType + 7, ARowType::NONE);
 }

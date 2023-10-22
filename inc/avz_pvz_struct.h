@@ -48,6 +48,25 @@ public:
         return (T)((uint8_t*)this + addr);
     }
 
+    // MRef<T>(0x1, 0x2, 0x3) 形式
+    template <typename T = APvzStruct, typename... Others>
+    __ANodiscard T& MRef(uintptr_t first, Others... others) noexcept
+    {
+        return MPtr(first)->MRef<T>(others...);
+    }
+
+    template <typename T = APvzStruct, typename... Others>
+    __ANodiscard T* MPtr(uintptr_t first, Others... others) noexcept
+    {
+        return MPtr(first)->MPtr<T>(others...);
+    }
+
+    template <typename T = APvzStruct*, typename... Others>
+    __ANodiscard T MVal(uintptr_t first, Others... others) noexcept
+    {
+        return MPtr(first)->MVal<T>(others...);
+    }
+
     template <typename T>
     void Write(const std::vector<T>& vec)
     {
@@ -86,6 +105,25 @@ template <typename T = APvzStruct*>
 __ANodiscard T AMVal(uintptr_t addr) noexcept
 {
     return (T)(addr);
+}
+
+// AMRef<T>(0x1, 0x2, 0x3) 形式
+template <typename T = APvzStruct, typename... Others>
+__ANodiscard T& AMRef(uintptr_t first, Others... others) noexcept
+{
+    return AMPtr(first)->MRef<T>(others...);
+}
+
+template <typename T = APvzStruct, typename... Others>
+__ANodiscard T* AMPtr(uintptr_t first, Others... others) noexcept
+{
+    return AMPtr(first)->MPtr<T>(others...);
+}
+
+template <typename T = APvzStruct*, typename... Others>
+__ANodiscard T AMVal(uintptr_t first, Others... others) noexcept
+{
+    return AMPtr(first)->MVal<T>(others...);
 }
 
 // 游戏基址

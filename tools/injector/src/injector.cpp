@@ -164,6 +164,10 @@ void Process::_RemoveAllInjectedDll()
         }
         pos += 13 + 1;
         auto len = fileName.size() - 4 - pos;
+        if (len <= 0 || pos >= fileName.size()
+            || fileName[pos] > '9' || fileName[pos] < '0') {
+            continue;
+        }
         auto pid = std::stoi(fileName.substr(pos, len));
         bool isDelete = true;
         for (auto hwnd : _hwnds) {
