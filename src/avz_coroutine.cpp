@@ -31,9 +31,9 @@ void __AWait::await_suspend(std::coroutine_handle<> handle)
         auto tickRunner = std::make_shared<ATickRunner>();
         tickRunner->Start([handle, pred = std::move(_predication), tickRunner] {
             if(pred()) {
-                tickRunner->Stop();
                 __ACoHandleManager::Remove(handle);
                 handle.resume();
+                tickRunner->Stop();
             } }, false);
     } else { // time 形式
         AConnect(_time, [handle] {

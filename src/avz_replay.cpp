@@ -9,7 +9,6 @@
 #include <filesystem>
 
 namespace stdFs = std::filesystem;
-namespace stdCh = std::chrono;
 
 void A7zCompressor::_BeforeScript()
 {
@@ -289,7 +288,7 @@ void AReplay::StartRecord(int interval, int64_t startIdx)
     _mouseInfos.clear();
     _tickRunner.Start([this] { _RecordTick(); }, false);
     _infoTickRunner.Start([this] {
-        if (!_isShowInfo) {
+        if (!_isShowInfo || __aGameControllor.isSkipTick()) {
             return;
         }
         _painter.Draw(AText("AReplay : 共录制 [" + std::to_string(_startIdx)
@@ -452,6 +451,10 @@ void AReplay::StartPlay(int interval, int64_t startIdx)
         AGetInternalLogger()->Error("StartPlay : 请先停止 Replay 的运行再进行播放");
         return;
     }
+    if (__aGameControllor.isSkipTick()) {
+        AGetInternalLogger()->Error("StartPlay : 请先停止帧运行再进行播放");
+        return;
+    }
     ASetAdvancedPause(true);
     SavePvzState();
     _ReadInfo();
@@ -465,7 +468,7 @@ void AReplay::StartPlay(int interval, int64_t startIdx)
             _PlayTick();
         }
     },
-        true);
+        ATickRunner::GLOBAL);
 
     _infoTickRunner.Start([this] {
         if (!_isShowInfo) {
@@ -477,7 +480,7 @@ void AReplay::StartPlay(int interval, int64_t startIdx)
         }
         _painter.Draw(AText("AReplay : 播放第 " + std::move(str) + " 帧", _showPosX, _showPosY));
     },
-        true);
+        ATickRunner::GLOBAL);
 }
 
 void AReplay::Pause()
@@ -611,7 +614,7 @@ void AReplay::SavePvzState()
 
 void AReplay::_LoadPvzState()
 {
-    if (AGetPvzBase()->GameUi() != 3) {
+    if (!AGetPvzBase() || !AGetPvzBase()->MainObject() || AGetPvzBase()->GameUi() != 3) {
         return;
     }
     auto filePath = _savePath / stdFs::path(RECOVER_DAT_STR);

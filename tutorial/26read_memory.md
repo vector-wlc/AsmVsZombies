@@ -62,6 +62,16 @@ void AScript()
     // 注意第一个函数是带 A 的，因为是全局函数
     // 后续就不用带了
     int tickInterval = AMPtr<APvzStruct>(0x6A9EC0)->MRef<int>(0x454);
+
+    // 简写形式1：
+    // 如果 <> 写的是 APvzStruct，则可以省略不写，所以下面的这种形式也是可以的
+    // int tickInterval = AMPtr(0x6A9EC0)->MRef<int>(0x454);
+
+    // 简写形式2：
+    // 甚至可以写成下面这样
+    // 实际上就是对上面代码的封装
+    // int tickInterval = AMRef<int>(0x6A9EC0, 0x454);
+
     console.Info(std::to_string(tickInterval));
 }
 ```
@@ -140,6 +150,8 @@ ALogger<AConsole> console;
 void AScript()
 {
     int sunVal = AMPtr<APvzStruct>(0x6A9EC0)->MPtr<APvzStruct>(0x768)->MRef<int>(0x5560);
+    // 同理可写成：
+    // int sunVal = AMRef<int>(0x6A9EC0, 0x768, 0x5560);
     console.Info(std::to_string(sunVal));
 }
 ```
@@ -164,10 +176,8 @@ ALogger<AConsole> console;
 
 void AScript()
 {
-    int x = AMPtr<APvzStruct>(0x6A9EC0)
-                ->MPtr<APvzStruct>(0x768)
-                ->MPtr<APvzStruct>(0xAC)
-                ->MRef<int>(0x8);
+    // 这里就直接使用简写形式了
+    int x = AMRef<int>(0x6a9ec0, 0x768, 0xac, 0x8);
     console.Info(std::to_string(x));
 }
 ```
@@ -184,10 +194,7 @@ ALogger<AConsole> console;
 
 void AScript()
 {
-    int x = AMPtr<APvzStruct>(0x6A9EC0)
-                ->MPtr<APvzStruct>(0x768)
-                ->MPtr<APvzStruct>(0xAC + 0x14C * 1)
-                ->MRef<int>(0x8);
+    int x = AMRef<int>(0x6A9EC0, 0x768, 0xAC + 0x14C * 1, 0x8);
     console.Info(std::to_string(x));
 }
 ```
@@ -201,10 +208,7 @@ ALogger<AConsole> console;
 
 void AScript()
 {
-    int x = AMPtr<APvzStruct>(0x6A9EC0)
-                ->MPtr<APvzStruct>(0x768)
-                ->MPtr<APvzStruct>(0xAC)
-                ->MRef<int>(0x8 + 0x14C * 1);
+    int x = AMRef<int>(0x6A9EC0, 0x768, 0xAC, 0x8 + 0x14C * 1);
     console.Info(std::to_string(x));
 }
 ```
@@ -227,14 +231,9 @@ ALogger<AConsole> console;
 
 void AScript()
 {
-    int plantArraySize = AMPtr<APvzStruct>(0x6A9EC0)
-                             ->MPtr<APvzStruct>(0x768)
-                             ->MRef<int>(0xB0);
+    int plantArraySize = AMRef<int>(0x6A9EC0, 0x768, 0xB0);
     for (int i = 0; i < plantArraySize; ++i) {
-        int x = AMPtr<APvzStruct>(0x6A9EC0)
-                    ->MPtr<APvzStruct>(0x768)
-                    ->MPtr<APvzStruct>(0xAC)
-                    ->MRef<int>(0x8 + 0x14C * i);
+        int x = AMRef<int>(0x6A9EC0, 0x768, 0xAC, 0x8 + 0x14C * i);
         console.Info(std::to_string(x));
     }
 }
@@ -269,14 +268,10 @@ struct Plant : public APvzStruct {
 
 void AScript()
 {
-    int plantArraySize = AMPtr<APvzStruct>(0x6A9EC0)
-                             ->MPtr<APvzStruct>(0x768)
-                             ->MRef<int>(0xB0);
+    int plantArraySize = AMRef<int>(0x6A9EC0, 0x768, 0xB0);
     // 强转为 Plant 类型的指针
     // 这样咱们就可以用 C/C++ 数组的读取方式了
-    auto plantArray = (Plant*)(AMPtr<APvzStruct>(0x6A9EC0)
-                                   ->MPtr<APvzStruct>(0x768)
-                                   ->MPtr<APvzStruct>(0xAC));
+    auto plantArray = AMPtr<Plant>(0x6A9EC0, 0x768, 0xAC);
     for (int i = 0; i < plantArraySize; ++i) {
         int x = (plantArray + i)->MRef<int>(0x8);
         console.Info(std::to_string(x));
@@ -296,12 +291,8 @@ struct Plant : public APvzStruct {
 
 void AScript()
 {
-    int plantArraySize = AMPtr<APvzStruct>(0x6A9EC0)
-                             ->MPtr<APvzStruct>(0x768)
-                             ->MRef<int>(0xB0);
-    auto plantArray = (Plant*)(AMPtr<APvzStruct>(0x6A9EC0)
-                                   ->MPtr<APvzStruct>(0x768)
-                                   ->MPtr<APvzStruct>(0xAC));
+    int plantArraySize = AMRef<int>(0x6A9EC0, 0x768, 0xB0);
+    auto plantArray = AMPtr<Plant>(0x6A9EC0, 0x768, 0xAC);
     for (int i = 0; i < plantArraySize; ++i) {
         int x = plantArray[i].MRef<int>(0x8);
         console.Info(std::to_string(x));
@@ -327,12 +318,8 @@ struct Plant : public APvzStruct {
 
 void AScript()
 {
-    int plantArraySize = AMPtr<APvzStruct>(0x6A9EC0)
-                             ->MPtr<APvzStruct>(0x768)
-                             ->MRef<int>(0xB0);
-    auto plantArray = (Plant*)(AMPtr<APvzStruct>(0x6A9EC0)
-                                   ->MPtr<APvzStruct>(0x768)
-                                   ->MPtr<APvzStruct>(0xAC));
+    int plantArraySize = AMRef<int>(0x6A9EC0, 0x768, 0xB0);
+    auto plantArray = AMPtr<Plant>(0x6A9EC0, 0x768, 0xAC);
     for (int i = 0; i < plantArraySize; ++i) {
         // 使用这个加的函数
         int x = plantArray[i].X();
@@ -364,19 +351,19 @@ class APvzStruct {
 
 public:
     template <typename T>
-    __ANodiscard T& MRef(uintptr_t addr) noexcept
+    T& MRef(uintptr_t addr) noexcept
     {
         return (T&)((uint8_t*)this)[addr];
     }
 
     template <typename T>
-    __ANodiscard T* MPtr(uintptr_t addr) noexcept
+    T* MPtr(uintptr_t addr) noexcept
     {
         return *(T**)((uint8_t*)this + addr);
     }
 
     template <typename T>
-    __ANodiscard T MVal(uintptr_t addr) noexcept
+    T MVal(uintptr_t addr) noexcept
     {
         return (T)((uint8_t*)this + addr);
     }
@@ -388,9 +375,10 @@ emmm，__ADeleteCopyAndMove(APvzStruct); 这条代码是说，咱们访问的是
 所以当时咱们为什么要模板实例化成 `<APvzStruct>` 呢？就是为了链式用这三个函数！至于这三个函数的源码大家看不懂
 的话很正常，咱们也不浪费篇章解释了，因为懂了这些对于使用本框架来说没什么意义，那么 MVal 是干啥的？这个名字可能有点误解，
 实质上它是用来读内置类型数组的，比如僵尸出怪列表之类的东西，这就不多说了，大多数情况下 MRef 和 MPtr 就够用了。
-```
+
+```C++
 // 出怪列表
-__ANodiscard uint32_t* ZombieList() noexcept
+uint32_t* ZombieList() noexcept
 {
     return MVal<uint32_t*>(0x6b4);
 }

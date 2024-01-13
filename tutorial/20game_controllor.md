@@ -15,7 +15,8 @@
 ```C++
 // 设定高级暂停
 // *** 注意开启高级暂停时不能使用跳帧
-// *** 特别注意的是 `ASetAdvancedPause` 一旦使得程序进入高级暂停状态后，便再也不会执行 AScript 中的代码，
+// *** 特别注意的是 `ASetAdvancedPause` 一旦使得程序进入高级暂停状态后，
+//     除了模式为 GLOBAL 和 AFTER_INJECT 的帧运行以及 AfterTick BeforeTick 的状态钩，框架将不再执行其他代码，
 // *** 使用示例
 // ASetAdvancedPause(true) ------ 开启高级暂停
 // ASetAdvancedPause(false) ------ 关闭高级暂停
@@ -128,33 +129,27 @@ ASkipTick(condition, callback);
 ## 快速进入游戏
 快速进入游戏由函数 `AEnterGame` 实现，此函数可以节省进入游戏的手动操作时间
 
-```
+```C++
 // 快速进入游戏函数
 // *** 使用示例
 // AEnterGame() ------ 默认进入泳池无尽生存模式，默认会自动点掉继续对话框
 // AEnterGame(AAsm::SURVIVAL_ENDLESS_STAGE_1) -------- 进入白天无尽生存模式，默认会自动点掉继续对话框
 // AEnterGame(AAsm::SURVIVAL_ENDLESS_STAGE_1, false) -------- 进入白天无尽生存模式，不会自动点掉继续对话框
-inline void AEnterGame(int gameMode = AAsm::SURVIVAL_ENDLESS_STAGE_3, bool hasContinueDialog = false)
-{
-    __AScriptManager::EnterGame(gameMode, hasContinueDialog);
-}
+inline void AEnterGame(int gameMode = AAsm::SURVIVAL_ENDLESS_STAGE_3, bool hasContinueDialog = false);
 ```
 
 ## 快速回到游戏主界面
-```
+```C++
 // 快速回到游戏主界面
 // *** 注意：此函数仅在战斗界面生效
 // *** 使用示例
 // ABackToMain() ----- 直接回到主界面，默认会自动存档
 // ABackToMain(false) ----- 直接回到主界面，不会自动存档
-inline void ABackToMain(bool isSaveData = true)
-{
-    __AScriptManager::BackToMain(isSaveData);
-}
+inline void ABackToMain(bool isSaveData = true);
 ```
 
 以上两个功能可以合并一下实现一个非常懒狗的功能
-```
+```C++
 // 按下 Q 键直接返回主界面，然后又从主界面立即进入游戏选卡或者战斗界面
 // 所以当存档设置为只读的时候，此功能就非常懒狗
 AConnect('Q', [] {

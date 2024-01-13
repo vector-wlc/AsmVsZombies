@@ -134,7 +134,8 @@ public:
     IDirectDrawSurface7* CreateTextureSurface(int theWidth, int theHeight);
 };
 
-class __ABasicPainter : public AOrderedStateHook<-1> {
+class __ABasicPainter : public AOrderedBeforeScriptHook<-1>, //
+                        public AOrderedExitFightHook<-1> {
     __ADeleteCopyAndMove(__ABasicPainter);
 
 public:
@@ -179,6 +180,7 @@ public:
 
     __ATextInfo textInfo;
     int fontSize = 20;
+    std::size_t maxQueueSize = 1e4;
     std::wstring fontName = L"宋体";
     void DrawRect(int x, int y, int w, int h, DWORD color);
     void DrawStr(const std::wstring& text, int x, int y, DWORD color);
@@ -255,9 +257,19 @@ public:
     void Draw(const AText& posText, int duration = 1);
     void Draw(const ACursor& cursor, int duration = 1);
 
+    // 设定队列最大容量
+    // 这个容量是为了防止内存泄露的
+    // 设置的越小就会限制在屏幕中显示的数目
+    // 设置的越大就越可能导致跳帧时的内存泄露
+    void SetMaxQueueSize(std::size_t size)
+    {
+        _maxQueueSize = size;
+    }
+
 protected:
     DWORD _textColor = AArgb(0xff, 0, 0xff, 0xff);
     DWORD _rectColor = AArgb(0xaf, 0, 0, 0);
     __ABasicPainter _basicPainter;
+    std::size_t _maxQueueSize = 1e4;
 };
 #endif

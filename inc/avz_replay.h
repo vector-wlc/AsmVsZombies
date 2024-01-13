@@ -45,7 +45,8 @@ protected:
 };
 
 class A7zCompressor : public AAbstractCompressor,
-                      public AOrderedStateHook<-1> {
+                      public AOrderedBeforeScriptHook<-1>, //
+                      public AOrderedExitFightHook<-1> {
 public:
     A7zCompressor(const std::string& path)
         : _7zPath(path)
@@ -98,7 +99,7 @@ protected:
     std::atomic<bool> _isRunning = true;
 };
 
-class AReplay : AOrderedStateHook<-2> {
+class AReplay : AOrderedExitFightHook<-2> {
 public:
     enum State {
         RECORDING,

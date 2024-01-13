@@ -6,7 +6,141 @@
 -->
 # 状态钩
 
-**首先说明一下，本页教程需要有一定的 C++ 基础才能读懂，C++ 基础比较薄弱的童鞋建议补一下语法再来看，不然可能读的怀疑人生**
+本框架给出的入口函数是 `void AScript()` 和协程入口函数 `ACoroutine ACoScript()`，
+诚然，将所有的代码写在这两个函数里面实际上已经满足绝大部分的需求了，但是总有那么一些需求是例外的。
+比如以下需求：
+
+* 有些用户想在刚注入的时候就做一些事情，但是上面两个函数就无法完成这样的功能，因为代码刚注入时游戏是必定不在战斗界面或者选卡界面的。
+* 有些时候需要在关卡刚一开始或者结束的时候做一些工作，虽然这样的代码写在框架提供的入口函数中也可以，但是会比较麻烦，你需要做一些控制。
+* 再比如，开启多次生效的时候，全局对象的状态重置有的时候也会是一个大问题，比如这个对象是给其他人使用的
+
+以上种种需求都在迫使着`状态钩`的诞生，为了能够使本文能够让大家各有所需，本文分为两节来说明，
+如果你是一般用户，你只需要看懂`基础使用`的内容即可，但是如果你是插件开发者或者想要搞懂状态钩的原理，
+那么你需要看懂`进阶`。
+
+
+## 基础使用（普通用户）
+
+状态钩顾名思义，就是当游戏或者脚本达到某个状态时就调用的函数，举个例子说明一下
+```C++
+#include <avz.h>
+
+AOnAfterInject(AEnterGame());
+
+void AScript()
+{
+}
+```
+上面的代码中的 `AOnAfterInject(AEnterGame());` 这条语句就是使用了状态钩，大家需要注意的是：状态钩的代码是写在 `void AScript()` 函数外面的，
+至于为啥这里不说明，有兴趣可以看`进阶`中的内容介绍。AOnAfterInject 的意思即使当注入之后，AEnterGame 在之前的教程已经说明了，所以不再详细介绍。
+所以这条代码可以翻译成：当注入之后进入游戏，所以你粘贴复制运行一下，运行效果就是游戏没有经过任何操作就直接进入了选卡或者战斗界面，
+但是接下来脚本就什么都不做了（除了有可能开始自动收集外），因为咱们没有在 `void AScript()` 里面写任何东西，所以状态钩的功能再解释就是：
+当游戏处于XXX状态时，就做XXX事，咱们再举一个例子，比如说我想在游戏刚一进入战斗界面的时候，就输出一句话：“游戏开始了”，那么就是下面的这条代码：
+```C++
+#include <avz.h>
+
+ALogger<AConsole> logger;
+
+AOnEnterFight(logger.Info("游戏开始了"));
+
+void AScript()
+{
+}
+```
+
+注意，这次使用的状态钩的名字是 `AOnEnterFight`，翻译一下就是当进入战斗的时候，所以通过上面两个例子，你应该就明白了状态钩是怎么一回事了，
+我相信你应该觉得使用起来很方便吧，那么本框架共有多少个状态钩呢？现在的版本共有以下七种状态钩，每种状态钩的触发状态以及使用注意事项都写在注释里面了，
+使用之前一定要仔细查看。
+```C++
+// 此函数会在 本框架 基本内存信息初始化完成后且调用 void AScript() 之前运行
+AOnBeforeScript
+
+// 此函数会在 本框架 调用 void AScript() 之后运行
+AOnAfterScript
+
+// 此函数会在游戏进入战斗界面后立即运行
+AOnEnterFight
+
+// 此函数会在游戏退出战斗界面后立即运行
+// 特别注意: 如果用户从主界面进入选卡界面但是又立即退回主界面，此函数依然会运行
+AOnExitFight
+
+// 此函数会在每次注入之后运行
+// 注意此函数非常危险，此函数内无法使用很多 AvZ 的功能，至于无法使用哪些，
+// 用户可以自行踩雷，因为实在是太多了，不想一一枚举
+// 因为 AvZ 的初始化发生在进入战斗界面或者选卡界面的时候
+AOnAfterInject
+
+// 此函数会在每帧运行 AvZ 主体代码之前运行
+// 注意此函数非常危险，最好判断一下当前 PvZ 的状态再使用 AvZ 的内置函数
+AOnBeforeTick
+
+// 此函数会在每帧运行 AvZ 主体代码之后运行
+// 注意此函数非常危险，最好判断一下当前 PvZ 的状态再使用 AvZ 的内置函数
+AOnAfterTick
+```
+了解了所有的状态钩之后，咱们再举一个比较复杂点的例子，比如我想知道，AvZ 的性能如何？
+就是每一帧 AvZ 运行耗时是多少？要想实现这个功能，是需要用到三个状态钩的：`AOnBeforeTick`、`AOnAfterTick`和`AOnExitFight`。
+
+```C++
+#include <avz.h>
+
+AOnAfterInject(AEnterGame());
+using namespace std::chrono;
+
+uint64_t avzTime = 0;
+uint64_t pvzTime = 0;
+
+ALogger<AMsgBox> logger;
+
+time_point<high_resolution_clock> t;
+AOnBeforeTick({
+    // 当游戏不在战斗界面的时候直接退出
+    if (AGetPvzBase()->GameUi() != 3) {
+        return;
+    }
+    auto tmp = high_resolution_clock::now();
+    auto cnt = duration_cast<microseconds>(tmp - t).count();
+    // 游戏的间隔是不可能大于 1s 的，所以只有当此值小于 1e6 时才有意义
+    if (cnt < 1e6) {
+        pvzTime += cnt;
+    }
+    t = tmp;
+});
+
+AOnAfterTick({
+    // 当游戏不在战斗界面的时候直接退出
+    if (AGetPvzBase()->GameUi() != 3) {
+        return;
+    }
+    auto tmp = high_resolution_clock::now();
+    auto cnt = duration_cast<microseconds>(tmp - t).count();
+    if (cnt < 1e6) {
+        avzTime += cnt;
+    }
+    t = tmp;
+});
+
+AOnExitFight({ // 显示统计结果
+    logger.Info("AvZ 一局总耗时: #微秒, PvZ 一局总耗时: #微秒, 占比: #%", avzTime, pvzTime, double(avzTime) / pvzTime * 100);
+});
+void AScript()
+{
+    // 代码...
+}
+
+```
+
+上面的代码就不进行解释了，其中 `AGetPvzBase()->GameUi()` 部分超纲了，但是下一个教程就会马上说到。
+还有关于 std::chrono，这是C++标准库里面的计时库，这里也不详细说明了，就是一堆 API 的使用，没啥好说的。
+
+普通用户看到这里就可以散了，除非你是插件开发者或者对状态钩的实现感兴趣，不然不推荐往下再读，因为比较劝退。
+
+## 进阶
+
+这节将介绍状态钩更深层次的使用和一些实现原理。
+
+**首先说明一下，下面教程需要有一定的 C++ 基础才能读懂，C++ 基础比较薄弱的童鞋建议补一下语法再来看，不然可能读的怀疑人生**
 
 你需要了解的语法知识要有：
 
@@ -14,6 +148,7 @@
 * 变量的声明周期
 * 堆内存申请
 * 智能指针 (这个可能理解起来最难)
+* 模板
 
 
 在写脚本的过程中，我们可能需要一些脚本的初始化和收尾工作，比如我们写了一个类，这个类运行之前是需要一些初始化工作，
@@ -253,7 +388,7 @@ void AScript()
     // 因为状态钩完成了初始化工作
 
     AConnect(ATime(1, 0), []{ // 全局对象不需要被捕获
-        // 没有任何问题，全局对象的生命周期和 libavz.dll 一致
+        // 没有任何问题，全局对象的生命周期和本次注入生效时间一致
         demo.xxx();
     });
 }
@@ -273,56 +408,15 @@ void AScript()
 可见，用了 AStateHook 之后，发现 Demo 类的用户并不用担心这个类的初始化问题了，
 对于用户来说更加的友好，然后也不存在使用构造函数那种方式出现的一系列问题。
 
-明白了 AStateHook 的作用之后，咱们还需要进一步了解这个类的接口，
+明白了 AStateHook 的作用之后，咱们还需要进一步了解这个类的接口，这个类乍一看比较复杂，
+我们先看看库中如何定义这个玩意的，咱们按照递归的形式一层一层往上扒源码。
 
 ```C++
-class __APublicStateHook {
-public:
-    __APublicStateHook(int runOrder)
-    {
-        _iter = __AStateHookManager::GetHookContainer().emplace(runOrder, this);
-    }
 
-    void Init();
-    void RunBeforeScript();
-    void RunAfterScript();
-    void RunEnterFight();
-    void RunExitFight();
-    void RunAfterInject();
+// 1
+using AStateHook = AOrderedStateHook<0>;
 
-    virtual ~__APublicStateHook()
-    {
-        __AStateHookManager::GetHookContainer().erase(_iter);
-    }
-
-protected:
-    __AStateHookManager::HookContainer::iterator _iter;
-    bool _isRunBeforeScript = false;
-    bool _isRunAfterScript = false;
-    bool _isRunEnterFight = false;
-    bool _isRunExitFight = false;
-    bool _isRunAfterInject = false;
-
-    // 此函数会在 本框架 基本内存信息初始化完成后且调用 void AScript() 之前运行
-    virtual void _BeforeScript() { }
-
-    // 此函数会在 本框架 调用 void AScript() 之后运行
-    virtual void _AfterScript() { }
-
-    // 此函数会在游戏进入战斗界面后立即运行
-    virtual void _EnterFight() { }
-
-    // 此函数会在游戏退出战斗界面后立即运行
-    // 特别注意: 如果用户从主界面进入选卡界面但是又立即退回主界面，此函数依然会运行
-    virtual void _ExitFight() { }
-
-    // 此函数会在每次注入之后运行
-    // 注意此函数非常危险，此函数内不得使用任何 AvZ 的其他功能
-    // 因为 AvZ 的初始化发生在进入战斗界面或者选卡界面的时候
-    virtual void _AfterInject() { }
-};
-
-// hookOrder 默认为 0, 数值越小, AStateHook 越先运行
+// 2
 template <int hookOrder>
 class AOrderedStateHook : protected __APublicStateHook {
 public:
@@ -333,175 +427,207 @@ public:
     static constexpr int HOOK_ORDER = hookOrder;
 };
 
-using AStateHook = AOrderedStateHook<0>;
+// 3
+using __APublicStateHook = __APublicStateHookT<
+    __APublicBeforeScriptHook,
+    __APublicAfterScriptHook,
+    __APublicEnterFightHook,
+    __APublicExitFightHook,
+    __APublicBeforeTickHook,
+    __APublicAfterTickHook,
+    __APublicAfterInjectHook>;
+
+// 4
+template <typename... Types>
+class __APublicStateHookT : public Types... {
+public:
+    __APublicStateHookT(int hookOrder)
+        : Types(hookOrder)...
+    {
+    }
+};
 ```
+我相信你看到这可能已经麻了，但是不要放弃，咱们先看第 4 步的模板是干啥的，它实际上是一个专门继承别的类的工具模板类，
+大白话就是他就是偷懒用的，也就是为了少写代码和少出错。即使你没有理解这些代码，咱们还是可以直接看第三步，
+你可以理解成 `__APublicStateHook` 这个类继承了七个类: 
 
-首先咱们看最下面的代码 `using AStateHook = AOrderedStateHook<0>;`， 可以看到 AStateHook 是 AOrderedStateHook<0> 的一个别名，
-所以咱们得先看 AOrderedStateHook 的定义，发现 AOrderedStateHook 是一个类模板， 而 AOrderedStateHook 本身什么普通成员函数都没有，
-这个模板参数中的 runOrder 咱们先不分析是什么，反正咱们现在知道了 AOrderedStateHook 实际上是个壳子，
-真正的实现在 __APublicStateHook 里面，所以咱们先看 __APublicStateHook 中的 protected 成员函数，
-你会发现都是虚函数，而且你发现这个` virtual void _EnterFight() { }` 实际上就是 Demo 类中重载的那个函数，然后你会发现还有其他三个哥们和这个函数长得很一样，
-他们分别是 `_BeforeScript _AfterScript _ExitFight _AfterInject`，至于这些函数的作用，和 _EnterFight 是一致的，只不过本框架调用这几个函数的时机是有差别的，
-至于什么时候调用请看相应的注释。
+* __APublicBeforeScriptHook
+* __APublicAfterScriptHook
+* __APublicEnterFightHook
+* __APublicExitFightHook
+* __APublicBeforeTickHook
+* __APublicAfterTickHook
+* __APublicAfterInjectHook
 
-介绍完这四个函数之后，咱们再介绍上面的 `RunBeforeScript RunAfterScript RunEnterFight RunExitFight RunAfterInject` 是干什么用的，
-比如咱们又来了一个 DemoA 类，然后 DemoA 类的 _EnterFight 的调用时机必须在 Demo 类的 _EnterFight 之后运行，
-那么如何保证这一点？就是使用上面这四个 Run 系列的函数，看下面的代码
+这七个类是不是有亿点点眼熟？没错，他们七个就是状态钩的核心实现。但是呢咱们先不看他们七个的实现，咱们还是先看之前第二步代码，
+你又发现了一个模板，这个模板实际上也是工具模板，这里需要大家明白的是，这个类 **protected** 继承了 __APublicStateHook，
+这点十分关键，大家先记下来，后续会填这个坑，至于这个模板参数是干啥的，咱们先不研究。
+
+好了，说了上面一大堆东西，咱们需要介绍那七个类的定义是啥了。如果你翻翻源代码，就会发现下面的东西，
+
 
 ```C++
-#include <avz.h>
+// 此函数会在 本框架 基本内存信息初始化完成后且调用 void AScript() 之前运行
+__ADefineHookClass(BeforeScript);
 
-class Demo : public AStateHook {
-protected:
-    bool _isChoosePumpkin = false;
-    virtual void _EnterFight() override
-    {
-        for (auto&& seed : aAliveSeedFilter) {
-            if (seed.Type() == AM_NGT_30 || seed.Type() == ANGT_30) {
-                _isChoosePumpkin = true;
-            }
-        }
+// 此函数会在 本框架 调用 void AScript() 之后运行
+__ADefineHookClass(AfterScript);
+
+// 此函数会在游戏进入战斗界面后立即运行
+__ADefineHookClass(EnterFight);
+
+// 此函数会在游戏退出战斗界面后立即运行
+// 特别注意: 如果用户从主界面进入选卡界面但是又立即退回主界面，此函数依然会运行
+__ADefineHookClass(ExitFight);
+
+// 此函数会在每次注入之后运行
+// 注意此函数非常危险，此函数内无法使用很多 AvZ 的功能，至于无法使用哪些，
+// 用户可以自行踩雷，因为实在是太多了，不想一一枚举
+// 因为 AvZ 的初始化发生在进入战斗界面或者选卡界面的时候
+__ADefineHookClass(AfterInject);
+
+// 此函数会在每帧运行 AvZ 主体代码之前运行
+// 注意此函数非常危险，最好判断一下当前 PvZ 的状态再使用 AvZ 的内置函数
+__ADefineHookClass(BeforeTick);
+
+// 此函数会在每帧运行 AvZ 主体代码之后运行
+// 注意此函数非常危险，最好判断一下当前 PvZ 的状态再使用 AvZ 的内置函数
+__ADefineHookClass(AfterTick);
+```
+现在一切的秘密都藏在了 `__ADefineHookClass` 这个东西里面，这个东西实际上是一个宏，这个宏的定义如下
+
+```C++
+#define __ADefineHookClass(HookName)                                                    \
+    class __APublic##HookName##Hook {                                                   \
+    public:                                                                             \
+        using HookContainer = std::multimap<int, __APublic##HookName##Hook*>;           \
+        __APublic##HookName##Hook(int runOrder);                                        \
+        virtual ~__APublic##HookName##Hook();                                           \
+        void Run##HookName();                                                           \
+        static void Reset();                                                            \
+        static void RunAll();                                                           \
+                                                                                        \
+    protected:                                                                          \
+        static HookContainer& _GetHookContainer();                                      \
+        virtual void _##HookName() {};                                                  \
+        HookContainer::iterator _iter;                                                  \
+        bool _isRun = false;                                                            \
+        inline static bool _isRunAll = false;                                           \
+    };                                                                                  \
+    template <int hookOrder>                                                            \
+    class AOrdered##HookName##Hook : protected __APublic##HookName##Hook {              \
+    public:                                                                             \
+        AOrdered##HookName##Hook()                                                      \
+            : __APublic##HookName##Hook(hookOrder)                                      \
+        {                                                                               \
+        }                                                                               \
+        static constexpr int HOOK_ORDER = hookOrder;                                    \
+    };                                                                                  \
+    using A##HookName##Hook = AOrdered##HookName##Hook<0>;                              \
+    template <int hookOrder>                                                            \
+    __APublic##HookName##Hook& AToPublicHook(AOrdered##HookName##Hook<hookOrder>& hook) \
+    {                                                                                   \
+        return *((__APublic##HookName##Hook*)(&hook));                                  \
     }
-};
+```
 
-Demo demo;
+首先说明一下，宏中##的意思就是把字符串连接起来，注意这个字符串是相对编译器来说的，而不是编译之后的程序来说的，
+例如
+```C++
+#define A(arg) test##arg##test
 
-class DemoA : public AStateHook {
-protected:
-    virtual void _EnterFight() override
-    {
-        AToPublicHook(demo).RunEnterFight();
-        // some code
-    }
-};
+// 这个宏使得下面两行代码是一致的
+int A(hello);
 
-void AScript()
+int testhellotest;
+```
+
+明白了这一点，咱们再看`__ADefineHookClass`，是不是就清晰一些了，它实际上就是一个代码生成器，用来批量生成状态钩类的定义代码。
+这里就有关键的成员函数 `virtual void _##HookName() {}; ` 的原型，那么状态钩类的原理到底是什么，
+**首先各个状态钩类的构造函数会将自己的 this 指针放到一个有序表里面**，
+**然后框架就会在游戏到达指定状态的时候访问相应的有序表，从中取出 this 指针运行相应的虚函数**，
+这两句话就是状态钩的实现核心，记住这个思想，去翻看相应的 .cpp 文件的函数定义源代码，就会一目了然，
+
+现在看了一遍源代码的你，可能会有以下疑问？
+
+* 模板类 AOrderedStateHook 的 hookOrder 有啥用
+* 各个状态钩里面的 Run##HookName、Reset 和 RunAll 成员函数有啥用
+
+咱们先解释第一条。首先咱们结合最一开始的例子就知道，状态钩的最初目的就是为了做一些初始化、状态重置或者回收工作的，
+也可能有其他作用，既然有初始化和状态重置这个作用，那么就会引入新的问题，顺序问题，就是哪个对象能先初始化呢？
+例如 AvZ 内的一些重要内置对象，帧运行管理对象，操作队列管理对象他们最应先被初始化，因为他们是后续一系列操作的基础，
+所以 AOrderedStateHook 中的模板参数就是为了确定这个运行顺序的，
+
+```C++
+// 帧运行管理类
+class __ATickManager : public AOrderedBeforeScriptHook<INT_MIN>
 {
+    // ...
+}
+
+// 操作队列管理类
+class __AOpQueueManager : public AOrderedBeforeScriptHook<INT_MIN>, //
+                          public AOrderedEnterFightHook<INT_MIN>
+{
+    // ...
 }
 ```
 
-上述代码中的 `AToPublicHook` 函数实际上就是个转换，源码如下
+你会发现这两个类的模板参数都是 INT_MIN，也就是整数中的最小值，这就保证了这两个类的运行优先顺序是顶级的，
+所以当你需要为自己状态钩设置运行顺序的时候，一种方法就是指定模板参数，指定模板参数是有两种方式的：
 
 ```C++
-template <int hookOrder>
-__APublicStateHook& AToPublicHook(AOrderedStateHook<hookOrder>& hook)
-{
-    return *((__APublicStateHook*)(&hook));
-}
+// 绝对顺序指定
+// 将顺序指定为 1
+class TestA : public AOrderedStateHook<1> {};
+
+// 相对顺序指定
+
+// 将顺序指定在 TestA 之后，实际上就是 2
+class TestB : public AOrderedStateHook<AAfterHook<TestA>> {};
+
+// 将顺序指定在 TestA 之前，实际上就是 0
+class TestC : public AOrderedStateHook<ABeforeHook<TestA>> {};
 ```
 
-通过整个转换之后，可以看到 DemoA 类的 _EnterFight 函数内调用了 demo 对象的 RunEnterFight 函数，这就保证了这一点，
-那么此时你可能还是有以下疑问:
+使用哪种指定顺序根据使用情况来定，但是推荐使用相对顺序，因为这样的代码兼容性更好一些。
 
-* 为什么不直接调用 demo 的 _EnterFight 函数，而是调用 RunEnterFight 函数？
-* 为什么 AStateHook 要包一层 APublicStateHook 的皮，直接让 Demo 继承 APublicStateHook 不好吗？
-
-下面咱们回答一下这两个问题，对于第一个问题，由于有这种对象之间的依赖关系，假如现在不止有 DemoA 类，
-还有一个 DemoB 类需要调用一下 demo 对象的 _EnterFight，此时 DemoA DemoB 都有对应的对象，那么游戏到了战斗界面的时候，
-是不是会调用 demo 对象的 _EnterFight 函数两次？那么此时问题就来了，这个函数能被调用两次吗，或者说他应该被调用两次吗？
-很明显，这是不应该的，因为这个函数起到了类似初始化的作用，所以应当只被调用一次，那么如何保证，我们看一下 RunEnterFight 这个函数的源码就知道了，
+下面开始介绍第二条，各个状态钩里面的 Run##HookName、Reset 和 RunAll 成员函数有啥用，这就涉及到了第二个问题，
+既然虚函数重写好了，咋调用呢，直接调用吗？直接调用虚函数乍一看是没有任何问题的，但是实际上还是有问题，
+就是同一帧可能运行两次，这是因为状态钩提供了第二种确定运行顺序的方式，比如 TestB 某个对象的状态钩需要在 TestA 某个对象的状态钩之后运行，
+除了像以上代码显式指定顺序外，还可以内部直接调用啊，语法就是这样的，
 
 ```C++
-void APublicStateHook::RunEnterFight()
-{
-    if (!_isRunEnterFight) {
-        _isRunEnterFight = true;
-        _EnterFight();
-    }
-}
-```
-
-可以看到这个函数首先检测一个变量 _isRunEnterFight 是不是为 false，如果是，那么就会把 _isRunEnterFight 设置为 true，再运行 _EnterFight，
-那么下次再调用这个 RunEnterFight 时，就不会再调用 _EnterFight 了，这样就有了只运行一次保证。
-
-对于第二个问题，为啥要套个壳子，那么咱们需要考虑，如果不套壳子会咋样？很明显，当用户使用 demo. 时， vscode 会有一个成员函数补全列表，
-此时因为 `RunBeforeScript RunAfterScript RunEnterFight RunExitFight RunAfterInject` 为 public 函数，所以这四个函数也会被用户看到，
-那么请问这四个函数应该被用户看到吗，很明显，不应该，而且用户看到了这四个函数是不是还会疑问一下，这是什么奇怪的函数，更有好奇宝宝甚至会调用这四个函数，
-很明显，这是我们万万不想的，本来就给使用者封装好了，根本不需要用户去调用，所以就有了 AStateHook 这个壳子。
-
-好了到这里状态钩基本就解释完了，还差最后一个内容，那就是 AStateHook 构造函数中的 runOrder 是什么意思，
-这个其实很容易想到，比如 DemoA DemoB 类都创建了相应的对象，那么这些对象的 _EnterFight 的运行总得有个运行顺序吧，
-那么好了，顺序是什么？就是由这个 runOrder 来决定的，构造函数参数 runOrder 默认为 0， 数值越小， AStateHook 越先运行，在本框架中，有一些类的运行顺序是特别靠前的，
-比如时间操作容器的初始化，帧运行操作容器的初始化，他们的状态钩要比其他对象的状态钩运行都要靠前才行，如果都像 DemoA 那样调用 RunEnterFight 的形式，未免太麻烦了，
-因此就有了 runOrder 这个东西，咱们再看一下这个 runOrder 是咋用的吧，这里就直接上本框架的源码了
-
-```C++
-
-// 时间操作容器管理者
-class __AOperationQueueManager : public AOrderedStateHook<INT_MIN> { // 运行顺序设置为最靠前
-
-protected:
-    // 这两个状态钩会最先运行
-    // 这两兄弟主要管理时间操作初始化的工作
-    virtual void _EnterFight() override;
-    virtual void _BeforeScript() override;
-};
-
-
-// 帧运行操作容器管理者
-class __ATickManager : public AOrderedStateHook<INT_MIN> { // 运行顺序设置为最靠前
-
-protected:
-    // 主要管理帧运行操作初始化的工作
-    virtual void _BeforeScript() override;
-};
-
-
-// 炮管理类
-class ACobManager : public AOrderedStateHook<-1> { // 运行顺序设置为 -1
-
-protected:
-    virtual void _BeforeScript() override;
-
-    // 此函数会调用 AutoSetList 函数
-    // 所以本框架不写 SetList 也是可以的
-    virtual void _EnterFight() override;
-};
-
-
-class AItemCollector : public AOrderedStateHook<-1>,
-                       public ATickRunnerWithNoStart { // 运行顺序设置为 -1
-
-protected:
-    // 此函数会调用 Start 函数
-    // 这就是为什么自动收集会自动开启的原因
-    virtual void _EnterFight() override;
-};
-
-```
-
-实际上看到这里，你可能就想到了一个 DemoA Demo 的 _EnterFight 调用顺序的第二个解决方案，那就是下面的代码
-
-```C++
-class DemoA : public AOrderedStateHook<1> {
-protected:
+class TestA : public AStateHook {
     virtual void _EnterFight() override
     {
-        // some code
+        // ...
     }
 };
-```
-我们把 DemoA _EnterFight 的运行顺序设置为 1，而 Demo 的运行顺序为 0，这个 Demo 的 _EnterFight 就必定在 DemoA 的之前运行了，
-是的，这样做是没有任何错误的，但是本框架提供了一个更好的方法
 
-```C++
-class DemoA : public AOrderedStateHook<AAfterHook<Demo>> {
-protected:
+TestA testA;
+class TestB : public AStateHook {
     virtual void _EnterFight() override
     {
-        // some code
+        AToPublicHook(testA).RunEnterFight();
+        // ...
     }
 };
 ```
 
-可以和之前的代码相比较，发现就有一处不同，也就是 `AAfterHook<Demo>`， 这个代码为什么更好呢，可以看到可读性更好了，
-意思就是 DemoA 的运行顺序就在 Demo 之后，而且我们不再需要知道 Demo 的运行顺序了，直接一个调用一个函数即可，
-除了上述作用之外，AAfterHook 还有一个作用，就是支持多个类的先后顺序，例如 DemoA 这个类状态钩需要在 Demo，DemoB，
-DemoC 的状态钩后面，那么只需要写成 `AAfterHook<Demo, DemoB, DemoC>` 即可。除了 AAfterHook，本框架还提供了 ABeforeHook，
-这个函数的作用我相信大家单看名字就知道是啥意思，我这里就不解释了。
+代码中的 `AToPublicHook` 你可能会有疑问是啥玩意，这个待会再说，上面代码就是状态钩的手动调用形式，
+这个手动调用形式是为了增加状态钩调用的灵活性的，就是既可以让框架到一个时刻被动调用，也可以用户自己手动调用，
+因为有了这个手动调用，就可能导致一个问题，就是一个状态后在一个时刻可能会被调用多次，就是因为这点，
+那些重载的 _EnterFight 虚函数是不应该直接调用的，而应该调用 RunEnterFight 这种函数，RunEnterFight 里面带了运行次数检测，
+他保证了状态钩在一帧内只运行一次，所以手动调用状态钩时，应该用 AToPublicHook(...).RunXXX() 形式，说完了这些，还剩最后一个问题，
+为啥要用 AToPublicHook 这个函数，这个纯纯是因为我觉得状态钩的这些手动调用接口是不应该暴露给普通用户的，
+普通用户是基本不可能有这种需求的，而且直接将他们设置成公开的接口，普通用户的编辑器代码补全列表内还会多很多东西，
+也会降低用户的使用体验，因此就有了 AToPublicHook 这个玩意，好了状态钩的所有内容就是这么多。
 
-好了，到最后了你可能还是有疑问，如果两个类的 runOrder 一模一样咋办，我可以很明确的告诉你，这两者状态钩的运行顺序纯看编译器的脸，
-但是这无所谓了，既然都一样了，那也就是不计较这两者的相对运行顺序了，比如 __AOperationQueueManager 和 __ATickManager，
-这两个的状态钩谁先运行都行，反正两者互不干扰，好了这就是 AStateHook 的全部内容了，希望大家能够理解。
+至于有亿些实现没说明，也就不说了，只要看懂了这高阶的内容，看懂那些代码就是小菜一碟。
+
+等等，还有一个问题，就是最一开始说的那些 AOnBeforeScript 啥啥啥之类的咋在高阶内容中没有呢？
+
+回答：去看源码吧，就是个宏定义而已...
 
 [目录](./0catalogue.md)

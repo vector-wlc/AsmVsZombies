@@ -226,17 +226,19 @@ void RecoverCard(APlantType plant, int row, float col)
 咱们再看协程阻塞版本
 
 ```C++
-// 返回值类型为 ACoroutine 而不是 void
-ACoroutine RecoverCard(APlantType plant, int row, float col)
+void RecoverCard(APlantType plant, int row, float col)
 {
-    // 卡片好了直接种
-    if (AIsSeedUsable(plant)) {
+    // 由于本框架实现的协程只能是无参形式，所以只能通过 Lambda 捕获的方式模拟有参协程
+    ACoLaunch([=]() -> ACoroutine {
+        // 卡片好了直接种
+        if (AIsSeedUsable(plant)) {
+            ACard(plant, row, col);
+            co_return; // 注意这里是 co_return，协程里面不能用 return
+        }
+        // 等待卡片能用
+        co_await [=] { return AIsSeedUsable(plant); };
         ACard(plant, row, col);
-        co_return; // 注意这里是 co_return，协程里面不能用 return
-    }
-    // 等待卡片能用
-    co_await [=] { return AIsSeedUsable(plant); };
-    ACard(plant, row, col);
+    });
 }
 ```
 

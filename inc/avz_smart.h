@@ -4,7 +4,8 @@
 #include "avz_tick_runner.h"
 #include <unordered_set>
 
-class ACobManager : public AOrderedStateHook<-1> {
+class ACobManager : public AOrderedBeforeScriptHook<-1>, //
+                    public AOrderedEnterFightHook<-1> {
     __ADeleteCopyAndMove(ACobManager);
 
 public:
@@ -153,7 +154,7 @@ public:
     // 自动填充炮列表
     // *** 注意：此函数无条件将场地上的所有炮填充至此炮列表
     // 此函数已弃用，请使用 AutoSetList();
-    __ADeprecated void AutoGetList()
+    __ADeprecated("请使用 AutoSetList()") void AutoGetList()
     {
         AutoSetList();
     }
@@ -183,6 +184,11 @@ public:
     // auto cobPtr = GetRoofRecoverPtr(9) ---- 得到发往九列恢复时间最短的屋顶炮的内存指针
     __ANodiscard APlant* GetRoofRecoverPtr(float col);
 
+    struct RecoverInfo {
+        APlant* ptr;
+        int recoverTime;
+    };
+
     // 得到恢复时间列表
     // *** 使用示例
     // auto lst = aCobManager.GetRecoverList();
@@ -191,22 +197,22 @@ public:
     //    // 示例就打印一下算了
     //    logger.Info("指针: #, 恢复时间: #", ptr, recoverTime);
     // }
-    __ANodiscard std::vector<std::pair<APlant*, int>> GetRecoverList();
+    __ANodiscard std::vector<RecoverInfo> GetRecoverList();
 
     // 得到屋顶炮恢复时间列表
     // *** 使用示例
-    // auto lst = aCobManager.GetRoofRecoverList(8); // 得到发往第九列的屋顶炮的恢复时间列表
+    // auto lst = aCobManager.GetRoofRecoverList(9); // 得到发往第九列的屋顶炮的恢复时间列表
     // for (auto&& [ptr, recoverTime] : lst) {
     //    // 这里应该写相应的处理代码
     //    // 示例就打印一下算了
     //    logger.Info("指针: #, 恢复时间: #", ptr, recoverTime);
     // }
-    __ANodiscard std::vector<std::pair<APlant*, int>> GetRoofRecoverList(float col);
+    __ANodiscard std::vector<RecoverInfo> GetRoofRecoverList(float col);
 
     // 获取屋顶炮飞行时间
     // *** 使用示例:
     // GetRoofFlyTime(1, 7) ----- 得到 1 列屋顶炮发往 7 列飞行时间
-    static int GetRoofFlyTime(int cobCol, float dropCol);
+    __ANodiscard static int GetRoofFlyTime(int cobCol, float dropCol);
 
 protected:
     static std::unordered_set<int> _lockSet; // 锁定的炮
@@ -251,16 +257,13 @@ protected:
     // 如果没有炮可用返回 nullptr
     __ANodiscard APlant* _BasicGetPtr(bool isRecover, float col);
 
-    // 得到恢复时间列表
-    // *** 使用示例
-    // auto recoverList = GetRecoverList();
-    //
-    __ANodiscard std::vector<std::pair<APlant*, int>> _BasicGetRecoverList(float col);
+    __ANodiscard std::vector<RecoverInfo> _BasicGetRecoverList(float col);
     virtual void _BeforeScript() override;
     virtual void _EnterFight() override;
 };
 
-class AItemCollector : public ATickRunnerWithNoStart {
+class AItemCollector : public ATickRunnerWithNoStart,
+                       public AOrderedEnterFightHook<-1> {
 
     __ADeleteCopyAndMove(AItemCollector);
 
@@ -341,7 +344,7 @@ public:
 
     // 自动得到修补的位置列表
     // 此函数已弃用，请使用 AutoSetList();
-    __ADeprecated void AutoGetList()
+    __ADeprecated("请使用 AutoSetList()") void AutoGetList()
     {
         AutoSetList();
     }

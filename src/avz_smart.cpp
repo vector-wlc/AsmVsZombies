@@ -63,9 +63,9 @@ void ACobManager::_BasicFire(int cobIdx, int dropRow, float dropCol)
     AAsm::ReleaseMouse();
     int x = 0;
     int y = 0;
-    auto plant = __aInternalGlobal.mainObject->PlantArray() + cobIdx;
-    auto&& pattern = __aInternalGlobal.loggerPtr->GetPattern();
-    __aInternalGlobal.loggerPtr->Info(
+    auto plant = __aig.mainObject->PlantArray() + cobIdx;
+    auto&& pattern = __aig.loggerPtr->GetPattern();
+    __aig.loggerPtr->Info(
         "Fire from (" + pattern + ", " + pattern + ") to (" + pattern + ", " + pattern + ")",
         plant->Row() + 1, plant->Col() + 1, dropRow, dropCol);
 
@@ -89,16 +89,16 @@ void ACobManager::_DelayFire(int delayTime, int cobIdx,
 // 用户自定义炮位置发炮：单发
 void ACobManager::RawFire(int cobRow, int cobCol, int dropRow, float dropCol)
 {
-    auto&& pattern = __aInternalGlobal.loggerPtr->GetPattern();
+    auto&& pattern = __aig.loggerPtr->GetPattern();
     int index = AGetPlantIndex(cobRow, cobCol, ACOB_CANNON);
     if (index < 0) {
-        __aInternalGlobal.loggerPtr->Error("请检查 (" + pattern + ", " + pattern + ") 是否为炮", cobRow, cobCol);
+        __aig.loggerPtr->Error("请检查 (" + pattern + ", " + pattern + ") 是否为炮", cobRow, cobCol);
         return;
     }
 
     int recoverTime = AGetCobRecoverTime(index);
     if (recoverTime > 0) {
-        __aInternalGlobal.loggerPtr->Error("位于 (" + pattern + ", " + pattern + ") 的炮还有 " + pattern + " cs 恢复",
+        __aig.loggerPtr->Error("位于 (" + pattern + ", " + pattern + ") 的炮还有 " + pattern + " cs 恢复",
             cobRow,
             cobCol,
             recoverTime);
@@ -118,21 +118,21 @@ void ACobManager::RawFire(const std::vector<FireDrop>& lst)
 // 屋顶修正时间发炮，单发
 void ACobManager::RawRoofFire(int cobRow, int cobCol, int dropRow, float dropCol)
 {
-    auto&& pattern = __aInternalGlobal.loggerPtr->GetPattern();
+    auto&& pattern = __aig.loggerPtr->GetPattern();
     if (!aFieldInfo.isRoof) {
-        __aInternalGlobal.loggerPtr->Error("RawRoofFire : RawRoofFire函数只适用于 RE 与 ME");
+        __aig.loggerPtr->Error("RawRoofFire : RawRoofFire函数只适用于 RE 与 ME");
         return;
     }
     int index = AGetPlantIndex(cobRow, cobCol, ACOB_CANNON);
     if (index < 0) {
-        __aInternalGlobal.loggerPtr->Error("请检查 (" + pattern + ", " + pattern + ") 是否为炮", cobRow, cobCol);
+        __aig.loggerPtr->Error("请检查 (" + pattern + ", " + pattern + ") 是否为炮", cobRow, cobCol);
         return;
     }
 
     int recoverTime = AGetCobRecoverTime(index);
     int delayTime = 387 - GetRoofFlyTime(cobCol, dropCol);
     if (recoverTime > delayTime) {
-        __aInternalGlobal.loggerPtr->Error("位于 (" + pattern + ", " + pattern + ") 的炮还有 " + pattern + " cs 恢复",
+        __aig.loggerPtr->Error("位于 (" + pattern + ", " + pattern + ") 的炮还有 " + pattern + " cs 恢复",
             cobRow,
             cobCol,
             recoverTime - delayTime);
@@ -161,13 +161,13 @@ void ACobManager::Plant(int row, int col)
             if (AGetPlantIndex(row, tCol, AKERNEL_PULT) != -1) {
                 continue;
             }
-            auto seedPtr = __aInternalGlobal.mainObject->SeedArray() + ymtseedIdx;
+            auto seedPtr = __aig.mainObject->SeedArray() + ymtseedIdx;
             if (!AIsSeedUsable(seedPtr)) {
                 return;
             }
             ACard(ymtseedIdx + 1, row, tCol);
         }
-        auto seedPtr = __aInternalGlobal.mainObject->SeedArray() + ymjnpSeedIdx;
+        auto seedPtr = __aig.mainObject->SeedArray() + ymjnpSeedIdx;
         if (!AIsSeedUsable(seedPtr)) {
             return;
         }
@@ -187,7 +187,7 @@ void ACobManager::SetList(const std::vector<AGrid>& lst)
     auto gridIter = _gridVec.begin();
     while (idxIter != _indexVec.end()) {
         if ((*idxIter) < 0) {
-            __aInternalGlobal.loggerPtr->Error(
+            __aig.loggerPtr->Error(
                 "resetFireList : 请检查 (" + std::to_string(gridIter->row)
                 + ", " + std::to_string(gridIter->col) + ") 位置是否为炮");
             return;
@@ -205,8 +205,8 @@ void ACobManager::AutoSetList()
     _gridVec.clear();
     _next = 0;
     AGrid cobGrid = {0, 0};
-    auto PlantArray = __aInternalGlobal.mainObject->PlantArray();
-    for (int index = 0; index < __aInternalGlobal.mainObject->PlantCountMax(); ++index) {
+    auto PlantArray = __aig.mainObject->PlantArray();
+    for (int index = 0; index < __aig.mainObject->PlantCountMax(); ++index) {
         if (!PlantArray[index].IsCrushed() && !PlantArray[index].IsDisappeared() && PlantArray[index].Type() == ACOB_CANNON) {
             cobGrid = {PlantArray[index].Row() + 1,
                 PlantArray[index].Col() + 1};
@@ -223,9 +223,9 @@ void ACobManager::AutoSetList()
 
 void ACobManager::SetNext(int tempNext)
 {
-    auto&& pattern = __aInternalGlobal.loggerPtr->GetPattern();
+    auto&& pattern = __aig.loggerPtr->GetPattern();
     if (tempNext > _gridVec.size()) {
-        __aInternalGlobal.loggerPtr->Error(
+        __aig.loggerPtr->Error(
             "SetNext : 本炮列表中一共有 " + pattern + " 门炮，您设的参数已溢出",
             _gridVec.size());
         return;
@@ -241,8 +241,8 @@ void ACobManager::SetNext(int row, int col)
     if (iter != _gridVec.end()) {
         _next = iter - _gridVec.begin();
     } else {
-        auto&& pattern = __aInternalGlobal.loggerPtr->GetPattern();
-        __aInternalGlobal.loggerPtr->Error(
+        auto&& pattern = __aig.loggerPtr->GetPattern();
+        __aig.loggerPtr->Error(
             "SetNext : 请检查(" + pattern + ", " + pattern + ")是否在本炮列表中", row, col);
         return;
     }
@@ -251,11 +251,11 @@ void ACobManager::SetNext(int row, int col)
 void ACobManager::FixLatest()
 {
     if (_lastestMsg.vecIndex == -1) {
-        __aInternalGlobal.loggerPtr->Error("FixLatest ：您尚未使用炮");
+        __aig.loggerPtr->Error("FixLatest ：您尚未使用炮");
         return;
     }
     _lastestMsg.isWritable = false; // 锁定信息
-    int delayTime = _lastestMsg.fireTime + 205 - __aInternalGlobal.mainObject->GameClock();
+    int delayTime = _lastestMsg.fireTime + 205 - __aig.mainObject->GameClock();
     if (delayTime < 0) {
         delayTime = 0;
     }
@@ -332,7 +332,7 @@ int ACobManager::_UpdateNextCob(bool isDelayFire, float dropCol, bool isShowErro
                                                          : "SPACE 模式 : ");
         error_str += "位于 (" + std::to_string(_gridVec[_next].row) + ", " + std::to_string(_gridVec[_next].col) + ") 的第 "
             + std::to_string(_next + 1) + " 门炮还有 " + std::to_string(minRecoverTime) + "cs 恢复";
-        __aInternalGlobal.loggerPtr->Error(std::move(error_str));
+        __aig.loggerPtr->Error(std::move(error_str));
     }
     return NO_EXIST_RECOVER_TIME;
 }
@@ -348,10 +348,10 @@ APlant* ACobManager::_BasicGetPtr(bool isRecover, float col)
     return ret == NO_EXIST_RECOVER_TIME ? nullptr : AGetMainObject()->PlantArray() + _indexVec[_next];
 }
 
-__ANodiscard std::vector<std::pair<APlant*, int>> ACobManager::_BasicGetRecoverList(float col)
+__ANodiscard std::vector<ACobManager::RecoverInfo> ACobManager::_BasicGetRecoverList(float col)
 {
     int iterCnt = _indexVec.size();
-    std::vector<std::pair<APlant*, int>> ret(iterCnt);
+    std::vector<RecoverInfo> ret(iterCnt);
     int tmpNext = _next;
     _next = 0;
     auto plantArray = AGetMainObject()->PlantArray();
@@ -359,19 +359,19 @@ __ANodiscard std::vector<std::pair<APlant*, int>> ACobManager::_BasicGetRecoverL
     for (int i = 0; i < iterCnt; ++i, Skip(1)) {
         // 被锁定的炮不允许发射
         if (_lockSet.find(_indexVec[_next]) != _lockSet.end()) {
-            ret[i].first = nullptr;
-            ret[i].second = -1;
+            ret[i].ptr = nullptr;
+            ret[i].recoverTime = -1;
             continue;
         }
-        ret[i].second = _GetRecoverTimeVec();
+        ret[i].recoverTime = _GetRecoverTimeVec();
         // 炮不存在直接跳过
-        if (ret[i].second == NO_EXIST_RECOVER_TIME) {
-            ret[i].first = nullptr;
+        if (ret[i].recoverTime == NO_EXIST_RECOVER_TIME) {
+            ret[i].ptr = nullptr;
             continue;
         }
-        ret[i].first = plantArray + _indexVec[i];
+        ret[i].ptr = plantArray + _indexVec[i];
         int roofOffsetTime = col < 0 ? 0 : (387 - GetRoofFlyTime(_gridVec[_next].col, col));
-        ret[i].second = std::max(0, ret[i].second - roofOffsetTime);
+        ret[i].recoverTime = std::max(0, ret[i].recoverTime - roofOffsetTime);
     }
     _next = tmpNext;
     return ret;
@@ -385,7 +385,7 @@ APlant* ACobManager::GetUsablePtr()
 APlant* ACobManager::GetRoofUsablePtr(float col)
 {
     if (col < 0 || col > 10) {
-        __aInternalGlobal.loggerPtr->Error("ACobManager::GetNextRoofUsable 参数溢出, 范围为 [0, 10]");
+        __aig.loggerPtr->Error("ACobManager::GetNextRoofUsable 参数溢出, 范围为 [0, 10]");
         col = -1;
     }
     return _BasicGetPtr(false, col);
@@ -399,21 +399,21 @@ __ANodiscard APlant* ACobManager::GetRecoverPtr()
 __ANodiscard APlant* ACobManager::GetRoofRecoverPtr(float col)
 {
     if (col < 0 || col > 10) {
-        __aInternalGlobal.loggerPtr->Error("ACobManager::GetNextRoofUsable 参数溢出, 范围为 [0, 10]");
+        __aig.loggerPtr->Error("ACobManager::GetNextRoofUsable 参数溢出, 范围为 [0, 10]");
         col = -1;
     }
     return _BasicGetPtr(true, col);
 }
 
-__ANodiscard std::vector<std::pair<APlant*, int>> ACobManager::GetRecoverList()
+__ANodiscard std::vector<ACobManager::RecoverInfo> ACobManager::GetRecoverList()
 {
     return _BasicGetRecoverList(-1);
 }
 
-__ANodiscard std::vector<std::pair<APlant*, int>> ACobManager::GetRoofRecoverList(float col)
+__ANodiscard std::vector<ACobManager::RecoverInfo> ACobManager::GetRoofRecoverList(float col)
 {
     if (col < 0 || col > 10) {
-        __aInternalGlobal.loggerPtr->Error("ACobManager::GetRoofRecoverList 参数溢出, 范围为 [0, 10]");
+        __aig.loggerPtr->Error("ACobManager::GetRoofRecoverList 参数溢出, 范围为 [0, 10]");
         col = -1;
     }
     return _BasicGetRecoverList(col);
@@ -423,14 +423,14 @@ __ANodiscard std::vector<std::pair<APlant*, int>> ACobManager::GetRoofRecoverLis
 int ACobManager::Fire(int row, float col)
 {
     if (_gridVec.size() == 0) {
-        __aInternalGlobal.loggerPtr->Error("Fire : 您尚未为此炮列表分配炮");
+        __aig.loggerPtr->Error("Fire : 您尚未为此炮列表分配炮");
         return -1;
     }
     if (_UpdateNextCob() == NO_EXIST_RECOVER_TIME) {
         return -1;
     }
     _BasicFire(_indexVec[_next], row, col);
-    _UpdateLastestMsg(__aInternalGlobal.mainObject->GameClock(), _next);
+    _UpdateLastestMsg(__aig.mainObject->GameClock(), _next);
     auto tmpNext = _next;
     Skip(1);
     return tmpNext;
@@ -450,7 +450,7 @@ std::vector<int> ACobManager::Fire(const std::vector<APosition>& lst)
 int ACobManager::_RecoverBasicFire(int row, float col, bool isRoof)
 {
     if (_gridVec.size() == 0) {
-        __aInternalGlobal.loggerPtr->Error("RecoverFire : 您尚未为此炮列表分配炮");
+        __aig.loggerPtr->Error("RecoverFire : 您尚未为此炮列表分配炮");
         return -1;
     }
     int delayTime = _UpdateNextCob(true, isRoof ? col : -1);
@@ -458,7 +458,7 @@ int ACobManager::_RecoverBasicFire(int row, float col, bool isRoof)
         return -1;
     }
     _DelayFire(delayTime, _indexVec[_next], row, col);
-    _UpdateLastestMsg(__aInternalGlobal.mainObject->GameClock() + delayTime,
+    _UpdateLastestMsg(__aig.mainObject->GameClock() + delayTime,
         _next);
     auto tmpNext = _next;
     Skip(1);
@@ -482,11 +482,11 @@ std::vector<int> ACobManager::RecoverFire(const std::vector<APosition>& lst)
 int ACobManager::RoofFire(int row, float col)
 {
     if (!aFieldInfo.isRoof) {
-        __aInternalGlobal.loggerPtr->Error("RoofFire : RoofFire函数只适用于 RE 与 ME ");
+        __aig.loggerPtr->Error("RoofFire : RoofFire函数只适用于 RE 与 ME ");
         return -1;
     }
     if (_gridVec.empty()) {
-        __aInternalGlobal.loggerPtr->Error("RoofFire : 您尚未为此炮列表分配炮");
+        __aig.loggerPtr->Error("RoofFire : 您尚未为此炮列表分配炮");
         return -1;
     }
 
@@ -496,7 +496,7 @@ int ACobManager::RoofFire(int row, float col)
     }
 
     _DelayFire(delayTime, _indexVec[_next], row, col);
-    _UpdateLastestMsg(__aInternalGlobal.mainObject->GameClock() + delayTime,
+    _UpdateLastestMsg(__aig.mainObject->GameClock() + delayTime,
         _next);
     auto tmpNext = _next;
     Skip(1);
@@ -515,7 +515,7 @@ std::vector<int> ACobManager::RoofFire(const std::vector<APosition>& lst)
 int ACobManager::RecoverRoofFire(int row, float col)
 {
     if (!aFieldInfo.isRoof) {
-        __aInternalGlobal.loggerPtr->Error("RecoverRoofFire : RecoverRoofFire 函数只适用于 RE 与 ME ");
+        __aig.loggerPtr->Error("RecoverRoofFire : RecoverRoofFire 函数只适用于 RE 与 ME ");
         return -1;
     }
     return _RecoverBasicFire(row, col, true);
@@ -542,8 +542,8 @@ void AItemCollector::_EnterFight()
 void AItemCollector::SetInterval(int timeInterval)
 {
     if (timeInterval < 1) {
-        auto&& pattern = __aInternalGlobal.loggerPtr->GetPattern();
-        __aInternalGlobal.loggerPtr->Error("自动收集类时间间隔范围为:[1, 正无穷], 你现在设定的参数为 " + pattern, timeInterval);
+        auto&& pattern = __aig.loggerPtr->GetPattern();
+        __aig.loggerPtr->Error("自动收集类时间间隔范围为:[1, 正无穷], 你现在设定的参数为 " + pattern, timeInterval);
         return;
     }
     this->_timeInterval = timeInterval;
@@ -551,21 +551,18 @@ void AItemCollector::SetInterval(int timeInterval)
 
 void AItemCollector::Start()
 {
-    ATickRunner::Start([this] {
-        _Run();
-    },
-        false);
+    ATickRunnerWithNoStart::_Start([this] { _Run(); }, ONLY_FIGHT);
 }
 
 void AItemCollector::_Run()
 {
-    if (__aInternalGlobal.mainObject->GameClock() % _timeInterval != 0 || //
-        __aInternalGlobal.mainObject->MouseAttribution()->Type() != 0) {
+    if (__aig.mainObject->GameClock() % _timeInterval != 0 || //
+        __aig.mainObject->MouseAttribution()->Type() != 0) {
         return;
     }
 
-    auto item = __aInternalGlobal.mainObject->ItemArray();
-    int total = __aInternalGlobal.mainObject->ItemTotal();
+    auto item = __aig.mainObject->ItemArray();
+    int total = __aig.mainObject->ItemTotal();
     int collectIdx = -1;
     for (int index = 0; index < total; ++index, ++item) {
         if (item->IsCollected() || item->IsDisappeared()) {
@@ -580,7 +577,7 @@ void AItemCollector::_Run()
         return;
     }
 
-    item = __aInternalGlobal.mainObject->ItemArray() + collectIdx;
+    item = __aig.mainObject->ItemArray() + collectIdx;
     float itemX = item->Abscissa();
     float itemY = item->Ordinate();
     if (itemX >= 0.0 && itemY >= 70) {
@@ -601,8 +598,8 @@ void AIceFiller::SetIceSeedList(const std::vector<int>& lst)
     // 未运行即进行检查是否为冰卡
     for (const auto& seedType : lst) {
         if (seedType != AICE_SHROOM && seedType != AM_ICE_SHROOM) {
-            auto&& pattern = __aInternalGlobal.loggerPtr->GetPattern();
-            __aInternalGlobal.loggerPtr->Error(
+            auto&& pattern = __aig.loggerPtr->GetPattern();
+            __aig.loggerPtr->Error(
                 "resetIceSeedList : 您填写的参数为 " + pattern + //
                     " ,然而此函数只接受植物类型为寒冰菇或模仿寒冰菇的参数",
                 seedType);
@@ -615,7 +612,7 @@ void AIceFiller::SetIceSeedList(const std::vector<int>& lst)
     for (const auto& seedType : lst) {
         iceIdx = AGetSeedIndex(AICE_SHROOM, seedType / AM_PEASHOOTER);
         if (iceIdx == -1) {
-            __aInternalGlobal.loggerPtr->Error(
+            __aig.loggerPtr->Error(
                 "resetIceSeedList : 您貌似没有选择对应的冰卡");
             continue;
         }
@@ -636,7 +633,7 @@ void AIceFiller::Start(const std::vector<AGrid>& lst)
     }
     _coffeeSeedIdx = AGetSeedIndex(ACOFFEE_BEAN);
     _fillIceGridVec = lst;
-    ATickRunner::Start([this]() { _Run(); }, false);
+    ATickRunnerWithNoStart::_Start([this]() { _Run(); }, ONLY_FIGHT);
 }
 
 void AIceFiller::_Run()
@@ -671,29 +668,24 @@ void AIceFiller::Coffee()
 {
 
     if (_coffeeSeedIdx == -1) {
-        __aInternalGlobal.loggerPtr->Error("你没有选择咖啡豆卡片!");
+        __aig.loggerPtr->Error("你没有选择咖啡豆卡片!");
         return;
     }
-
     if (_fillIceGridVec.empty()) {
-        __aInternalGlobal.loggerPtr->Error("你还未为自动存冰对象初始化存冰列表");
+        __aig.loggerPtr->Error("你还未为自动存冰对象初始化存冰列表");
         return;
     }
-    std::vector<int> icePlantIdxVec;
-    AGetPlantIndices(_fillIceGridVec, AICE_SHROOM, icePlantIdxVec);
-
-    auto fillGridIter = _fillIceGridVec.end();
-    do {
-        --fillGridIter;
-        if (icePlantIdxVec[fillGridIter - _fillIceGridVec.begin()] > -1) {
-            AAsm::ReleaseMouse();
-            ACard(_coffeeSeedIdx + 1, fillGridIter->row,
-                fillGridIter->col);
-            AAsm::ReleaseMouse();
-            return;
+    auto icePlantIdxVec = AGetPlantIndices(_fillIceGridVec, AICE_SHROOM);
+    for (int i = _fillIceGridVec.size() - 1; i >= 0; --i) {
+        if (icePlantIdxVec[i] < 0) {
+            continue;
         }
-    } while (fillGridIter != _fillIceGridVec.begin());
-    __aInternalGlobal.loggerPtr->Error("coffee : 未找到可用的存冰");
+        AAsm::ReleaseMouse();
+        ACard(_coffeeSeedIdx + 1, _fillIceGridVec[i].row, _fillIceGridVec[i].col);
+        AAsm::ReleaseMouse();
+        return;
+    }
+    __aig.loggerPtr->Error("Coffee : 未找到可用的存冰");
 }
 
 /////////////////////////////////////////////////
@@ -703,8 +695,8 @@ void AIceFiller::Coffee()
 void APlantFixer::AutoSetList()
 {
     _gridLst.clear();
-    auto plant = __aInternalGlobal.mainObject->PlantArray();
-    int plantCntMax = __aInternalGlobal.mainObject->PlantCountMax();
+    auto plant = __aig.mainObject->PlantArray();
+    int plantCntMax = __aig.mainObject->PlantCountMax();
     AGrid grid;
     for (int index = 0; index < plantCntMax; ++index, ++plant) {
         if (!plant->IsCrushed() && !plant->IsDisappeared() && plant->Type() == _plantType) {
@@ -743,7 +735,7 @@ void APlantFixer::_GetSeedList()
         _seedIdxVec.push_back(seedIndex);
     }
     if (_seedIdxVec.size() == 0) {
-        __aInternalGlobal.loggerPtr->Error("您没有选择修补该植物的卡片！");
+        __aig.loggerPtr->Error("您没有选择修补该植物的卡片！");
     }
     _coffeeSeedIdx = AGetSeedIndex(ACOFFEE_BEAN);
 }
@@ -752,12 +744,12 @@ void APlantFixer::Start(int plantType, const std::vector<AGrid>& lst,
     int fixHp)
 {
     if (plantType == ACOFFEE_BEAN) {
-        __aInternalGlobal.loggerPtr->Error("PlantFixer 不支持修补咖啡豆");
+        __aig.loggerPtr->Error("PlantFixer 不支持修补咖啡豆");
         return;
     }
 
     if (plantType >= AGATLING_PEA) {
-        __aInternalGlobal.loggerPtr->Error("修补植物类仅支持绿卡");
+        __aig.loggerPtr->Error("修补植物类仅支持绿卡");
         return;
     }
 
@@ -770,7 +762,7 @@ void APlantFixer::Start(int plantType, const std::vector<AGrid>& lst,
     } else {
         _gridLst = lst;
     }
-    ATickRunner::Start([this]() { _Run(); }, false);
+    ATickRunnerWithNoStart::_Start([this]() { _Run(); }, ONLY_FIGHT);
 }
 
 void APlantFixer::_Run()
@@ -784,14 +776,14 @@ void APlantFixer::_Run()
         if (_coffeeSeedIdx == -1) {
             return;
         }
-        auto coffeeSeed = __aInternalGlobal.mainObject->SeedArray() + _coffeeSeedIdx;
+        auto coffeeSeed = __aig.mainObject->SeedArray() + _coffeeSeedIdx;
         if (!AIsSeedUsable(coffeeSeed)) {
             return;
         }
     }
 
     do {
-        auto seedMemory = __aInternalGlobal.mainObject->SeedArray();
+        auto seedMemory = __aig.mainObject->SeedArray();
         seedMemory += *usableSeedIndexIter;
         if (AIsSeedUsable(seedMemory)) {
             break;
@@ -822,7 +814,7 @@ void APlantFixer::_Run()
                 false);
             return;
         }
-        auto plant = __aInternalGlobal.mainObject->PlantArray();
+        auto plant = __aig.mainObject->PlantArray();
         plant += *plantIdxIter;
         int plantHp = plant->Hp();
         // 如果当前生命值低于最小生命值，记录下来此植物的信息

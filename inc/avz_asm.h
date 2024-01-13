@@ -81,6 +81,9 @@ public:
     // 游戏最完整刷新函数，带帧率控制
     static void GameSleepLoop();
 
+    // 控件管理器在一次更新中递归地更新其中所有的控件
+    static void UpdateFrame();
+
     static void ClearObjectMemory();
 
     static void CheckFightExit();
@@ -119,6 +122,8 @@ public:
     static bool CanSpawnZombies(int row);
     static bool IsNight();
     static bool IsRoof();
+    static bool HasGrave();
+    static bool HasPool();
 
     enum GameMode {
         ADVENTURE,
@@ -214,9 +219,15 @@ public:
         CHALLENGE
     };
 
-    __ADeprecated static void* SaveToMemory();
-    __ADeprecated static void LoadFromMemory(void*& p);
-    __ADeprecated static void FreeMemory(void*& p);
+    // 内置生成僵尸列表的函数
+    static void PickZombieWaves();
+
+    // 选卡界面点击调试试玩按钮时，以随机选卡填充卡槽，立即完成所有选卡的移动，然后结束选卡。
+    static void PickRandomSeeds();
+
+    __ADeprecated() static void* SaveToMemory();
+    __ADeprecated() static void LoadFromMemory(void*& p);
+    __ADeprecated() static void FreeMemory(void*& p);
 
 protected:
     static void _ClickScene();

@@ -9,6 +9,7 @@
 #define __AVZ_CARD_H__
 
 #include "avz_state_hook.h"
+#include "avz_tick_runner.h"
 
 struct ACardName {
     APlantType plantType;
@@ -16,30 +17,32 @@ struct ACardName {
     float col;
 };
 
-class __ACardManager : public AOrderedStateHook<-1> {
+class __ACardManager : public AOrderedBeforeScriptHook<-1>, //
+                       public AOrderedEnterFightHook<-1> {
 public:
-    static void ChooseSingleCard();
-    static void SelectCards(const std::vector<int>& lst, int selectInterval);
-    static int GetCardIndex(APlantType plantType);
-    static std::vector<APlant*> Card(const std::vector<ACardName>& lst);
-    static APlant* Card(int seedIndex, int row, float col);
-    static APlant* Card(int seedIndex, const std::vector<APosition>& lst);
-    static APlant* Card(APlantType plantType, int row, float col);
-    static APlant* Card(APlantType plantType, const std::vector<APosition>& lst);
+    void SelectCards(const std::vector<int>& lst, int selectInterval);
+    int GetCardIndex(APlantType plantType);
+    std::vector<APlant*> Card(const std::vector<ACardName>& lst);
+    APlant* Card(int seedIndex, int row, float col);
+    APlant* Card(int seedIndex, const std::vector<APosition>& lst);
+    APlant* Card(APlantType plantType, int row, float col);
+    APlant* Card(APlantType plantType, const std::vector<APosition>& lst);
 
 protected:
-    static std::vector<int> _selectCardVec;
-    static std::unordered_map<int, int> _seedNameToIndexMap;
-    static AMainObject* _mainObject;
-    static APvzBase* _pvzBase;
-    static int _selectInterval;
-    static APlant* _BasicCard(int seedIndex, int row, float col);
-    static APlant* _BasicCard(int seedIndex, const std::vector<APosition>& lst);
-    static bool _Check(int seedIndex);
+    std::vector<int> _selectCardVec;
+    std::unordered_map<int, int> _seedNameToIndexMap;
+    int _selectInterval;
+    ATickRunner _tickRunner;
+    bool _isSelectCards = false;
+    APlant* _BasicCard(int seedIndex, int row, float col);
+    APlant* _BasicCard(int seedIndex, const std::vector<APosition>& lst);
+    bool _Check(int seedIndex);
+    void _ChooseSingleCard();
+    virtual void _BeforeScript() override;
     virtual void _EnterFight() override;
 };
 
-inline __ACardManager __cm; // AStateHook
+inline __ACardManager __aCardManager;
 
 // 选择一堆卡片
 // ***注意：卡片名称与英文原版图鉴一致
@@ -56,9 +59,39 @@ inline __ACardManager __cm; // AStateHook
 //     APUMPKIN,      // 南瓜头
 //     APUFF_SHROOM,  // 小喷菇
 // });
-inline void ASelectCards(const std::vector<int>& lst, int selectInterval = 17)
+//
+// ASelectCards({
+//     AICE_SHROOM,   // 寒冰菇
+//     AM_ICE_SHROOM, // 模仿寒冰菇
+//     ACOFFEE_BEAN,  // 咖啡豆
+//     ADOOM_SHROOM,  // 毁灭菇
+//     ALILY_PAD,     // 荷叶
+//     ASQUASH,       // 倭瓜
+//     ACHERRY_BOMB,  // 樱桃炸弹
+//     ABLOVER,       // 三叶草
+//     APUMPKIN,      // 南瓜头
+//     APUFF_SHROOM,  // 小喷菇
+// }, 1); --------------------------- 将选卡间隔更改为 1cs 以增加选卡速度
+//
+// ASelectCards({
+//     AICE_SHROOM,   // 寒冰菇
+//     AM_ICE_SHROOM, // 模仿寒冰菇
+//     ACOFFEE_BEAN,  // 咖啡豆
+//     ADOOM_SHROOM,  // 毁灭菇
+//     ALILY_PAD,     // 荷叶
+//     ASQUASH,       // 倭瓜
+//     ACHERRY_BOMB,  // 樱桃炸弹
+//     ABLOVER,       // 三叶草
+//     APUMPKIN,      // 南瓜头
+//     APUFF_SHROOM,  // 小喷菇
+// }, 0); --------------------------- 将选卡间隔更改为 0cs 以进行极速选卡，注意 0 为特殊值，效果为瞬间跳到战斗界面
+//
+// ASelectCards({
+//     AICE_SHROOM,   // 寒冰菇
+// }, 0); --------------------------- 将选卡间隔更改为 0cs 以进行极速选卡，注意 0 为特殊值，效果为瞬间跳到战斗界面，然后剩下的九个卡槽会被随机填充
+inline void ASelectCards(const std::vector<int>& lst = {}, int selectInterval = 17)
 {
-    __ACardManager::SelectCards(lst, selectInterval);
+    __aCardManager.SelectCards(lst, selectInterval);
 }
 
 // 根据卡片名称得到卡片索引
@@ -67,7 +100,7 @@ inline void ASelectCards(const std::vector<int>& lst, int selectInterval = 17)
 // AGetCardIndex(AICE_SHROOM) ---- 得到寒冰菇的卡片索引
 __ANodiscard inline int AGetCardIndex(APlantType plantType)
 {
-    return __ACardManager::GetCardIndex(plantType);
+    return __aCardManager.GetCardIndex(plantType);
 }
 
 // 根据卡片名称得到卡片指针
@@ -90,45 +123,27 @@ __ANodiscard ASeed* AGetCardPtr(APlantType plantType);
 //                                                                           注意是先将第一颗植物尝试所有位置，在进行下一个植物的尝试
 inline std::vector<APlant*> ACard(const std::vector<ACardName>& lst)
 {
-    return __ACardManager::Card(lst);
+    return __aCardManager.Card(lst);
 }
 inline APlant* ACard(int seedIndex, int row, float col)
 {
-    return __ACardManager::Card(seedIndex, row, col);
+    return __aCardManager.Card(seedIndex, row, col);
 }
 inline APlant* ACard(int seedIndex, const std::vector<APosition>& lst)
 {
-    return __ACardManager::Card(seedIndex, lst);
+    return __aCardManager.Card(seedIndex, lst);
 }
 inline APlant* ACard(APlantType plantType, int row, float col)
 {
-    return __ACardManager::Card(plantType, row, col);
+    return __aCardManager.Card(plantType, row, col);
 }
 inline APlant* ACard(APlantType plantType, const std::vector<APosition>& lst)
 {
-    return __ACardManager::Card(plantType, lst);
+    return __aCardManager.Card(plantType, lst);
 }
-inline std::vector<APlant*> ACard(const std::vector<APlantType>& plantTypeVec, int row, float col)
-{
-    std::vector<APlant*> ret;
-    for (auto&& plantType : plantTypeVec) {
-        ret.push_back(__ACardManager::Card(plantType, row, col));
-    }
-    return ret;
-}
-inline std::vector<APlant*> ACard(const std::vector<APlantType>& plantTypeVec, const std::vector<APosition>& lst)
-{
-    std::vector<APlant*> ret;
-    for (auto&& plantType : plantTypeVec) {
-        for (auto&& pos : lst) {
-            auto ptr = __ACardManager::Card(plantType, pos.row, pos.col);
-            if (ptr != nullptr) {
-                ret.push_back(ptr);
-                break;
-            }
-        }
-    }
-    return ret;
-}
+
+std::vector<APlant*> ACard(const std::vector<APlantType>& plantTypeVec, int row, float col);
+
+std::vector<APlant*> ACard(const std::vector<APlantType>& plantTypeVec, const std::vector<APosition>& lst);
 
 #endif

@@ -4,12 +4,6 @@ Author: vector-wlc
 Date: 2023-03-18 22:22:35
 Description: 
 '''
-"""
-Coding: utf-8
-Author: vector-wlc
-Date: 2021-12-06 23:44:11
-Description: 
-"""
 
 import shutil
 import os
@@ -34,7 +28,7 @@ if __name__ == "__main__":
 
     # 打包版本文件
     avz_zip_name = time.strftime(src + "release/nightly/%Y_%m_%d.zip", time.localtime())
-    cmd = "7z a -tzip " + avz_zip_name + " " + dst + "inc " + dst + "src " + dst + "bin"
+    cmd = "7z a " + avz_zip_name + " " + dst + "inc " + dst + "src " + dst + "bin"
     print(cmd)
     os.system(cmd)
 

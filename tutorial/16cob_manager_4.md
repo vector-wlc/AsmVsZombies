@@ -39,24 +39,21 @@ aCobManager.SetNext(1);
 // 他们可以得到更加详细的炮的状态
 
 // 得到可用的炮的内存指针
-auto cobPtr = GetUsablePtr() 
+auto cobPtr = aCobManager.GetUsablePtr();
 
 // 得到发往九列可用的屋顶炮的内存指针
-auto cobPtr = GetRoofUsablePtr(9) 
+auto cobPtr = aCobManager.GetRoofUsablePtr(9);
 
 // 得到恢复时间最短的炮的内存指针
-auto cobPtr = GetRecoverPtr() 
+auto cobPtr = aCobManager.GetRecoverPtr();
 
 // 得到发往九列恢复时间最短的屋顶炮的内存指针
-auto cobPtr = GetRoofRecoverPtr(9) 
+auto cobPtr = aCobManager.GetRoofRecoverPtr(9);
 
 // 得到 1 列屋顶炮发往 7 列飞行时间
 auto flyTime = ACobManager::GetRoofFlyTime(1, 7);
 
 // 得到恢复时间列表
-// 这玩意的返回类型是 std::vector<std::pair<int, int>>
-// pair.first 为 APlant* 指针
-// pair.second 为 炮的恢复时间
 // 如果恢复时间为 -1，代表炮被锁了不可用
 // 如果恢复时间为 INT_MIN，代表炮消失了
 // 恢复时间 >= 0 为正常值

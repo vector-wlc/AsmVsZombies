@@ -134,6 +134,27 @@ void AAsm::GameSleepLoop()
         : ASaveAllRegister);
 }
 
+// 5D59A0
+//   54B980
+void AAsm::UpdateFrame()
+{
+    __asm__ __volatile__(
+        "movl 0x6a9ec0, %%edi;"
+        "movl 0x320(%%edi), %%edi;"
+        "movl $0x539140, %%eax;"
+        "calll *%%eax;"
+        :
+        :
+        : ASaveAllRegister);
+    // __asm__ __volatile__(
+    //     "movl 0x6a9ec0, %%ecx;"
+    //     "movl $0x54B980, %%eax;"
+    //     "calll *%%eax;"
+    //     :
+    //     :
+    //     : ASaveAllRegister);
+}
+
 void AAsm::ClearObjectMemory()
 {
     __asm__ __volatile__(
@@ -720,7 +741,7 @@ void AAsm::MakeNewBoard()
         :
         :
         : ASaveAllRegister);
-    __aInternalGlobal.mainObject = AGetPvzBase()->MainObject();
+    __aig.mainObject = AGetPvzBase()->MainObject();
     AGetMainObject()->Scene() = scene;
 }
 
@@ -839,6 +860,36 @@ bool AAsm::IsRoof()
     return ret & 0xff;
 }
 
+bool AAsm::HasGrave()
+{
+    int ret;
+    __asm__ __volatile__(
+        "movl 0x6a9ec0, %%edx;"
+        "movl 0x768(%%edx), %%edx;"
+        "movl $0x41c040, %%ecx;"
+        "calll *%%ecx;"
+        "movl %%eax, %[ret];"
+        :
+        : [ret] "m"(ret)
+        : "esp", "ebp", "ecx", "edx");
+    return ret & 0xff;
+}
+
+bool AAsm::HasPool()
+{
+    int ret;
+    __asm__ __volatile__(
+        "movl 0x6a9ec0, %%eax;"
+        "movl 0x768(%%eax), %%eax;"
+        "movl $0x41c0d0, %%ecx;"
+        "calll *%%ecx;"
+        "movl %%eax, %[ret];"
+        :
+        : [ret] "m"(ret)
+        : "esp", "ebp", "eax", "ecx");
+    return ret & 0xff;
+}
+
 void AAsm::EnterGame(int gameMode)
 {
     auto gameUi = AMPtr<APvzBase>(0x6a9ec0)->GameUi();
@@ -898,6 +949,31 @@ void AAsm::DoBackToMain()
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%eax;"
         "movl $0x44FEB0, %%ebx;"
+        "calll *%%ebx;"
+        :
+        :
+        : ASaveAllRegister);
+}
+
+void AAsm::PickZombieWaves()
+{
+    __asm__ __volatile__(
+        "movl 0x6a9ec0, %%edi;"
+        "movl 0x768(%%edi), %%edi;"
+        "movl $0x4092e0, %%ebx;"
+        "calll *%%ebx;"
+        :
+        :
+        : ASaveAllRegister);
+}
+
+void AAsm::PickRandomSeeds()
+{
+    __asm__ __volatile__(
+        "movl 0x6a9ec0, %%ebx;"
+        "movl 0x774(%%ebx), %%ebx;"
+        "pushl %%ebx;"
+        "movl $0x4859B0, %%ebx;"
         "calll *%%ebx;"
         :
         :

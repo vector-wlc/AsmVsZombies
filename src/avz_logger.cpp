@@ -10,11 +10,6 @@ void AAbstractLogger::_BeforeScript()
 {
     _pattern = "#";
     _headerStyle = "[#wave, #time][#level]";
-#define _ASTR(s) #s
-#define ASTR(s) _ASTR(s)
-    Info("\n=================================\n框架版本: " ASTR(__AVZ_VERSION__) "\n脚本开始运行\n=================================");
-#undef _ASTR
-#undef ASTR
 }
 
 std::string AAbstractLogger::_CreatHeader(ALogLevel level)
@@ -71,7 +66,7 @@ bool ALogger<AFile>::Clear()
     _outFile.close();
     _outFile.open(_fileName, std::ios::out);
     if (!_outFile.good() && AGetInternalLogger() != this) {
-        AGetInternalLogger()->Error("无法打开 #", _fileName);
+        AGetInternalLogger()->Error("无法打开 " + _fileName);
         return false;
     }
     _outFile.imbue(std::locale(""));
@@ -85,9 +80,19 @@ void ALogger<AConsole>::_Output(ALogLevel level, std::string&& str)
     SetConsoleTextAttribute(_handle, FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_BLUE);
 }
 
+ALogger<APvzGui>::ALogger()
+{
+    _color[0] = AArgb(0xff, 0xff, 0xff, 0xff); // white
+    _color[1] = AArgb(0xff, 0, 0xff, 0);       // green
+    _color[2] = AArgb(0xff, 0xff, 0xff, 0);    // yellow
+    _color[3] = AArgb(0xff, 0xff, 0, 0);       // red
+    _remainTime = 500;                         // 控制显示的持续时间
+    _pixelDisplay = {10, 500};
+}
+
 void ALogger<APvzGui>::_Output(ALogLevel level, std::string&& str)
 {
-    int globalClock = __aInternalGlobal.mainObject->GlobalClock();
+    int globalClock = __aig.mainObject->GlobalClock();
     if (globalClock - _lastestDisplayedTime > _remainTime) { // 上一条显示已经结束
         auto oriColor = _painter.GetTextColor();
         _painter.SetTextColor(_color[int(level)]);
@@ -98,24 +103,17 @@ void ALogger<APvzGui>::_Output(ALogLevel level, std::string&& str)
 }
 void ALogger<APvzGui>::_BeforeScript()
 {
-    _color[0] = AArgb(0xff, 0xff, 0xff, 0xff); // white
-    _color[1] = AArgb(0xff, 0, 0xff, 0);       // green
-    _color[2] = AArgb(0xff, 0xff, 0xff, 0);    // yellow
-    _color[3] = AArgb(0xff, 0xff, 0, 0);       // red
-    _remainTime = 500;                         // 控制显示的持续时间
     _lastestDisplayedTime = -1;
-    _pixelDisplay = {10, 500};
     AAbstractLogger::_BeforeScript();
 }
 
 void ALogger<AMsgBox>::_Output(ALogLevel level, std::string&& str)
 {
-    MessageBoxW(nullptr, AStrToWstr(str).c_str(), L"AMsgBox", MB_OK);
+    AMsgBox::Show(str);
 }
 
 void ALogger<AMsgBox>::_BeforeScript()
 {
-    SetLevel({ALogLevel::ERROR, ALogLevel::WARNING});
     AAbstractLogger::_BeforeScript();
 }
 
@@ -129,6 +127,11 @@ ALogger<AConsole>::ALogger()
         freopen("CON", "w", stdout);
         setlocale(LC_ALL, "chs");
     }
+    _color[0] = FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_BLUE; // white
+    _color[1] = FOREGROUND_GREEN;                                    // green
+    _color[2] = FOREGROUND_RED | FOREGROUND_GREEN;                   // yellow
+    _color[3] = FOREGROUND_RED;                                      // red
+
     // 完成后，无需使用 CloseHandle 释放此句柄
     _handle = GetStdHandle(STD_OUTPUT_HANDLE);
 }
@@ -144,9 +147,10 @@ ALogger<AConsole>::~ALogger()
 
 void ALogger<AConsole>::_BeforeScript()
 {
-    _color[0] = FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_BLUE; // white
-    _color[1] = FOREGROUND_GREEN;                                    // green
-    _color[2] = FOREGROUND_RED | FOREGROUND_GREEN;                   // yellow
-    _color[3] = FOREGROUND_RED;                                      // red
     AAbstractLogger::_BeforeScript();
+#define _ASTR(s) #s
+#define ASTR(s) _ASTR(s)
+    Info("\n=================================\n框架版本: " ASTR(__AVZ_VERSION__) "\n脚本开始运行\n=================================");
+#undef _ASTR
+#undef ASTR
 }

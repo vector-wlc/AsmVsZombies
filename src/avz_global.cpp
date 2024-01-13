@@ -11,7 +11,7 @@
 #include <codecvt>
 #include <locale>
 
-__AInternalGlobal __aInternalGlobal;
+__AInternalGlobal __aig;
 
 bool ARangeIn(int num, const std::vector<int>& lst)
 {

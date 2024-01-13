@@ -7,8 +7,6 @@
 
 #include "avz_connector.h"
 
-__AConnectVec __aConnectVec;
-
 void ATimeConnectHandle::Stop()
 {
     if (_iter) {
@@ -17,38 +15,33 @@ void ATimeConnectHandle::Stop()
             return;
         }
     }
-    auto&& pattern = __aInternalGlobal.loggerPtr->GetPattern();
-    __aInternalGlobal.loggerPtr->Warning("时间连接 [" + pattern + ", " + pattern + "] 连接已失效, Stop 无效调用",
+    auto&& pattern = __aig.loggerPtr->GetPattern();
+    __aig.loggerPtr->Warning("时间连接 [" + pattern + ", " + pattern + "] 连接已失效, Stop 无效调用",
         _time.wave, _time.time);
 }
 
-std::vector<ATimeConnectHandle> AConnect(const ATime& time, ARelOp&& reOp)
+std::vector<ATimeConnectHandle> AConnect(const ATime& time, const ATimeline& timeline)
 {
-    std::vector<ATimeConnectHandle> ret;
-    int wave = time.wave;
-    for (auto&& op : reOp.GetOpVec()) {
-        ret.push_back(AConnect(ATime(wave, time.time + op.relativeTime), std::move(op.operation)));
+    __aig.loggerPtr->Info("正在将包含 " + std::to_string(timeline.GetEntries().size())
+        + " 项操作的时间轴连接至 (" + std::to_string(time.wave) + ", " + std::to_string(time.time) + ")");
+    std::vector<ATimeConnectHandle> handles;
+    for (auto&& entry : timeline.GetEntries()) {
+        ATime timeWithOffset {time.wave + entry.offset.wave, time.time + entry.offset.time};
+        handles.emplace_back(AConnect(timeWithOffset, entry.action));
     }
-    return ret;
+    return handles;
 }
 
-std::vector<ATimeConnectHandle> AConnect(const ATime& time, const ARelOp& reOp)
+std::vector<ATimeConnectHandle> AConnect(const ATime& time, ATimeline&& timeline)
 {
-    std::vector<ATimeConnectHandle> ret;
-    int wave = time.wave;
-    for (auto&& op : reOp.GetOpVec()) {
-        ret.push_back(AConnect(ATime(wave, time.time + op.relativeTime), op.operation));
+    __aig.loggerPtr->Info("正在将包含 " + std::to_string(timeline.GetEntries().size())
+        + " 项操作的时间轴连接至 (" + std::to_string(time.wave) + ", " + std::to_string(time.time) + ")");
+    std::vector<ATimeConnectHandle> handles;
+    for (auto&& entry : timeline.GetEntries()) {
+        ATime timeWithOffset {time.wave + entry.offset.wave, time.time + entry.offset.time};
+        handles.emplace_back(AConnect(timeWithOffset, std::move(entry.action)));
     }
-    return ret;
-}
-
-void __AConnectVec::_ExitFight()
-{
-    for (auto tick : tickVec) {
-        delete tick;
-    }
-
-    tickVec.clear();
+    return handles;
 }
 
 std::vector<std::string> __AKeyManager::_keyVec;
@@ -63,8 +56,8 @@ __AKeyManager::KeyState __AKeyManager::ToVaildKey(AKey& key)
     }
 
     if (keyState == UNKNOWN) {
-        __aInternalGlobal.loggerPtr->Error("不允许绑定未知的按键 : " + //
-                __aInternalGlobal.loggerPtr->GetPattern(),
+        __aig.loggerPtr->Error("不允许绑定未知的按键 : " + //
+                __aig.loggerPtr->GetPattern(),
             key);
         return UNKNOWN;
     }
@@ -72,8 +65,8 @@ __AKeyManager::KeyState __AKeyManager::ToVaildKey(AKey& key)
     if (iter == _keyMap.end() || iter->second.IsStopped()) {
         return VALID;
     } else {
-        __aInternalGlobal.loggerPtr->Error("按键 : " + //
-                __aInternalGlobal.loggerPtr->GetPattern()
+        __aig.loggerPtr->Error("按键 : " + //
+                __aig.loggerPtr->GetPattern()
                 + "已被绑定, AConnect(AKey, AOperation) 不允许重复绑定按键",
             __AKeyManager::ToName(key));
         return REPEAT;

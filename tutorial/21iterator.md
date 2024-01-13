@@ -27,7 +27,7 @@ for (int idx = 0; idx < zombieTotal; ++idx) {
 能够胜任绝大部分情况的任务，**它被设计用于仅仅遍历场地上活着的对象**。
 
 ```C++
-AAliveFilter<Zombie> zombieFilter;
+AAliveFilter<AZombie> zombieFilter;
 for (auto&& zombie : zombieFilter) {
     if (zombie.Type() == AHY_32) {
         // some code
@@ -44,7 +44,7 @@ for (auto&& zombie : zombieFilter) {
 在这里我只想说明一点，不要总是想着在性能不变的情况下压缩代码，除非你觉得别人在看你的代码时不会感觉很困惑。
 写出一套可读性很好的代码也是水平的一种体现。
 ```C++
-for (auto&& zombie : AAliveFilter<Zombie>()) {
+for (auto&& zombie : AAliveFilter<AZombie>()) {
     if (zombie.Type() == AHY_32) {
         // some code
     }
@@ -53,7 +53,7 @@ for (auto&& zombie : AAliveFilter<Zombie>()) {
 
 这就是使用对象迭代器的亿些好处，除此之外，对象迭代器依然有其他功能，比如可将判断僵尸是否是红眼的代码写在过滤器的构造函数中
 ```C++
-AAliveFilter<Zombie> zombieFilter([](Zombie* zombie) {
+AAliveFilter<AZombie> zombieFilter([](AZombie* zombie) {
     return zombie->Type() == AHY_32;
 });
 
@@ -68,7 +68,7 @@ for (auto&& zombie : zombieFilter) {
 相比于 AAliveFilter 会自动过滤掉死亡的僵尸，ABasicFilter 则什么都没有做，他只是能普通的遍历数组中的对象。
 
 ```C++
-ABasicFilter<Zombie> zombieFilter;
+ABasicFilter<AZombie> zombieFilter;
 for (auto&& zombie : zombieFilter) {
     if (!zombie.IsDisappeared() && !zombie.IsDead() && zombie.Type() == AHY_32) {
         // some code
@@ -78,7 +78,7 @@ for (auto&& zombie : zombieFilter) {
 
 查看这段代码，你可能心里会想，这不就是最原始普通的遍历加上了一个范围for循环吗，好像确实如此，但是当你在构造函数中添加亿些条件看起来也许就不那么一样了
 ```C++
-ABasicFilter<AZombie> zombieFilter([](AZombie* zombie) {
+ABasicFilter<AZombie> zombieFilter([](AAZombie* zombie) {
     return !zombie->IsDisappeared() && !zombie->IsDead() && zombie->Type() == AHY_32;
 });
 

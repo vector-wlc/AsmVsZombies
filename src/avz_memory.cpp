@@ -14,7 +14,7 @@
 int AMouseRow()
 {
     static int lastValue = -1;
-    auto memoryValue = __aInternalGlobal.mainObject->MouseExtraAttribution()->Row();
+    auto memoryValue = __aig.mainObject->MouseExtraAttribution()->Row();
     if (memoryValue >= 0) {
         lastValue = memoryValue + 1;
     }
@@ -25,7 +25,7 @@ int AMouseRow()
 float AMouseCol()
 {
     static float lastValue = -1;
-    auto memoryValue = __aInternalGlobal.mainObject->MouseAttribution()->Abscissa();
+    auto memoryValue = __aig.mainObject->MouseAttribution()->Abscissa();
     if (memoryValue >= 0) {
         lastValue = float(memoryValue + 25) / 80;
     }
@@ -34,6 +34,10 @@ float AMouseCol()
 
 int AGetSeedIndex(int type, bool imitator)
 {
+    if (type >= AM_PEASHOOTER) {
+        type -= AM_PEASHOOTER;
+        imitator = true;
+    }
     auto seed = AGetMainObject()->SeedArray();
     int cnt = seed->Count();
     for (int index = 0; index < cnt; ++index, ++seed) {
@@ -184,7 +188,7 @@ void ASetPlantActiveTime(APlantType plantType, int delayTime)
                 if (std::abs(plant->ExplodeCountdown() - 10) < 10) {
                     plant->ExplodeCountdown() = 10;
                 } else {
-                    __aInternalGlobal.loggerPtr->Error("ASetPlantActiveTime 不允许修改的生效时间超过 3cs");
+                    __aig.loggerPtr->Error("ASetPlantActiveTime 不允许修改的生效时间超过 3cs");
                 }
                 return;
             }
@@ -201,7 +205,7 @@ void AUpdateZombiesPreview()
     AGetMainObject()->SelectCardUi_m()->IsCreatZombie() = false;
 }
 
-void ASetZombies(const std::vector<int>& zombieType)
+void ASetZombies(const std::vector<int>& zombieType, ASetZombieMode mode)
 {
     std::vector<int> zombieTypeVec;
     bool isHasBungee = false;
@@ -220,24 +224,35 @@ void ASetZombies(const std::vector<int>& zombieType)
             zombieTypeVec.push_back(type);
         }
     }
-    auto zombieList = AGetMainObject()->ZombieList();
-    for (int index = 0; index < 1000; ++index, ++zombieList) {
-        (*zombieList) = zombieTypeVec[index % zombieTypeVec.size()];
-    }
 
-    // 生成旗帜
-    for (auto index : {450, 950}) {
-        (*(AGetMainObject()->ZombieList() + index)) = AQZ_1;
-    }
+    if (mode == ASetZombieMode::INTERNAL) {
+        if (typeList[AZOMBIE] == false) {
+            AGetInternalLogger()->Warning("自然出怪模式下出怪类型必须有普僵，已自动添加");
+            typeList[AZOMBIE] = 1;
+        }
+        AAsm::PickZombieWaves();
+    } else if (mode == ASetZombieMode::AVERAGE) {
+        auto zombieList = AGetMainObject()->ZombieList();
+        int totaNum = AGetMainObject()->TotalWave() * 50;
+        for (int idx = 0; idx < totaNum; ++idx) {
+            zombieList[idx] = zombieTypeVec[idx % zombieTypeVec.size()];
+        }
+        // 生成旗帜
+        for (int idx = 9 * 50; idx < totaNum; idx += 10 * 50) {
+            zombieList[idx * 50] = AQZ_1;
+        }
 
-    if (isHasBungee) {
-        // 生成蹦极
-        for (auto index : {451, 452, 453, 454, 951, 952, 953, 954}) {
-            (*(AGetMainObject()->ZombieList() + index)) = ABJ_20;
+        if (isHasBungee) {
+            // 生成蹦极
+            for (int idx = 9 * 50; idx < totaNum; idx += 10 * 50) {
+                for (auto index : {idx + 1, idx + 2, idx + 3, idx + 4}) {
+                    zombieList[index] = ABJ_20;
+                }
+            }
         }
     }
 
-    if (__aInternalGlobal.pvzBase->GameUi() == 2) {
+    if (__aig.pvzBase->GameUi() == 2) {
         AUpdateZombiesPreview();
     }
 }
@@ -256,21 +271,95 @@ void ASetWaveZombies(int wave, const std::vector<int>& zombieType)
         }
     }
     auto zombieList = AGetMainObject()->ZombieList() + (wave - 1) * 50;
-    for (int index = 0; index < 50; ++index, ++zombieList) {
-        (*zombieList) = zombieTypeVec[index % zombieTypeVec.size()];
+    for (int idx = 0; idx < 50; ++idx) {
+        zombieList[idx] = zombieTypeVec[idx % zombieTypeVec.size()];
     }
-
+    int totaNum = AGetMainObject()->TotalWave() * 50;
     // 生成旗帜
-    for (auto index : {450, 950}) {
-        (*(AGetMainObject()->ZombieList() + index)) = AQZ_1;
+    for (int idx = 9 * 50; idx < totaNum; idx += 10 * 50) {
+        zombieList[idx * 50] = AQZ_1;
     }
-
     if (isHasBungee) {
         // 生成蹦极
-        for (auto index : {451, 452, 453, 454, 951, 952, 953, 954}) {
-            (*(AGetMainObject()->ZombieList() + index)) = ABJ_20;
+        for (int idx = 9 * 50; idx < totaNum; idx += 10 * 50) {
+            for (auto index : {idx + 1, idx + 2, idx + 3, idx + 4}) {
+                zombieList[index] = ABJ_20;
+            }
         }
     }
+}
+
+std::vector<int> ACreateRandomTypeList(const std::vector<int>& required, const std::vector<int>& banned)
+{
+    static constexpr std::array<int, 22> CANDIDATES {0, 2, 3, 4, 5, 6, 7, 8, 11, 12, 14, 15, 16, 17, 18, 20, 21, 22, 23, 32, -1, -2};
+    std::unordered_map<int, bool> requirements {{AZOMBIE, true}};
+    if (aFieldInfo.hasGrave) {
+        requirements[AZOMBONI] = false;
+    }
+    if (!aFieldInfo.hasPool) {
+        requirements[ASNORKEL_ZOMBIE] = requirements[ADOLPHIN_RIDER_ZOMBIE] = false;
+    }
+    if (aFieldInfo.isRoof) {
+        requirements[ADANCING_ZOMBIE] = requirements[ADIGGER_ZOMBIE] = false;
+    }
+    for (int type : required) {
+        if (requirements.contains(type) && !requirements[type]) {
+            std::string msg = "无法满足出怪类型中包含 " + std::to_string(type) + " 的要求";
+            __aig.loggerPtr->Error(msg);
+            throw AException(msg);
+        } else {
+            requirements[type] = true;
+        }
+    }
+    for (int type : banned) {
+        if (requirements.contains(type) && requirements[type]) {
+            std::string msg = "无法满足出怪类型中不包含 " + std::to_string(type) + " 的要求";
+            __aig.loggerPtr->Error(msg);
+            throw AException(msg);
+        } else {
+            requirements[type] = false;
+        }
+    }
+    if (!requirements.contains(ACONEHEAD_ZOMBIE) && !requirements.contains(ANEWSPAPER_ZOMBIE)) {
+        requirements[aRandom(5) ? ACONEHEAD_ZOMBIE : ANEWSPAPER_ZOMBIE] = true;
+    } else {
+        bool banConehead = requirements.contains(ACONEHEAD_ZOMBIE) && !requirements[ACONEHEAD_ZOMBIE];
+        bool banNewspaper = requirements.contains(ANEWSPAPER_ZOMBIE) && !requirements[ANEWSPAPER_ZOMBIE];
+        if (banConehead && banNewspaper) {
+            std::string msg = "自然出怪中路障僵尸和读报僵尸至少出现其一";
+            __aig.loggerPtr->Error(msg);
+            throw AException(msg);
+        }
+        if (banConehead) {
+            requirements[ANEWSPAPER_ZOMBIE] = true;
+        } else if (banNewspaper) {
+            requirements[ACONEHEAD_ZOMBIE] = true;
+        }
+    }
+
+    std::vector<int> candidates;
+    for (int type : CANDIDATES) {
+        if (!requirements.contains(type)) {
+            candidates.push_back(type);
+        }
+    }
+    std::vector<int> typeList;
+    for (auto [type, required] : requirements) {
+        if (required) {
+            typeList.push_back(type);
+        }
+    }
+    if (typeList.size() > 11) {
+        std::string msg = "已指定 " + std::to_string(typeList.size()) + " 种必选出怪，而自然出怪的上限为 11 种";
+        __aig.loggerPtr->Error(msg);
+        throw AException(msg);
+    }
+    for (int type : aRandom.Sample(candidates, 11 - typeList.size())) {
+        if (type >= 0) {
+            typeList.push_back(type);
+        }
+    }
+    return typeList;
 }
 
 bool* AGetZombieTypeList()
@@ -280,28 +369,28 @@ bool* AGetZombieTypeList()
 
 void __AGameSpeedManager::_BeforeScript()
 {
-    _oriTickMs = __aInternalGlobal.pvzBase->TickMs();
+    _oriTickMs = __aig.pvzBase->TickMs();
 }
 
 void __AGameSpeedManager::_ExitFight()
 {
-    __aInternalGlobal.pvzBase->TickMs() = _oriTickMs;
+    __aig.pvzBase->TickMs() = _oriTickMs;
 }
 
 void __AGameSpeedManager::Set(float x)
 {
     if (x < 0.05 || x > 10) {
-        __aInternalGlobal.loggerPtr->Error(
+        __aig.loggerPtr->Error(
             "SetGameSpeed : 倍速设置失败，倍速设置的合法范围为 [0.05, 10]");
         return;
     }
     int ms = int(10 / x + 0.5);
-    __aInternalGlobal.pvzBase->TickMs() = ms;
+    __aig.pvzBase->TickMs() = ms;
 }
 
 bool AGameIsPaused()
 {
-    if (!__aInternalGlobal.pvzBase->MainObject()) {
+    if (!__aig.pvzBase->MainObject()) {
         return false;
     }
     return AGetMainObject()->GamePaused() || AGetPvzBase()->MouseWindow()->TopWindow() != nullptr;
@@ -379,7 +468,7 @@ __ANodiscard bool AIsSeedUsable(ASeed* seed)
 __ANodiscard int AGetCobRecoverTime(int index)
 {
     if (index < 0 || index >= AGetMainObject()->PlantCountMax()) {
-        __aInternalGlobal.loggerPtr->Error("AGetCobRecoverTime(int) 参数值为:" + std::to_string(index) + ", 不合法");
+        __aig.loggerPtr->Error("AGetCobRecoverTime(int) 参数值为:" + std::to_string(index) + ", 不合法");
         return ACobManager::NO_EXIST_RECOVER_TIME;
     }
     return AGetCobRecoverTime(AGetMainObject()->PlantArray() + index);
@@ -388,10 +477,10 @@ __ANodiscard int AGetCobRecoverTime(int index)
 __ANodiscard int AGetCobRecoverTime(APlant* cob)
 {
     if (cob == nullptr || cob->IsDisappeared() || cob->Type() != ACOB_CANNON) {
-        __aInternalGlobal.loggerPtr->Error("AGetCobRecoverTime(APlant*) 参数值不合法");
+        __aig.loggerPtr->Error("AGetCobRecoverTime(APlant*) 参数值不合法");
         return ACobManager::NO_EXIST_RECOVER_TIME;
     }
-    auto animationMemory = __aInternalGlobal.pvzBase->AnimationMain()->AnimationOffset()->AnimationArray() + cob->AnimationCode();
+    auto animationMemory = __aig.pvzBase->AnimationMain()->AnimationOffset()->AnimationArray() + cob->AnimationCode();
 
     switch (cob->State()) {
     case 35:
@@ -416,14 +505,13 @@ void AFieldInfo::_BeforeScript()
         if (rowType[i] == ARowType::NONE && AAsm::CanSpawnZombies(i - 1)) {
             rowType[i] = ARowType::UNSODDED;
         }
-        if (rowType[i] != ARowType::NONE) {
-            nRows = i;
-        }
     }
     if (rowHeight == 100 && rowType[6] != ARowType::NONE) { // AQE
         rowType[6] = ARowType::UNSODDED;
     }
     isNight = AAsm::IsNight();
     isRoof = AAsm::IsRoof();
-    //nRows = 6 - std::count(rowType + 1, rowType + 7, ARowType::NONE);
+    hasGrave = AAsm::HasGrave();
+    hasPool = AAsm::HasPool();
+    nRows = 6 - std::count(rowType + 1, rowType + 7, ARowType::NONE);
 }

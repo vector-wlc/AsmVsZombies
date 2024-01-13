@@ -74,25 +74,28 @@ public:
 
 using __ATimeIter = __AOperationQueue::RunOrderQueue::iterator;
 
-class __AOpQueueManager : public AOrderedStateHook<INT_MIN> {
+class __AOpQueueManager : public AOrderedBeforeScriptHook<INT_MIN>, //
+                          public AOrderedEnterFightHook<INT_MIN> {
 public:
     using Container = std::vector<__AOperationQueue>;
-    static Container container;
-    static ATime startTime; // 脚本设定的开始时间
-    static std::optional<__ATimeIter> Push(const ATime& time, __ABoolOperation&& timeOp);
-    static void UpdateRefreshTime();
-    static void SetWavelength(const std::vector<ATime>& lst);
-    static void AssumeWavelength(const std::vector<ATime>& lst);
-    static void RunOperation();
+    Container container;
+    ATime startTime; // 脚本设定的开始时间
+    std::optional<__ATimeIter> Push(const ATime& time, __ABoolOperation&& timeOp);
+    void UpdateRefreshTime();
+    void SetWavelength(const std::vector<ATime>& lst);
+    void AssumeWavelength(const std::vector<ATime>& lst);
+    void RunOperation();
 
 protected:
-    static void _PrintLog(const ATime& time, int nowTime);
-    static bool _CheckWavelength(const ATime& time);
-    static void _CheckAssumeWavelength(int wave);
-    static void _SetRefreshTime(int wave, int refreshTime);
-    virtual void _EnterFight() override;
+    void _PrintLog(const ATime& time, int nowTime);
+    bool _CheckWavelength(const ATime& time);
+    void _CheckAssumeWavelength(int wave);
+    void _SetRefreshTime(int wave, int refreshTime);
     virtual void _BeforeScript() override;
+    virtual void _EnterFight() override;
 };
+
+inline __AOpQueueManager __aOpQueueManager;
 
 // 得到当前游戏的波数
 __ANodiscard inline int ANowWave()
@@ -113,10 +116,8 @@ __ANodiscard int ANowTime(int wave);
 // 得到当前时间，读取失败返回 [currentWave, INT_MIN]
 __ANodiscard inline ATime ANowTime()
 {
-    ATime time;
-    time.wave = ANowWave();
-    time.time = ANowTime(time.wave);
-    return time;
+    auto wave = ANowWave();
+    return ATime(wave, ANowTime(wave));
 }
 
 // 得到当前时间的延迟时间
@@ -134,13 +135,12 @@ __ANodiscard inline ATime ANowDelayTime(int delayTime)
 }
 
 // 设定特定波的波长
-// *** 注意： wave 9 19 20 无法设定波长
 // 波长的设定范围为 601 - 2510
 // *** 使用示例：
 // ASetWavelength({ATime(1, 601), ATime(4, 1000)}) ----- 将第一波的波长设置为 601，将第四波的波长设置为 1000
 inline void ASetWavelength(const std::vector<ATime>& lst)
 {
-    __AOpQueueManager::SetWavelength(lst);
+    __aOpQueueManager.SetWavelength(lst);
 }
 
 // 假定特定波的波长
@@ -152,9 +152,7 @@ inline void ASetWavelength(const std::vector<ATime>& lst)
 // AAssumeWavelength({ATime(1, 601), ATime(4, 1000)}) ----- 将第一波的波长假定为 601，将第四波的波长假定为 1000
 inline void AAssumeWavelength(const std::vector<ATime>& lst)
 {
-    __AOpQueueManager::AssumeWavelength(lst);
+    __aOpQueueManager.AssumeWavelength(lst);
 }
-
-inline __AOpQueueManager __oqm; // AStateHook
 
 #endif

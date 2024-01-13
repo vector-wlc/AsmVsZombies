@@ -9,13 +9,13 @@
 
 #include "avz_state_hook.h"
 
-__ANodiscard inline AMainObject* AGetMainObject() { return __aInternalGlobal.mainObject; }
+__ANodiscard inline AMainObject* AGetMainObject() { return __aig.mainObject; }
 
 __ANodiscard inline APvzBase* AGetPvzBase() { return *(APvzBase**)0x6a9ec0; }
 
 __ANodiscard inline AAnimation* AGetAnimationArray()
 {
-    return __aInternalGlobal.pvzBase->AnimationMain()->AnimationOffset()->AnimationArray();
+    return __aig.pvzBase->AnimationMain()->AnimationOffset()->AnimationArray();
 }
 
 // 返回鼠标所在行
@@ -71,7 +71,7 @@ __ANodiscard std::vector<APlant*> AGetPlantPtrs(const std::vector<AGrid>& lst, i
 // AIsZombieExist(23)-------检查场上是否存在巨人僵尸
 // AIsZombieExist(-1,4)-----检查第四行是否有僵尸存在
 // AIsZombieExist(23,4)-----检查第四行是否有巨人僵尸存在
-__ANodiscard bool AIsZombieExist(int type, int row = -1);
+__ANodiscard bool AIsZombieExist(int type = -1, int row = -1);
 
 __ANodiscard int AGetSeedSunVal(APlantType type);
 
@@ -100,6 +100,10 @@ inline void AIce3(int delayTime)
     ASetPlantActiveTime(AICE_SHROOM, delayTime);
 }
 
+enum class ASetZombieMode {
+    AVERAGE,  // 极限出怪，平均填充出怪列表
+    INTERNAL, // 自然出怪，调用游戏内置出怪函数
+};
 // 设置出怪
 // 参数命名规则：与英文原版图鉴名称一致
 // *** 使用示例：
@@ -118,12 +122,27 @@ inline void AIce3(int delayTime)
 // 设置出怪类型为：撑杆 铁桶 冰车 小丑 气球 扶梯 投篮 白眼 红眼 跳跳
 //
 // ASetZombies({
+//     APOLE_VAULTING_ZOMBIE,   // 撑杆
+//     ABUCKETHEAD_ZOMBIE,      // 铁桶
+//     AZOMBONI,                // 冰车
+//     AJACK_IN_THE_BOX_ZOMBIE, // 小丑
+//     ABALLOON_ZOMBIE,         // 气球
+//     ALADDER_ZOMBIE,          // 梯子
+//     ACATAPULT_ZOMBIE,        // 投篮
+//     AGARGANTUAR,             // 巨人
+//     AGIGA_GARGANTUAR,        // 红眼巨人
+//     APOGO_ZOMBIE,            // 跳跳
+// }, ASetZombieMode::INTERNAL);
+// 设置出怪类型为：撑杆 铁桶 冰车 小丑 气球 扶梯 投篮 白眼 红眼 跳跳
+// 并设置为自然出怪
+//
+// ASetZombies({
 //     ABUCKETHEAD_ZOMBIE,
 //     AZOMBONI,
 //     AZOMBONI,
 // });
 // 设置出怪类型为：铁桶 冰车 并且两种僵尸的比例为 1：2
-void ASetZombies(const std::vector<int>& zombieType);
+void ASetZombies(const std::vector<int>& zombieType, ASetZombieMode mode = ASetZombieMode::AVERAGE);
 
 // 参数命名规则：与英文原版图鉴名称一致
 // *** 使用示例：
@@ -149,6 +168,13 @@ void ASetZombies(const std::vector<int>& zombieType);
 // 设置第一波出怪类型为：铁桶 冰车 并且两种僵尸的比例为 1：2
 void ASetWaveZombies(int wave, const std::vector<int>& zombieType);
 
+// 随机生成出怪类型，可以指定必出和不出的僵尸类型
+// 该函数不会生成游戏内不可能出现的出怪类型组合；错误的指定会导致报错
+// 使用示例：设置出怪为随机的红白关，但不出现铁桶
+// auto typeList = ACreateRandomTypeList({AGIGA_GARGANTUAR, AGARGANTUAR}, {ABUCKETHEAD_ZOMBIE});
+// ASetZombies(typeList, ASetZombieMode::INTERNAL);
+std::vector<int> ACreateRandomTypeList(const std::vector<int>& required = {}, const std::vector<int>& banned = {});
+
 // *** 使用示例：
 // 检查当前出怪中是否有红眼：
 // auto zombieTypeList = AGetZombieTypeList();
@@ -158,7 +184,8 @@ void ASetWaveZombies(int wave, const std::vector<int>& zombieType);
 // }
 __ANodiscard bool* AGetZombieTypeList();
 
-class __AGameSpeedManager : public AOrderedStateHook<-1> {
+class __AGameSpeedManager : public AOrderedBeforeScriptHook<-1>, //
+                            public AOrderedExitFightHook<-1> {
 public:
     static void Set(float x);
 
@@ -179,7 +206,7 @@ inline void ASetGameSpeed(float x)
 }
 
 // 女仆秘籍
-class AMaidCheats : public AOrderedStateHook<-1> {
+class AMaidCheats : public AOrderedExitFightHook<-1> {
 public:
     // 召唤舞伴
     // 舞王不前进且每帧尝试召唤舞伴
@@ -246,13 +273,15 @@ enum class ARowType {
     UNSODDED, // 不能种植，出僵尸
 };
 
-class AFieldInfo : public AOrderedStateHook<-2> {
+class AFieldInfo : public AOrderedBeforeScriptHook<-2> {
 public:
     int nRows;           // 目前游戏中使用的行数
     int rowHeight;       // 一行有多高
     ARowType rowType[7]; // 每行的类型
     bool isNight;        // 是否是夜晚
     bool isRoof;         // 是否是屋顶
+    bool hasGrave;       // 是否有墓碑
+    bool hasPool;        // 是否有泳池
 
 protected:
     virtual void _BeforeScript() override;

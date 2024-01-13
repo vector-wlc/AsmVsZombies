@@ -62,7 +62,7 @@ void ASetGameSpeed(float x);
 ## 设定僵尸出怪类型函数
 
 ```C++
-// 设置出怪 此函数不管填不填蹦极都会在 wave 10 20 刷蹦极！！！！！！！！！！！！
+// 设置出怪
 // 参数命名规则：与英文原版图鉴名称一致
 // *** 使用示例：
 // ASetZombies({
@@ -78,6 +78,21 @@ void ASetGameSpeed(float x);
 //     APOGO_ZOMBIE,            // 跳跳
 // });
 // 设置出怪类型为：撑杆 铁桶 冰车 小丑 气球 扶梯 投篮 白眼 红眼 跳跳
+//
+// ASetZombies({
+//     APOLE_VAULTING_ZOMBIE,   // 撑杆
+//     ABUCKETHEAD_ZOMBIE,      // 铁桶
+//     AZOMBONI,                // 冰车
+//     AJACK_IN_THE_BOX_ZOMBIE, // 小丑
+//     ABALLOON_ZOMBIE,         // 气球
+//     ALADDER_ZOMBIE,          // 梯子
+//     ACATAPULT_ZOMBIE,        // 投篮
+//     AGARGANTUAR,             // 巨人
+//     AGIGA_GARGANTUAR,        // 红眼巨人
+//     APOGO_ZOMBIE,            // 跳跳
+// }, ASetZombieMode::INTERNAL);
+// 设置出怪类型为：撑杆 铁桶 冰车 小丑 气球 扶梯 投篮 白眼 红眼 跳跳
+// 并设置为自然出怪
 //
 // ASetZombies({
 //     ABUCKETHEAD_ZOMBIE,
@@ -116,7 +131,6 @@ void ASetWaveZombies(int wave, const std::vector<int>& zombie_type);
 
 ```C++
 // 设定特定波的波长
-// *** 注意： wave 9 19 20 无法设定波长
 // 波长的设定范围为 601 - 2510
 // *** 使用示例：
 // ASetWavelength({ATime(1, 601), ATime(4, 1000)}) ----- 将第一波的波长设置为 601，将第四波的波长设置为 1000

@@ -15,12 +15,12 @@ template <>
 struct __AFilterTrait<APlant> {
     __ANodiscard static APlant* GetEnd()
     {
-        return __aInternalGlobal.mainObject->PlantArray() + //
-            __aInternalGlobal.mainObject->PlantTotal();
+        return __aig.mainObject->PlantArray() + //
+            __aig.mainObject->PlantTotal();
     }
     __ANodiscard static APlant* GetBegin()
     {
-        return __aInternalGlobal.mainObject->PlantArray();
+        return __aig.mainObject->PlantArray();
     }
     __ANodiscard static __APredicateT<APlant> GetAlivePredicate()
     {
@@ -32,12 +32,12 @@ template <>
 struct __AFilterTrait<AZombie> {
     __ANodiscard static AZombie* GetEnd()
     {
-        return __aInternalGlobal.mainObject->ZombieArray() + //
-            __aInternalGlobal.mainObject->ZombieTotal();
+        return __aig.mainObject->ZombieArray() + //
+            __aig.mainObject->ZombieTotal();
     }
     __ANodiscard static AZombie* GetBegin()
     {
-        return __aInternalGlobal.mainObject->ZombieArray();
+        return __aig.mainObject->ZombieArray();
     }
     __ANodiscard static __APredicateT<AZombie> GetAlivePredicate()
     {
@@ -49,12 +49,12 @@ template <>
 struct __AFilterTrait<AItem> {
     __ANodiscard static AItem* GetEnd()
     {
-        return __aInternalGlobal.mainObject->ItemArray() + //
-            __aInternalGlobal.mainObject->ItemTotal();
+        return __aig.mainObject->ItemArray() + //
+            __aig.mainObject->ItemTotal();
     }
     __ANodiscard static AItem* GetBegin()
     {
-        return __aInternalGlobal.mainObject->ItemArray();
+        return __aig.mainObject->ItemArray();
     }
     __ANodiscard static __APredicateT<AItem> GetAlivePredicate()
     {
@@ -66,12 +66,12 @@ template <>
 struct __AFilterTrait<ASeed> {
     __ANodiscard static ASeed* GetEnd()
     {
-        return __aInternalGlobal.mainObject->SeedArray() + //
-            __aInternalGlobal.mainObject->SeedArray()->Count();
+        return __aig.mainObject->SeedArray() + //
+            __aig.mainObject->SeedArray()->Count();
     }
     __ANodiscard static ASeed* GetBegin()
     {
-        return __aInternalGlobal.mainObject->SeedArray();
+        return __aig.mainObject->SeedArray();
     }
     __ANodiscard static __APredicateT<ASeed> GetAlivePredicate()
     {
@@ -84,12 +84,12 @@ template <>
 struct __AFilterTrait<APlaceItem> {
     __ANodiscard static APlaceItem* GetEnd()
     {
-        return __aInternalGlobal.mainObject->PlaceItemArray() + //
-            __aInternalGlobal.mainObject->PlaceItemTotal();
+        return __aig.mainObject->PlaceItemArray() + //
+            __aig.mainObject->PlaceItemTotal();
     }
     __ANodiscard static APlaceItem* GetBegin()
     {
-        return __aInternalGlobal.mainObject->PlaceItemArray();
+        return __aig.mainObject->PlaceItemArray();
     }
     __ANodiscard static __APredicateT<APlaceItem> GetAlivePredicate()
     {

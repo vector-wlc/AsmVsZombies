@@ -9,7 +9,7 @@
 
 extern "C" __declspec(dllexport) void __cdecl __AScriptHook()
 {
-    __AScriptManager::ScriptHook();
+    __aScriptManager.ScriptHook();
 }
 
 void __AInstallHook()
@@ -38,7 +38,7 @@ BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 
     case DLL_PROCESS_DETACH:
         // detach from process
-        __AScriptManager::var.isExit = true;
+        __aScriptManager.isExit = true;
         Sleep(10);
         __AUninstallHook();
         break;

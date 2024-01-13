@@ -6,7 +6,7 @@
 #include "avz_state_hook.h"
 #include "avz_time_queue.h"
 
-class __ACoHandleManager : public AOrderedStateHook<-10> {
+class __ACoHandleManager : public AOrderedExitFightHook<-10> {
 public:
     static void Add(std::coroutine_handle<> handle)
     {
@@ -141,7 +141,7 @@ public:
         return *this;
     }
 
-    ACoFunctor& operator=(ACoFunctor& rhs)
+    ACoFunctor& operator=(const ACoFunctor& rhs)
     {
         this->_functor = rhs._functor;
         return *this;

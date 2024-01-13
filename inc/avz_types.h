@@ -30,8 +30,10 @@ concept __AIsOperation = std::is_convertible_v<T, AOperation> && __ACheckRet<T, 
 template <typename T>
 concept __AIsPredication = std::is_convertible_v<T, APredication> && __ACheckRet<T, bool>;
 
-#define __ADeprecated [[deprecated("此功能已弃用, 请尽量不要使用此功能")]]
+#define __ADeprecated(...) [[deprecated("此功能已弃用, 请尽量不要使用此功能. " __VA_ARGS__)]]
+
 #define __ANodiscard [[nodiscard("不要丢弃此函数的返回值")]]
+
 #define __ADeleteCopyAndMove(ClassName)              \
 public:                                              \
     ClassName(ClassName&&) = delete;                 \

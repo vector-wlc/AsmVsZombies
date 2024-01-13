@@ -7,6 +7,7 @@
 #include "avz_painter.h"
 #include "avz_logger.h"
 #include "avz_memory.h"
+#include "avz_game_controllor.h"
 
 void APainter::SetFont(const std::string& name)
 {
@@ -49,8 +50,13 @@ DWORD APainter::GetTextColor()
 
 void APainter::Draw(const ARect& rect, int duration)
 {
+    // 跳帧模式下，绘制无效
+    if (__aGameControllor.isSkipTick()) {
+        return;
+    }
+
     if (!_basicPainter.IsOpen3dAcceleration()) {
-        __aInternalGlobal.loggerPtr->Warning("您尚未开启 3D 加速，无法使用绘制类");
+        __aig.loggerPtr->Warning("您尚未开启 3D 加速，无法使用绘制类");
         return;
     }
     __ABasicPainter::DrawInfo info;
@@ -60,12 +66,24 @@ void APainter::Draw(const ARect& rect, int duration)
     info.duration = duration;
     info.rectColor = _rectColor;
     _basicPainter.drawInfoQueue.emplace_back(std::move(info));
+
+    // 检测到超出阈值，直接开始删东西
+    if (_basicPainter.drawInfoQueue.size() > _maxQueueSize) {
+        for (; _basicPainter.drawInfoQueue.size() > _maxQueueSize / 2;) {
+            _basicPainter.drawInfoQueue.pop_front();
+        }
+    }
 }
 
 void APainter::Draw(const AText& posText, int duration)
 {
+    // 跳帧模式下，绘制无效
+    if (__aGameControllor.isSkipTick()) {
+        return;
+    }
+
     if (!_basicPainter.IsOpen3dAcceleration()) {
-        __aInternalGlobal.loggerPtr->Warning("您尚未开启 3D 加速，无法使用绘制类");
+        __aig.loggerPtr->Warning("您尚未开启 3D 加速，无法使用绘制类");
         return;
     }
     if (posText.text.empty()) {
@@ -110,11 +128,29 @@ void APainter::Draw(const AText& posText, int duration)
     info.duration = duration;
     info.textColor = _textColor;
     _basicPainter.drawInfoQueue.emplace_back(std::move(info));
+
+    // 检测到超出阈值，直接开始删东西
+    if (_basicPainter.drawInfoQueue.size() > _maxQueueSize) {
+        for (; _basicPainter.drawInfoQueue.size() > _maxQueueSize / 2;) {
+            _basicPainter.drawInfoQueue.pop_front();
+        }
+    }
 }
 
 void APainter::Draw(const ACursor& cursor, int duration)
 {
+    // 跳帧模式下，绘制无效
+    if (__aGameControllor.isSkipTick()) {
+        return;
+    }
     _basicPainter.cursorQueue.emplace_back(std::make_pair(cursor, duration));
+
+    // 检测到超出阈值，直接开始删东西
+    if (_basicPainter.cursorQueue.size() > _maxQueueSize) {
+        for (; _basicPainter.cursorQueue.size() > _maxQueueSize / 2;) {
+            _basicPainter.cursorQueue.pop_front();
+        }
+    }
 }
 
 std::vector<std::vector<int>> __ABasicPainter::posDict = {
@@ -135,7 +171,7 @@ bool __ABasicPainter::IsOk()
 {
     static int recordClock = 0;
     static bool isOk = false;
-    int gameClock = __aInternalGlobal.mainObject->GlobalClock();
+    int gameClock = __aig.mainObject->GlobalClock();
     if (gameClock != recordClock) { // 一帧刷新一次
         recordClock = gameClock;
         isOk = Refresh();
@@ -232,8 +268,8 @@ bool __ABasicPainter::AsmDraw()
         "calll *%%edx;"
         "movl %%eax, %[__x];"
         "popal;"
+        : [__x] "=rm"(__x)
         :
-        : [__x] "m"(__x)
         :);
 
     if (__x) {
@@ -253,7 +289,7 @@ bool __ABasicPainter::AsmDraw()
     __asm__ __volatile__(
         "movl %[__x], %%eax;"
         :
-        : [__x] "m"(__x)
+        : [__x] "rm"(__x)
         :);
 
     return __x;
@@ -315,7 +351,7 @@ __ATextInfo* __ABasicPainter::GetTextNeedInfo()
 
 bool __ABasicPainter::IsOpen3dAcceleration()
 {
-    auto p2 = __aInternalGlobal.pvzBase->MPtr<APvzStruct>(0x36C);
+    auto p2 = __aig.pvzBase->MPtr<APvzStruct>(0x36C);
     if (!p2) {
         return false;
     }

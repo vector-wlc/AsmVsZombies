@@ -20,7 +20,7 @@ enum class ALogLevel {
     ERROR,
 };
 
-class AAbstractLogger : public AOrderedStateHook<-1> {
+class AAbstractLogger : public AOrderedBeforeScriptHook<-1> {
 public:
     __ANodiscard const std::string& GetPattern() const { return _pattern; }
 
@@ -34,7 +34,7 @@ public:
         _headerStyle = headerStyle;
     }
 
-    void SetLevel(const std::vector<ALogLevel> levelVec)
+    void SetLevel(const std::vector<ALogLevel>& levelVec)
     {
         _level = 0;
         for (auto&& level : levelVec) {
@@ -129,13 +129,17 @@ struct AConsole {
 struct APvzGui {
 };
 struct AMsgBox {
+    static void Show(const std::string& str)
+    {
+        MessageBoxW(nullptr, AStrToWstr(str).c_str(), L"AMsgBox", MB_OK);
+    }
 };
 
 template <typename T>
 class ALogger;
 
 template <>
-class ALogger<AFile> : public AAbstractLogger {
+class ALogger<AFile> : public AAbstractLogger, public AOrderedExitFightHook<-1> {
 public:
     ALogger(const std::string& fileName)
         : _fileName(fileName)
@@ -178,6 +182,7 @@ protected:
 template <>
 class ALogger<APvzGui> : public AAbstractLogger {
 public:
+    ALogger();
     __ANodiscard APainter& GetPainter() { return _painter; }
 
     // 设置显示颜色

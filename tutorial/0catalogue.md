@@ -63,7 +63,5 @@
 
 * [(附加) 两仪键控](./28liang_yi.md)
 
-* [(附加) 两仪键控脚本](./29fourth_tas_script.md)
-
 * [一些编写技巧](./30trick.md)
 

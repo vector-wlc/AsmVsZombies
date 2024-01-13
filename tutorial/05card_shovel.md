@@ -24,7 +24,43 @@ ASelectCards({
     APUFF_SHROOM,  // 小喷菇
 });
 ```
-emmm， 这个选卡函数没什么好说的，我相信你应该一看就懂
+emmm， 这个选卡函数没什么好说的，我相信你应该一看就懂，他还有以下几种调用方式
+
+```C++
+// 选卡间隔更改为 1cs 以增加选卡速度
+ASelectCards({
+    AICE_SHROOM,   // 寒冰菇
+    AM_ICE_SHROOM, // 模仿寒冰菇
+    ACOFFEE_BEAN,  // 咖啡豆
+    ADOOM_SHROOM,  // 毁灭菇
+    ALILY_PAD,     // 荷叶
+    ASQUASH,       // 倭瓜
+    ACHERRY_BOMB,  // 樱桃炸弹
+    ABLOVER,       // 三叶草
+    APUMPKIN,      // 南瓜头
+    APUFF_SHROOM,  // 小喷菇
+}, 1);  
+
+// 将选卡间隔更改为 0cs 以进行极速选卡，注意 0 为特殊值，效果为瞬间跳到战斗界面
+ASelectCards({
+    AICE_SHROOM,   // 寒冰菇
+    AM_ICE_SHROOM, // 模仿寒冰菇
+    ACOFFEE_BEAN,  // 咖啡豆
+    ADOOM_SHROOM,  // 毁灭菇
+    ALILY_PAD,     // 荷叶
+    ASQUASH,       // 倭瓜
+    ACHERRY_BOMB,  // 樱桃炸弹
+    ABLOVER,       // 三叶草
+    APUMPKIN,      // 南瓜头
+    APUFF_SHROOM,  // 小喷菇
+}, 0); 
+
+// 将选卡间隔更改为 0cs 以进行极速选卡，注意 0 为特殊值，效果为瞬间跳到战斗界面，
+// 然后剩下的九个卡槽会被随机填充
+ASelectCards({
+    AICE_SHROOM,   // 寒冰菇
+}, 0, true); 
+```
 
 然后是用卡函数
 本框架的卡片操作十分简单，共有以下五种调用方式

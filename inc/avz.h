@@ -22,21 +22,18 @@ void AScript();
 
 #define ___AConCat(a, b) a##b
 #define __AConCat(a, b) ___AConCat(a, b)
-#define AAddStateHook(FuncName, ...)            \
-    class : public AStateHook {                 \
-        protected :                             \
-            virtual void FuncName() __VA_ARGS__ \
-    } __AConCat(__aStateHook, __COUNTER__)
+#define AAddStateHook(FuncName, ...)                        \
+    class : public A##FuncName##Hook {                      \
+        protected :                                         \
+            virtual void _##FuncName() override __VA_ARGS__ \
+    } __AConCat(__aStateHook, __COUNTER__);
 
-#define AOnBeforeScriptCodeBlock(...) AAddStateHook(_BeforeScript, __VA_ARGS__)
-#define AOnBeforeScript(...) AAddStateHook(_BeforeScript, { __VA_ARGS__; })
-#define AOnAfterScriptCodeBlock(...) AAddStateHook(_AfterScript, __VA_ARGS__)
-#define AOnAfterScript(...) AAddStateHook(_AfterScript, { __VA_ARGS__; })
-#define AOnEnterFightCodeBlock(...) AAddStateHook(_EnterFight, __VA_ARGS__)
-#define AOnEnterFightBeforeScript(...) AAddStateHook(_EnterFight, { __VA_ARGS__; })
-#define AOnExitFightCodeBlock(...) AAddStateHook(_ExitFight, __VA_ARGS__)
-#define AOnExitFight(...) AAddStateHook(_ExitFight, { __VA_ARGS__; })
-#define AOnAfterInjectCodeBlock(...) AAddStateHook(_AfterInject, __VA_ARGS__)
-#define AOnAfterInject(...) AAddStateHook(_AfterInject, { __VA_ARGS__; })
+#define AOnBeforeScript(...) AAddStateHook(BeforeScript, { __VA_ARGS__; })
+#define AOnAfterScript(...) AAddStateHook(AfterScript, { __VA_ARGS__; })
+#define AOnEnterFight(...) AAddStateHook(EnterFight, { __VA_ARGS__; })
+#define AOnExitFight(...) AAddStateHook(ExitFight, { __VA_ARGS__; })
+#define AOnAfterInject(...) AAddStateHook(AfterInject, { __VA_ARGS__; })
+#define AOnBeforeTick(...) AAddStateHook(BeforeTick, { __VA_ARGS__; })
+#define AOnAfterTick(...) AAddStateHook(AfterTick, { __VA_ARGS__; })
 
 #endif
