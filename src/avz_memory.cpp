@@ -396,6 +396,24 @@ bool AGameIsPaused()
     return AGetMainObject()->GamePaused() || AGetPvzBase()->MouseWindow()->TopWindow() != nullptr;
 }
 
+ARemovePlantPos::ARemovePlantPos(int row, float col, int type)
+    : row(row)
+    , col(col)
+{
+    if (type == -1) {
+        types = {-1, APUMPKIN, AFLOWER_POT, ALILY_PAD, ACOFFEE_BEAN};
+    } else {
+        types = {type, -1, APUMPKIN, AFLOWER_POT, ALILY_PAD, ACOFFEE_BEAN};
+    }
+}
+
+ARemovePlantPos::ARemovePlantPos(int row, float col, const std::vector<int>& types)
+    : row(row)
+    , col(col)
+    , types(types)
+{
+}
+
 void ARemovePlant(int row, float col, const std::vector<int>& priority)
 {
     int tmpCol = int(col + 0.5);
@@ -429,6 +447,13 @@ void ARemovePlant(int row, float col, int type)
         ARemovePlant(row, col, {-1, APUMPKIN, AFLOWER_POT, ALILY_PAD, ACOFFEE_BEAN});
     } else {
         ARemovePlant(row, col, {type, -1, APUMPKIN, AFLOWER_POT, ALILY_PAD, ACOFFEE_BEAN});
+    }
+}
+
+void ARemovePlant(const std::vector<ARemovePlantPos>& lst)
+{
+    for (auto&& [row, col, types] : lst) {
+        ARemovePlant(row, col, types);
     }
 }
 

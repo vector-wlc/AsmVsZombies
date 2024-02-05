@@ -6,6 +6,7 @@
  */
 
 #include "avz_script.h"
+#include "avz_global.h"
 
 extern "C" __declspec(dllexport) void __cdecl __AScriptHook()
 {
@@ -33,13 +34,16 @@ BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
     case DLL_PROCESS_ATTACH:
         // attach to process
         // return FALSE to fail DLL load
+        __aig.hInstance = hinstDLL;
         __AInstallHook();
         break;
 
     case DLL_PROCESS_DETACH:
         // detach from process
-        __aScriptManager.isExit = true;
-        Sleep(10);
+        __aScriptManager.willBeExit = true;
+        for (int i = 0; !__aScriptManager.isExit && i < 50; ++i) {
+            Sleep(20);
+        }
         __AUninstallHook();
         break;
 

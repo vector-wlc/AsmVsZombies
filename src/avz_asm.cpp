@@ -146,13 +146,6 @@ void AAsm::UpdateFrame()
         :
         :
         : ASaveAllRegister);
-    // __asm__ __volatile__(
-    //     "movl 0x6a9ec0, %%ecx;"
-    //     "movl $0x54B980, %%eax;"
-    //     "calll *%%eax;"
-    //     :
-    //     :
-    //     : ASaveAllRegister);
 }
 
 void AAsm::ClearObjectMemory()
@@ -305,7 +298,7 @@ void AAsm::_MouseClick()
         "movl 0x320(%%edx), %%edx;"
         "movl %[curX], %%eax;"
         "movl %[curY], %%ecx;"
-        "movl $0x5394A0, %%ebx;"
+        "movl $0x5394a0, %%ebx;"
         "calll *%%ebx;"
         :
         : [__x] "m"(__x), [__y] "m"(__y), [curX] "m"(curX), [curY] "m"(curY), [__key] "m"(__key)
@@ -378,7 +371,7 @@ void AAsm::_ChooseCard()
 {
     __asm__ __volatile__(
 
-        "movl $0x6A9EC0, %%eax;"
+        "movl $0x6a9ec0, %%eax;"
         "movl (%%eax), %%eax;"
         "movl 0x774(%%eax), %%eax;"
         "movl %[__cardType], %%edx;"
@@ -400,19 +393,19 @@ void AAsm::_ChooseImitatorCard()
 
     __asm__ __volatile__(
 
-        "movl $0x6A9EC0, %%eax;"
+        "movl $0x6a9ec0, %%eax;"
         "movl (%%eax), %%eax;"
         "movl 0x774(%%eax), %%eax;"
 
-        "movl $0x3, 0x0C08(%%eax);"
-        "movl $0x0, 0x0C09(%%eax);"
-        "movl $0x0, 0x0C0A(%%eax);"
-        "movl $0x0, 0x0C0B(%%eax);"
+        "movl $0x3, 0x0c08(%%eax);"
+        "movl $0x0, 0x0c09(%%eax);"
+        "movl $0x0, 0x0c0a(%%eax);"
+        "movl $0x0, 0x0c0b(%%eax);"
         "movl %[__cardType], %%edx;"
-        "movl %%edx, 0x0C18(%%eax);"
-        "movl $0x0, 0x0C19(%%eax);"
-        "movl $0x0, 0x0C1A(%%eax);"
-        "movl $0x0, 0x0C1B(%%eax);"
+        "movl %%edx, 0x0c18(%%eax);"
+        "movl $0x0, 0x0c19(%%eax);"
+        "movl $0x0, 0x0c1a(%%eax);"
+        "movl $0x0, 0x0c1b(%%eax);"
 
         "leal 0xbe4(%%eax), %%ecx;"
         "movl 0xa0(%%eax), %%edx;"
@@ -424,7 +417,7 @@ void AAsm::_ChooseImitatorCard()
         "pushl %%ecx;"
         "movl $0x486030, %%edx;"
         "calll *%%edx;"
-        "movl $0x4866E0, %%edx;"
+        "movl $0x4866e0, %%edx;"
         "calll *%%edx;"
 
         :
@@ -439,11 +432,11 @@ void AAsm::_GetPlantRejectType()
         "movl %[__row], %%eax;"
         "pushl %[__cardType];"
         "pushl %[__col];"
-        "movl $0x6A9EC0, %%ebx;"
+        "movl $0x6a9ec0, %%ebx;"
         "movl (%%ebx), %%ebx;"
         "movl 0x768(%%ebx), %%ebx;"
         "pushl %%ebx;"
-        "movl $0x40E020, %%edx;"
+        "movl $0x40e020, %%edx;"
         "calll *%%edx;"
         "movl %%eax, %[__reject_type];"
 
@@ -456,9 +449,9 @@ void AAsm::ReleaseMouse()
 {
     __asm__ __volatile__(
 
-        "movl 0x6A9EC0, %%eax;"
+        "movl 0x6a9ec0, %%eax;"
         "movl 0x768(%%eax), %%eax;"
-        "movl $0x40CD80, %%edx;"
+        "movl $0x40cd80, %%edx;"
         "calll *%%edx;"
 
         :
@@ -472,11 +465,11 @@ int AAsm::GridToAbscissa(int row, int col)
     __col = col;
     __asm__ __volatile__(
 
-        "movl 0x6A9EC0, %%ecx;"
+        "movl 0x6a9ec0, %%ecx;"
         "movl 0x768(%%ecx), %%ecx;"
         "movl %[__col], %%eax;"
         "movl %[__row], %%esi;"
-        "movl $0x41C680, %%edx;"
+        "movl $0x41c680, %%edx;"
         "calll *%%edx;"
         "movl %%eax, %[__x];"
 
@@ -492,11 +485,11 @@ int AAsm::GridToOrdinate(int row, int col)
     __row = row;
     __col = col;
     __asm__ __volatile__(
-        "movl 0x6A9EC0, %%ebx;"
+        "movl 0x6a9ec0, %%ebx;"
         "movl 0x768(%%ebx), %%ebx;"
         "movl %[__col], %%ecx;"
         "movl %[__row], %%eax;"
-        "movl $0x41C740, %%edx;"
+        "movl $0x41c740, %%edx;"
         "calll *%%edx;"
         "movl %%eax, %[__y];"
         :
@@ -517,7 +510,7 @@ AZombie* AAsm::PutZombie(int row, int col, AZombieType type)
         "movl %[__row], %%eax;"
         "pushl %[__col];"
         "pushl %[__index];"
-        "movl 0x6a9ec0,%%ecx;"
+        "movl 0x6a9ec0, %%ecx;"
         "movl 0x768(%%ecx), %%ecx;"
         "movl 0x160(%%ecx), %%ecx;"
         "movl $0x42a0f0, %%edx;"
@@ -549,9 +542,9 @@ APlant* AAsm::PutPlant(int row, int col, APlantType type)
 
         "pushl %[__imitatorType];"
         "pushl %[__type];"
-        "movl %[__row],%%eax;"
+        "movl %[__row], %%eax;"
         "pushl %[__col];"
-        "movl 0x6a9ec0,%%ebp;"
+        "movl 0x6a9ec0, %%ebp;"
         "movl 0x768(%%ebp), %%edi;"
         "pushl %%edi;"
         "movl $0x40d120, %%edx;"
@@ -570,7 +563,7 @@ void AAsm::RemovePlant(APlant* plant)
     __asm__ __volatile__(
 
         "pushl %[__plant];"
-        "movl $0x4679B0, %%edx;"
+        "movl $0x4679b0, %%edx;"
         "calll *%%edx;"
 
         :
@@ -600,7 +593,7 @@ void* AAsm::SaveToMemory()
     __asm__ __volatile__(
         "movl %[__p], %%eax;"
         "pushl %[__board];"
-        "movl $0x4819D0, %%ecx;"
+        "movl $0x4819d0, %%ecx;"
         "calll *%%ecx;"
         "addl $0x4, %%esp;"
         :
@@ -619,7 +612,7 @@ void AAsm::FreeMemory(void*& p)
     __p = p;
     __asm__ __volatile__(
         "movl %[__p], %%ecx;"
-        "movl $0x5D60C0, %%eax;"
+        "movl $0x5d60c0, %%eax;"
         "calll *%%eax;"
         :
         : [__p] "m"(__p)
@@ -635,20 +628,20 @@ void AAsm::LoadFromMemory(void*& p)
         return;
     }
     __p = p;
-    __levelprop = ((DWORD***)nullptr)[0x6A9EC0 / 4][0x768 / 4][0x160 / 4];
+    __levelprop = ((DWORD***)nullptr)[0x6a9ec0 / 4][0x768 / 4][0x160 / 4];
 
     __asm__ __volatile__(
         "movl %[__levelprop], %%edi;"
-        "movl $0x429E50, %%eax;"
+        "movl $0x429e50, %%eax;"
         "calll *%%eax;"
 
         "movl %[__p], %%eax;"
-        "movl 0x6a9ec0,%%edi;"
+        "movl 0x6a9ec0, %%edi;"
         "movl 0x768(%%edi), %%edi;"
         "pushl %%edi;"
-        "movl $0x4819D0, %%ecx;"
+        "movl $0x4819d0, %%ecx;"
         "calll *%%ecx;"
-        "movl $0x481CE0, %%eax;"
+        "movl $0x481ce0, %%eax;"
         "calll *%%eax;"
         "addl $0x4, %%esp;"
         :
@@ -681,9 +674,9 @@ int AAsm::GetSeedSunVal(int type, int iType)
     __asm__ __volatile__(
         "movl %[type], %%eax;"
         "movl %[iType], %%edx;"
-        "movl 0x6a9ec0,%%edi;"
+        "movl 0x6a9ec0, %%edi;"
         "movl 0x768(%%edi), %%edi;"
-        "movl $0x41DAE0, %%ebx;"
+        "movl $0x41dae0, %%ebx;"
         "calll *%%ebx;"
         "movl %%eax, %[ret];"
         :
@@ -696,9 +689,9 @@ int AAsm::GetSeedSunVal(int type, int iType)
 void AAsm::UpdateMousePos()
 {
     __asm__ __volatile__(
-        "movl 0x6a9ec0,%%eax;"
+        "movl 0x6a9ec0, %%eax;"
         "movl 0x768(%%eax), %%eax;"
-        "movl $0x40EAB0, %%ebx;"
+        "movl $0x40eab0, %%ebx;"
         "calll *%%ebx;"
         :
         :
@@ -736,7 +729,7 @@ void AAsm::MakeNewBoard()
     int scene = AGetMainObject()->Scene();
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%ecx;"
-        "movl $0x44F5F0, %%eax;"
+        "movl $0x44f5f0, %%eax;"
         "calll *%%eax;"
         :
         :
@@ -761,7 +754,7 @@ void AAsm::LoadGame(const std::string& file)
         "pushl %[tmpPtr];"
         "movl 0x6a9ec0, %%ecx;"
         "movl 0x768(%%ecx), %%ecx;"
-        "movl $0x481FE0, %%eax;"
+        "movl $0x481fe0, %%eax;"
         "calll *%%eax;"
         "addl $0x4, %%esp;"
         :
@@ -775,7 +768,7 @@ void AAsm::LoadGame(const std::string& file)
             "movl %[tmpPtr], %%eax;"
             "movl 0x6a9ec0, %%edi;"
             "movl 0x768(%%edi), %%edi;"
-            "movl $0x408DE0, %%ecx;"
+            "movl $0x408de0, %%ecx;"
             "calll *%%ecx;"
             :
             : [tmpPtr] "m"(tmpPtr)
@@ -787,7 +780,7 @@ void AAsm::LoadGame(const std::string& file)
         "movl $0, %%eax;"
         "movl 0x6a9ec0, %%ecx;"
         "movl 0x768(%%ecx), %%ecx;"
-        "movl $0x4127A0, %%ebx;"
+        "movl $0x4127a0, %%ebx;"
         "calll *%%ebx;"
         :
         : [tmpPtr] "m"(tmpPtr)
@@ -805,7 +798,7 @@ void AAsm::SaveGame(const std::string& file)
         "movl 0x6a9ec0, %%edi;"
         "movl 0x768(%%edi), %%edi;"
         "pushl %[tmpPtr];"
-        "movl $0x4820D0, %%ecx;"
+        "movl $0x4820d0, %%ecx;"
         "calll *%%ecx;"
         "addl $0x4, %%esp;"
         :
@@ -890,6 +883,22 @@ bool AAsm::HasPool()
     return ret & 0xff;
 }
 
+int AAsm::ZombieTotalHp(int wave)
+{
+    int ret;
+    __asm__ __volatile__(
+        "pushl %[wave];"
+        "movl 0x6a9ec0, %%ebx;"
+        "movl 0x768(%%ebx), %%ebx;"
+        "movl $0x412e30, %%ecx;"
+        "calll *%%ecx;"
+        "mov %%eax, %[ret];"
+        : [ret] "=rm"(ret)
+        : [wave] "rm"(wave)
+        : "ebx", "ecx", "edx");
+    return ret;
+}
+
 void AAsm::EnterGame(int gameMode)
 {
     auto gameUi = AMPtr<APvzBase>(0x6a9ec0)->GameUi();
@@ -901,7 +910,7 @@ void AAsm::EnterGame(int gameMode)
         if (gameUi == 0) { // 载入界面，需要直接删除载入界面进入主界面
             __asm__ __volatile__(
                 "movl 0x6a9ec0, %%ecx;"
-                "movl $0x452CB0, %%ebx;"
+                "movl $0x452cb0, %%ebx;"
                 "calll *%%ebx;"
                 :
                 :
@@ -910,7 +919,7 @@ void AAsm::EnterGame(int gameMode)
 
         __asm__ __volatile__( // 删除主界面
             "movl 0x6a9ec0, %%esi;"
-            "movl $0x44F9E0, %%eax;"
+            "movl $0x44f9e0, %%eax;"
             "calll *%%eax;"
             :
             :
@@ -920,7 +929,7 @@ void AAsm::EnterGame(int gameMode)
     if (gameUi == 7) {        // 选项卡界面
         __asm__ __volatile__( // 删除选项卡界面
             "movl 0x6a9ec0, %%esi;"
-            "movl $0x44FD00, %%eax;"
+            "movl $0x44fd00, %%eax;"
             "calll *%%eax;"
             :
             :
@@ -948,7 +957,7 @@ void AAsm::DoBackToMain()
     }
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%eax;"
-        "movl $0x44FEB0, %%ebx;"
+        "movl $0x44feb0, %%ebx;"
         "calll *%%ebx;"
         :
         :
@@ -973,7 +982,7 @@ void AAsm::PickRandomSeeds()
         "movl 0x6a9ec0, %%ebx;"
         "movl 0x774(%%ebx), %%ebx;"
         "pushl %%ebx;"
-        "movl $0x4859B0, %%ebx;"
+        "movl $0x4859b0, %%ebx;"
         "calll *%%ebx;"
         :
         :

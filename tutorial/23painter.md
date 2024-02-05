@@ -88,8 +88,6 @@ OK, 有了以上的介绍，我们就开始正式介绍这个玩意有啥用吧�
 ```C++
 #include <avz.h>
 
-#include <avz.h>
-
 void DrawCobHp()
 {
     for (auto&& plant : aAlivePlantFilter) {

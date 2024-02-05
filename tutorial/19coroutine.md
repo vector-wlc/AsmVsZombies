@@ -166,10 +166,10 @@ bool IsHasGiga()
         // 如果僵尸类型为红眼并且在上半场
         if (zombie.Type() == AGIGA_GARGANTUAR
             && (zombieRow == 0 || zombieRow == 1)) {
-            return false;
+            return true;
         }
     }
-    return true;
+    return false;
 }
 
 void AScript()

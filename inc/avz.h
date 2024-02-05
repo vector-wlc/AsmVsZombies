@@ -35,5 +35,6 @@ void AScript();
 #define AOnAfterInject(...) AAddStateHook(AfterInject, { __VA_ARGS__; })
 #define AOnBeforeTick(...) AAddStateHook(BeforeTick, { __VA_ARGS__; })
 #define AOnAfterTick(...) AAddStateHook(AfterTick, { __VA_ARGS__; })
+#define AOnBeforeExit(...) AAddStateHook(BeforeExit, { __VA_ARGS__; })
 
 #endif

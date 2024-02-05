@@ -7,14 +7,13 @@
 #ifndef __AVZ_SCRIPT_H__
 #define __AVZ_SCRIPT_H__
 
-#include "avz_global.h"
 #include "avz_asm.h"
 
 class __AScriptManager {
 public:
-    bool isBlocked = false;
     bool isBlockable = true;
     bool isLoaded = false;
+    bool willBeExit = false;
     bool isExit = false;
     AReloadMode scriptReloadMode = AReloadMode::NONE;
     int blockDepth = 0;
@@ -48,7 +47,6 @@ public:
 inline __AScriptManager __aScriptManager;
 
 // 阻塞运行直到达到目标时间点
-// *** AWaitUntil 停止阻塞的时间点是设定的时间点的下一帧
 __ADeprecated("请使用 ACoroutine ACoScript() 和 co_await ATime())") inline void AWaitUntil(int wave, int time)
 {
     __aScriptManager.WaitUntil(wave, time);

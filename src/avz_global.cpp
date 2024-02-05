@@ -25,11 +25,16 @@ bool ARangeIn(int num, const std::vector<int>& lst)
 
 std::wstring AStrToWstr(const std::string& input)
 {
-    auto cStr = input.c_str();
-    auto strLen = input.length();
-    int len = MultiByteToWideChar(CP_UTF8, 0, cStr, strLen, NULL, 0);
-    wchar_t* m_wchar = new wchar_t[len + 1];
-    MultiByteToWideChar(CP_UTF8, 0, cStr, strLen, m_wchar, len);
-    m_wchar[len] = L'\0';
-    return m_wchar;
+    std::wstring wstr;
+    wstr.resize(MultiByteToWideChar(CP_UTF8, 0, input.c_str(), input.length(), NULL, 0) + 1);
+    MultiByteToWideChar(CP_UTF8, 0, input.c_str(), input.length(), wstr.data(), wstr.size());
+    return wstr;
+}
+
+std::string AWStrToStr(const std::wstring& input)
+{
+    std::string str;
+    str.resize(WideCharToMultiByte(CP_UTF8, 0, input.c_str(), input.length(), NULL, 0, NULL, FALSE) + 1);
+    WideCharToMultiByte(CP_UTF8, 0, input.c_str(), input.length(), str.data(), str.size(), NULL, FALSE);
+    return str;
 }

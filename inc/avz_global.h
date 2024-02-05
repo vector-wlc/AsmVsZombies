@@ -22,6 +22,7 @@
 #undef ERROR
 
 __ANodiscard std::wstring AStrToWstr(const std::string& input);
+__ANodiscard std::string AWStrToStr(const std::wstring& input);
 
 // *** 函数功能：判断数字范围
 // *** 使用示例：
@@ -75,6 +76,7 @@ class AAbstractLogger;
 class __ATickManager;
 
 struct __AInternalGlobal {
+    HINSTANCE hInstance = nullptr;
     AMainObject* mainObject = nullptr;
     APvzBase* pvzBase = nullptr;
     AAbstractLogger* loggerPtr = nullptr;
@@ -95,6 +97,11 @@ extern __AInternalGlobal __aig;
 inline void ASetInternalLogger(AAbstractLogger& logger)
 {
     __aig.loggerPtr = &logger;
+}
+
+inline HINSTANCE AGetDllInstance()
+{
+    return __aig.hInstance;
 }
 
 template <typename Op>

@@ -1,7 +1,5 @@
 #include "avz_script.h"
 #include "avz_asm.h"
-#include "avz_card.h"
-#include "avz_connector.h"
 #include "avz_exception.h"
 #include "avz_game_controllor.h"
 #include "avz_global.h"
@@ -47,7 +45,6 @@ bool __AScriptManager::MemoryInit()
         return false;
     }
 
-    isBlocked = true;
     for (auto&& initOp : __aig.GetInitOps()) {
         initOp();
     }
@@ -64,7 +61,6 @@ void __AScriptManager::LoadScript()
     void AScript();
     AScript();
     __APublicAfterScriptHook::RunAll();
-    isBlocked = true;
 
     RunTotal();
 
@@ -92,7 +88,7 @@ void __AScriptManager::LoadScript()
 
     // 当递归深度为 0 和 scriptReloadMode > 0 时, 才能重置 isLoaded
     isLoaded = !(int(scriptReloadMode) > 0 && blockDepth == 0);
-    isExit = isLoaded;
+    willBeExit = isLoaded;
 }
 
 void __AScriptManager::RunScript()
@@ -136,9 +132,16 @@ void __AScriptManager::RunTotal()
     constexpr auto stopWorkingStr = " || AvZ has stopped working !!!";
 
     try {
-        if (isExit) {
+        if (willBeExit) {
+            static bool isRunBeforeExitHook = false;
+            if (!isRunBeforeExitHook) {
+                __APublicBeforeExitHook::RunAll();
+                isRunBeforeExitHook = true;
+            }
+            isExit = true;
             return;
         }
+
         // 这里有最基础的全局初始化，任何功能都必须在这之后运行
         // 而且这只进行一次初始化，对性能毫无影响
         GlobalInit();
@@ -146,7 +149,11 @@ void __AScriptManager::RunTotal()
         __APublicBeforeTickHook::RunAll();
         __APublicBeforeTickHook::Reset();
 
-        __APublicAfterInjectHook::RunAll();
+        static bool isRunAfterInjectHook = false;
+        if (!isRunAfterInjectHook) {
+            __APublicAfterInjectHook::RunAll();
+            isRunAfterInjectHook = true;
+        }
 
         // 运行 AFTER_INJECT 运行帧
         __aig.tickManagers[ATickRunner::AFTER_INJECT].RunQueue();
@@ -164,22 +171,22 @@ void __AScriptManager::RunTotal()
     } catch (AException& exce) {
         std::string exceMsg = exce.what();
         if (exceMsg != ASTR_GAME_RET_MAIN_UI) {
-            isExit = true;
+            willBeExit = true;
             exceMsg = "catch avz exception: " + exceMsg + stopWorkingStr;
             __aig.loggerPtr->Info(exceMsg.c_str());
         } else {
             // 当递归深度为 0 和 scriptReloadMode > 0 时, 才能重置 isLoaded
             isLoaded = !(int(scriptReloadMode) > 0 && blockDepth == 0);
-            isExit = isLoaded;
+            willBeExit = isLoaded;
             __aig.loggerPtr->Info(exceMsg.c_str());
             __APublicExitFightHook::RunAll();
         }
     } catch (std::exception& exce) {
         AMsgBox::Show(std::string("catch std exception: ") + exce.what() + stopWorkingStr);
-        isExit = true;
+        willBeExit = true;
     } catch (...) {
         AMsgBox::Show(std::string("The script triggered an unknown exception. ") + stopWorkingStr);
-        isExit = true;
+        willBeExit = true;
     }
 }
 
@@ -200,7 +207,7 @@ void __AScriptManager::ScriptHook()
         if (AGameIsPaused()) { // 防止游戏暂停时开启跳帧发生死锁
             return;
         }
-        if (isBlocked && ANowTime(blockTime.wave) == blockTime.time) {
+        if (blockDepth != 0 && ANowTime(blockTime.wave) == blockTime.time) {
             // 阻塞时间到达，必须通知阻塞函数释放阻塞
             return;
         }
@@ -273,8 +280,6 @@ void __AScriptManager::WaitUntil(int wave, int time)
         return;
     }
     ++blockDepth;
-    isBlocked = true;
-
     while (ANowTime(wave) < time) {
         AAsm::GameSleepLoop();
         if (!__aig.pvzBase->MainObject()) {

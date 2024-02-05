@@ -69,6 +69,9 @@ __ADefineHookClass(BeforeTick);
 // 注意此函数非常危险，最好判断一下当前 PvZ 的状态再使用 AvZ 的内置函数
 __ADefineHookClass(AfterTick);
 
+// 此函数在 AvZ 因异常退出或者卸载前运行
+__ADefineHookClass(BeforeExit);
+
 template <typename... Types>
 class __APublicStateHookT : public Types... {
 public:
@@ -85,7 +88,8 @@ using __APublicStateHook = __APublicStateHookT<
     __APublicExitFightHook,
     __APublicBeforeTickHook,
     __APublicAfterTickHook,
-    __APublicAfterInjectHook>;
+    __APublicAfterInjectHook,
+    __APublicBeforeExitHook>;
 
 template <int hookOrder>
 class AOrderedStateHook : protected __APublicStateHook {

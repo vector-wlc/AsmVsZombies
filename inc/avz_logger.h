@@ -176,7 +176,6 @@ protected:
     static bool _isAllocateConsole;
     HANDLE _handle = nullptr;
     virtual void _Output(ALogLevel level, std::string&& str) override;
-    virtual void _BeforeScript() override;
 };
 
 template <>

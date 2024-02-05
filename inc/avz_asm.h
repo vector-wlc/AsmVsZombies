@@ -119,11 +119,14 @@ public:
     static void MakeNewBoard();
     static void LoadGame(const std::string& file);
     static void SaveGame(const std::string& file);
+
     static bool CanSpawnZombies(int row);
     static bool IsNight();
     static bool IsRoof();
     static bool HasGrave();
     static bool HasPool();
+
+    static int ZombieTotalHp(int wave);
 
     enum GameMode {
         ADVENTURE,

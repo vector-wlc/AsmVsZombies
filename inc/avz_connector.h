@@ -9,7 +9,6 @@
 
 #include "avz_coroutine.h"
 #include "avz_tick_runner.h"
-#include "avz_timeline.h"
 
 class ATimeConnectHandle {
 public:
@@ -121,9 +120,6 @@ ATimeConnectHandle AConnect(const ATime& time, Sess&& func)
             } }, false);
     });
 }
-
-std::vector<ATimeConnectHandle> AConnect(const ATime& time, ATimeline&& timeline);
-std::vector<ATimeConnectHandle> AConnect(const ATime& time, const ATimeline& timeline);
 
 using AConnectHandle = ATickHandle;
 

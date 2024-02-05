@@ -39,8 +39,9 @@ void AScript()
 相信这个程序很简单吧，大家应该都能看懂，但是实际上帧运行的 Start 函数还有一个参数，就是以何种方式运行，这是什么意思呢，看代码
 
 ```C++
-tickRunner.Start(UseBlover) // 默认值只在战斗界面运行
-tickRunner.Start(UseBlover, true) // 在整个 PvZ 程序任意时间运行
+tickRunner.Start(UseBlover);                            // 默认值只在战斗界面运行
+tickRunner.Start(UseBlover, ATickRunner::GLOBAL);       // 在选卡和战斗界面运行
+tickRunner.Start(UseBlover, ATickRunner::AFTER_INJECT); // 在注入之后的每帧都运行
 ```
 
 实际上大多数情况下， 默认在战斗界面运行是足够用的，但是极少数情况下是需要再全局方式下运行，你可能会问，是什么情况下呢，

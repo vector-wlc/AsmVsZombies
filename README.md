@@ -58,5 +58,5 @@ AvZ 脚本库 : [AvZScript](https://github.com/qrmd0/AvZScript)
 [失控的指令(bilibili)](https://space.bilibili.com/147204150/)<br>
 [Power_tile(bilibili)](https://space.bilibili.com/367385512)<br>
 [六三enjoy(bilibili)](https://space.bilibili.com/660622963)<br>
-[Reisen-レイセン(bilibili)](https://space.bilibili.com/323002513)<br>
+[alumkal(github)](https://github.com/alumkal)<br>
 <strong>以及所有对此项目提出建议的使用者和开发人员</strong>

@@ -7,6 +7,99 @@
 #include "avz_tick_runner.h"
 #include <unordered_set>
 
+std::vector<std::string> __ACardManager::_cardName = {
+    "豌豆射手",
+    "向日葵",
+    "樱桃炸弹",
+    "坚果",
+    "土豆地雷",
+    "寒冰射手",
+    "大嘴花",
+    "双重射手",
+    "小喷菇",
+    "阳光菇",
+    "大喷菇",
+    "墓碑吞噬者",
+    "魅惑菇",
+    "胆小菇",
+    "寒冰菇",
+    "毁灭菇",
+    "荷叶",
+    "倭瓜",
+    "三发射手",
+    "缠绕海藻",
+    "火爆辣椒",
+    "地刺",
+    "火炬树桩",
+    "高坚果",
+    "水兵菇",
+    "路灯花",
+    "仙人掌",
+    "三叶草",
+    "裂荚射手",
+    "杨桃",
+    "南瓜头",
+    "磁力菇",
+    "卷心菜投手",
+    "花盆",
+    "玉米投手",
+    "咖啡豆",
+    "大蒜",
+    "叶子保护伞",
+    "金盏花",
+    "西瓜投手",
+    "机枪射手",
+    "双子向日葵",
+    "忧郁菇",
+    "香蒲",
+    "冰西瓜投手",
+    "吸金磁",
+    "地刺王",
+    "玉米加农炮",
+    "模仿者",
+    "模仿豌豆射手",
+    "模仿向日葵",
+    "模仿樱桃炸弹",
+    "模仿坚果",
+    "模仿土豆地雷",
+    "模仿寒冰射手",
+    "模仿大嘴花",
+    "模仿双重射手",
+    "模仿小喷菇",
+    "模仿阳光菇",
+    "模仿大喷菇",
+    "模仿墓碑吞噬者",
+    "模仿魅惑菇",
+    "模仿胆小菇",
+    "模仿寒冰菇",
+    "模仿毁灭菇",
+    "模仿荷叶",
+    "模仿倭瓜",
+    "模仿三发射手",
+    "模仿缠绕海藻",
+    "模仿火爆辣椒",
+    "模仿地刺",
+    "模仿火炬树桩",
+    "模仿高坚果",
+    "模仿水兵菇",
+    "模仿路灯花",
+    "模仿仙人掌",
+    "模仿三叶草",
+    "模仿裂荚射手",
+    "模仿杨桃",
+    "模仿南瓜头",
+    "模仿磁力菇",
+    "模仿卷心菜投手",
+    "模仿花盆",
+    "模仿玉米投手",
+    "模仿咖啡豆",
+    "模仿大蒜",
+    "模仿叶子保护伞",
+    "模仿金盏花",
+    "模仿西瓜投手",
+    "未知",
+};
+
 void __ACardManager::_BeforeScript()
 {
     _isSelectCards = false;
@@ -23,7 +116,7 @@ void __ACardManager::_BeforeScript()
 void __ACardManager::_EnterFight()
 {
     _tickRunner.Stop();
-    _seedNameToIndexMap.clear();
+    _cardNameToIndexMap.clear();
     _selectCardVec.clear();
 
     if (__aig.pvzBase->GameUi() != 3) {
@@ -45,8 +138,30 @@ void __ACardManager::_EnterFight()
             seedInfo.first = seedType;
             seedInfo.second = i;
         }
-        _seedNameToIndexMap.insert(seedInfo);
+        _cardNameToIndexMap.insert(seedInfo);
     }
+}
+
+const std::string& __ACardManager::GetCardName(APlantType type)
+{
+    if (std::size_t(type) > _cardName.size() - 1) {
+        AGetInternalLogger()->Error("GetCardName : 您选择的代号为 " + std::to_string(type) + " 的卡片在 PvZ 中不存在");
+        return _cardName.back();
+    }
+    return _cardName[std::size_t(type)];
+}
+
+const std::string& __ACardManager::GetCardName(ASeed* seed)
+{
+    if (seed == nullptr) {
+        AGetInternalLogger()->Error("GetCardName : 您传入的参数为 nullptr");
+        return _cardName.back();
+    }
+    int type = seed->Type();
+    if (type == AIMITATOR) {
+        type = AM_PEASHOOTER + seed->ImitatorType();
+    }
+    return GetCardName(APlantType(type));
 }
 
 void __ACardManager::_ChooseSingleCard()
@@ -121,7 +236,7 @@ void __ACardManager::SelectCards(const std::vector<int>& lst, int selectInterval
         if (repetitiveTypeSet.find(cardType) == repetitiveTypeSet.end()) { // 没有被选择的卡片
             repetitiveTypeSet.insert(cardType);
         } else {
-            __aig.loggerPtr->Error("您重复选择了代号为 " + pattern + " 的卡片", cardType);
+            __aig.loggerPtr->Error("您重复选择了 " + GetCardName(APlantType(cardType)) + " 卡片");
             return;
         }
 
@@ -138,7 +253,33 @@ void __ACardManager::SelectCards(const std::vector<int>& lst, int selectInterval
     AWaitForFight(selectInterval == 0);
 }
 
-bool __ACardManager::_Check(int seedIndex)
+APlant* __ACardManager::_CardWithoutCheck(int seedIndex, int row, float col)
+{
+    auto mainObject = AGetMainObject();
+    auto seed = mainObject->SeedArray() + seedIndex - 1;
+    col = int(col + 0.5);
+    std::string msg = "放置" + GetCardName(seed) + "卡片到 ("
+        + std::to_string(row) + ", " + AGetInternalLogger()->GetPattern() + ") ";
+    if (AAsm::GetPlantRejectType(seed->Type(), row - 1, col - 1) != AAsm::NIL) {
+        AGetInternalLogger()->Info(msg + "失败", col);
+        return nullptr;
+    }
+    auto [x, y] = AGridToCoordinate(row, col);
+    auto currentIdx = mainObject->PlantNext();
+    AAsm::PlantCard(x, y, seedIndex - 1);
+    AAsm::ReleaseMouse();
+    if (currentIdx != mainObject->PlantNext()) {
+        AGetInternalLogger()->Info(msg + "成功", col);
+        return mainObject->PlantArray() + currentIdx;
+    }
+
+    // 这里几乎不可能执行
+    // 因为前面已经做了检查
+    AGetInternalLogger()->Info(msg + "失败", col);
+    return nullptr;
+}
+
+bool __ACardManager::_CheckCard(int seedIndex)
 {
     auto seedCount = __aig.mainObject->SeedArray()->Count();
     if (seedIndex > seedCount || seedIndex < 1) {
@@ -146,14 +287,19 @@ bool __ACardManager::_Check(int seedIndex)
             "Card : 您填写的参数 " + std::to_string(seedIndex) + " 已溢出");
         return false;
     }
-
     AAsm::ReleaseMouse();
     auto seed = __aig.mainObject->SeedArray() + seedIndex - 1;
     if (!AIsSeedUsable(seed)) {
-        __aig.loggerPtr->Error(
-            "Card : 第 " + std::to_string(seedIndex) + " 张卡片还有 "
-            + std::to_string(seed->InitialCd() - seed->Cd() + 1) // PvZ计算问题导致+1
-            + " cs 才能使用或者阳光不足");
+        int cd = seed->InitialCd() - seed->Cd() + 1;
+        if (cd > 0) {
+            __aig.loggerPtr->Error(
+                "Card : " + GetCardName(seed) + "卡片还有 "
+                + std::to_string(cd) // PvZ计算问题导致+1
+                + " cs 才能使用");
+        } else {
+            __aig.loggerPtr->Error(
+                "Card : " + GetCardName(seed) + "卡片无法使用，这可能是因为阳光不足或者未放置相应的绿卡");
+        }
         return false;
     }
     return true;
@@ -161,54 +307,32 @@ bool __ACardManager::_Check(int seedIndex)
 
 APlant* __ACardManager::_BasicCard(int seedIndex, int row, float col)
 {
-    if (!_Check(seedIndex)) {
+    if (!_CheckCard(seedIndex)) {
         return nullptr;
     }
-    __aig.loggerPtr->Info("Plant Card (" + std::to_string(seedIndex) + ") to ("
-            + std::to_string(row) + ", " + AGetInternalLogger()->GetPattern() + ")",
-        col);
-    int x;
-    int y;
-    col = int(col + 0.5);
-    AGridToCoordinate(row, col, x, y);
-    auto mainObject = __aig.mainObject;
-    auto currentIdx = mainObject->PlantNext();
-    AAsm::PlantCard(x, y, seedIndex - 1);
-    AAsm::ReleaseMouse();
-    return currentIdx == mainObject->PlantNext() ? nullptr : mainObject->PlantArray() + currentIdx;
+
+    return _CardWithoutCheck(seedIndex, row, col);
 }
 
 APlant* __ACardManager::_BasicCard(int seedIndex, const std::vector<APosition>& lst)
 {
-    if (!_Check(seedIndex)) {
+    if (!_CheckCard(seedIndex)) {
         return nullptr;
     }
 
-    int x = 0;
-    int y = 0;
-    int col = 0;
-    auto mainObject = __aig.mainObject;
-    auto currentIdx = mainObject->PlantNext();
-    for (const auto& crood : lst) {
-        col = int(crood.col + 0.5);
-        AGridToCoordinate(crood.row, col, x, y);
-        AGetInternalLogger()->Info(
-            "Try Plant Card (" + std::to_string(seedIndex) + ") to ("
-                + std::to_string(crood.row) + ", " + AGetInternalLogger()->GetPattern() + ")",
-            crood.col);
-        AAsm::PlantCard(x, y, seedIndex - 1);
-        if (currentIdx != mainObject->PlantNext()) {
-            return mainObject->PlantArray() + currentIdx;
+    for (auto&& [row, col] : lst) {
+        auto ret = _CardWithoutCheck(seedIndex, row, col);
+        if (ret != nullptr) {
+            return ret;
         }
     }
-    AAsm::ReleaseMouse();
     return nullptr;
 }
 
 int __ACardManager::GetCardIndex(APlantType plantType)
 {
-    auto it = _seedNameToIndexMap.find(plantType);
-    return it == _seedNameToIndexMap.end() ? -1 : it->second;
+    auto it = _cardNameToIndexMap.find(plantType);
+    return it == _cardNameToIndexMap.end() ? -1 : it->second;
 }
 
 __ANodiscard ASeed* AGetCardPtr(APlantType plantType)
@@ -226,10 +350,9 @@ APlant* __ACardManager::Card(APlantType plantType, int row, float col)
 {
     int seedIndex = GetCardIndex(plantType);
     if (seedIndex == -1) {
-        __aig.loggerPtr->Error("你没有选择卡片代号为 " + std::to_string(plantType) + " 的植物");
+        __aig.loggerPtr->Error("您没有选择" + GetCardName(plantType) + "卡片");
         return nullptr;
     }
-
     return _BasicCard(seedIndex + 1, row, col);
 }
 
@@ -251,7 +374,7 @@ APlant* __ACardManager::Card(APlantType plantType, const std::vector<APosition>&
 {
     int seedIndex = GetCardIndex(plantType);
     if (seedIndex == -1) {
-        __aig.loggerPtr->Error("你没有选择卡片代号为 " + std::to_string(plantType) + " 的植物");
+        __aig.loggerPtr->Error("您没有选择" + GetCardName(plantType) + "卡片");
         return nullptr;
     }
     return _BasicCard(seedIndex + 1, lst);

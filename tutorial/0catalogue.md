@@ -1,4 +1,4 @@
-<!--
+ <!--
  * @Coding: utf-8
  * @Author: vector-wlc
  * @Date: 2021-09-25 23:08:31
@@ -6,6 +6,13 @@
 -->
 
 # 目录
+
+## 主库教程
+
+此部分教程是使用 AvZ 的基础，尽量学完此教程再看其他教程
+
+<details>
+<summary>点击左边的三角进行展开/收起</summary>
 
 * [起步](./01start.md)
 
@@ -63,5 +70,28 @@
 
 * [(附加) 两仪键控](./28liang_yi.md)
 
-* [一些编写技巧](./30trick.md)
+</details>
 
+
+## DSL 教程
+
+<strong> 组件作者: [alumkal(github)](https://github.com/alumkal) </strong>
+
+<details>
+<summary>点击左边的三角进行展开/收起</summary>
+
+正文：
+
+* [1 时间轴是什么](./dsl/1%20时间轴是什么.md)
+
+* [2 构建时间轴](./dsl/2%20构建时间轴.md)
+
+* [3 连接时间轴](./dsl/3%20连接时间轴.md)
+
+* [4 脚本示例：[FE] 经典四炮.md](./dsl/4%20脚本示例：[FE]%20经典四炮.md)
+
+附录：
+
+* [A 关于 `shorthand.h`](./dsl/A%20关于%20shorthand.h.md)
+
+</details>

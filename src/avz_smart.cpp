@@ -33,14 +33,25 @@ ACobManager::RoofFlyTime ACobManager::_flyTimeData[8] = {
 
 void ACobManager::_BeforeScript()
 {
-    _sequentialMode = TIME;
     _next = 0;
     _lockSet.clear();
+    if (_gridVec.empty()) {
+        AutoSetList();
+    }
 }
 
-void ACobManager::_EnterFight()
+void ACobManager::_Skip(int n)
 {
-    AutoSetList();
+    _next = (_next + n) % _gridVec.size();
+}
+
+void ACobManager::Skip(int n)
+{
+    if (_sequentialMode == PRIORITY) {
+        __aig.loggerPtr->Error("Skip 在优先级模式下无效，请使用 MoveToListTop 和 MoveToListBottom 控制炮序");
+        return;
+    }
+    _Skip(n);
 }
 
 // 获取屋顶炮飞行时间
@@ -64,6 +75,10 @@ void ACobManager::_BasicFire(int cobIdx, int dropRow, float dropCol)
     int x = 0;
     int y = 0;
     auto plant = __aig.mainObject->PlantArray() + cobIdx;
+    if (plant->Type() != ACOB_CANNON || plant->State() != 37) {
+        __aig.loggerPtr->Error("ACobManager 内部错误，请联系开发者修复");
+        return;
+    }
     auto&& pattern = __aig.loggerPtr->GetPattern();
     __aig.loggerPtr->Info(
         "Fire from (" + pattern + ", " + pattern + ") to (" + pattern + ", " + pattern + ")",
@@ -74,16 +89,14 @@ void ACobManager::_BasicFire(int cobIdx, int dropRow, float dropCol)
     AAsm::ReleaseMouse();
 }
 
-void ACobManager::_DelayFire(int delayTime, int cobIdx,
-    int row, float col)
+void ACobManager::_DelayFire(int delayTime, int cobIdx, int row, float col)
 {
     // 将操作动态插入操作队列
     _lockSet.insert(cobIdx);
-    AConnect(
-        ANowDelayTime(delayTime), [=]() {
-            _BasicFire(cobIdx, row, col);
-            _lockSet.erase(cobIdx);
-        });
+    AConnect(ANowDelayTime(delayTime), [=] {
+        _BasicFire(cobIdx, row, col);
+        _lockSet.erase(cobIdx);
+    });
 }
 
 // 用户自定义炮位置发炮：单发
@@ -120,7 +133,7 @@ void ACobManager::RawRoofFire(int cobRow, int cobCol, int dropRow, float dropCol
 {
     auto&& pattern = __aig.loggerPtr->GetPattern();
     if (!aFieldInfo.isRoof) {
-        __aig.loggerPtr->Error("RawRoofFire : RawRoofFire函数只适用于 RE 与 ME");
+        __aig.loggerPtr->Error("RawRoofFire : RawRoofFire 函数只适用于 RE 与 ME");
         return;
     }
     int index = AGetPlantIndex(cobRow, cobCol, ACOB_CANNON);
@@ -207,9 +220,9 @@ void ACobManager::AutoSetList()
     AGrid cobGrid = {0, 0};
     auto PlantArray = __aig.mainObject->PlantArray();
     for (int index = 0; index < __aig.mainObject->PlantCountMax(); ++index) {
-        if (!PlantArray[index].IsCrushed() && !PlantArray[index].IsDisappeared() && PlantArray[index].Type() == ACOB_CANNON) {
-            cobGrid = {PlantArray[index].Row() + 1,
-                PlantArray[index].Col() + 1};
+        if (!PlantArray[index].IsCrushed() && !PlantArray[index].IsDisappeared()
+            && PlantArray[index].Type() == ACOB_CANNON) {
+            cobGrid = {PlantArray[index].Row() + 1, PlantArray[index].Col() + 1};
             _gridVec.push_back(cobGrid);
         }
     }
@@ -223,6 +236,11 @@ void ACobManager::AutoSetList()
 
 void ACobManager::SetNext(int tempNext)
 {
+    if (_sequentialMode == PRIORITY) {
+        __aig.loggerPtr->Error("SetNext 在优先级模式下无效，请使用 MoveToListTop 和 MoveToListBottom 控制炮序");
+        return;
+    }
+
     auto&& pattern = __aig.loggerPtr->GetPattern();
     if (tempNext > _gridVec.size()) {
         __aig.loggerPtr->Error(
@@ -235,6 +253,11 @@ void ACobManager::SetNext(int tempNext)
 
 void ACobManager::SetNext(int row, int col)
 {
+    if (_sequentialMode == PRIORITY) {
+        __aig.loggerPtr->Error("SetNext 在优先级模式下无效，请使用 MoveToListTop 和 MoveToListBottom 控制炮序");
+        return;
+    }
+
     AGrid grid = {row, col};
     auto iter = std::find(_gridVec.begin(), _gridVec.end(), grid);
 
@@ -242,10 +265,75 @@ void ACobManager::SetNext(int row, int col)
         _next = iter - _gridVec.begin();
     } else {
         auto&& pattern = __aig.loggerPtr->GetPattern();
-        __aig.loggerPtr->Error(
-            "SetNext : 请检查(" + pattern + ", " + pattern + ")是否在本炮列表中", row, col);
+        __aig.loggerPtr->Error("SetNext : 请检查 (" + pattern + ", " + pattern + ") 是否在本炮列表中", row, col);
         return;
     }
+}
+
+void ACobManager::MoveToListTop(const std::vector<AGrid>& lst)
+{
+    if (_sequentialMode != PRIORITY) {
+        __aig.loggerPtr->Error("MoveToListTop 在非优先级模式下无效，请使用 SetNext 和 Skip 控制炮序");
+        return;
+    } else {
+        std::set<AGrid> tmpGridVec(_gridVec.begin(), _gridVec.end());
+        for (auto&& grid : lst) {
+            if (!tmpGridVec.contains(grid)) {
+                auto&& pattern = __aig.loggerPtr->GetPattern();
+                __aig.loggerPtr->Error("MoveToListTop : 请检查 (" + pattern + ", " + pattern + ") 是否在本炮列表中", grid.row, grid.col);
+                return;
+            }
+        }
+    }
+
+    std::set<AGrid> tmpLst(lst.begin(), lst.end());
+    std::vector<AGrid> tmpGridVec;
+    tmpGridVec.reserve(_gridVec.size());
+    tmpGridVec.insert(tmpGridVec.end(), lst.begin(), lst.end());
+    for (auto&& grid : _gridVec) {
+        if (!tmpLst.contains(grid)) {
+            tmpGridVec.emplace_back(grid);
+        }
+    }
+    SetList(tmpGridVec);
+}
+
+void ACobManager::MoveToListTop(int row, int col)
+{
+    MoveToListTop({{row, col}});
+}
+
+void ACobManager::MoveToListBottom(const std::vector<AGrid>& lst)
+{
+    if (_sequentialMode != PRIORITY) {
+        __aig.loggerPtr->Error("MoveToListBottom 在非优先级模式下无效，请使用 SetNext 和 Skip 控制炮序");
+        return;
+    } else {
+        std::set<AGrid> tmpGridVec(_gridVec.begin(), _gridVec.end());
+        for (auto&& grid : lst) {
+            if (!tmpGridVec.contains(grid)) {
+                auto&& pattern = __aig.loggerPtr->GetPattern();
+                __aig.loggerPtr->Error("MoveToListTop : 请检查 (" + pattern + ", " + pattern + ") 是否在本炮列表中", grid.row, grid.col);
+                return;
+            }
+        }
+    }
+
+    std::set<AGrid> tmpLst(lst.begin(), lst.end());
+    std::vector<AGrid> tmpGridVec;
+    tmpGridVec.reserve(_gridVec.size());
+    for (auto&& grid : _gridVec) {
+        if (!tmpLst.contains(grid)) {
+            tmpGridVec.emplace_back(grid);
+        }
+    }
+    tmpGridVec.insert(tmpGridVec.end(), lst.begin(), lst.end());
+    SetList(tmpGridVec);
+}
+
+void ACobManager::MoveToListBottom(int row, int col)
+{
+    MoveToListBottom({{row, col}});
 }
 
 void ACobManager::FixLatest()
@@ -259,14 +347,11 @@ void ACobManager::FixLatest()
     if (delayTime < 0) {
         delayTime = 0;
     }
-    AConnect(
-        ANowDelayTime(delayTime), [this]() {
-            _lastestMsg.isWritable = true; // 解锁信息
-            AShovel(_gridVec[_lastestMsg.vecIndex].row,
-                _gridVec[_lastestMsg.vecIndex].col);
-        });
-    Plant(_gridVec[_lastestMsg.vecIndex].row,
-        _gridVec[_lastestMsg.vecIndex].col);
+    AConnect(ANowDelayTime(delayTime), [this]() {
+        _lastestMsg.isWritable = true; // 解锁信息
+        AShovel(_gridVec[_lastestMsg.vecIndex].row, _gridVec[_lastestMsg.vecIndex].col);
+    });
+    Plant(_gridVec[_lastestMsg.vecIndex].row, _gridVec[_lastestMsg.vecIndex].col);
 }
 
 int ACobManager::_GetRecoverTimeVec()
@@ -277,8 +362,7 @@ int ACobManager::_GetRecoverTimeVec()
     if (cobIdx < 0 || cobIdx >= mainObject->PlantCountMax()
         || cobPtr->Type() != ACOB_CANNON
         || cobPtr->IsDisappeared() || cobPtr->IsCrushed()) {
-        int index = AGetPlantIndex(
-            _gridVec[_next].row, _gridVec[_next].col, ACOB_CANNON);
+        int index = AGetPlantIndex(_gridVec[_next].row, _gridVec[_next].col, ACOB_CANNON);
         if (index < 0) { // 找不到本来位置的炮
             return NO_EXIST_RECOVER_TIME;
         }
@@ -289,16 +373,19 @@ int ACobManager::_GetRecoverTimeVec()
 
 int ACobManager::_UpdateNextCob(bool isDelayFire, float dropCol, bool isShowError)
 {
-    int minRecoverTime = 0xFFFF;
+    if (_sequentialMode == PRIORITY) {
+        _next = 0;
+    }
+    int minRecoverTime = 0xFFFF, minRecoverOffset = 0;
     int recoverTime;
     // 此变量用于选择最短时间内可用的炮
     int tmpNext = _next;
     // 要迭代的次数
     // 对于时间模式, 需要迭代整个炮列表
     // 对于空间模式, 需要迭代一次
-    int iterCnt = _sequentialMode == TIME ? _indexVec.size() : 1;
+    int iterCnt = _sequentialMode == SPACE ? 1 : _indexVec.size();
     // 开始遍历
-    for (int i = 0; i < iterCnt; ++i, Skip(1)) {
+    for (int i = 0; i < iterCnt; ++i, _Skip(1)) {
         // 被锁定的炮不允许发射
         if (_lockSet.find(_indexVec[_next]) != _lockSet.end()) {
             continue;
@@ -316,6 +403,7 @@ int ACobManager::_UpdateNextCob(bool isDelayFire, float dropCol, bool isShowErro
         }
         if (minRecoverTime > recoverTime) {
             minRecoverTime = recoverTime;
+            minRecoverOffset = roofOffsetTime;
             tmpNext = _next;
         }
     }
@@ -325,11 +413,10 @@ int ACobManager::_UpdateNextCob(bool isDelayFire, float dropCol, bool isShowErro
     // 如果炮当前时刻不能使用但是为 RecoverFire 时则不会报错，
     // 并返回恢复时间
     if (isDelayFire) {
-        return minRecoverTime;
+        return minRecoverTime + minRecoverOffset;
     }
     if (isShowError) {
-        std::string error_str = (_sequentialMode == TIME ? "TIME 模式 : 未找到能够发射的炮，"
-                                                         : "SPACE 模式 : ");
+        std::string error_str = (_sequentialMode == SPACE ? "SPACE 模式 : " : "TIME 模式 : 未找到能够发射的炮，");
         error_str += "位于 (" + std::to_string(_gridVec[_next].row) + ", " + std::to_string(_gridVec[_next].col) + ") 的第 "
             + std::to_string(_next + 1) + " 门炮还有 " + std::to_string(minRecoverTime) + "cs 恢复";
         __aig.loggerPtr->Error(std::move(error_str));
@@ -340,11 +427,13 @@ int ACobManager::_UpdateNextCob(bool isDelayFire, float dropCol, bool isShowErro
 APlant* ACobManager::_BasicGetPtr(bool isRecover, float col)
 {
     int tmpIdx = _next;
-    auto _tmpSeqMode = _sequentialMode;
-    _sequentialMode = TIME;
+    auto tmpSeqMode = _sequentialMode;
+    if (_sequentialMode == SPACE) {
+        _sequentialMode = TIME;
+    }
     auto ret = _UpdateNextCob(isRecover, col, false);
     _next = tmpIdx;
-    _sequentialMode = _tmpSeqMode;
+    _sequentialMode = tmpSeqMode;
     return ret == NO_EXIST_RECOVER_TIME ? nullptr : AGetMainObject()->PlantArray() + _indexVec[_next];
 }
 
@@ -356,7 +445,7 @@ __ANodiscard std::vector<ACobManager::RecoverInfo> ACobManager::_BasicGetRecover
     _next = 0;
     auto plantArray = AGetMainObject()->PlantArray();
     // 开始遍历
-    for (int i = 0; i < iterCnt; ++i, Skip(1)) {
+    for (int i = 0; i < iterCnt; ++i, _Skip(1)) {
         // 被锁定的炮不允许发射
         if (_lockSet.find(_indexVec[_next]) != _lockSet.end()) {
             ret[i].ptr = nullptr;
@@ -432,7 +521,7 @@ int ACobManager::Fire(int row, float col)
     _BasicFire(_indexVec[_next], row, col);
     _UpdateLastestMsg(__aig.mainObject->GameClock(), _next);
     auto tmpNext = _next;
-    Skip(1);
+    _Skip(1);
     return tmpNext;
 }
 
@@ -458,10 +547,9 @@ int ACobManager::_RecoverBasicFire(int row, float col, bool isRoof)
         return -1;
     }
     _DelayFire(delayTime, _indexVec[_next], row, col);
-    _UpdateLastestMsg(__aig.mainObject->GameClock() + delayTime,
-        _next);
+    _UpdateLastestMsg(__aig.mainObject->GameClock() + delayTime, _next);
     auto tmpNext = _next;
-    Skip(1);
+    _Skip(1);
     return tmpNext;
 }
 
@@ -482,7 +570,7 @@ std::vector<int> ACobManager::RecoverFire(const std::vector<APosition>& lst)
 int ACobManager::RoofFire(int row, float col)
 {
     if (!aFieldInfo.isRoof) {
-        __aig.loggerPtr->Error("RoofFire : RoofFire函数只适用于 RE 与 ME ");
+        __aig.loggerPtr->Error("RoofFire : RoofFire 函数只适用于 RE 与 ME ");
         return -1;
     }
     if (_gridVec.empty()) {
@@ -496,10 +584,9 @@ int ACobManager::RoofFire(int row, float col)
     }
 
     _DelayFire(delayTime, _indexVec[_next], row, col);
-    _UpdateLastestMsg(__aig.mainObject->GameClock() + delayTime,
-        _next);
+    _UpdateLastestMsg(__aig.mainObject->GameClock() + delayTime, _next);
     auto tmpNext = _next;
-    Skip(1);
+    _Skip(1);
     return tmpNext;
 }
 
@@ -515,7 +602,7 @@ std::vector<int> ACobManager::RoofFire(const std::vector<APosition>& lst)
 int ACobManager::RecoverRoofFire(int row, float col)
 {
     if (!aFieldInfo.isRoof) {
-        __aig.loggerPtr->Error("RecoverRoofFire : RecoverRoofFire 函数只适用于 RE 与 ME ");
+        __aig.loggerPtr->Error("RecoverRoofFire : RecoverRoofFire 函数只适用于 RE 与 ME");
         return -1;
     }
     return _RecoverBasicFire(row, col, true);
@@ -601,7 +688,7 @@ void AIceFiller::SetIceSeedList(const std::vector<int>& lst)
             auto&& pattern = __aig.loggerPtr->GetPattern();
             __aig.loggerPtr->Error(
                 "resetIceSeedList : 您填写的参数为 " + pattern + //
-                    " ,然而此函数只接受植物类型为寒冰菇或模仿寒冰菇的参数",
+                    " , 然而此函数只接受植物类型为寒冰菇或模仿寒冰菇的参数",
                 seedType);
             return;
         }
@@ -612,8 +699,7 @@ void AIceFiller::SetIceSeedList(const std::vector<int>& lst)
     for (const auto& seedType : lst) {
         iceIdx = AGetSeedIndex(AICE_SHROOM, seedType / AM_PEASHOOTER);
         if (iceIdx == -1) {
-            __aig.loggerPtr->Error(
-                "resetIceSeedList : 您貌似没有选择对应的冰卡");
+            __aig.loggerPtr->Error("resetIceSeedList : 您没有选择对应的冰卡");
             continue;
         }
         _iceSeedIdxVec.push_back(iceIdx);
@@ -666,7 +752,6 @@ void AIceFiller::_Run()
 
 void AIceFiller::Coffee()
 {
-
     if (_coffeeSeedIdx == -1) {
         __aig.loggerPtr->Error("你没有选择咖啡豆卡片!");
         return;

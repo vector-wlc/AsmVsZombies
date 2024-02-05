@@ -20,30 +20,6 @@ void ATimeConnectHandle::Stop()
         _time.wave, _time.time);
 }
 
-std::vector<ATimeConnectHandle> AConnect(const ATime& time, const ATimeline& timeline)
-{
-    __aig.loggerPtr->Info("正在将包含 " + std::to_string(timeline.GetEntries().size())
-        + " 项操作的时间轴连接至 (" + std::to_string(time.wave) + ", " + std::to_string(time.time) + ")");
-    std::vector<ATimeConnectHandle> handles;
-    for (auto&& entry : timeline.GetEntries()) {
-        ATime timeWithOffset {time.wave + entry.offset.wave, time.time + entry.offset.time};
-        handles.emplace_back(AConnect(timeWithOffset, entry.action));
-    }
-    return handles;
-}
-
-std::vector<ATimeConnectHandle> AConnect(const ATime& time, ATimeline&& timeline)
-{
-    __aig.loggerPtr->Info("正在将包含 " + std::to_string(timeline.GetEntries().size())
-        + " 项操作的时间轴连接至 (" + std::to_string(time.wave) + ", " + std::to_string(time.time) + ")");
-    std::vector<ATimeConnectHandle> handles;
-    for (auto&& entry : timeline.GetEntries()) {
-        ATime timeWithOffset {time.wave + entry.offset.wave, time.time + entry.offset.time};
-        handles.emplace_back(AConnect(timeWithOffset, std::move(entry.action)));
-    }
-    return handles;
-}
-
 std::vector<std::string> __AKeyManager::_keyVec;
 std::unordered_map<AKey, AConnectHandle> __AKeyManager::_keyMap;
 

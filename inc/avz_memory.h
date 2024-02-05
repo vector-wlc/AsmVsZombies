@@ -173,7 +173,7 @@ void ASetWaveZombies(int wave, const std::vector<int>& zombieType);
 // 使用示例：设置出怪为随机的红白关，但不出现铁桶
 // auto typeList = ACreateRandomTypeList({AGIGA_GARGANTUAR, AGARGANTUAR}, {ABUCKETHEAD_ZOMBIE});
 // ASetZombies(typeList, ASetZombieMode::INTERNAL);
-std::vector<int> ACreateRandomTypeList(const std::vector<int>& required = {}, const std::vector<int>& banned = {});
+__ANodiscard std::vector<int> ACreateRandomTypeList(const std::vector<int>& required = {}, const std::vector<int>& banned = {});
 
 // *** 使用示例：
 // 检查当前出怪中是否有红眼：
@@ -246,6 +246,15 @@ protected:
 // 判断游戏是否暂停
 bool AGameIsPaused();
 
+struct ARemovePlantPos {
+    int row;
+    float col;
+    std::vector<int> types;
+
+    ARemovePlantPos(int row, float col, int type = -1);
+    ARemovePlantPos(int row, float col, const std::vector<int>& types);
+};
+
 // 移除植物函数
 // 优先删除 非 南瓜、花盆、荷叶、咖啡豆的植物， 如果需要优先删除以上四种植物，需要在第三个参数上指定
 // 使用示例:
@@ -253,8 +262,11 @@ bool AGameIsPaused();
 // ARemovePlant(1, 2, APUMPKIN) ---- 优先删除位于 (1, 2) 的南瓜头
 // ARemovePlant(1, 2, {APUMPKIN, AFLOWER_POT})  ---- 优先删除位于 (1, 2) 的南瓜头，如果该位置没有南瓜头，则尝试删除花盆
 //                                                   如果该位置依然没有花盆，则什么都不做
+// ARemovePlant({{1, 2}, {1, 3, APUMPKIN}})  ----- 自行猜测
+// ARemovePlant({{1, 2}, {1, 3, {APUMPKIN, AFLOWER_POT}}})  ----- 自行猜测
 void ARemovePlant(int row, float col, const std::vector<int>& priority);
 void ARemovePlant(int row, float col, int type = -1);
+void ARemovePlant(const std::vector<ARemovePlantPos>& lst);
 
 // 得到炮的恢复时间
 // index 为玉米加农炮的内存索引
@@ -280,7 +292,7 @@ public:
     ARowType rowType[7]; // 每行的类型
     bool isNight;        // 是否是夜晚
     bool isRoof;         // 是否是屋顶
-    bool hasGrave;       // 是否有墓碑
+    bool hasGrave;       // 是否出墓碑
     bool hasPool;        // 是否有泳池
 
 protected:

@@ -22,7 +22,7 @@ using AOperation = ARetVoidFunc;
 using AKey = uint32_t;
 
 template <typename Functor, typename Ret>
-concept __ACheckRet = std::is_same_v<decltype(std::declval<Functor>()()), Ret>;
+concept __ACheckRet = std::is_same_v<std::invoke_result_t<Functor>, Ret>;
 
 template <typename T>
 concept __AIsOperation = std::is_convertible_v<T, AOperation> && __ACheckRet<T, void>;
@@ -68,7 +68,7 @@ struct APosition {
 
 struct ATime {
     int time;
-    int wave = 1;
+    int wave;
 
     ATime() = default;
 
@@ -375,7 +375,13 @@ enum AZombieType {
     AGARGANTUAR,             // 白眼
     AIMP,                    // 小鬼
     ADR_ZOMBOSS,             // 僵博
-    AGIGA_GARGANTUAR = 32    // 红眼
+    APEASHOOTER_ZOMBIE,      // 豌豆僵尸
+    AWALL_NUT_ZOMBIE,        // 坚果僵尸
+    AJALAPENO_ZOMBIE,        // 辣椒僵尸
+    AGATLING_PEA_ZOMBIE,     // 机枪僵尸
+    ASQUASH_ZOMBIE,          // 倭瓜僵尸
+    ATALL_NUT_ZOMBIE,        // 高坚果僵尸
+    AGIGA_GARGANTUAR,        // 红眼
 };
 
 constexpr AZombieType APJ_0 = AZOMBIE;                  // 普僵

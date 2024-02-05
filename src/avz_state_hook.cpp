@@ -3,12 +3,10 @@
 #define __ADefineHookClassFuncs(HookName)                                                    \
     __APublic##HookName##Hook::__APublic##HookName##Hook(int runOrder)                       \
     {                                                                                        \
-        if (#HookName != std::string("AfterInject")) {                                       \
-            __ARegisterInitOp([this] {                                                       \
-                this->_isRunAll = false;                                                     \
-                this->_isRun = false;                                                        \
-            });                                                                              \
-        }                                                                                    \
+        __ARegisterInitOp([this] {                                                           \
+            this->_isRunAll = false;                                                         \
+            this->_isRun = false;                                                            \
+        });                                                                                  \
         _iter = _GetHookContainer().emplace(runOrder, this);                                 \
     }                                                                                        \
     __APublic##HookName##Hook::~__APublic##HookName##Hook()                                  \
@@ -52,3 +50,4 @@ __ADefineHookClassFuncs(ExitFight);
 __ADefineHookClassFuncs(AfterInject);
 __ADefineHookClassFuncs(BeforeTick);
 __ADefineHookClassFuncs(AfterTick);
+__ADefineHookClassFuncs(BeforeExit);

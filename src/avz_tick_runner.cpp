@@ -112,7 +112,7 @@ void ATickHandle::Stop()
 {
     // 卸载脚本行为会触发 Stop，
     // 此时不应该做任何事
-    if (__aScriptManager.isExit || IsStopped()) {
+    if (__aScriptManager.willBeExit || IsStopped()) {
         return;
     }
     __aig.tickManagers[_runMode].Remove(_priority, _idx);

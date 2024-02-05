@@ -78,6 +78,9 @@ AOnBeforeTick
 // 此函数会在每帧运行 AvZ 主体代码之后运行
 // 注意此函数非常危险，最好判断一下当前 PvZ 的状态再使用 AvZ 的内置函数
 AOnAfterTick
+
+// 此函数在 AvZ 因异常退出或者卸载前运行
+AOnBeforeExit
 ```
 了解了所有的状态钩之后，咱们再举一个比较复杂点的例子，比如我想知道，AvZ 的性能如何？
 就是每一帧 AvZ 运行耗时是多少？要想实现这个功能，是需要用到三个状态钩的：`AOnBeforeTick`、`AOnAfterTick`和`AOnExitFight`。
@@ -435,7 +438,8 @@ using __APublicStateHook = __APublicStateHookT<
     __APublicExitFightHook,
     __APublicBeforeTickHook,
     __APublicAfterTickHook,
-    __APublicAfterInjectHook>;
+    __APublicAfterInjectHook,
+    __APublicBeforeExitHook>;
 
 // 4
 template <typename... Types>

@@ -4,8 +4,7 @@
 #include "avz_tick_runner.h"
 #include <unordered_set>
 
-class ACobManager : public AOrderedBeforeScriptHook<-1>, //
-                    public AOrderedEnterFightHook<-1> {
+class ACobManager : public AOrderedBeforeScriptHook<-1> {
     __ADeleteCopyAndMove(ACobManager);
 
 public:
@@ -41,11 +40,16 @@ public:
     // 选用顺序控制模式
     enum SequentialMode {
         SPACE,
-        TIME
+        TIME,
+        PRIORITY,
     };
 
 public:
-    ACobManager() = default;
+    ACobManager(SequentialMode sequentialMode = TIME)
+        : _sequentialMode(sequentialMode)
+    {
+    }
+
     static constexpr int NO_EXIST_RECOVER_TIME = INT_MIN;
 
     // 发炮函数：用户自定义位置发射，屋顶修正飞行时间发炮.
@@ -86,28 +90,32 @@ public:
 
     // 设置炮序模式
     // *** 使用示例：
-    // SetSequentialMode(ACobManager::TIME) ---- 设置时间使用模式
-    // SetSequentialMode(ACobManager::SPACE) ---- 设置空间使用模式
-    void SetSequentialMode(int sequentialMode)
+    // SetSequentialMode(ACobManager::SPACE) ---- 设置为空间模式
+    // SetSequentialMode(ACobManager::PRIORITY) ---- 设置为优先级模式
+    void SetSequentialMode(SequentialMode sequentialMode)
     {
         _sequentialMode = sequentialMode;
     }
 
     // 设置即将发射的下一门炮
-    // 此函数只有在限制炮序的时候才可调用
+    // 此函数在优先级模式下无效
     // *** 使用示例：
     // SetNext(10)------将炮列表中第十门炮设置为下一门即将发射的炮
     // SetNext(2, 8)------将炮列表中位于 (2, 8) 的炮设置为下一门即将发射的炮
     void SetNext(int next);
     void SetNext(int row, int col);
 
-    // 跳炮函数
+    // 跳过炮列表中接下来的 n 门炮
+    // 此函数在优先级模式下无效
     // *** 使用示例：
-    // Skip(2)---跳过按照顺序即将要发射的2门炮
-    void Skip(int x)
-    {
-        _next = (_next + x) % _gridVec.size();
-    }
+    // Skip(2)---跳过按照顺序即将要发射的两门炮
+    void Skip(int n);
+
+    void MoveToListTop(int row, int col);
+    void MoveToListTop(const std::vector<AGrid>& lst);
+
+    void MoveToListBottom(int row, int col);
+    void MoveToListBottom(const std::vector<AGrid>& lst);
 
     // 发炮函数
     // *** 注意，此函数返回 >=0 的值代表使用的炮在炮列表中的位置
@@ -144,8 +152,16 @@ public:
 
     // 重置炮列表
     // *** 使用示例:
-    // SetList({{3, 1},{4, 1},{3, 3},{4, 3}})-------经典四炮
+    // SetList({{3, 1}, {4, 1}, {3, 3}, {4, 3}})-------经典四炮
     void SetList(const std::vector<AGrid>& lst);
+
+    // 获取炮列表
+    // *** 使用示例:
+    // std::vector<AGrid> lst = GetList();
+    const std::vector<AGrid>& GetList()
+    {
+        return _gridVec;
+    }
 
     // 自动填充炮列表
     // *** 注意：此函数无条件将场地上的所有炮填充至此炮列表
@@ -218,11 +234,13 @@ protected:
     static std::unordered_set<int> _lockSet; // 锁定的炮
     static ATickRunner _tickRunner;
     static RoofFlyTime _flyTimeData[8];
-    std::vector<int> _indexVec;  // 炮的内存位置
-    std::vector<AGrid> _gridVec; // 炮列表，记录炮的信息
-    int _next;                   // 记录当前即将发射的下一门炮
-    int _sequentialMode = true;  // 顺序模式
-    LastestMsg _lastestMsg;      // 最近一颗发炮的信息
+    std::vector<int> _indexVec;     // 炮的内存位置
+    std::vector<AGrid> _gridVec;    // 炮列表，记录炮的信息
+    int _next;                      // 记录当前即将发射的下一门炮
+    SequentialMode _sequentialMode; // 顺序模式
+    LastestMsg _lastestMsg;         // 最近一颗发炮的信息
+
+    void _Skip(int n);
 
     // 基础发炮函数
     static void _BasicFire(int cobIndex, int dropRow, float dropCol);
@@ -258,8 +276,8 @@ protected:
     __ANodiscard APlant* _BasicGetPtr(bool isRecover, float col);
 
     __ANodiscard std::vector<RecoverInfo> _BasicGetRecoverList(float col);
+
     virtual void _BeforeScript() override;
-    virtual void _EnterFight() override;
 };
 
 class AItemCollector : public ATickRunnerWithNoStart,

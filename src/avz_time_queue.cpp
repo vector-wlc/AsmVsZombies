@@ -139,6 +139,10 @@ void __AOpQueueManager::UpdateRefreshTime()
 void __AOpQueueManager::SetWavelength(const std::vector<ATime>& lst)
 {
     for (const auto& time : lst) {
+        if (time.wave == __aig.mainObject->TotalWave()) {
+            __aig.loggerPtr->Error("SetWavelength 对最后一波无效");
+            continue;
+        }
         if (!_CheckWavelength(time)) {
             continue;
         }
@@ -184,6 +188,10 @@ void __AOpQueueManager::_PrintLog(const ATime& time, int nowTime)
 
 bool __AOpQueueManager::_CheckWavelength(const ATime& time)
 {
+    if (time.wave == __aig.mainObject->TotalWave()) {
+        return false;
+    }
+
     if (time.time < 601) {
         __aig.loggerPtr->Error(
             "您当前设定的第 " + std::to_string(time.wave)         //
@@ -193,9 +201,18 @@ bool __AOpQueueManager::_CheckWavelength(const ATime& time)
     }
 
     if (container[time.wave - 1].wavelength != -1) {
-        __aig.loggerPtr->Error("您第 " + std::to_string(time.wave) + " 波已经设置过波长，不允许再次设置");
+        __aig.loggerPtr->Warning("您第 " + std::to_string(time.wave) + " 波已经设置过波长，此次设置无效");
         return false;
     }
+
+    int upperLimit = (time.wave % 10 == 9 ? 4500 : 3100);
+    if (time.time > upperLimit) {
+        __aig.loggerPtr->Warning(
+            "您当前设定的第 " + std::to_string(time.wave)         //
+            + " 波 的 time 参数为 " + std::to_string(time.time) + //
+            ", 超出有效范围");
+    }
+
     return true;
 }
 
@@ -208,14 +225,7 @@ void __AOpQueueManager::_CheckAssumeWavelength(int wave)
     std::string str;
     if (nextRefreshTime == __AOperationQueue::UNINIT) { // 下波的实际时间还未到
         // 计算当前僵尸的血量
-        int currentHp = 0;
-        for (auto&& zombie : aAliveZombieFilter) {
-            if (zombie.AtWave() == wave - 1 && //
-                !ARangeIn(zombie.Type(), {ABACKUP_DANCER, ABUNGEE_ZOMBIE})) {
-                currentHp += zombie.Hp() + zombie.OneHp() + zombie.TwoHp() / 5;
-            }
-        }
-
+        int currentHp = AAsm::ZombieTotalHp(wave - 1);
         int refreshHp = __aig.mainObject->ZombieRefreshHp();
         int totalHp = __aig.mainObject->MRef<int>(0x5598);
         float refreshRatio = float(totalHp - currentHp) / (totalHp - refreshHp);

@@ -144,13 +144,3 @@ ALogger<AConsole>::~ALogger()
         FreeConsole();
     }
 }
-
-void ALogger<AConsole>::_BeforeScript()
-{
-    AAbstractLogger::_BeforeScript();
-#define _ASTR(s) #s
-#define ASTR(s) _ASTR(s)
-    Info("\n=================================\n框架版本: " ASTR(__AVZ_VERSION__) "\n脚本开始运行\n=================================");
-#undef _ASTR
-#undef ASTR
-}

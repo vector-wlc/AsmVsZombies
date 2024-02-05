@@ -27,17 +27,22 @@ public:
     APlant* Card(int seedIndex, const std::vector<APosition>& lst);
     APlant* Card(APlantType plantType, int row, float col);
     APlant* Card(APlantType plantType, const std::vector<APosition>& lst);
+    const std::string& GetCardName(APlantType type);
+    const std::string& GetCardName(ASeed* seed);
 
 protected:
+    static std::vector<std::string> _cardName;
     std::vector<int> _selectCardVec;
-    std::unordered_map<int, int> _seedNameToIndexMap;
+    std::unordered_map<int, int> _cardNameToIndexMap;
     int _selectInterval;
     ATickRunner _tickRunner;
     bool _isSelectCards = false;
+    APlant* _CardWithoutCheck(int seedIndex, int row, float col);
     APlant* _BasicCard(int seedIndex, int row, float col);
     APlant* _BasicCard(int seedIndex, const std::vector<APosition>& lst);
-    bool _Check(int seedIndex);
+    bool _CheckCard(int seedIndex);
     void _ChooseSingleCard();
+
     virtual void _BeforeScript() override;
     virtual void _EnterFight() override;
 };
