@@ -36,7 +36,6 @@ protected:
 
     using ACobManager::AutoGetList;
     using ACobManager::AutoSetList;
-    using ACobManager::SetList;
 
 public:
     ARoofCobManager(const std::vector<int>& columns)
@@ -393,7 +392,7 @@ public:
 
         public:
             WaveConstraint() { }
-            WaveConstraint(std::set<int> waves)
+            WaveConstraint(const std::set<int>& waves)
                 : _waves(waves)
             {
             }
@@ -422,8 +421,8 @@ public:
 
         class AbscConstraint {
         private:
-            int _l = -1000;
-            int _r = 1000;
+            int _l = INT_MIN;
+            int _r = INT_MAX;
 
         public:
             AbscConstraint() { }
@@ -433,9 +432,9 @@ public:
             {
             }
 
-            bool operator()(int x) const
+            bool operator()(float x) const
             {
-                return _l <= x && x <= _r;
+                return _l <= int(x) && int(x) <= _r;
             }
 
             friend AbscConstraint operator&(AbscConstraint lhs, AbscConstraint rhs)
@@ -484,7 +483,7 @@ public:
 
         bool operator()(AZombie* zombie) const
         {
-            return _type == zombie->Type() && _wave(ANowWave() - zombie->AtWave() - 1) && _absc(zombie->Abscissa());
+            return _type == zombie->Type() && _wave(zombie->AtWave() + 1 - ANowWave()) && _absc(zombie->Abscissa());
         }
     };
 
@@ -501,29 +500,31 @@ public:
         {
         }
 
-        std::set<int> _GetSatisfiedRows() const
+        std::set<int> _GetTriggeredRows() const
         {
-            std::set<int> satisfiedRows;
+            std::set<int> triggeredRows;
             for (auto&& zombie : aAliveZombieFilter) {
-                if (satisfiedRows.contains(zombie.Row() + 1))
+                if (triggeredRows.contains(zombie.Row() + 1))
                     continue;
                 for (auto&& constraint : _constraints)
-                    if (constraint(&zombie))
-                        satisfiedRows.insert(zombie.Row() + 1);
+                    if (constraint(&zombie)) {
+                        triggeredRows.insert(zombie.Row() + 1);
+                        break;
+                    }
             }
-            return satisfiedRows;
+            return triggeredRows;
         }
 
     public:
         ATimeline operator()(int removalDelay, const std::vector<APosition>& positions) const
         {
             return [=, *this, positions = _ParseRow(positions)] {
-                std::set<int> satisfiedRows = _GetSatisfiedRows();
-                std::vector<APosition> filteredPositions;
+                std::set<int> triggeredRows = _GetTriggeredRows();
+                std::vector<APosition> triggeredPositions;
                 for (auto [row, col] : positions)
-                    if (satisfiedRows.contains(row))
-                        filteredPositions.push_back({row, col});
-                At(now) _fodder->operator()(removalDelay, filteredPositions);
+                    if (triggeredRows.contains(row))
+                        triggeredPositions.push_back({row, col});
+                _fodder->_Fodder(removalDelay, triggeredPositions);
             };
         }
 
@@ -540,7 +541,7 @@ public:
         ATimeline operator()(int removalDelay) const
         {
             std::vector<APosition> positions;
-            for (int row = 1; row <= 6; ++row)
+            for (int row = 1; row <= aFieldInfo.nRows; ++row)
                 if (aFieldInfo.rowType[row] == ARowType::LAND)
                     positions.push_back({row, 9});
             return operator()(removalDelay, positions);
