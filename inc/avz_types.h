@@ -47,18 +47,7 @@ struct AGrid {
     int row;
     int col;
 
-    friend bool operator==(const AGrid& lhs, const AGrid& rhs)
-    {
-        return lhs.row == rhs.row && lhs.col == rhs.col;
-    }
-
-    friend bool operator<(const AGrid& lhs, const AGrid& rhs)
-    {
-        if (lhs.row == rhs.row) {
-            return lhs.col < rhs.col;
-        }
-        return lhs.row < rhs.row;
-    }
+    auto operator<=>(const AGrid&) const = default;
 };
 
 struct APosition {
@@ -92,7 +81,6 @@ enum class APos { // 控制文本矩形框出现在顶点的哪个方位
 };
 
 struct ARect {
-
     int x;
     int y;
     int width;
@@ -142,7 +130,7 @@ struct AText {
 struct ACursor {
     int x;
     int y;
-    int type; // 0为指针 1 为手形
+    int type; // 0 为指针，1 为手形
     ACursor() = default;
     explicit ACursor(int x, int y, int type = 0)
         : x(x)

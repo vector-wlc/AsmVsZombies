@@ -35,9 +35,7 @@ void ACobManager::_BeforeScript()
 {
     _next = 0;
     _lockSet.clear();
-    if (_gridVec.empty()) {
-        AutoSetList();
-    }
+    AutoSetList();
 }
 
 void ACobManager::_Skip(int n)
@@ -349,9 +347,9 @@ void ACobManager::FixLatest()
     }
     AConnect(ANowDelayTime(delayTime), [this]() {
         _lastestMsg.isWritable = true; // 解锁信息
-        AShovel(_gridVec[_lastestMsg.vecIndex].row, _gridVec[_lastestMsg.vecIndex].col);
+        ARemovePlant(_gridVec[_lastestMsg.vecIndex].row, _gridVec[_lastestMsg.vecIndex].col, {AYMJNP_47, AYMJNP_47});
+        Plant(_gridVec[_lastestMsg.vecIndex].row, _gridVec[_lastestMsg.vecIndex].col);
     });
-    Plant(_gridVec[_lastestMsg.vecIndex].row, _gridVec[_lastestMsg.vecIndex].col);
 }
 
 int ACobManager::_GetRecoverTimeVec()
@@ -506,6 +504,28 @@ __ANodiscard std::vector<ACobManager::RecoverInfo> ACobManager::GetRoofRecoverLi
         col = -1;
     }
     return _BasicGetRecoverList(col);
+}
+
+__ANodiscard std::vector<APlant*> ACobManager::GetUsableList()
+{
+    std::vector<APlant*> ret;
+    for (auto&& [ptr, recoverTime] : GetRecoverList()) {
+        if (ptr != nullptr && recoverTime == 0) {
+            ret.push_back(ptr);
+        }
+    }
+    return ret;
+}
+
+__ANodiscard std::vector<APlant*> ACobManager::GetRoofUsableList(float col)
+{
+    std::vector<APlant*> ret;
+    for (auto&& [ptr, recoverTime] : GetRoofRecoverList(col)) {
+        if (ptr != nullptr && recoverTime == 0) {
+            ret.push_back(ptr);
+        }
+    }
+    return ret;
 }
 
 // 发炮函数：单发

@@ -206,6 +206,7 @@ public:
     };
 
     // 得到恢复时间列表
+    // *** 注意当得到的指针为 nullptr 或者回复时间为小于 0 的值时，此炮不可用
     // *** 使用示例
     // auto lst = aCobManager.GetRecoverList();
     // for (auto&& [ptr, recoverTime] : lst) {
@@ -216,6 +217,7 @@ public:
     __ANodiscard std::vector<RecoverInfo> GetRecoverList();
 
     // 得到屋顶炮恢复时间列表
+    // *** 注意当得到的指针为 nullptr 或者回复时间为小于 0 的值时，此炮不可用
     // *** 使用示例
     // auto lst = aCobManager.GetRoofRecoverList(9); // 得到发往第九列的屋顶炮的恢复时间列表
     // for (auto&& [ptr, recoverTime] : lst) {
@@ -224,6 +226,26 @@ public:
     //    logger.Info("指针: #, 恢复时间: #", ptr, recoverTime);
     // }
     __ANodiscard std::vector<RecoverInfo> GetRoofRecoverList(float col);
+
+    // 得到可用列表
+    // *** 使用示例
+    // auto lst = aCobManager.GetUsableList();
+    // for (auto ptr : lst) {
+    //    // 这里应该写相应的处理代码
+    //    // 示例就打印一下算了
+    //    logger.Info("指针: #", ptr);
+    // }
+    __ANodiscard std::vector<APlant*> GetUsableList();
+
+    // 得到屋顶炮可用列表
+    // *** 使用示例
+    // auto lst = aCobManager.GetRoofUsableList(9); // 得到发往第九列的屋顶炮的可用列表
+    // for (auto ptr : lst) {
+    //    // 这里应该写相应的处理代码
+    //    // 示例就打印一下算了
+    //    logger.Info("指针: #", ptr);
+    // }
+    __ANodiscard std::vector<APlant*> GetRoofUsableList(float col);
 
     // 获取屋顶炮飞行时间
     // *** 使用示例:

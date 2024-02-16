@@ -386,7 +386,7 @@ uint32_t* ZombieList() noexcept
 
 最后咱们还需要介绍的是，为了方便大家编写脚本，本框架已经贴心的将很多内存地址封装了，
 例如 0x6a9ec0 这个地址大家可以用 AGetPvzBase 这个函数获取，0x768 可以用 AGetMainObject 获取，
-然后咱们读的阳光值已经封装好了，就是 AGetMainObject()->SunVal()，植物僵尸卡片内存数组也有，他们分别的是 
+然后咱们读的阳光值已经封装好了，就是 AGetMainObject()->Sun()，植物僵尸卡片内存数组也有，他们分别的是 
 AGetMainObject()->PlantArray()， AGetMainObject()->ZombieArray()， AGetMainObject()->SeedArray()，
 封装方式就是咱们之前说的那些，不信你去看源码，然后为了更更更方便大家去读这些内存数组的，本框架还设计了
 对象过滤器，也就是 [对象过滤迭代器]，读到这里，是不是所有的知识都串起来了！

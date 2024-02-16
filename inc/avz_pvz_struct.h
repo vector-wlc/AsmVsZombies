@@ -297,19 +297,19 @@ public:
         return MRef<int>(0xe8);
     }
 
-    // 收集物内存数组
-    APlaceItem* PlaceItemArray() noexcept
+    // 场地物品内存数组
+    __ANodiscard APlaceItem* PlaceItemArray() noexcept
     {
         return MPtr<APlaceItem>(0x11c);
     }
 
-    // 收集物内存数组大小
+    // 场地物品内存数组大小
     __ANodiscard int& PlaceItemCountMax() noexcept
     {
         return MRef<int>(0x120);
     }
 
-    // 收集物内存数组大小
+    // 场地物品内存数组大小
     __ANodiscard int& PlaceItemTotal() noexcept
     {
         return MRef<int>(0x120);
@@ -327,6 +327,7 @@ public:
     // 2 - 泳池
     // 3 - 雾夜
     // 4 - 天台
+    // 5 - 月夜（僵王战场地）
     __ANodiscard int& Scene() noexcept
     {
         return MRef<int>(0x554c);
@@ -924,12 +925,21 @@ public:
     }
 
     // 物品类型
+    // 1 - 墓碑
+    // 2 - 弹坑
+    // 3 - 梯子
+    // 4 - 传送门（圆）
+    // 5 - 传送门（方）
+    // 6 - 脑子（水族馆）
+    // 7 - 罐子
+    // 11 - 钉耙
+    // 12 - 脑子（我是僵尸）
     __ANodiscard int& Type() noexcept
     {
         return MRef<int>(0x8);
     }
 
-    // 墓碑冒出的量,弹坑消失倒计时,脑子血量,钉钯消失倒计时
+    // 墓碑冒出的量；弹坑消失倒计时；脑子血量；钉耙消失倒计时
     __ANodiscard int& Value() noexcept
     {
         return MRef<int>(0x18);

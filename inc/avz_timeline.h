@@ -10,7 +10,7 @@ struct ATimeOffset {
     int wave = 0;
     int time = 0;
 
-    constexpr ATimeOffset() { }
+    constexpr ATimeOffset() = default;
     constexpr ATimeOffset(int time)
         : time(time)
     {
@@ -65,6 +65,8 @@ struct ATimeOffset {
     {
         return *this = *this * n;
     }
+
+    auto operator<=>(const ATimeOffset&) const = default;
 };
 
 inline ATime operator+(ATime lhs, ATimeOffset rhs)

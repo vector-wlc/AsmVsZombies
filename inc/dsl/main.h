@@ -1,5 +1,4 @@
-
-// Author : alumkal(https://github.com/alumkal)
+// Copyright (c) 2024 Reisen (https://github.com/alumkal)
 
 #ifndef __DSL_MAIN_H__
 #define __DSL_MAIN_H__
@@ -121,6 +120,7 @@ private:
 
 public:
     explicit AWave(auto&&... args)
+        requires (sizeof...(args) > 0)
     {
         (AppendWaves(std::forward<decltype(args)>(args)), ...);
     }

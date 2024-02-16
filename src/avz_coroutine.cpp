@@ -15,6 +15,27 @@ void __ACoHandleManager::_ExitFight()
     _handleSet.clear();
 }
 
+bool __AWait::await_ready() const
+{
+    // 检测一下是否真的需要将协程挂起
+    if (_time.wave == -1) { // pred 形式
+        if (_predication()) {
+            return true;
+        }
+    } else { // time 形式
+        int nowTime = ANowTime(_time.wave);
+        if (nowTime > _time.time) {
+            __aig.loggerPtr->Warning("co_await 等待的时间为 ["
+                + std::to_string(_time.wave) + "," + std::to_string(_time.time)
+                + "], 但是现在时间已到 [" + std::to_string(_time.wave) + "," + std::to_string(nowTime) + "]");
+        }
+        if (nowTime >= _time.time) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void __AWait::await_resume()
 {
     // 不在战斗界面直接抛出异常

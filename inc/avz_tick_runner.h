@@ -17,8 +17,8 @@ struct __ATickOperation {
 
     template <typename Op>
         requires __AIsOperation<Op>
-    __ATickOperation(Op&& opertaion)
-        : operation(std::forward<Op>(opertaion))
+    __ATickOperation(Op&& operation)
+        : operation(std::forward<Op>(operation))
         , isRunning(true)
     {
     }
