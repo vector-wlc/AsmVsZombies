@@ -28,6 +28,9 @@ std::wstring AStrToWstr(const std::string& input)
     std::wstring wstr;
     wstr.resize(MultiByteToWideChar(CP_UTF8, 0, input.c_str(), input.length(), NULL, 0) + 1);
     MultiByteToWideChar(CP_UTF8, 0, input.c_str(), input.length(), wstr.data(), wstr.size());
+    for (; !wstr.empty() && wstr.back() == 0;) {
+        wstr.pop_back();
+    }
     return wstr;
 }
 
@@ -36,5 +39,8 @@ std::string AWStrToStr(const std::wstring& input)
     std::string str;
     str.resize(WideCharToMultiByte(CP_UTF8, 0, input.c_str(), input.length(), NULL, 0, NULL, FALSE) + 1);
     WideCharToMultiByte(CP_UTF8, 0, input.c_str(), input.length(), str.data(), str.size(), NULL, FALSE);
+    for (; !str.empty() && str.back() == 0;) {
+        str.pop_back();
+    }
     return str;
 }

@@ -135,7 +135,8 @@ __ANodiscard inline ATime ANowDelayTime(int delayTime)
 }
 
 // 设定特定波的波长
-// 波长的设定范围为 601 - 2510
+// *** 注意: 对最后一波无效
+// 第 9、19、... 波的合法波长范围为 1346 - 5245，其他波为 601 - 3100
 // *** 使用示例：
 // ASetWavelength({ATime(1, 601), ATime(4, 1000)}) ----- 将第一波的波长设置为 601，将第四波的波长设置为 1000
 inline void ASetWavelength(const std::vector<ATime>& lst)
@@ -144,8 +145,6 @@ inline void ASetWavelength(const std::vector<ATime>& lst)
 }
 
 // 假定特定波的波长
-// *** 注意： wave 9 19 20 无法假定波长
-// 波长的假定范围为 [601, 2510]
 // 本函数与 ASetWavelength 区别在于, 本函数不会对内存进行修改
 // 只是可以让时间点的书写范围小于 -200, 如果真实的波长与假定的波长不一致, 则会报错
 // *** 使用示例：

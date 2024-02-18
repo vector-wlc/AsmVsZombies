@@ -239,7 +239,7 @@ void ASetZombies(const std::vector<int>& zombieType, ASetZombieMode mode)
         }
         // 生成旗帜
         for (int idx = 9 * 50; idx < totaNum; idx += 10 * 50) {
-            zombieList[idx * 50] = AQZ_1;
+            zombieList[idx] = AQZ_1;
         }
 
         if (isHasBungee) {
@@ -277,7 +277,7 @@ void ASetWaveZombies(int wave, const std::vector<int>& zombieType)
     int totaNum = AGetMainObject()->TotalWave() * 50;
     // 生成旗帜
     for (int idx = 9 * 50; idx < totaNum; idx += 10 * 50) {
-        zombieList[idx * 50] = AQZ_1;
+        zombieList[idx] = AQZ_1;
     }
     if (isHasBungee) {
         // 生成蹦极

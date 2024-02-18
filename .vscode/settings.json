@@ -7,4 +7,5 @@
     "cmake.generator": "MinGW Makefiles",
     "C_Cpp.clang_format_fallbackStyle": "{ BasedOnStyle: WebKit, AlignTrailingComments: true, Cpp11BracedListStyle: true}",
     "C_Cpp.errorSquiggles": "disabled",
+    "avzConfigure.avzCompilerCmd": "-m32 -static -std=c++2b -fexperimental-library -g -Wall -Werror=return-type -Werror=unused-result \"__FILE_NAME__\" -I \"__AVZ_DIR__/inc\" -lavz -lgdi32 -ldbghelp -lcomdlg32 -L \"__AVZ_DIR__/bin\" -shared -o \"./bin/libavz.dll\""
 }

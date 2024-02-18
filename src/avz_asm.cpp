@@ -304,6 +304,22 @@ void AAsm::_MouseClick()
         : [__x] "m"(__x), [__y] "m"(__y), [curX] "m"(curX), [curY] "m"(curY), [__key] "m"(__key)
         : ASaveAllRegister);
 }
+
+// 移动鼠标
+void AAsm::MouseMove(int x, int y)
+{
+    __asm__ __volatile__(
+        "movl 0x6a9ec0, %%edx;"
+        "movl 0x320(%%edx), %%edx;"
+        "movl %[x], %%eax;"
+        "movl %[y], %%ecx;"
+        "movl $0x5394a0, %%ebx;"
+        "calll *%%ebx;"
+        :
+        : [x] "m"(x), [y] "m"(y)
+        : ASaveAllRegister);
+}
+
 void AAsm::_ShootPao()
 {
 

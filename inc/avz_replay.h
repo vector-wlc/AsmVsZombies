@@ -201,7 +201,7 @@ protected:
     void _LoadPvzState();
     void _RecordTick();
     void _PlayTick();
-    bool _PreparePack(int packIdx);
+    bool _PreparePack();
     void _CompressTailFiles();
     void _ClearDatFiles();
     void _ClearAllFiles();
@@ -219,6 +219,7 @@ protected:
     int64_t _startIdx = 0;
     int64_t _endIdx = 0;
     int64_t _maxSavePackCnt = 20;
+    int _lastPackIdx = INT_MIN;
     int _showPosX = 0;
     int _showPosY = 0;
     bool _isInterpolate = true;

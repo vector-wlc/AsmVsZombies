@@ -32,6 +32,9 @@ public:
 
     static void MouseClick(int x, int y, int key);
 
+    // 移动鼠标
+    static void MouseMove(int x, int y);
+
     // 发射炮
     static void Fire(int x, int y, int rank);
 

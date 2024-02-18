@@ -153,8 +153,9 @@ void __AOpQueueManager::SetWavelength(const std::vector<ATime>& lst)
         }
         auto setRefresh = [time]() {
             __aig.mainObject->ZombieRefreshHp() = -1;
-            __aig.mainObject->RefreshCountdown() = time.time - 1;
-            __aig.mainObject->InitialCountdown() = time.time;
+            int countdown = (time.wave % 10 == 9 ? time.time - 745 : time.time);
+            __aig.mainObject->RefreshCountdown() = countdown - 1;
+            __aig.mainObject->InitialCountdown() = countdown;
         };
         AConnect(ATime(time.wave, 1), std::move(setRefresh));
     }
@@ -192,7 +193,7 @@ bool __AOpQueueManager::_CheckWavelength(const ATime& time)
         return false;
     }
 
-    if (time.time < 601) {
+    if (time.time < (time.wave % 10 == 9 ? 1346 : 601)) {
         __aig.loggerPtr->Error(
             "您当前设定的第 " + std::to_string(time.wave)         //
             + " 波 的 time 参数为 " + std::to_string(time.time) + //
@@ -205,8 +206,7 @@ bool __AOpQueueManager::_CheckWavelength(const ATime& time)
         return false;
     }
 
-    int upperLimit = (time.wave % 10 == 9 ? 4500 : 3100);
-    if (time.time > upperLimit) {
+    if (time.time > (time.wave % 10 == 9 ? 5245 : 3100)) {
         __aig.loggerPtr->Warning(
             "您当前设定的第 " + std::to_string(time.wave)         //
             + " 波 的 time 参数为 " + std::to_string(time.time) + //
