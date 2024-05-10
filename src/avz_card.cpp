@@ -105,7 +105,7 @@ void __ACardManager::_BeforeScript()
     _isSelectCards = false;
     _tickRunner.Start([this] {
         _selectInterval = std::max(1, _selectInterval);
-        if (__aig.mainObject->GlobalClock() % _selectInterval != 0) {
+        if (AGetMainObject()->GlobalClock() % _selectInterval != 0) {
             return; // 选卡间隔为 _selectInterval
         }
         __aCardManager._ChooseSingleCard();
@@ -119,11 +119,11 @@ void __ACardManager::_EnterFight()
     _cardNameToIndexMap.clear();
     _selectCardVec.clear();
 
-    if (__aig.pvzBase->GameUi() != 3) {
+    if (AGetPvzBase()->GameUi() != 3) {
         return;
     }
 
-    auto seed = __aig.mainObject->SeedArray();
+    auto seed = AGetMainObject()->SeedArray();
     int seedCount = seed->Count();
     int seedType;
     std::pair<int, int> seedInfo;
@@ -167,8 +167,8 @@ const std::string& __ACardManager::GetCardName(ASeed* seed)
 void __ACardManager::_ChooseSingleCard()
 {
     static auto iter = _selectCardVec.begin();
-    if (__aig.mainObject->Words()->DisappearCountdown() || //
-        __aig.mainObject->SelectCardUi_m()->OrizontalScreenOffset() != 4250) {
+    if (AGetMainObject()->Words()->DisappearCountdown() || //
+        AGetMainObject()->SelectCardUi_m()->OrizontalScreenOffset() != 4250) {
         iter = _selectCardVec.begin();
         return;
     }
@@ -190,7 +190,7 @@ void __ACardManager::_ChooseSingleCard()
     int okCnt = 0;
     for (auto&& type : _selectCardVec) {
         int idx = std::min(48, type);
-        int state = __aig.pvzBase->SelectCardUi_p()->CardMoveState(idx);
+        int state = AGetPvzBase()->SelectCardUi_p()->CardMoveState(idx);
         if (state == 1 || state == 0) {
             ++okCnt;
         }
@@ -199,7 +199,7 @@ void __ACardManager::_ChooseSingleCard()
     if (okCnt != _selectCardVec.size()) {
         static int cnt = 0;
         ++cnt;
-        AAsm::Click(__aig.pvzBase->MouseWindow(), 100, 50, 1);
+        AAsm::Click(AGetPvzBase()->MouseWindow(), 100, 50, 1);
         if (cnt == 10) {
             cnt = 0;
             iter = _selectCardVec.begin();
@@ -215,7 +215,7 @@ void __ACardManager::SelectCards(const std::vector<int>& lst, int selectInterval
         __aig.loggerPtr->Error("ASelectCards 不允许选卡间隔小于 0cs");
         return;
     }
-    if (lst.size() > __aig.mainObject->SeedArray()->Count()) {
+    if (lst.size() > AGetMainObject()->SeedArray()->Count()) {
         __aig.loggerPtr->Error("ASelectCards 不允许选卡的数量大于卡片的数量");
         return;
     }
@@ -260,7 +260,8 @@ APlant* __ACardManager::_CardWithoutCheck(int seedIndex, int row, float col)
     col = int(col + 0.5);
     std::string msg = "放置" + GetCardName(seed) + "卡片到 ("
         + std::to_string(row) + ", " + AGetInternalLogger()->GetPattern() + ") ";
-    if (AAsm::GetPlantRejectType(seed->Type(), row - 1, col - 1) != AAsm::NIL) {
+    int type = seed->Type() == AIMITATOR ? seed->ImitatorType() : seed->Type();
+    if (AAsm::GetPlantRejectType(type, row - 1, col - 1) != AAsm::NIL) {
         AGetInternalLogger()->Info(msg + "失败", col);
         return nullptr;
     }
@@ -281,14 +282,14 @@ APlant* __ACardManager::_CardWithoutCheck(int seedIndex, int row, float col)
 
 bool __ACardManager::_CheckCard(int seedIndex)
 {
-    auto seedCount = __aig.mainObject->SeedArray()->Count();
+    auto seedCount = AGetMainObject()->SeedArray()->Count();
     if (seedIndex > seedCount || seedIndex < 1) {
         __aig.loggerPtr->Error(
             "Card : 您填写的参数 " + std::to_string(seedIndex) + " 已溢出");
         return false;
     }
     AAsm::ReleaseMouse();
-    auto seed = __aig.mainObject->SeedArray() + seedIndex - 1;
+    auto seed = AGetMainObject()->SeedArray() + seedIndex - 1;
     if (!AIsSeedUsable(seed)) {
         int cd = seed->InitialCd() - seed->Cd() + 1;
         if (cd > 0) {

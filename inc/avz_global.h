@@ -77,8 +77,6 @@ class __ATickManager;
 
 struct __AInternalGlobal {
     HINSTANCE hInstance = nullptr;
-    AMainObject* mainObject = nullptr;
-    APvzBase* pvzBase = nullptr;
     AAbstractLogger* loggerPtr = nullptr;
     // 这个指针指向的是一个数组 !!!
     // 大小为 ATickRunner::__COUNT

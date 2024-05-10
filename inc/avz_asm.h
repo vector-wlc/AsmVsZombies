@@ -32,6 +32,12 @@ public:
 
     static void MouseClick(int x, int y, int key);
 
+    // 鼠标按下
+    static void MouseDown(int x, int y, int key);
+
+    // 鼠标松开
+    static void MouseUp(int x, int y, int key);
+
     // 移动鼠标
     static void MouseMove(int x, int y);
 
@@ -230,6 +236,22 @@ public:
 
     // 选卡界面点击调试试玩按钮时，以随机选卡填充卡槽，立即完成所有选卡的移动，然后结束选卡。
     static void PickRandomSeeds();
+
+    static constexpr int JACK_MUSIC_IDX = 0x0e;   // 小丑音效
+    static constexpr int MJ_MUSIC_IDX = 0x64;     // 舞王音效
+    static constexpr int DIGGER_MUSIC_IDX = 0x21; // 矿工音效
+
+    // 增加音效的引用计数
+    static void PlayFoleyPitch(int idx);
+
+    // 减少音效的引用计数
+    static void StopFoley(int idx);
+
+    // 播放僵尸的出场音效
+    static void PlayZombieAppearSound(AZombie* zombie);
+
+    // 播放音乐
+    static void PlaySample(int idx);
 
     __ADeprecated() static void* SaveToMemory();
     __ADeprecated() static void LoadFromMemory(void*& p);

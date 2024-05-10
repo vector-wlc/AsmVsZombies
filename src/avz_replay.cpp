@@ -10,6 +10,20 @@
 
 namespace stdFs = std::filesystem;
 
+#define __ACheckASCII(path, info, ret)                                                                                      \
+    for (auto c : path) {                                                                                                   \
+        if (uint8_t(c) > 127) {                                                                                             \
+            AGetInternalLogger()->Error(info ": 您设定的路径: [" + path + "] 含有非英文字符(ASCII), 请更换其为纯英文路径"); \
+            return ret;                                                                                                     \
+        }                                                                                                                   \
+    }
+
+A7zCompressor::A7zCompressor(const std::string& path)
+{
+    __ACheckASCII(path, "Compressor", );
+    _7zPath = path;
+}
+
 void A7zCompressor::_BeforeScript()
 {
     _isRunning = true;
@@ -190,6 +204,7 @@ AReplay::AReplay()
 
 void AReplay::SetSaveDirPath(const std::string& path)
 {
+    __ACheckASCII(path, "AReplay::SetSaveDirPath", );
     _savePath = stdFs::absolute(path).string();
     if (!stdFs::exists(_savePath)) {
         stdFs::create_directory(_savePath);
@@ -224,21 +239,38 @@ void AReplay::SetPackTickCnt(int packTickCnt)
 
 void AReplay::_RecordTick()
 {
+    // record tick
     int x = AGetPvzBase()->MouseWindow()->MouseAbscissa();
     int y = AGetPvzBase()->MouseWindow()->MouseOrdinate();
     int type = AGetPvzBase()->MRef<int>(0x4B0);
+    int pressType = AGetPvzBase()->MouseWindow()->MRef<int>(0xe8);
     int clock = AGetMainObject()->GameClock();
-    _mouseInfos[clock] = ACursor(x, y, type);
+    auto&& tickInfo = _tickInfos[clock];
+    switch (pressType) {
+    case 0:
+    case 1:
+        break;
+    case 2:
+        pressType = -1;
+        break;
+    default:
+        pressType = 3;
+        break;
+    }
+    tickInfo.cursor = ACursor(x, y, type, pressType);
+    tickInfo.mjClock = AGetPvzBase()->MjClock();
+    tickInfo.mjPhase = AMaidCheats::Phase();
     if (clock % _recordInterval != 0) {
         return;
     }
+    // record dat
     auto dirName = stdFs::path(std::to_string((_endIdx % _maxSaveCnt) / _packTickCnt));
     auto fileName = stdFs::path(std::to_string(_endIdx % _maxSaveCnt % _packTickCnt) + ".dat");
     if (_endIdx - _startIdx >= _maxSaveCnt) {
         _startIdx = _endIdx - _maxSaveCnt + 1;
     }
     int leftClock = clock - (_endIdx - _startIdx) * _recordInterval;
-    for (auto iter = _mouseInfos.begin(); iter != _mouseInfos.end(); iter = _mouseInfos.erase(iter)) {
+    for (auto iter = _tickInfos.begin(); iter != _tickInfos.end(); iter = _tickInfos.erase(iter)) {
         if (iter->first >= leftClock) {
             break;
         }
@@ -289,7 +321,7 @@ void AReplay::StartRecord(int interval, int64_t startIdx)
         return;
     }
     _state = RECORDING;
-    _mouseInfos.clear();
+    _tickInfos.clear();
     _tickRunner.Start([this] { _RecordTick(); }, false);
     _infoTickRunner.Start([this] {
         if (!_isShowInfo || __aGameControllor.isSkipTick()) {
@@ -335,6 +367,7 @@ bool AReplay::ShowOneTick(int64_t tick)
     auto fileName = stdFs::path(std::to_string(tick % _packTickCnt) + ".dat");
     auto filePath = _savePath / dirName / fileName;
     if (stdFs::exists(filePath)) {
+        _ShowTickInfo();
         AAsm::LoadGame(filePath.string());
         return true;
     }
@@ -344,6 +377,7 @@ bool AReplay::ShowOneTick(int64_t tick)
         _compressor->Decompress((dirName / fileName).string(), _savePath);
         _compressor->WaitForDone();
         if (stdFs::exists(filePath)) {
+            _ShowTickInfo();
             AAsm::LoadGame(filePath.string());
             return true;
         }
@@ -425,12 +459,9 @@ void AReplay::_PlayTick()
     static int counter = 0;
     ++counter;
     bool isPlay = (counter % _playInterval) == 0;
-    int clock = AGetMainObject()->GameClock();
-    if (_isMouseVisible && _mouseInfos.find(clock) != _mouseInfos.end()) {
-        _painter.Draw(_mouseInfos[clock], 1);
-        AAsm::MouseMove(_mouseInfos[clock].x, _mouseInfos[clock].y);
-    }
+
     if (_isInterpolate && !isPlay) { // 如果插帧
+        _ShowTickInfo();
         AAsm::GameTotalLoop();
     }
     if (!isPlay) {
@@ -447,7 +478,56 @@ void AReplay::_PlayTick()
     int tmpPlayIdx = _playIdx + 1;
     if (!ShowOneTick(tmpPlayIdx)) {
         _tickRunner.Pause();
+    }
+}
+
+void AReplay::_ShowTickInfo()
+{
+    int clock = AGetMainObject()->GameClock();
+    auto iter = _tickInfos.find(clock);
+    if (iter != _tickInfos.end()) {
+        auto&& info = iter->second;
+        AGetPvzBase()->MjClock() = info.mjClock;
+        AMaidCheats::Phase() = info.mjPhase;
+        if (info.cursor.pressType == 0
+            && _cursorLastPressType != 0 && _cursorLastPressType != INT_MIN) { // 鼠标抬起
+            AAsm::MouseUp(info.cursor.x, info.cursor.y, _cursorLastPressType);
+        } else if (info.cursor.pressType != 0 && _cursorLastPressType == 0) { // 鼠标按下
+            AAsm::MouseDown(info.cursor.x, info.cursor.y, info.cursor.pressType);
+        }
+        _cursorLastPressType = info.cursor.pressType;
+        if (_isMouseVisible) {
+            _painter.Draw(info.cursor, 1);
+            AAsm::MouseMove(info.cursor.x, info.cursor.y);
+        }
+    }
+
+    // 播放大波的音效
+    // lastRefreshCountdown 是为了避免最后一波音效播放好多次
+    static int lastRefreshCountdown = INT_MIN;
+    __aOpQueueManager.UpdateRefreshTime();
+    int nowWave = AGetMainObject()->Wave();
+    if ((nowWave == AGetMainObject()->TotalWave() && AGetMainObject()->RefreshCountdown() == 0 && lastRefreshCountdown > 0)) {
+        // 播放下一波来临的音效
+        AAsm::PlaySample(0x45);
+    }
+    lastRefreshCountdown = AGetMainObject()->RefreshCountdown();
+
+    if (nowWave < 1 || _lastWave == nowWave) {
         return;
+    }
+    // 播放僵尸的出场音效
+    _lastWave = nowWave;
+    for (auto&& zombie : AAliveFilter<AZombie>()) {
+        int type = zombie.Type();
+        if (zombie.ExistTime() < 50
+            && (type == AHT_14 || type == AZOMBIE || type == AQQ_16)) {
+            AAsm::PlayZombieAppearSound(&zombie);
+        }
+    }
+    int nowTime = ANowTime(nowWave);
+    if ((nowWave % 10 == 0 || nowWave == 1) && nowTime >= 0 && nowTime < 50) {
+        AAsm::PlaySample(3);
     }
 }
 
@@ -455,10 +535,6 @@ void AReplay::StartPlay(int interval, int64_t startIdx)
 {
     if (AGetPvzBase()->GameUi() != 3) {
         AGetInternalLogger()->Error("StartPlay : AReplay 只能在战斗界面使用");
-        return;
-    }
-    if (interval < 1) {
-        AGetInternalLogger()->Error("StartPlay : interval 的范围为 [1, ], 您当前的 interval 为: " + std::to_string(interval));
         return;
     }
     if (_state != REST) {
@@ -469,14 +545,18 @@ void AReplay::StartPlay(int interval, int64_t startIdx)
         AGetInternalLogger()->Error("StartPlay : 请先停止帧运行再进行播放");
         return;
     }
+
     ASetAdvancedPause(true);
     SavePvzState();
     _ReadInfo();
     _lastPackIdx = INT_MIN;
+    _cursorLastPressType = INT_MIN;
+    _lastWave = INT_MIN;
     _state = PLAYING;
-    _playInterval = interval;
+    if (interval > 0) {
+        _playInterval = interval;
+    }
     _playIdx = _startIdx + startIdx;
-    _compressPath.clear();
 
     _tickRunner.Start([this] {
         if (!AGameIsPaused()) {
@@ -510,7 +590,14 @@ bool AReplay::IsPaused()
 
 void AReplay::GoOn()
 {
-    _ClearDatFiles();
+    if (_state != RECORDING) {
+        _ClearDatFiles();
+    }
+    // 高级暂停状态下，不调用一次 _RecordTick 就丢帧了
+    if (AGetPvzBase()->GameUi() == 3 && _state == RECORDING
+        && __aGameControllor.isAdvancedPaused) {
+        _RecordTick();
+    }
     _tickRunner.GoOn();
 }
 
@@ -532,11 +619,11 @@ void AReplay::Stop()
 void AReplay::_ReadInfo()
 {
     if (_compressor != nullptr) {
-        _compressor->Decompress(INFO_FILE_STR, _savePath);
-        _compressor->Decompress(MOUSE_INFO_FILE_STR, _savePath);
+        _compressor->Decompress(_INFO_FILE_STR, _savePath);
+        _compressor->Decompress(_TICK_INFO_FILE_STR, _savePath);
         _compressor->WaitForDone();
     }
-    auto infoFilePath = stdFs::path(_savePath) / INFO_FILE_STR;
+    auto infoFilePath = stdFs::path(_savePath) / _INFO_FILE_STR;
     std::ifstream infoFile(infoFilePath.c_str());
     if (!infoFile.good()) {
         _maxSaveCnt = INT64_MAX;
@@ -550,69 +637,71 @@ void AReplay::_ReadInfo()
         for (; (infoFile >> key) && (infoFile >> val);) {
             table[key] = val;
         }
-        _maxSaveCnt = table[MAX_SAVE_CNT_KEY];
-        _packTickCnt = table[PACK_TICK_CNT_KEY];
-        _startIdx = table[START_IDX_KEY];
-        _endIdx = table[END_IDX_KEY];
+        _maxSaveCnt = table[_MAX_SAVE_CNT_KEY];
+        _packTickCnt = table[_PACK_TICK_CNT_KEY];
+        _startIdx = table[_START_IDX_KEY];
+        _endIdx = table[_END_IDX_KEY];
+        _playInterval = table[_RECORD_INTERVAL_KEY];
     }
     _maxSavePackCnt = _maxSaveCnt / _packTickCnt;
     _maxSavePackCnt += ((_maxSaveCnt % _packTickCnt > 0) ? 1 : 0);
     infoFile.close();
-    _LoadMouseInfo();
+    _LoadTickInfo();
 }
 
 void AReplay::_WriteInfo()
 {
-    auto infoFilePath = stdFs::path(_savePath) / INFO_FILE_STR;
+    auto infoFilePath = stdFs::path(_savePath) / _INFO_FILE_STR;
     std::ofstream infoFile(infoFilePath.c_str());
     if (!infoFile.good()) {
         AGetInternalLogger()->Error("保存回放文件信息失败");
     } else {
-        infoFile << MAX_SAVE_CNT_KEY << " " << _maxSaveCnt << "\n"
-                 << PACK_TICK_CNT_KEY << " " << _packTickCnt << "\n"
-                 << START_IDX_KEY << " " << _startIdx << "\n"
-                 << END_IDX_KEY << " " << _endIdx;
+        infoFile << _MAX_SAVE_CNT_KEY << " " << _maxSaveCnt << "\n"
+                 << _PACK_TICK_CNT_KEY << " " << _packTickCnt << "\n"
+                 << _START_IDX_KEY << " " << _startIdx << "\n"
+                 << _END_IDX_KEY << " " << _endIdx << "\n"
+                 << _RECORD_INTERVAL_KEY << " " << _recordInterval;
     }
 
     infoFile.close();
-    _SaveMouseInfo();
+    _SaveTickInfo();
 }
 
-using AClockCursor = std::pair<int, ACursor>;
+using AClockTickInfo = std::pair<int, AReplay::TickInfo>;
 
-void AReplay::_SaveMouseInfo()
+void AReplay::_SaveTickInfo()
 {
-    auto infoFilePath = stdFs::path(_savePath) / MOUSE_INFO_FILE_STR;
+    auto infoFilePath = stdFs::path(_savePath) / _TICK_INFO_FILE_STR;
     std::ofstream infoFile(infoFilePath.c_str(), std::ios_base::binary);
     if (!infoFile.good()) {
-        AGetInternalLogger()->Error("保存鼠标回放文件信息失败");
+        AGetInternalLogger()->Error("保存帧信息回放文件信息失败");
     } else {
-        std::vector<AClockCursor> tmp;
-        for (auto&& e : _mouseInfos) {
+        std::vector<AClockTickInfo> tmp;
+        for (auto&& e : _tickInfos) {
             tmp.push_back(e);
         }
         size_t size = tmp.size();
         infoFile.write((char*)(&size), sizeof(size));
-        infoFile.write((char*)tmp.data(), size * sizeof(AClockCursor));
+        infoFile.write((char*)tmp.data(), size * sizeof(AClockTickInfo));
     }
     infoFile.close();
-    _mouseInfos.clear();
+    _tickInfos.clear();
 }
 
-void AReplay::_LoadMouseInfo()
+void AReplay::_LoadTickInfo()
 {
-    _mouseInfos.clear();
-    auto infoFilePath = stdFs::path(_savePath) / MOUSE_INFO_FILE_STR;
+    _tickInfos.clear();
+    auto infoFilePath = stdFs::path(_savePath) / _TICK_INFO_FILE_STR;
     std::ifstream infoFile(infoFilePath.c_str(), std::ios_base::binary);
     if (!infoFile.good()) {
-        AGetInternalLogger()->Error("载入鼠标回放文件信息失败");
+        AGetInternalLogger()->Error("载入帧信息回放文件信息失败");
     } else {
         size_t size = 0;
         infoFile.read((char*)(&size), sizeof(size));
-        std::vector<AClockCursor> tmp(size);
-        infoFile.read((char*)tmp.data(), size * sizeof(AClockCursor));
+        std::vector<AClockTickInfo> tmp(size);
+        infoFile.read((char*)tmp.data(), size * sizeof(AClockTickInfo));
         for (auto&& e : tmp) {
-            _mouseInfos.insert(e);
+            _tickInfos.insert(e);
         }
     }
     infoFile.close();
@@ -620,7 +709,12 @@ void AReplay::_LoadMouseInfo()
 
 void AReplay::SavePvzState()
 {
-    auto filePath = _savePath / stdFs::path(RECOVER_DAT_STR);
+    _mjPhaseRecover = AMaidCheats::Phase();
+    _fallingSunCodeRecover = AMRef<uint8_t>(_FALLING_SUN_ADDR);
+    AMRef<uint8_t>(_FALLING_SUN_ADDR) = _NO_FALLING_SUN_CODE;
+    _zombieSpawnCodeRecover = AMRef<uint8_t>(_ZOMBIE_SPAWN_ADDR);
+    AMRef<uint8_t>(_ZOMBIE_SPAWN_ADDR) = _STOP_ZOMBIE_SPAWN_CODE;
+    auto filePath = _savePath / stdFs::path(_RECOVER_DAT_STR);
     if (stdFs::exists(filePath)) {
         stdFs::remove(filePath);
     }
@@ -629,10 +723,13 @@ void AReplay::SavePvzState()
 
 void AReplay::_LoadPvzState()
 {
+    AMaidCheats::Phase() = _mjPhaseRecover;
+    AMRef<uint8_t>(_FALLING_SUN_ADDR) = _fallingSunCodeRecover;
+    AMRef<uint8_t>(_ZOMBIE_SPAWN_ADDR) = _zombieSpawnCodeRecover;
     if (!AGetPvzBase() || !AGetPvzBase()->MainObject() || AGetPvzBase()->GameUi() != 3) {
         return;
     }
-    auto filePath = _savePath / stdFs::path(RECOVER_DAT_STR);
+    auto filePath = _savePath / stdFs::path(_RECOVER_DAT_STR);
     if (stdFs::exists(filePath)) {
         AAsm::LoadGame(filePath.string());
     }
@@ -644,8 +741,8 @@ void AReplay::_CompressTailFiles()
         return;
     }
 
-    auto infoPath = _savePath / stdFs::path(INFO_FILE_STR);
-    auto mouseInfoPath = _savePath / stdFs::path(MOUSE_INFO_FILE_STR);
+    auto infoPath = _savePath / stdFs::path(_INFO_FILE_STR);
+    auto mouseInfoPath = _savePath / stdFs::path(_TICK_INFO_FILE_STR);
     auto dirName = stdFs::path(std::to_string((_endIdx % _maxSaveCnt) / _packTickCnt));
     auto dirPath = _savePath / dirName;
 
@@ -663,15 +760,12 @@ void AReplay::_CompressTailFiles()
 
 void AReplay::_ClearDatFiles()
 {
+
     if (_compressor == nullptr) {
         return;
     }
     // 等待压缩任务全部完成
     _compressor->WaitForDone();
-
-    if (_state == RECORDING) {
-        return;
-    }
 
     // 遍历所有的文件，发现以纯数字命名的目录就删除
     for (auto&& dir : std::filesystem::directory_iterator(_savePath)) {
@@ -699,12 +793,12 @@ void AReplay::_ClearAllFiles()
     }
     _ClearDatFiles();
     // 删除 info.txt
-    auto infoPath = _savePath / stdFs::path(INFO_FILE_STR);
+    auto infoPath = _savePath / stdFs::path(_INFO_FILE_STR);
     if (stdFs::exists(infoPath)) {
         stdFs::remove(infoPath);
     }
     // 删除鼠标文件
-    auto mouseInfoPath = _savePath / stdFs::path(MOUSE_INFO_FILE_STR);
+    auto mouseInfoPath = _savePath / stdFs::path(_TICK_INFO_FILE_STR);
     if (stdFs::exists(mouseInfoPath)) {
         stdFs::remove(mouseInfoPath);
     }

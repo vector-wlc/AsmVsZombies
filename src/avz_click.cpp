@@ -13,7 +13,7 @@
 
 void AClickSeed(int seed_index)
 {
-    auto seed = __aig.mainObject->SeedArray() + seed_index - 1;
+    auto seed = AGetMainObject()->SeedArray() + seed_index - 1;
     AAsm::MouseClick(int(seed->Abscissa() + seed->Width() / 2),
         int(seed->Ordinate() + seed->Height() / 2), 1);
 }

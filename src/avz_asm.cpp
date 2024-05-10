@@ -9,6 +9,9 @@
 #include "avz_memory.h"
 #include <filesystem>
 
+#include "avz_logger.h"
+#include "avz_iterator.h"
+
 static AMainObject* __level;
 static AMouseWindow* __mw;
 static int __x;
@@ -275,33 +278,40 @@ void AAsm::_MouseClick()
 {
     int curX = AGetPvzBase()->MouseWindow()->MouseAbscissa();
     int curY = AGetPvzBase()->MouseWindow()->MouseOrdinate();
-    __asm__ __volatile__(
+    MouseDown(__x, __y, __key);
+    MouseUp(__x, __y, __key);
+    MouseMove(curX, curY);
+}
 
-        // mouse down
-        "pushl %[__x];"
-        "movl %[__y], %%eax;"
-        "movl %[__key], %%ebx;"
+// 鼠标按下
+void AAsm::MouseDown(int x, int y, int key)
+{
+    __asm__ __volatile__(
+        "pushl %[x];"
+        "movl %[y], %%eax;"
+        "movl %[key], %%ebx;"
         "movl 0x6a9ec0, %%ecx;"
         "movl 0x320(%%ecx), %%ecx;"
         "movl $0x539390, %%edx;"
         "calll *%%edx;"
-        // mouse up
-        "pushl %[__key];"
-        "pushl %[__x];"
+        :
+        : [x] "m"(x), [y] "m"(y), [key] "m"(key)
+        : ASaveAllRegister);
+}
+
+// 鼠标松开
+void AAsm::MouseUp(int x, int y, int key)
+{
+    __asm__ __volatile__(
+        "pushl %[key];"
+        "pushl %[x];"
         "movl 0x6a9ec0, %%eax;"
         "movl 0x320(%%eax), %%eax;"
-        "movl %[__y], %%ebx;"
+        "movl %[y], %%ebx;"
         "movl $0x5392e0, %%edx;"
         "calll *%%edx;"
-        // mouse move
-        "movl 0x6a9ec0, %%edx;"
-        "movl 0x320(%%edx), %%edx;"
-        "movl %[curX], %%eax;"
-        "movl %[curY], %%ecx;"
-        "movl $0x5394a0, %%ebx;"
-        "calll *%%ebx;"
         :
-        : [__x] "m"(__x), [__y] "m"(__y), [curX] "m"(curX), [curY] "m"(curY), [__key] "m"(__key)
+        : [x] "m"(x), [y] "m"(y), [key] "m"(key)
         : ASaveAllRegister);
 }
 
@@ -744,51 +754,138 @@ void AAsm::MakeNewBoard()
 {
     int scene = AGetMainObject()->Scene();
     __asm__ __volatile__(
+        // MakeNewBoard
         "movl 0x6a9ec0, %%ecx;"
         "movl $0x44f5f0, %%eax;"
+        "calll *%%eax;"
+
+        // ProcessSafeDeleteList
+        "movl 0x6a9ec0, %%ecx;"
+        "pushl %%ecx;"
+        "movl $0x5518F0, %%eax;"
         "calll *%%eax;"
         :
         :
         : ASaveAllRegister);
-    __aig.mainObject = AGetPvzBase()->MainObject();
     AGetMainObject()->Scene() = scene;
+}
+
+// 此函数是为了防止 LoadGame 过长的
+void __ABeforeMakeNewBoard(std::vector<int>& zombieMusicRefCnts, std::vector<int>& zombieMusicIdxs)
+{
+    for (auto idx : zombieMusicIdxs) {
+        zombieMusicRefCnts.push_back(AMRef<int>(0x6A9Ec0, 0x784, 0xa4 * idx + 0x4));
+        if (zombieMusicRefCnts.back() != 0) {
+            // 有音效要维持住
+            AAsm::PlayFoleyPitch(idx);
+        }
+    }
+    // AGetInternalLogger()->Info("{} {}", __LINE__, AMRef<int>(0x6A9Ec0, 0x784, 0xa4 * AAsm::JACK_MUSIC_IDX + 0x4));
+
+    // 舞王和小丑的音效
+    auto&& mjMusicRefCnt = AMRef<int>(0x6A9Ec0, 0x784, 0xa4 * AAsm::MJ_MUSIC_IDX + 0x4);
+    if (mjMusicRefCnt != 0) {
+        int mjCnt = 0;
+        for (auto&& zombie : AAliveFilter<AZombie>()) {
+            int type = zombie.Type();
+            mjCnt += int(type == AWW_8 || type == ABW_9);
+        }
+        mjMusicRefCnt = mjCnt + 1;
+    }
+}
+
+// 此函数是为了防止 LoadGame 过长的
+void __AAfterLoadGame(std::vector<int>& zombieMusicRefCnts, std::vector<int>& zombieMusicIdxs)
+{
+    // 如果没有舞王和舞伴就删除音效
+    int mjCnt = 0;
+    for (auto&& zombie : AAliveFilter<AZombie>()) {
+        int type = zombie.Type();
+        mjCnt += int(type == AWW_8 || type == ABW_9);
+
+        if (zombie.FixationCountdown() == 0 && zombie.FreezeCountdown() == 0) {
+            int type = zombie.Type();
+            int state = zombie.State();
+            // 处于活动状态，进行音乐播放
+            if (type == AXC_15 && state == 15) {
+                AAsm::PlayFoleyPitch(AAsm::JACK_MUSIC_IDX);
+                zombie.MRef<bool>(0x104) = true;
+            } else if (type == AKG_17 && state == 32) {
+                AAsm::PlayFoleyPitch(AAsm::DIGGER_MUSIC_IDX);
+                zombie.MRef<bool>(0x104) = true;
+            }
+        } else if (type == AXC_15) {
+            // 冻结的僵尸没有持有音乐
+            zombie.MRef<bool>(0x104) = false;
+        }
+    }
+    if (mjCnt == 0) {
+        int refCnt = AMRef<int>(0x6A9Ec0, 0x784, 0xa4 * AAsm::MJ_MUSIC_IDX + 0x4);
+        for (int i = 0; i < refCnt; ++i) {
+            AAsm::StopFoley(AAsm::MJ_MUSIC_IDX);
+        }
+    }
+
+    // 把之前增加的减回去
+    for (int i = 0; i < zombieMusicIdxs.size(); ++i) {
+        if (zombieMusicRefCnts[i] != 0) {
+            AAsm::StopFoley(zombieMusicIdxs[i]);
+        }
+    }
 }
 
 void AAsm::LoadGame(const std::string& file)
 {
-    uint8_t pvzStr[28] = {0};
-    void* tmpPtr = pvzStr;
-
     // 此函数需要根据场景调用不同的函数
     // 如果没有切换场景，调用 LawnLoadGame 481FE0
     // 如果切换场景，调用 LoadGame 408DE0
+    uint8_t pvzStr[28] = {0};
+    void* tmpPtr = pvzStr;
     int scene = AGetMainObject()->Scene();
-    MakeNewBoard();
     MakePvzString(file.c_str(), &pvzStr);
-    __asm__ __volatile__(
-        // LawnLoadGame
-        "pushl %[tmpPtr];"
-        "movl 0x6a9ec0, %%ecx;"
-        "movl 0x768(%%ecx), %%ecx;"
-        "movl $0x481fe0, %%eax;"
-        "calll *%%eax;"
-        "addl $0x4, %%esp;"
-        :
-        : [tmpPtr] "m"(tmpPtr)
-        : ASaveAllRegister);
 
-    if (scene != AGetMainObject()->Scene()) {
+    for (int i = 0; i < 2; ++i) {
+        // 先增加音效的引用计数
+        // 防止 MakeNewBoard 停止音乐
+        // AGetInternalLogger()->Info("{} {}", __LINE__, AMRef<int>(0x6A9Ec0, 0x784, 0xa4 * JACK_MUSIC_IDX + 0x4));
+        std::vector<int> zombieMusicRefCnts;
+        std::vector<int> zombieMusicIdxs = {AAsm::JACK_MUSIC_IDX, AAsm::DIGGER_MUSIC_IDX};
+        __ABeforeMakeNewBoard(zombieMusicRefCnts, zombieMusicIdxs);
         MakeNewBoard();
-        __asm__ __volatile__(
-            // LoadGame
-            "movl %[tmpPtr], %%eax;"
-            "movl 0x6a9ec0, %%edi;"
-            "movl 0x768(%%edi), %%edi;"
-            "movl $0x408de0, %%ecx;"
-            "calll *%%ecx;"
-            :
-            : [tmpPtr] "m"(tmpPtr)
-            : ASaveAllRegister);
+        // AGetInternalLogger()->Info("{} {}", __LINE__, AMRef<int>(0x6A9Ec0, 0x784, 0xa4 * JACK_MUSIC_IDX + 0x4));
+
+        if (i == 0) { // 首先尝试调用 LawnLoadGame
+            __asm__ __volatile__(
+                // LawnLoadGame
+                "pushl %[tmpPtr];"
+                "movl 0x6a9ec0, %%ecx;"
+                "movl 0x768(%%ecx), %%ecx;"
+                "movl $0x481fe0, %%eax;"
+                "calll *%%eax;"
+                "addl $0x4, %%esp;"
+                :
+                : [tmpPtr] "m"(tmpPtr)
+                : ASaveAllRegister);
+        } else { // 场景切换需要调用 LoadGame
+            __asm__ __volatile__(
+                // LoadGame
+                "movl %[tmpPtr], %%eax;"
+                "movl 0x6a9ec0, %%edi;"
+                "movl 0x768(%%edi), %%edi;"
+                "movl $0x408de0, %%ecx;"
+                "calll *%%ecx;"
+                :
+                : [tmpPtr] "m"(tmpPtr)
+                : ASaveAllRegister);
+        }
+        // AGetInternalLogger()->Info("{} {}", __LINE__, AMRef<int>(0x6A9Ec0, 0x784, 0xa4 * JACK_MUSIC_IDX + 0x4));
+        __AAfterLoadGame(zombieMusicRefCnts, zombieMusicIdxs);
+        // AGetInternalLogger()->Info("{} {}", __LINE__, AMRef<int>(0x6A9Ec0, 0x784, 0xa4 * JACK_MUSIC_IDX + 0x4));
+
+        // 这说明需要切换场景
+        if (scene == AGetMainObject()->Scene()) {
+            break;
+        }
     }
 
     __asm__ __volatile__(
@@ -801,12 +898,19 @@ void AAsm::LoadGame(const std::string& file)
         :
         : [tmpPtr] "m"(tmpPtr)
         : ASaveAllRegister);
+    // AGetInternalLogger()->Info("{} {}", __LINE__, AMRef<int>(0x6A9Ec0, 0x784, 0xa4 * _JACK_MUSIC_IDX + 0x4));
 
     FreePvzString(&pvzStr);
 }
 
 void AAsm::SaveGame(const std::string& file)
 {
+    for (auto&& zombie : AAliveFilter<AZombie>()) {
+        if ((zombie.FixationCountdown() != 0 || zombie.FreezeCountdown() != 0)
+            && zombie.Type() == AXC_15 && zombie.State() == 15) {
+            zombie.MRef<bool>(0x104) = zombie.MRef<bool>(0xba);
+        }
+    }
     uint8_t pvzStr[28] = {0};
     void* tmpPtr = &pvzStr;
     MakePvzString(file.c_str(), &pvzStr);
@@ -1004,3 +1108,87 @@ void AAsm::PickRandomSeeds()
         :
         : ASaveAllRegister);
 }
+
+void AAsm::PlayFoleyPitch(int idx)
+{
+    __asm__ __volatile__(
+        "movl 0x6a9ec0, %%ecx;"
+        "movl 0x784(%%ecx), %%ecx;"
+        "movl %[idx], %%eax;"
+        "pushl $0;"
+        "movl $0x515020, %%ebx;"
+        "calll *%%ebx;"
+        :
+        : [idx] "m"(idx)
+        : ASaveAllRegister);
+}
+
+void AAsm::StopFoley(int idx)
+{
+    __asm__ __volatile__(
+        "movl 0x6a9ec0, %%edi;"
+        "movl 0x784(%%edi), %%edi;"
+        "movl %[idx], %%eax;"
+        "movl $0x515290, %%ebx;"
+        "calll *%%ebx;"
+        :
+        : [idx] "m"(idx)
+        : ASaveAllRegister);
+}
+
+// 播放僵尸的出场音效
+void AAsm::PlayZombieAppearSound(AZombie* zombie)
+{
+    __asm__ __volatile__(
+        "movl %[zombie], %%ecx;"
+        "movl $0x530640, %%eax;"
+        "calll *%%eax;"
+        :
+        : [zombie] "m"(zombie)
+        : ASaveAllRegister);
+}
+
+// 播放音乐
+void AAsm::PlaySample(int idx)
+{
+    __asm__ __volatile__(
+        "movl 0x6a9ec0, %%ecx;"
+        "pushl %[idx];"
+        "movl $0x4560C0, %%ebx;"
+        "calll *%%ebx;"
+        :
+        : [idx] "m"(idx)
+        : ASaveAllRegister);
+}
+
+// // 重新开始循环的音效
+// void AAsm::RestartLoopingSounds()
+// {
+//     // DWORD ptr[0x55];
+//     // ptr[0x54] = DWORD(AGetPvzBase());
+//     // void* tmpPtr = &ptr;
+
+//     // __asm__ __volatile__(
+//     //     "movl %[tmpPtr], %%edi;"
+//     //     "movl $0x4335D0, %%eax;"
+//     //     "calll *%%eax;"
+//     //     :
+//     //     : [tmpPtr] "m"(tmpPtr)
+//     //     : ASaveAllRegister);
+//     // // 这里需要再删除被冰冻的小丑和舞王的引用计数
+//     // // 给宝开的 BUG 擦屁股
+//     // for (auto&& zombie : AAliveFilter<AZombie>()) {
+//     //     if (zombie.FixationCountdown() == 0 && zombie.FreezeCountdown() == 0) {
+//     //         continue;
+//     //     }
+//     //     int type = zombie.Type();
+//     //     if (type == AXC_15) {
+//     //         StopFoley(_JACK_MUSIC_IDX);
+//     //         StopFoley(_JACK_MUSIC_IDX);
+//     //     } else if (type == AWW_8) {
+//     //         StopFoley(_MJ_MUSIC_IDX);
+//     //         StopFoley(_MJ_MUSIC_IDX);
+//     //     }
+//     //     zombie.MRef<bool>(0x104) = false;
+//     // }
+// }

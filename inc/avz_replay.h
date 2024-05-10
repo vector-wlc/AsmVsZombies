@@ -48,10 +48,7 @@ class A7zCompressor : public AAbstractCompressor,
                       public AOrderedBeforeScriptHook<-1>, //
                       public AOrderedExitFightHook<-1> {
 public:
-    A7zCompressor(const std::string& path)
-        : _7zPath(path)
-    {
-    }
+    A7zCompressor(const std::string& path);
     virtual ~A7zCompressor() {};
     virtual void Compress(const std::string& inPath) override;
     virtual void Decompress(const std::string& srcPath, const std::string& dstPath) override;
@@ -83,7 +80,7 @@ protected:
     virtual void _ExitFight() override;
     static void _RunExe(const std::string& exe, const std::string& cmd);
     static constexpr auto DEFAULT_CMD = "a -aoa -mx=";
-    std::string _7zPath;
+    std::string _7zPath = "7z";
     std::deque<std::string> _compressList;
     std::deque<Info> _decompressList;
     std::vector<std::string> _compressedList;
@@ -99,8 +96,14 @@ protected:
     std::atomic<bool> _isRunning = true;
 };
 
-class AReplay : AOrderedExitFightHook<-2> {
+class AReplay : public AOrderedExitFightHook<-2> {
 public:
+    struct TickInfo {
+        ACursor cursor;
+        int mjClock;
+        uint32_t mjPhase; // 这个是记录女仆的相位的，开启了女仆秘籍此值生效
+    };
+
     enum State {
         RECORDING,
         PLAYING,
@@ -117,9 +120,9 @@ public:
 
     // 开始播放
     // 使用示例：
-    // StartPlay(); -------- 开始播放，默认每 10 帧播放一帧，默认从第 0 帧开始播放
+    // StartPlay(); -------- 开始播放，默认从第 0 帧开始播放
     // StartPlay(3, 100); -------- 开始播放，每 3 帧播放一帧，从第 100 帧开始播放
-    void StartPlay(int interval = 10, int64_t startIdx = 0);
+    void StartPlay(int interval = -1, int64_t startIdx = 0);
 
     // 显示设定的帧
     // 注意: 对于播放模式，此函数会将播放的帧位设置为当前要显示的帧
@@ -196,22 +199,24 @@ protected:
     virtual void _ExitFight() override { Stop(); }
     void _ReadInfo();
     void _WriteInfo();
-    void _SaveMouseInfo();
-    void _LoadMouseInfo();
+    void _SaveTickInfo();
+    void _LoadTickInfo();
     void _LoadPvzState();
     void _RecordTick();
     void _PlayTick();
+    void _ShowTickInfo();
     bool _PreparePack();
     void _CompressTailFiles();
     void _ClearDatFiles();
     void _ClearAllFiles();
-    static constexpr auto MAX_SAVE_CNT_KEY = "maxSaveCnt";
-    static constexpr auto PACK_TICK_CNT_KEY = "packTickCnt";
-    static constexpr auto END_IDX_KEY = "endIdx";
-    static constexpr auto START_IDX_KEY = "startIdx";
-    static constexpr auto RECOVER_DAT_STR = "recover.dat";
-    static constexpr auto INFO_FILE_STR = "info.txt";
-    static constexpr auto MOUSE_INFO_FILE_STR = "mouseInfo.dat";
+    static constexpr auto _MAX_SAVE_CNT_KEY = "maxSaveCnt";
+    static constexpr auto _PACK_TICK_CNT_KEY = "packTickCnt";
+    static constexpr auto _END_IDX_KEY = "endIdx";
+    static constexpr auto _START_IDX_KEY = "startIdx";
+    static constexpr auto _RECORD_INTERVAL_KEY = "recordInterval";
+    static constexpr auto _RECOVER_DAT_STR = "recover.dat";
+    static constexpr auto _INFO_FILE_STR = "info.txt";
+    static constexpr auto _TICK_INFO_FILE_STR = "tickInfo.dat";
     int _recordInterval = 10;
     int _playInterval = 10;
     int64_t _maxSaveCnt = 2000;
@@ -231,9 +236,17 @@ protected:
     std::string _savePath;
     APainter _painter;
     AAbstractCompressor* _compressor = nullptr;
-    std::string _compressPath;
-    std::map<int, ACursor> _mouseInfos;
+    std::map<int, TickInfo> _tickInfos;
     bool _isMouseVisible = true;
+    uint32_t _mjPhaseRecover = AMaidCheats::MC_STOP;
+    static constexpr uint32_t _FALLING_SUN_ADDR = 0x00413B83;
+    static constexpr uint8_t _NO_FALLING_SUN_CODE = 0xeb;
+    uint8_t _fallingSunCodeRecover = 0x75;
+    static constexpr uint32_t _ZOMBIE_SPAWN_ADDR = 0x004265dc;
+    static constexpr uint8_t _STOP_ZOMBIE_SPAWN_CODE = 0xeb;
+    uint8_t _zombieSpawnCodeRecover = 0x74;
+    int _cursorLastPressType = INT_MIN;
+    int _lastWave = INT_MIN;
 };
 
 inline AReplay aReplay;

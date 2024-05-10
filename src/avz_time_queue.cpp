@@ -61,7 +61,7 @@ __AOpQueueManager::Push(const ATime& time, __ABoolOperation&& timeOp)
 
 void __AOpQueueManager::RunOperation()
 {
-    int nowTime = __aig.mainObject->GameClock();
+    int nowTime = AGetMainObject()->GameClock();
     auto totalWave = container.size();
     for (int wave = 1; wave <= totalWave; ++wave) {
         auto&& opQueue = container[wave - 1];
@@ -92,7 +92,7 @@ void __AOpQueueManager::RunOperation()
 
 void __AOpQueueManager::UpdateRefreshTime()
 {
-    auto mainObject = __aig.mainObject;
+    auto mainObject = AGetMainObject();
     int wave = mainObject->Wave();
     if (wave == mainObject->TotalWave()) {
         return;
@@ -139,7 +139,7 @@ void __AOpQueueManager::UpdateRefreshTime()
 void __AOpQueueManager::SetWavelength(const std::vector<ATime>& lst)
 {
     for (const auto& time : lst) {
-        if (time.wave == __aig.mainObject->TotalWave()) {
+        if (time.wave == AGetMainObject()->TotalWave()) {
             __aig.loggerPtr->Error("SetWavelength 对最后一波无效");
             continue;
         }
@@ -152,10 +152,10 @@ void __AOpQueueManager::SetWavelength(const std::vector<ATime>& lst)
             container[time.wave].calRefreshTime = timeQueue.calRefreshTime + time.time;
         }
         auto setRefresh = [time]() {
-            __aig.mainObject->ZombieRefreshHp() = -1;
+            AGetMainObject()->ZombieRefreshHp() = -1;
             int countdown = (time.wave % 10 == 9 ? time.time - 745 : time.time);
-            __aig.mainObject->RefreshCountdown() = countdown - 1;
-            __aig.mainObject->InitialCountdown() = countdown;
+            AGetMainObject()->RefreshCountdown() = countdown - 1;
+            AGetMainObject()->InitialCountdown() = countdown;
         };
         AConnect(ATime(time.wave, 1), std::move(setRefresh));
     }
@@ -189,7 +189,7 @@ void __AOpQueueManager::_PrintLog(const ATime& time, int nowTime)
 
 bool __AOpQueueManager::_CheckWavelength(const ATime& time)
 {
-    if (time.wave == __aig.mainObject->TotalWave()) {
+    if (time.wave == AGetMainObject()->TotalWave()) {
         return false;
     }
 
@@ -226,8 +226,8 @@ void __AOpQueueManager::_CheckAssumeWavelength(int wave)
     if (nextRefreshTime == __AOperationQueue::UNINIT) { // 下波的实际时间还未到
         // 计算当前僵尸的血量
         int currentHp = AAsm::ZombieTotalHp(wave - 1);
-        int refreshHp = __aig.mainObject->ZombieRefreshHp();
-        int totalHp = __aig.mainObject->MRef<int>(0x5598);
+        int refreshHp = AGetMainObject()->ZombieRefreshHp();
+        int totalHp = AGetMainObject()->MRef<int>(0x5598);
         float refreshRatio = float(totalHp - currentHp) / (totalHp - refreshHp);
 
         str = "但下一波僵尸尚未刷新，目前僵尸总血量为 " + std::to_string(currentHp) //
@@ -257,7 +257,7 @@ void __AOpQueueManager::_CheckAssumeWavelength(int wave)
 void __AOpQueueManager::_BeforeScript()
 {
     container.clear();
-    container.resize(__aig.mainObject->TotalWave());
+    container.resize(AGetMainObject()->TotalWave());
     startTime = ATime(1, __AOperationQueue::UNINIT);
 }
 
@@ -277,7 +277,7 @@ int ANowTime(int wave)
         return __AOperationQueue::UNINIT;
     }
     ++depth;
-    auto maxWave = __aig.mainObject->TotalWave();
+    auto maxWave = AGetMainObject()->TotalWave();
     if (wave <= 0 || wave > maxWave) {
         auto&& pattern = __aig.loggerPtr->GetPattern();
         // 此处会造成递归调用
@@ -295,5 +295,5 @@ int ANowTime(int wave)
     --depth;
     return refreshTime == __AOperationQueue::UNINIT //
         ? __AOperationQueue::UNINIT
-        : __aig.mainObject->GameClock() - refreshTime;
+        : AGetMainObject()->GameClock() - refreshTime;
 }

@@ -71,6 +71,7 @@ msgBoxLogger.Error("Error");     // 不显示
 
 ```C++
 // 格式化字符串默认为 #
+// 这里需要注意的是，由于日志对象内部实现使用了 C++20 的 std::format，因此 {} 是万能的格式化字符串
 consoleLogger.Info("时间是:#", 5);  // 输出结果: [1, -2147483648][INFO] 时间是:5
 // 将格式化字符串默认 # 变为 {}
 consoleLogger.SetPattern("{}");

@@ -131,11 +131,13 @@ struct ACursor {
     int x;
     int y;
     int type; // 0 为指针，1 为手形
+    int pressType;
     ACursor() = default;
-    explicit ACursor(int x, int y, int type = 0)
+    explicit ACursor(int x, int y, int type = 0, int pressType = 0)
         : x(x)
         , y(y)
         , type(type)
+        , pressType(pressType)
     {
     }
 };

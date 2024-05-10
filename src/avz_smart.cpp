@@ -72,7 +72,7 @@ void ACobManager::_BasicFire(int cobIdx, int dropRow, float dropCol)
     AAsm::ReleaseMouse();
     int x = 0;
     int y = 0;
-    auto plant = __aig.mainObject->PlantArray() + cobIdx;
+    auto plant = AGetMainObject()->PlantArray() + cobIdx;
     if (plant->Type() != ACOB_CANNON || plant->State() != 37) {
         __aig.loggerPtr->Error("ACobManager 内部错误，请联系开发者修复");
         return;
@@ -172,13 +172,13 @@ void ACobManager::Plant(int row, int col)
             if (AGetPlantIndex(row, tCol, AKERNEL_PULT) != -1) {
                 continue;
             }
-            auto seedPtr = __aig.mainObject->SeedArray() + ymtseedIdx;
+            auto seedPtr = AGetMainObject()->SeedArray() + ymtseedIdx;
             if (!AIsSeedUsable(seedPtr)) {
                 return;
             }
             ACard(ymtseedIdx + 1, row, tCol);
         }
-        auto seedPtr = __aig.mainObject->SeedArray() + ymjnpSeedIdx;
+        auto seedPtr = AGetMainObject()->SeedArray() + ymjnpSeedIdx;
         if (!AIsSeedUsable(seedPtr)) {
             return;
         }
@@ -216,8 +216,8 @@ void ACobManager::AutoSetList()
     _gridVec.clear();
     _next = 0;
     AGrid cobGrid = {0, 0};
-    auto PlantArray = __aig.mainObject->PlantArray();
-    for (int index = 0; index < __aig.mainObject->PlantCountMax(); ++index) {
+    auto PlantArray = AGetMainObject()->PlantArray();
+    for (int index = 0; index < AGetMainObject()->PlantCountMax(); ++index) {
         if (!PlantArray[index].IsCrushed() && !PlantArray[index].IsDisappeared()
             && PlantArray[index].Type() == ACOB_CANNON) {
             cobGrid = {PlantArray[index].Row() + 1, PlantArray[index].Col() + 1};
@@ -341,7 +341,7 @@ void ACobManager::FixLatest()
         return;
     }
     _lastestMsg.isWritable = false; // 锁定信息
-    int delayTime = _lastestMsg.fireTime + 205 - __aig.mainObject->GameClock();
+    int delayTime = _lastestMsg.fireTime + 205 - AGetMainObject()->GameClock();
     if (delayTime < 0) {
         delayTime = 0;
     }
@@ -539,7 +539,7 @@ int ACobManager::Fire(int row, float col)
         return -1;
     }
     _BasicFire(_indexVec[_next], row, col);
-    _UpdateLastestMsg(__aig.mainObject->GameClock(), _next);
+    _UpdateLastestMsg(AGetMainObject()->GameClock(), _next);
     auto tmpNext = _next;
     _Skip(1);
     return tmpNext;
@@ -567,7 +567,7 @@ int ACobManager::_RecoverBasicFire(int row, float col, bool isRoof)
         return -1;
     }
     _DelayFire(delayTime, _indexVec[_next], row, col);
-    _UpdateLastestMsg(__aig.mainObject->GameClock() + delayTime, _next);
+    _UpdateLastestMsg(AGetMainObject()->GameClock() + delayTime, _next);
     auto tmpNext = _next;
     _Skip(1);
     return tmpNext;
@@ -604,7 +604,7 @@ int ACobManager::RoofFire(int row, float col)
     }
 
     _DelayFire(delayTime, _indexVec[_next], row, col);
-    _UpdateLastestMsg(__aig.mainObject->GameClock() + delayTime, _next);
+    _UpdateLastestMsg(AGetMainObject()->GameClock() + delayTime, _next);
     auto tmpNext = _next;
     _Skip(1);
     return tmpNext;
@@ -641,6 +641,11 @@ std::vector<int> ACobManager::RecoverRoofFire(const std::vector<APosition>& lst)
 //  ItemCollector
 ////////////////////////////////////////
 
+AItemCollector::AItemCollector()
+{
+    _types.fill(true);
+}
+
 void AItemCollector::_EnterFight()
 {
     AItemCollector::Start();
@@ -656,6 +661,18 @@ void AItemCollector::SetInterval(int timeInterval)
     this->_timeInterval = timeInterval;
 }
 
+void AItemCollector::SetTypeList(const std::vector<int>& types)
+{
+    _types.fill(false);
+    for (auto type : types) {
+        if (type < 1 && type >= _TYPE_SIZE) {
+            AGetInternalLogger()->Warning("AItemCollector::SetTypeList : 您设置的收集物类型: {} 不存在", type);
+            continue;
+        }
+        _types[type] = true;
+    }
+}
+
 void AItemCollector::Start()
 {
     ATickRunnerWithNoStart::_Start([this] { _Run(); }, ONLY_FIGHT);
@@ -663,20 +680,21 @@ void AItemCollector::Start()
 
 void AItemCollector::_Run()
 {
-    if (__aig.mainObject->GameClock() % _timeInterval != 0 || //
-        __aig.mainObject->MouseAttribution()->Type() != 0) {
+    if (AGetMainObject()->GameClock() % _timeInterval != 0 || //
+        AGetMainObject()->MouseAttribution()->Type() != 0) {
         return;
     }
 
-    auto item = __aig.mainObject->ItemArray();
-    int total = __aig.mainObject->ItemTotal();
+    auto item = AGetMainObject()->ItemArray();
+    int total = AGetMainObject()->ItemTotal();
     int collectIdx = -1;
     for (int index = 0; index < total; ++index, ++item) {
-        if (item->IsCollected() || item->IsDisappeared()) {
+        int type = item->Type();
+        if (item->IsCollected() || item->IsDisappeared() || !_types[item->Type()]) {
             continue;
         }
         collectIdx = index;
-        if (ARangeIn(item->Type(), {4, 5, 6})) { // 优先采集阳光
+        if (ARangeIn(type, {4, 5, 6})) { // 优先采集阳光
             break;
         }
     }
@@ -684,7 +702,7 @@ void AItemCollector::_Run()
         return;
     }
 
-    item = __aig.mainObject->ItemArray() + collectIdx;
+    item = AGetMainObject()->ItemArray() + collectIdx;
     float itemX = item->Abscissa();
     float itemY = item->Ordinate();
     if (itemX >= 0.0 && itemY >= 70) {
@@ -800,8 +818,8 @@ void AIceFiller::Coffee()
 void APlantFixer::AutoSetList()
 {
     _gridLst.clear();
-    auto plant = __aig.mainObject->PlantArray();
-    int plantCntMax = __aig.mainObject->PlantCountMax();
+    auto plant = AGetMainObject()->PlantArray();
+    int plantCntMax = AGetMainObject()->PlantCountMax();
     AGrid grid;
     for (int index = 0; index < plantCntMax; ++index, ++plant) {
         if (!plant->IsCrushed() && !plant->IsDisappeared() && plant->Type() == _plantType) {
@@ -881,14 +899,14 @@ void APlantFixer::_Run()
         if (_coffeeSeedIdx == -1) {
             return;
         }
-        auto coffeeSeed = __aig.mainObject->SeedArray() + _coffeeSeedIdx;
+        auto coffeeSeed = AGetMainObject()->SeedArray() + _coffeeSeedIdx;
         if (!AIsSeedUsable(coffeeSeed)) {
             return;
         }
     }
 
     do {
-        auto seedMemory = __aig.mainObject->SeedArray();
+        auto seedMemory = AGetMainObject()->SeedArray();
         seedMemory += *usableSeedIndexIter;
         if (AIsSeedUsable(seedMemory)) {
             break;
@@ -919,7 +937,7 @@ void APlantFixer::_Run()
                 false);
             return;
         }
-        auto plant = __aig.mainObject->PlantArray();
+        auto plant = AGetMainObject()->PlantArray();
         plant += *plantIdxIter;
         int plantHp = plant->Hp();
         // 如果当前生命值低于最小生命值，记录下来此植物的信息

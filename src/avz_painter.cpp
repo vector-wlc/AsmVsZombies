@@ -8,6 +8,7 @@
 #include "avz_logger.h"
 #include "avz_memory.h"
 #include "avz_game_controllor.h"
+#include "avz_tick_runner.h"
 
 void APainter::SetFont(const std::string& name)
 {
@@ -17,6 +18,18 @@ void APainter::SetFont(const std::string& name)
     }
     _basicPainter.fontName = wstr;
     _basicPainter.ClearFont();
+}
+
+// 得到字体
+__ANodiscard std::string APainter::GetFont() const
+{
+    return AWStrToStr(_basicPainter.fontName);
+}
+
+// 得到字体的大小
+__ANodiscard int APainter::GetFontSize() const
+{
+    return _basicPainter.fontSize;
 }
 
 void APainter::SetFontSize(int size)
@@ -33,7 +46,7 @@ void APainter::SetTextColor(DWORD color)
     _textColor = color;
 }
 
-DWORD APainter::GetRectColor()
+DWORD APainter::GetRectColor() const
 {
     return _rectColor;
 }
@@ -43,7 +56,7 @@ void APainter::SetRectColor(DWORD color)
     _rectColor = color;
 }
 
-DWORD APainter::GetTextColor()
+DWORD APainter::GetTextColor() const
 {
     return _textColor;
 }
@@ -160,6 +173,9 @@ std::vector<std::vector<int>> __ABasicPainter::posDict = {
     {-1, 0},
 };
 
+HCURSOR __ABasicPainter::handCursor = nullptr;
+HCURSOR __ABasicPainter::arrowCursor = nullptr;
+
 void __ABasicPainter::ClearFont()
 {
     DeleteObject(textInfo.HFont);
@@ -171,7 +187,7 @@ bool __ABasicPainter::IsOk()
 {
     static int recordClock = 0;
     static bool isOk = false;
-    int gameClock = __aig.mainObject->GlobalClock();
+    int gameClock = AGetMainObject()->GlobalClock();
     if (gameClock != recordClock) { // 一帧刷新一次
         recordClock = gameClock;
         isOk = Refresh();
@@ -258,6 +274,34 @@ void __ABasicPainter::_ExitFight()
     *(uint32_t*)0x676968 = 0x54C650;
 }
 
+void __ABasicPainter::_AfterInject()
+{
+    // 获取 PvZ 鼠标的样式
+    static ATickRunner tickRunner;
+    if (!tickRunner.IsStopped()) {
+        return;
+    }
+    tickRunner.Start([] {
+        if (__ABasicPainter::arrowCursor && __ABasicPainter::handCursor) {
+            tickRunner.Stop();
+            return;
+        }
+        if (!AGetPvzBase()->MouseWindow()->IsInWindow()) {
+            return;
+        }
+        CURSORINFO cursorInfo;
+        cursorInfo.cbSize = sizeof(CURSORINFO);
+        GetCursorInfo(&cursorInfo);
+        int cursorType = AGetPvzBase()->MRef<int>(0x4B0);
+        if (cursorType == 0) { // arrow
+            __ABasicPainter::arrowCursor = cursorInfo.hCursor;
+        } else if (cursorType == 1) { // hand
+            __ABasicPainter::handCursor = cursorInfo.hCursor;
+        }
+    },
+        ATickRunner::AFTER_INJECT);
+}
+
 bool __ABasicPainter::AsmDraw()
 {
     static int __x = 0;
@@ -327,11 +371,12 @@ void __ABasicPainter::DrawCursor(int x, int y, int type)
 {
     static std::unordered_map<int, std::shared_ptr<__ATexture>> m;
     if (m[type] == nullptr) {
-        auto pvzBase = *(APvzBase**)0x6a9ec0;
         __ACursorInfo cursorInfo;
-        cursorInfo.width = GetSystemMetrics(SM_CXCURSOR);
-        cursorInfo.height = GetSystemMetrics(SM_CYCURSOR);
-        cursorInfo.hCursor = type == 1 ? pvzBase->MRef<HCURSOR>(0x4B8) : LoadCursor(NULL, IDC_ARROW);
+        auto theArrowCursor = arrowCursor == nullptr ? LoadCursor(NULL, IDC_ARROW) : arrowCursor;
+        auto theHandCursor = handCursor == nullptr ? LoadCursor(NULL, IDC_HAND) : handCursor;
+        // auto theArrowCursor = LoadCursor(NULL, IDC_ARROW);
+        // auto theHandCursor = LoadCursor(NULL, IDC_HAND);
+        cursorInfo.hCursor = type == 1 ? theHandCursor : theArrowCursor;
         cursorInfo.type = type;
         m[type] = std::make_shared<__ATexture>(&cursorInfo);
     }
@@ -351,7 +396,7 @@ __ATextInfo* __ABasicPainter::GetTextNeedInfo()
 
 bool __ABasicPainter::IsOpen3dAcceleration()
 {
-    auto p2 = __aig.pvzBase->MPtr<APvzStruct>(0x36C);
+    auto p2 = AGetPvzBase()->MPtr<APvzStruct>(0x36C);
     if (!p2) {
         return false;
     }
@@ -450,6 +495,80 @@ __ATexture::__ATexture(wchar_t chr, __ATextInfo* _textInfo)
     DeleteObject(aBitmap);
 }
 
+void __ATexture::_DrawBlackBorder(DWORD* bits)
+{
+    // 左右扫描
+    for (int i = 0; i < mHeight; ++i) {
+        DWORD* preBit = bits;
+        for (int j = 0; j < mWidth; ++j) {
+            DWORD* curBit = bits + i * mWidth + j;
+            if (*preBit != 0xffffff && *curBit == 0xffffff) {
+                *preBit = 0xff000000; // 左边
+            } else if (*preBit == 0xffffff && *curBit != 0xffffff) {
+                *curBit = 0xff000000; // 右边
+            }
+            preBit = curBit;
+        }
+    }
+
+    // 上下扫描
+    for (int i = 0; i < mWidth; ++i) {
+        DWORD* preBit = bits;
+        for (int j = 0; j < mHeight; ++j) {
+            DWORD* curBit = bits + j * mWidth + i;
+            if (*preBit != 0xffffff && *curBit == 0xffffff) {
+                *preBit = 0xff000000; // 上边
+            } else if (*preBit == 0xffffff && *curBit != 0xffffff) {
+                *curBit = 0xff000000; // 下边
+            }
+            preBit = curBit;
+        }
+    }
+}
+
+void __ATexture::_CopyBitsToSurface(DWORD* src, DDSURFACEDESC2& dst, __ACursorInfo* cursorInfo)
+{
+    bool isSuccessGetPvzCursor = (cursorInfo->type == 0 && cursorInfo->hCursor != LoadCursor(NULL, IDC_ARROW))
+        || (cursorInfo->type == 1 && cursorInfo->hCursor != LoadCursor(NULL, IDC_HAND));
+    char* surface = (char*)dst.lpSurface;
+    if (isSuccessGetPvzCursor) {
+        if (cursorInfo->type != 0) {
+            // 如果不是箭头，对其加黑色边框
+            // 这里不知道为啥不是箭头的时候没有黑边
+            // 方法就是左右扫描一遍+上下扫描一遍
+            _DrawBlackBorder(src);
+        }
+        for (int i = 0; i < mHeight; ++i) {
+            DWORD* _dst = (DWORD*)surface;
+            DWORD* _bits = src;
+            for (int j = 0; j < mWidth; ++j) {
+                auto val = *_bits++;
+                if (val == 0xffffff) {
+                    *_dst++ = 0xffffffff;
+                } else if (val == 0) {
+                    *_dst++ = 0x00000000;
+                } else {
+                    *_dst++ = 0xff000000;
+                }
+            }
+
+            src += mWidth;
+            surface += dst.lPitch;
+        }
+    } else {
+        for (int i = 0; i < mHeight; ++i) {
+            DWORD* _dst = (DWORD*)surface;
+            DWORD* _bits = src;
+            for (int j = 0; j < mWidth; ++j) {
+                *_dst++ = *_bits++;
+            }
+
+            src += mWidth;
+            surface += dst.lPitch;
+        }
+    }
+}
+
 __ATexture::__ATexture(__ACursorInfo* cursorInfo)
     : mWidth(0)
     , mHeight(0)
@@ -457,8 +576,8 @@ __ATexture::__ATexture(__ACursorInfo* cursorInfo)
     , v(0)
     , texture(nullptr)
 {
-    mWidth = cursorInfo->width + 1;
-    mHeight = cursorInfo->height + 1;
+    mWidth = 1 + GetSystemMetrics(SM_CXCURSOR);
+    mHeight = 1 + GetSystemMetrics(SM_CYCURSOR);
     HDC hDc = CreateCompatibleDC(nullptr);
     SelectObject(hDc, GetStockObject(BLACK_BRUSH));
     BITMAPINFO aBitmapInfo;
@@ -477,10 +596,10 @@ __ATexture::__ATexture(__ACursorInfo* cursorInfo)
     }
     HBITMAP anOldBitmap = (HBITMAP)SelectObject(hDc, aBitmap);
     Rectangle(hDc, 0, 0, mWidth, mHeight);
-    // SetBkMode(hDc, TRANSPARENT);
-    // SetTextColor(hDc, RGB(0, 255, 255));
+    SetBkMode(hDc, TRANSPARENT);
+    SetTextColor(hDc, RGB(0, 255, 255));
     DrawIconEx(hDc, 0, 0, cursorInfo->hCursor, 0, 0, 0, NULL, DI_NORMAL | DI_COMPAT);
-    // GdiFlush();
+    GdiFlush();
     SelectObject(hDc, anOldBitmap);
     texture = CreateTextureSurface(mWidth, mHeight);
     DDSURFACEDESC2 aDesc;
@@ -488,16 +607,7 @@ __ATexture::__ATexture(__ACursorInfo* cursorInfo)
     texture->Lock(nullptr, &aDesc, DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT | DDLOCK_WRITEONLY, nullptr);
     u = (float)(mWidth - 1) / aDesc.dwWidth;
     v = (float)(mHeight - 1) / aDesc.dwHeight;
-    char* dst = (char*)aDesc.lpSurface;
-    for (int i = 0; i < mHeight; ++i) {
-        DWORD* _dst = (DWORD*)dst;
-        DWORD* _bits = aBits;
-        for (int j = 0; j < mWidth; ++j) {
-            *_dst++ = cursorInfo->type == 1 ? ((*_bits++) << 24) | 0xFFFFFFul : *_bits++;
-        }
-        aBits += mWidth;
-        dst += aDesc.lPitch;
-    }
+    _CopyBitsToSurface(aBits, aDesc, cursorInfo);
     texture->Unlock(nullptr);
     DeleteObject(aBitmap);
 }

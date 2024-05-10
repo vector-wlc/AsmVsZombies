@@ -7,6 +7,7 @@
 #ifndef __AVZ_GAME_CONTROLLOR_H__
 #define __AVZ_GAME_CONTROLLOR_H__
 
+#include "avz_memory.h"
 #include "avz_logger.h"
 
 class __AGameControllor : public AOrderedExitFightHook<-1> {
@@ -25,7 +26,7 @@ public:
         }
         isSkipTick = [pre = std::forward<Pre>(pre), //
                          callback = std::forward<CallBack>(callback), this]() mutable {
-            auto gameUi = __aig.pvzBase->GameUi();
+            auto gameUi = AGetPvzBase()->GameUi();
             if (gameUi == 3 && pre()) {
                 return true;
             }

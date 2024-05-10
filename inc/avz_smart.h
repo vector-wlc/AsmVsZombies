@@ -308,12 +308,45 @@ class AItemCollector : public ATickRunnerWithNoStart,
     __ADeleteCopyAndMove(AItemCollector);
 
 public:
-    AItemCollector() = default;
+    AItemCollector();
     void Start();
     void SetInterval(int timeInterval);
 
+    // 设置收集类型
+    // 1银币
+    // 2金币
+    // 3钻石
+    // 4阳光
+    // 5小阳光
+    // 6大阳光
+    // 8奖杯
+    // 9铲子
+    // 10图鉴
+    // 11钥匙
+    // 12透视空花瓶
+    // 13绿水壶
+    // 14玉米卷
+    // 15信
+    // 16植物卡片
+    // 17礼物盒子
+    // 18钱袋
+    // 19礼物盒子
+    // 20钱袋
+    // 21银向日葵
+    // 22金向日葵
+    // 23巧克力
+    // 24巧克力
+    // 25礼物盒子
+    // 26礼物盒子
+    // 27礼物盒子
+    // 使用示例：
+    // SetTypeList({1, 2, 3}); -------- 只收集银币金币和钻石
+    void SetTypeList(const std::vector<int>& types);
+
 protected:
     int _timeInterval = 10;
+    static constexpr int _TYPE_SIZE = 28;
+    std::array<bool, _TYPE_SIZE> _types;
     void _Run();
     virtual void _EnterFight() override;
 };

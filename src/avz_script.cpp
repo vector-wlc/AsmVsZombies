@@ -27,18 +27,16 @@ void __AScriptManager::GlobalInit()
 
 bool __AScriptManager::MemoryInit()
 {
-    __aig.pvzBase = *(APvzBase**)0x6a9ec0;
-    int gameUi = __aig.pvzBase->GameUi();
+    int gameUi = AGetPvzBase()->GameUi();
     if (gameUi == 1 || //
         (gameUi != 2 && gameUi != 3)) {
         return false;
     }
-    int gameIdx = __aig.pvzBase->MRef<int>(0x7f8); // 关卡序号
+    int gameIdx = AGetPvzBase()->MRef<int>(0x7f8); // 关卡序号
     if (gameIdx == AAsm::CHALLENGE_ZEN_GARDEN) {   // 进入禅静花园直接返回
         return false;
     }
-    auto mainObject = __aig.pvzBase->MainObject();
-    __aig.mainObject = mainObject;
+    auto mainObject = AGetPvzBase()->MainObject();
 
     // 假进入战斗界面直接返回
     if (mainObject->LoadDataState() == 1) {
@@ -65,14 +63,14 @@ void __AScriptManager::LoadScript()
     RunTotal();
 
     // 等待游戏进入战斗界面
-    while (__aig.pvzBase->GameUi() == 2 && //
-        __aig.pvzBase->MainObject()) {
+    while (AGetPvzBase()->GameUi() == 2 && //
+        AGetPvzBase()->MainObject()) {
         AAsm::GameSleepLoop();
     }
 
     // 等待游戏结束
-    while (__aig.pvzBase->GameUi() == 3 && //
-        __aig.pvzBase->MainObject()) {
+    while (AGetPvzBase()->GameUi() == 3 && //
+        AGetPvzBase()->MainObject()) {
         AAsm::GameSleepLoop();
     }
 
@@ -81,7 +79,7 @@ void __AScriptManager::LoadScript()
 
     if (scriptReloadMode != AReloadMode::MAIN_UI_OR_FIGHT_UI) {
         // 如果战斗界面不允许重新注入则等待回主界面
-        while (__aig.pvzBase->MainObject()) {
+        while (AGetPvzBase()->MainObject()) {
             AAsm::GameSleepLoop();
         }
     }
@@ -93,7 +91,7 @@ void __AScriptManager::LoadScript()
 
 void __AScriptManager::RunScript()
 {
-    int gameUi = __aig.pvzBase->GameUi();
+    int gameUi = AGetPvzBase()->GameUi();
 
     if (gameUi == 2 || __aGameControllor.isAdvancedPaused) {
         __aig.tickManagers[ATickRunner::GLOBAL].RunQueue();
@@ -106,7 +104,7 @@ void __AScriptManager::RunScript()
 
     // 下面的代码只能在战斗界面运行
 
-    auto mainObject = __aig.mainObject;
+    auto mainObject = AGetMainObject();
 
     static int64_t runFlag = -1;
     auto gameClock = mainObject->GameClock();
@@ -196,10 +194,11 @@ void __AScriptManager::ScriptHook()
     if (__aGameControllor.isAdvancedPaused) {
         return;
     }
+
     AAsm::GameTotalLoop();
 
     while (__aGameControllor.isSkipTick() //
-        && __aig.pvzBase->MainObject()) {
+        && AGetPvzBase()->MainObject()) {
         RunTotal();
         if (__aGameControllor.isAdvancedPaused) {
             return;
@@ -211,7 +210,7 @@ void __AScriptManager::ScriptHook()
             // 阻塞时间到达，必须通知阻塞函数释放阻塞
             return;
         }
-        __aig.pvzBase->MjClock() += 1;
+        AGetPvzBase()->MjClock() += 1;
         AAsm::GameFightLoop();
         AAsm::ClearObjectMemory();
         AAsm::CheckFightExit();
@@ -232,22 +231,22 @@ void __AScriptManager::WaitForFight(bool isSkipTick)
 
     ++blockDepth;
 
-    for (int cnt = 0; __aig.pvzBase->GameUi() == 2 && cnt < 2; ++cnt) {
+    for (int cnt = 0; AGetPvzBase()->GameUi() == 2 && cnt < 2; ++cnt) {
         // 画面刷新几帧防止被系统杀死
         AAsm::GameSleepLoop();
     }
     if (isSkipTick) {
-        for (; __aig.pvzBase->GameUi() == 2;) {
+        for (; AGetPvzBase()->GameUi() == 2;) {
             RunTotal();
             AAsm::UpdateFrame();
         }
     }
-    for (; __aig.pvzBase->GameUi() == 2;) {
+    for (; AGetPvzBase()->GameUi() == 2;) {
         AAsm::GameSleepLoop();
     }
 
     --blockDepth;
-    if (!__aig.pvzBase->MainObject()) {
+    if (!AGetPvzBase()->MainObject()) {
         AExitFight();
     }
     __aOpQueueManager.UpdateRefreshTime(); // 刷新一次
@@ -282,7 +281,7 @@ void __AScriptManager::WaitUntil(int wave, int time)
     ++blockDepth;
     while (ANowTime(wave) < time) {
         AAsm::GameSleepLoop();
-        if (!__aig.pvzBase->MainObject()) {
+        if (!AGetPvzBase()->MainObject()) {
             --blockDepth;
             AExitFight();
         }
@@ -304,7 +303,7 @@ void __AScriptManager::FastSaveLoad()
     }
 
     // 点掉继续对话框
-    if (continueCountdown == 0) {
+    if (continueCountdown == 0 && !hasContinueDialog) {
         auto topWindow = AMPtr<APvzBase>(0x6a9ec0)->MouseWindow()->TopWindow();
         if (topWindow) {
             AAsm::MouseClick(280, 370, 1);

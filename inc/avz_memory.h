@@ -9,13 +9,13 @@
 
 #include "avz_state_hook.h"
 
-__ANodiscard inline AMainObject* AGetMainObject() { return __aig.mainObject; }
-
 __ANodiscard inline APvzBase* AGetPvzBase() { return *(APvzBase**)0x6a9ec0; }
+
+__ANodiscard inline AMainObject* AGetMainObject() { return AGetPvzBase()->MainObject(); }
 
 __ANodiscard inline AAnimation* AGetAnimationArray()
 {
-    return __aig.pvzBase->AnimationMain()->AnimationOffset()->AnimationArray();
+    return AGetPvzBase()->AnimationMain()->AnimationOffset()->AnimationArray();
 }
 
 // 返回鼠标所在行
@@ -208,32 +208,43 @@ inline void ASetGameSpeed(float x)
 // 女仆秘籍
 class AMaidCheats : public AOrderedExitFightHook<-1> {
 public:
+    // MC 前缀是 machine code 的缩写
+    static constexpr uint32_t MC_CALL_PARTNER = 0x00F0B890;
+    static constexpr uint32_t MC_DANCING = 0x0140B890;
+    static constexpr uint32_t MC_MOVE = 0x00E9B890;
+    static constexpr uint32_t MC_STOP = 0x838808B;
+
+    static uint32_t& Phase()
+    {
+        return AMRef<uint32_t>(0x52DFC9);
+    }
+
     // 召唤舞伴
     // 舞王不前进且每帧尝试召唤舞伴
     static void CallPartner()
     {
-        *((uint32_t*)(0x52DFC9)) = 0x00F0B890;
+        Phase() = MC_CALL_PARTNER;
     }
 
     // 跳舞
     // 舞王不前进且不会召唤舞伴
     static void Dancing()
     {
-        *((uint32_t*)(0x52DFC9)) = 0x0140B890;
+        Phase() = MC_DANCING;
     }
 
     // 保持前进
     // 舞王一直前进
     static void Move()
     {
-        *((uint32_t*)(0x52DFC9)) = 0x00E9B890;
+        Phase() = MC_MOVE;
     }
 
     // 停止女仆秘籍
     // 恢复游戏原样
     static void Stop()
     {
-        *((uint32_t*)(0x52DFC9)) = 0x838808B;
+        Phase() = MC_STOP;
     }
 
 protected:

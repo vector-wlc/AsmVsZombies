@@ -14,7 +14,7 @@
 int AMouseRow()
 {
     static int lastValue = -1;
-    auto memoryValue = __aig.mainObject->MouseExtraAttribution()->Row();
+    auto memoryValue = AGetMainObject()->MouseExtraAttribution()->Row();
     if (memoryValue >= 0) {
         lastValue = memoryValue + 1;
     }
@@ -25,7 +25,7 @@ int AMouseRow()
 float AMouseCol()
 {
     static float lastValue = -1;
-    auto memoryValue = __aig.mainObject->MouseAttribution()->Abscissa();
+    auto memoryValue = AGetMainObject()->MouseAttribution()->Abscissa();
     if (memoryValue >= 0) {
         lastValue = float(memoryValue + 25) / 80;
     }
@@ -252,7 +252,7 @@ void ASetZombies(const std::vector<int>& zombieType, ASetZombieMode mode)
         }
     }
 
-    if (__aig.pvzBase->GameUi() == 2) {
+    if (AGetPvzBase()->GameUi() == 2) {
         AUpdateZombiesPreview();
     }
 }
@@ -369,12 +369,12 @@ bool* AGetZombieTypeList()
 
 void __AGameSpeedManager::_BeforeScript()
 {
-    _oriTickMs = __aig.pvzBase->TickMs();
+    _oriTickMs = AGetPvzBase()->TickMs();
 }
 
 void __AGameSpeedManager::_ExitFight()
 {
-    __aig.pvzBase->TickMs() = _oriTickMs;
+    AGetPvzBase()->TickMs() = _oriTickMs;
 }
 
 void __AGameSpeedManager::Set(float x)
@@ -385,12 +385,12 @@ void __AGameSpeedManager::Set(float x)
         return;
     }
     int ms = int(10 / x + 0.5);
-    __aig.pvzBase->TickMs() = ms;
+    AGetPvzBase()->TickMs() = ms;
 }
 
 bool AGameIsPaused()
 {
-    if (!__aig.pvzBase->MainObject()) {
+    if (!AGetPvzBase()->MainObject()) {
         return false;
     }
     return AGetMainObject()->GamePaused() || AGetPvzBase()->MouseWindow()->TopWindow() != nullptr;
@@ -505,7 +505,7 @@ __ANodiscard int AGetCobRecoverTime(APlant* cob)
         __aig.loggerPtr->Error("AGetCobRecoverTime(APlant*) 参数值不合法");
         return ACobManager::NO_EXIST_RECOVER_TIME;
     }
-    auto animationMemory = __aig.pvzBase->AnimationMain()->AnimationOffset()->AnimationArray() + cob->AnimationCode();
+    auto animationMemory = AGetPvzBase()->AnimationMain()->AnimationOffset()->AnimationArray() + cob->AnimationCode();
 
     switch (cob->State()) {
     case 35:

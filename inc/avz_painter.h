@@ -99,8 +99,6 @@ struct __ATextInfo : public __AD3dInfo {
 
 struct __ACursorInfo : public __AD3dInfo {
     int type;
-    int width;
-    int height;
     HCURSOR hCursor;
 };
 
@@ -132,10 +130,18 @@ public:
     void Draw(DWORD color, int x, int y) const;
 
     IDirectDrawSurface7* CreateTextureSurface(int theWidth, int theHeight);
+
+protected:
+    // 给一个图像画上黑色边框
+    void _DrawBlackBorder(DWORD* bits);
+
+    // 将 bit 复制到 surface 上
+    void _CopyBitsToSurface(DWORD* src, DDSURFACEDESC2& dst, __ACursorInfo* cursorInfo);
 };
 
 class __ABasicPainter : public AOrderedBeforeScriptHook<-1>, //
-                        public AOrderedExitFightHook<-1> {
+                        public AOrderedExitFightHook<-1>,
+                        public AOrderedAfterInjectHook<-1> {
     __ADeleteCopyAndMove(__ABasicPainter);
 
 public:
@@ -167,6 +173,16 @@ public:
         }
     };
 
+    __ABasicPainter()
+    {
+        GetPainterSet().insert(this);
+    }
+
+    ~__ABasicPainter()
+    {
+        GetPainterSet().erase(this);
+    }
+
     // Hook
     static bool AsmDraw();
     static void DrawEveryTick();
@@ -178,10 +194,6 @@ public:
     std::unordered_map<wchar_t, std::shared_ptr<__ATexture>> textureDict;
     static std::vector<std::vector<int>> posDict;
 
-    __ATextInfo textInfo;
-    int fontSize = 20;
-    std::size_t maxQueueSize = 1e4;
-    std::wstring fontName = L"宋体";
     void DrawRect(int x, int y, int w, int h, DWORD color);
     void DrawStr(const std::wstring& text, int x, int y, DWORD color);
     static void DrawCursor(int x, int y, int type); // 0: 普通的 1: 手
@@ -195,19 +207,17 @@ public:
         return __;
     }
 
-    __ABasicPainter()
-    {
-        GetPainterSet().insert(this);
-    }
-
-    ~__ABasicPainter()
-    {
-        GetPainterSet().erase(this);
-    }
+    __ATextInfo textInfo;
+    int fontSize = 20;
+    std::size_t maxQueueSize = 1e4;
+    std::wstring fontName = L"宋体";
+    static HCURSOR handCursor;
+    static HCURSOR arrowCursor;
 
 protected:
     virtual void _BeforeScript() override;
     virtual void _ExitFight() override;
+    virtual void _AfterInject() override;
 };
 
 class APainter {
@@ -220,11 +230,17 @@ public:
     // SetFont("黑体") ------ 将字体设置为黑体
     void SetFont(const std::string& name);
 
+    // 得到字体
+    __ANodiscard std::string GetFont() const;
+
     // 设置字体大小
     // 使用示例
     // SetFontSize(15) ------ 将字体大小设置为 15
     // 注意此处字体大小不一定与 MS Word 中的相同
     void SetFontSize(int size);
+
+    // 得到字体的大小
+    __ANodiscard int GetFontSize() const;
 
     // 设置文本颜色
     // 使用示例
@@ -232,7 +248,7 @@ public:
     // SetTextColor(AArgb(0xff, 0, 0, 0)) ----- 将文本的不透明度设置为 0xff, 也就是不透明, 色彩设置为 RGB(0, 0, 0), 也就是黑色
     void SetTextColor(DWORD color);
 
-    __ANodiscard DWORD GetTextColor();
+    __ANodiscard DWORD GetTextColor() const;
 
     // 设置矩形框颜色
     // 使用示例
@@ -240,7 +256,7 @@ public:
     // SetRectColor(AArgb(0xff, 0, 0, 0)) ----- 将矩形框的不透明度设置为 0xff, 也就是不透明, 色彩设置为 RGB(0, 0, 0), 也就是黑色
     void SetRectColor(DWORD color);
 
-    __ANodiscard DWORD GetRectColor();
+    __ANodiscard DWORD GetRectColor() const;
 
     // 绘制函数
     // 第一个参数指的是绘制什么: 文本还是矩形

@@ -9,31 +9,33 @@
 void AAbstractLogger::_BeforeScript()
 {
     _pattern = "#";
-    _headerStyle = "[#wave, #time][#level]";
+    _headerStyle = "[#wave, #time][#level] ";
 }
 
-std::string AAbstractLogger::_CreatHeader(ALogLevel level)
+void AAbstractLogger::_Replace(std::string& content, std::string_view pattern, std::string_view replaceStr)
 {
-    if (_headerStyle.empty()) {
-        return "";
+    if (pattern.empty()) {
+        return;
     }
-    std::string header = _headerStyle;
-    auto nowTime = ANowTime();
-    auto idx = header.find(_pattern + "time");
-    if (idx != std::string::npos) {
-        header.replace(idx, _pattern.size() + 4, std::to_string(nowTime.time));
+    size_t idx = 0;
+    while (true) {
+        idx = content.find(pattern, idx);
+        if (idx == std::string::npos) {
+            break;
+        }
+        content.replace(idx, pattern.size(), replaceStr);
+        idx += replaceStr.size();
     }
+}
 
-    idx = header.find(_pattern + "wave");
-    if (idx != std::string::npos) {
-        header.replace(idx, _pattern.size() + 4, std::to_string(nowTime.wave));
-    }
-
-    idx = header.find(_pattern + "level");
-    if (idx != std::string::npos) {
-        header.replace(idx, _pattern.size() + 5, _levelStr[int(level)]);
-    }
-    return header + ' ';
+std::string AAbstractLogger::_CreateHeader(ALogLevel level)
+{
+    std::string headerFormat = _headerStyle;
+    _Replace(headerFormat, _pattern + "wave", "{0}");
+    _Replace(headerFormat, _pattern + "time", "{1}");
+    _Replace(headerFormat, _pattern + "level", "{2}");
+    auto now = ANowTime();
+    return std::vformat(headerFormat, std::make_format_args(now.wave, now.time, _levelStr[int(level)]));
 }
 
 void ALogger<AFile>::_Output(ALogLevel level, std::string&& str)
@@ -82,29 +84,68 @@ void ALogger<AConsole>::_Output(ALogLevel level, std::string&& str)
 
 ALogger<APvzGui>::ALogger()
 {
-    _color[0] = AArgb(0xff, 0xff, 0xff, 0xff); // white
-    _color[1] = AArgb(0xff, 0, 0xff, 0);       // green
-    _color[2] = AArgb(0xff, 0xff, 0xff, 0);    // yellow
-    _color[3] = AArgb(0xff, 0xff, 0, 0);       // red
-    _remainTime = 500;                         // 控制显示的持续时间
+    _textColors[0] = AArgb(0xff, 0xff, 0xff, 0xff); // white
+    _textColors[1] = AArgb(0xff, 0, 0xff, 0);       // green
+    _textColors[2] = AArgb(0xff, 0xff, 0xff, 0);    // yellow
+    _textColors[3] = AArgb(0xff, 0xff, 0, 0);       // red
+    _rectColors[0] = AArgb(0xaf, 0, 0, 0);
+    _rectColors[1] = AArgb(0xaf, 0, 0, 0);
+    _rectColors[2] = AArgb(0xaf, 0, 0, 0);
+    _rectColors[3] = AArgb(0xaf, 0, 0, 0);
+    _remainTime = 500; // 控制显示的持续时间
     _pixelDisplay = {10, 500};
 }
 
 void ALogger<APvzGui>::_Output(ALogLevel level, std::string&& str)
 {
-    int globalClock = __aig.mainObject->GlobalClock();
-    if (globalClock - _lastestDisplayedTime > _remainTime) { // 上一条显示已经结束
-        auto oriColor = _painter.GetTextColor();
-        _painter.SetTextColor(_color[int(level)]);
-        _painter.Draw(AText(std::move(str), _pixelDisplay.x, _pixelDisplay.y), _remainTime);
-        _painter.SetTextColor(oriColor);
-        _lastestDisplayedTime = globalClock;
+    int lineCnt = 0;
+    for (auto c : str) {
+        lineCnt += (c == '\n');
+    }
+    _curBottom += lineCnt * _painter.GetFontSize();
+    int globalClock = AGetMainObject()->GlobalClock();
+    _displayList.push_back({level, std::move(str), globalClock, lineCnt});
+    _ShowTick();
+}
+
+void ALogger<APvzGui>::_ShowTick()
+{
+    int globalClock = AGetMainObject()->GlobalClock();
+    if (globalClock == _lastTick) {
+        return; // 一帧只显示一次
+    }
+    _lastTick = globalClock;
+    int x = _pixelDisplay.x;
+    int y = _pixelDisplay.y;
+    int eraseCnt = _displayList.size();
+    for (auto iter = _displayList.rbegin(); iter != _displayList.rend(); ++iter, --eraseCnt) {
+        if (iter->gameClock + _remainTime < globalClock) { // 持续时间到，需要删除
+            break;
+        }
+        y -= _painter.GetFontSize() * iter->lineCnt;
+        _painter.SetTextColor(_textColors[int(iter->level)]);
+        _painter.SetRectColor(_rectColors[int(iter->level)]);
+        _painter.Draw(AText(iter->str, x, y + _curBottom));
+    }
+    for (int i = 0; i < eraseCnt; ++i) {
+        _displayList.pop_front();
+    }
+    if (_curBottom != 0) {
+        _curBottom -= _transitSpeed;
+        _curBottom = std::clamp(_curBottom, 0, INT_MAX);
     }
 }
+
 void ALogger<APvzGui>::_BeforeScript()
 {
-    _lastestDisplayedTime = -1;
     AAbstractLogger::_BeforeScript();
+    _curBottom = 0;
+    _displayList.clear();
+    _lastTick = INT_MIN;
+    _tickRunner = std::make_shared<ATickRunner>([this] {
+        this->_ShowTick();
+    },
+        ATickRunner::GLOBAL);
 }
 
 void ALogger<AMsgBox>::_Output(ALogLevel level, std::string&& str)

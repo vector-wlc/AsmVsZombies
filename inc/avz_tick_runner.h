@@ -260,7 +260,7 @@ protected:
     {
         constexpr auto PRI_MAX = __ATickManager::PRIORITY_SIZE / 2;
         if (_priority < -PRI_MAX || _priority > PRI_MAX) {
-            AGetInternalLogger()->Error("优先级设置范围为 [#, #], 您设置的优先级数值为 #, 已溢出", -PRI_MAX, PRI_MAX, priority);
+            AGetInternalLogger()->Error("优先级设置范围为 [{}, {}], 您设置的优先级数值为 {}, 已溢出", -PRI_MAX, PRI_MAX, priority);
             return;
         }
         _runMode = runMode;
