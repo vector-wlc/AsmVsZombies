@@ -1161,6 +1161,41 @@ void AAsm::PlaySample(int idx)
         : ASaveAllRegister);
 }
 
+void AAsm::UpdateCursorObjectAndPreview()
+{
+    __asm__ __volatile__(
+        // CursorObject::Update
+        "movl 0x6a9ec0, %%esi;"
+        "movl 0x768(%%esi), %%esi;"
+        "movl 0x138(%%esi), %%esi;"
+        "movl $0x438780, %%ebx;"
+        "calll *%%ebx;"
+
+        // CursorPreview::Update
+        "movl 0x6a9ec0, %%edi;"
+        "movl 0x768(%%edi), %%edi;"
+        "movl 0x13C(%%edi), %%edi;"
+        "movl $0x438DA0, %%ebx;"
+        "calll *%%ebx;"
+        :
+        :
+        : "esi", "ebx", "edi");
+}
+
+void AAsm::RefreshAllSeedPackets()
+{
+    __asm__ __volatile__(
+        "movl 0x6a9ec0, %%esi;"
+        "movl 0x768(%%esi), %%esi;"
+        "movl 0x144(%%esi), %%esi;"
+        "pushl %%esi;"
+        "movl $0x489D50, %%ebx;"
+        "calll *%%ebx;"
+        :
+        :
+        : "esi", "ebx");
+}
+
 // // 重新开始循环的音效
 // void AAsm::RestartLoopingSounds()
 // {

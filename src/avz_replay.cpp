@@ -527,6 +527,7 @@ void AReplay::_ShowTickInfo()
     }
     int nowTime = ANowTime(nowWave);
     if ((nowWave % 10 == 0 || nowWave == 1) && nowTime >= 0 && nowTime < 50) {
+        // 播放僵尸大波出场警报声
         AAsm::PlaySample(3);
     }
 }

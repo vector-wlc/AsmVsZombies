@@ -93,12 +93,18 @@ void __AScriptManager::RunScript()
 {
     int gameUi = AGetPvzBase()->GameUi();
 
-    if (gameUi == 2 || __aGameControllor.isAdvancedPaused) {
+    if (gameUi == 2) {
         __aig.tickManagers[ATickRunner::GLOBAL].RunQueue();
         return;
     }
 
     if (gameUi != 3) {
+        return;
+    }
+
+    if (__aGameControllor.isAdvancedPaused) {
+        __aig.tickManagers[ATickRunner::GLOBAL].RunQueue();
+        __aGameControllor.UpdateAdvancedPause();
         return;
     }
 
@@ -191,9 +197,6 @@ void __AScriptManager::RunTotal()
 void __AScriptManager::ScriptHook()
 {
     RunTotal();
-    if (__aGameControllor.isAdvancedPaused) {
-        return;
-    }
 
     AAsm::GameTotalLoop();
 

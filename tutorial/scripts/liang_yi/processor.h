@@ -43,7 +43,7 @@ public:
                 // 红眼最左垫材锤击第 x 格垫材满足以下公式
                 // x = (红眼横坐标 - 11) / 80 + 1
                 int col = (zombie.Abscissa() - 11) / 80;
-                ALimitValue(col, 0, 8);
+                col = std::clamp(col, 0, 8);
                 _gigaVec.At2d(zombie.Row(), col).push_back(&zombie);
                 break;
             }

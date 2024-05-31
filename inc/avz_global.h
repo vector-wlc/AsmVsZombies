@@ -57,21 +57,6 @@ __ANodiscard auto AFindSameEle(std::vector<Ele>& container, const Ele& ele_) -> 
     return result;
 }
 
-template <typename T>
-concept __AIsNumber = std::is_integral_v<T> || std::is_floating_point_v<T>;
-
-template <typename T>
-    requires __AIsNumber<T>
-void ALimitValue(T& value, T min_v, T max_v)
-{
-    if (value < min_v) {
-        value = min_v;
-    }
-    if (value > max_v) {
-        value = max_v;
-    }
-}
-
 class AAbstractLogger;
 class __ATickManager;
 

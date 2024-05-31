@@ -1,5 +1,9 @@
 ## 更新日志
 
+AvZ Nightly
+
+* 高级暂停时鼠标指针可以正常响应
+
 AvZ 2.7.1 2024_05_10 (Vector Final Version)
 
 * 修复 Card 函数无法正常种植模仿者卡片的问题
@@ -37,20 +41,20 @@ AvZ 2.5.1 2023_09_26 (AReplay)
 * `ACard` 新增两种重载形式，可用于多张卡片的使用，具体查看头文件中的注释
 * 新增状态钩 `_AfterInject` 用于注入之后立即完成的操作，需要注意在此状态钩内使用 AvZ 的功能游戏可能崩溃
 * 新增 `AEnterGame` 和 `ABackToMain` 完成快速进入和退出游戏的功能
-* 修复了 `APainter` 的一些 BUG 
+* 修复了 `APainter` 的一些 BUG
 * 注入支持多开，通过右键双击指定要注入的 PvZ 窗口
 * 增加回放功能: `AReplay`，可用于跳帧的死亡回放或者其他形式的游戏录制以及手动 TAS
 * 帧运行新增优先级机制，整体运行顺序: 时间连接>全局帧运行>战斗界面帧运行，帧运行内部运行顺序由指定的 priority 值确定，范围为 [-20, 20]，priority 越小越先运行
-* 修复了场景识别的 BUG，以及增添了一些关于场地的信息: `aFieldInfo` 
+* 修复了场景识别的 BUG，以及增添了一些关于场地的信息: `aFieldInfo`
 
 AvZ 2.4.4 2023_06_15
 
 * 修复鼠标位置获取错误问题
 * `ACobManager` 当炮消失，不再报错而是直接跳过
 * 修复 `AIsSeedUsable` 的 bug
-* 新增无条件删除植物函数 `ARemovePlant`，建议使用此函数代替 `AShovel`	
+* 新增无条件删除植物函数 `ARemovePlant`，建议使用此函数代替 `AShovel`
 * 修复 `AShovel` 的铲除失败问题
-* 修复协程内存访问错误问题，并新增 `ACoLaunch` 启动协程	
+* 修复协程内存访问错误问题，并新增 `ACoLaunch` 启动协程
 * 修复波数限制错误
 
 AvZ 2.3.3 2023_05_01
@@ -100,7 +104,7 @@ AvZ 2.0.0 2022_12_08
 AvZ 2022_11_24 2.0.0 preview (breaking change)
 
 * 所有的标识符都带有一个 `A`(类，函数，常量) 或者 `a`(变量、对象) 的前缀
-* 新增核心机制 AConnect 
+* 新增核心机制 AConnect
 * 新增功能相较完善的 ALogger 日志类
 * 新增假设波长功能 `AAssumeWavelength`，此功能在不内存的情况下实现 <-200 时间的设定
 * 新增绘制类 `APainter`

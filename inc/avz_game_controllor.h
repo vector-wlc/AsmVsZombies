@@ -12,7 +12,7 @@
 
 class __AGameControllor : public AOrderedExitFightHook<-1> {
 public:
-    bool isAdvancedPaused;
+    __AGameControllor();
     APredication isSkipTick = []() -> bool {
         return false;
     };
@@ -41,20 +41,35 @@ public:
         requires __AIsPredication<Pre>
     void SkipTick(Pre&& pre)
     {
-        SkipTick(
-            std::forward<Pre>(pre), [] {});
+        SkipTick(std::forward<Pre>(pre), [] {});
     }
     void SkipTick(int wave, int time);
 
+    void SetAdvancedPause(bool isAdvancedPaused);
+
+    // 用于在高级暂停下的游戏刷新处理
+    // 让高级暂停更加丝滑
+    void UpdateAdvancedPause();
+
+    bool isAdvancedPaused = false;
+
 protected:
-    virtual void _ExitFight() override
-    {
-        isSkipTick = []() -> bool {
-            return false;
-        };
-    }
+    virtual void _ExitFight() override;
 
     bool _CheckSkipTick();
+
+    // pvz 每帧的更新汇编代码起始地址
+    static constexpr uintptr_t _UPDATE_ASM_ADDR_BEGIN = 0x41600E;
+
+    // pvz 每帧的更新汇编代码结束地址
+    static constexpr uintptr_t _UPDATE_ASM_ADDR_END = 0x416039 + 1;
+    static constexpr uintptr_t _UPDATE_ASM_ADDR_SIZE = _UPDATE_ASM_ADDR_END - _UPDATE_ASM_ADDR_BEGIN;
+
+    std::vector<uint8_t> _updateOriAsm;
+    std::vector<uint8_t> _updateNopAsm;
+
+    int _pvzHeight = 0;
+    int _pvzWidth = 0;
 };
 
 inline __AGameControllor __aGameControllor;
@@ -99,6 +114,6 @@ void ASkipTick(Args&&... args)
 // ASetAdvancedPause(false) ------ 关闭高级暂停
 inline void ASetAdvancedPause(bool isAdvancedPaused)
 {
-    __aGameControllor.isAdvancedPaused = isAdvancedPaused;
+    __aGameControllor.SetAdvancedPause(isAdvancedPaused);
 }
 #endif

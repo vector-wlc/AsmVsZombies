@@ -253,6 +253,12 @@ public:
     // 播放音乐
     static void PlaySample(int idx);
 
+    // 更新鼠标和预览
+    static void UpdateCursorObjectAndPreview();
+
+    // 刷新卡片冷却
+    static void RefreshAllSeedPackets();
+
     __ADeprecated() static void* SaveToMemory();
     __ADeprecated() static void LoadFromMemory(void*& p);
     __ADeprecated() static void FreeMemory(void*& p);
