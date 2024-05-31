@@ -31,7 +31,7 @@ __ANodiscard bool ARangeIn(int num, const std::vector<int>& lst);
 
 // 寻找 vector 中相同的元素，返回其迭代器
 template <typename Ele>
-__ANodiscard auto AFindSameEle(const std::vector<Ele>& container, const Ele& ele_) -> std::vector<decltype(container.begin())>
+__ANodiscard auto __AFindSameEle(const std::vector<Ele>& container, const Ele& ele_)
 {
     std::vector<decltype(container.begin())> result;
     for (auto it = container.begin(); it != container.end(); ++it) {
@@ -45,7 +45,7 @@ __ANodiscard auto AFindSameEle(const std::vector<Ele>& container, const Ele& ele
 
 // 寻找 vector 中相同的元素，返回其迭代器
 template <typename Ele>
-__ANodiscard auto AFindSameEle(std::vector<Ele>& container, const Ele& ele_) -> std::vector<decltype(container.begin())>
+__ANodiscard auto __AFindSameEle(std::vector<Ele>& container, const Ele& ele_)
 {
     std::vector<decltype(container.begin())> result;
     for (auto it = container.begin(); it != container.end(); ++it) {
@@ -54,6 +54,38 @@ __ANodiscard auto AFindSameEle(std::vector<Ele>& container, const Ele& ele_) -> 
         }
     }
 
+    return result;
+}
+
+template <typename T>
+__ANodiscard std::vector<T> __AErase(const std::vector<T>& vec, const std::vector<T>& targets)
+{
+    std::vector<T> result;
+    std::copy_if(vec.begin(), vec.end(), std::back_inserter(result), [&](const T& x) {
+        return std::find(targets.begin(), targets.end(), x) == targets.end();
+    });
+    return result;
+}
+
+template <typename T>
+__ANodiscard std::vector<T> __AMoveToTop(const std::vector<T>& vec, const std::vector<T>& targets)
+{
+    std::vector<T> result;
+    result.insert(result.end(), targets.begin(), targets.end());
+    std::copy_if(vec.begin(), vec.end(), std::back_inserter(result), [&](const T& x) {
+        return std::find(targets.begin(), targets.end(), x) == targets.end();
+    });
+    return result;
+}
+
+template <typename T>
+__ANodiscard std::vector<T> __AMoveToBottom(const std::vector<T>& vec, const std::vector<T>& targets)
+{
+    std::vector<T> result;
+    std::copy_if(vec.begin(), vec.end(), std::back_inserter(result), [&](const T& x) {
+        return std::find(targets.begin(), targets.end(), x) == targets.end();
+    });
+    result.insert(result.end(), targets.begin(), targets.end());
     return result;
 }
 

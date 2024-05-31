@@ -7,11 +7,12 @@
 #ifndef __LIBAVZ_H__
 #define __LIBAVZ_H__
 
-#define __AVZ_VERSION__ 240510
+#define __AVZ_VERSION__ 240531
 
 #include "avz_asm.h"
 #include "avz_card.h"
 #include "avz_click.h"
+#include "avz_cob_manager.h"
 #include "avz_exception.h"
 #include "avz_game_controllor.h"
 #include "avz_iterator.h"
@@ -23,13 +24,6 @@
 #include "avz_connector.h"
 #include "avz_timeline.h"
 #include "avz_replay.h"
-
-// #include "avz_tick_runner.h"
-// #include "avz_global.h"
-// #include "avz_logger.h"
-// #include "avz_pvz_struct.h"
-// #include "avz_types.h"
-// #include "avz_painter.h"
 
 inline AItemCollector aItemCollector;
 extern AIceFiller aIceFiller;

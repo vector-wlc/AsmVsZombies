@@ -10,15 +10,11 @@ private:
     std::vector<ATimeline> _sequence;
 
 public:
-    ASequence(const ATimeline& timeline)
-        : _sequence {timeline}
-    {
-    }
-    ASequence(const std::vector<ATimeline>& sequence)
+    explicit ASequence(const std::vector<ATimeline>& sequence)
         : _sequence(sequence)
     {
     }
-    ASequence(std::initializer_list<ATimeline> sequence)
+    explicit ASequence(std::initializer_list<ATimeline> sequence)
         : _sequence(sequence)
     {
     }
@@ -319,7 +315,7 @@ inline void operator<<=(ATime time, const ATimeline& timeline)
 
 class __ADSLCastHelper {
 private:
-    std::variant<ATimeOffset, ATimeline> _value;
+    std::variant<ATimeOffset, ATimeline, ASequence> _value;
 
 public:
     explicit __ADSLCastHelper(auto&& value)
@@ -327,7 +323,7 @@ public:
     {
     }
     explicit __ADSLCastHelper(std::initializer_list<ATimeline> timelines)
-        : _value(timelines)
+        : _value(ATimeline(timelines))
     {
     }
 
@@ -336,6 +332,14 @@ public:
         if (auto timeline = std::get_if<ATimeline>(&_value))
             return *timeline;
         return {};
+    }
+
+    friend void operator<<=(const AWave& wave, const __ADSLCastHelper& castHelper)
+    {
+        if (auto timeline = std::get_if<ATimeline>(&castHelper._value))
+            wave <<= *timeline;
+        else if (auto sequence = std::get_if<ASequence>(&castHelper._value))
+            wave <<= *sequence;
     }
 
     ATimeline operator<<=(const ATimeline& timeline) const

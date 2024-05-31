@@ -106,7 +106,7 @@ void AGetPlantIndices(const std::vector<AGrid>& lstIn, int type,
         grid.row = plant->Row() + 1;
         grid.col = plant->Col() + 1;
 
-        auto itVec = AFindSameEle<AGrid>(lstIn, grid);
+        auto itVec = __AFindSameEle<AGrid>(lstIn, grid);
         if (itVec.empty()) {
             continue;
         }
@@ -494,7 +494,7 @@ __ANodiscard int AGetCobRecoverTime(int index)
 {
     if (index < 0 || index >= AGetMainObject()->PlantCountMax()) {
         __aig.loggerPtr->Error("AGetCobRecoverTime(int) 参数值为:" + std::to_string(index) + ", 不合法");
-        return ACobManager::NO_EXIST_RECOVER_TIME;
+        return INT_MIN;
     }
     return AGetCobRecoverTime(AGetMainObject()->PlantArray() + index);
 }
@@ -503,7 +503,7 @@ __ANodiscard int AGetCobRecoverTime(APlant* cob)
 {
     if (cob == nullptr || cob->IsDisappeared() || cob->Type() != ACOB_CANNON) {
         __aig.loggerPtr->Error("AGetCobRecoverTime(APlant*) 参数值不合法");
-        return ACobManager::NO_EXIST_RECOVER_TIME;
+        return INT_MIN;
     }
     auto animationMemory = AGetPvzBase()->AnimationMain()->AnimationOffset()->AnimationArray() + cob->AnimationCode();
 
@@ -517,7 +517,7 @@ __ANodiscard int AGetCobRecoverTime(APlant* cob)
     case 38:
         return 3125 + int(350 * (1 - animationMemory->CirculationRate()) + 0.5);
     default:
-        return ACobManager::NO_EXIST_RECOVER_TIME;
+        return INT_MIN;
     }
 }
 
