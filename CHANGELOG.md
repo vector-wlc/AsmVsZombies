@@ -3,6 +3,8 @@
 AvZ Nightly
 
 * 高级暂停时鼠标指针可以正常响应
+* 为 `ACobManager`、`AIceFiller` 和 `APlantFixer` 添加了增量改变位置列表的成员函数
+* DSL 连接轨道的语法更加自然
 
 AvZ 2.7.1 2024_05_10 (Vector Final Version)
 
@@ -28,8 +30,8 @@ AvZ 2.7.0 2024_02_05 (DSL)
 AvZ 2.6.0 2024_01_13
 
 * 修复了锁波长的依然刷新问题
-* 修复了 AShovel 函数的一些问题
-* ASetZombies 函数支持自然出怪
+* 修复了 `AShovel` 函数的一些问题
+* `ASetZombies` 函数支持自然出怪
 * 对状态钩的实现进行了一些优化
 * 选卡函数支持极速选卡，瞬间到战斗界面
 * 增加帧运行的新运行模式，可在注入之后一直运行

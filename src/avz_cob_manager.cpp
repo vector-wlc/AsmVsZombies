@@ -12,6 +12,9 @@
 #include "avz_connector.h"
 #include "avz_memory.h"
 
+std::unordered_set<int> ACobManager::_lockSet;
+ATickRunner ACobManager::_tickRunner;
+
 void ACobManager::_BeforeScript()
 {
     _next = 0;
