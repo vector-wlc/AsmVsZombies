@@ -121,18 +121,10 @@ __ANodiscard inline ATime ANowTime()
 }
 
 // 得到当前时间的延迟时间
-__ANodiscard inline int ANowDelayTime(int wave, int delayTime)
-{
-    return ANowTime(wave) + delayTime;
-}
+__ANodiscard int ANowDelayTime(int wave, int delayTime);
 
 // 得到当前时间的延迟时间
-__ANodiscard inline ATime ANowDelayTime(int delayTime)
-{
-    auto time = ANowTime();
-    time.time += delayTime;
-    return time;
-}
+__ANodiscard ATime ANowDelayTime(int delayTime);
 
 // 设定特定波的波长
 // *** 注意: 对最后一波无效

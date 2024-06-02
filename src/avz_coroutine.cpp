@@ -3,6 +3,7 @@
 #include "avz_memory.h"
 #include "avz_exception.h"
 #include "avz_tick_runner.h"
+#include "avz_script.h"
 
 std::unordered_set<void*> __ACoHandleManager::_handleSet;
 
@@ -47,6 +48,7 @@ void __AWait::await_resume()
 
 void __AWait::await_suspend(std::coroutine_handle<> handle)
 {
+    AWaitForFight();
     __ACoHandleManager::Add(handle);
     if (_time.wave == -1) { // pred 形式
         auto tickRunner = std::make_shared<ATickRunner>();
@@ -57,10 +59,13 @@ void __AWait::await_suspend(std::coroutine_handle<> handle)
                 tickRunner->Stop();
             } }, false);
     } else { // time 形式
-        AConnect(_time, [handle] {
+        auto func = [handle] {
             __ACoHandleManager::Remove(handle);
             handle.resume();
-        });
+        };
+        if (!AConnect(_time, func)) {
+            func();
+        }
     }
 }
 

@@ -10,19 +10,20 @@
 
 static APainter rectPainter;
 
+// 保存原本的机器码
+uint16_t __AGameControllor::_oriAsm = 0;
+
 __AGameControllor::__AGameControllor()
 {
-    _updateOriAsm.resize(_UPDATE_ASM_ADDR_SIZE);
-    _updateNopAsm.assign(_UPDATE_ASM_ADDR_SIZE, 0x90);
     // 保存原本的机器码
-    std::copy((uint8_t*)_UPDATE_ASM_ADDR_BEGIN, (uint8_t*)_UPDATE_ASM_ADDR_END, _updateOriAsm.begin());
+    _oriAsm = AMRef<uint16_t>(_UPDATE_ASM_ADDR_BEGIN);
 
     // 初始化高级暂停的工具信息
     RECT rect;
     GetClientRect(AGetPvzBase()->MRef<HWND>(0x350), &rect);
     _pvzHeight = rect.bottom - rect.top;
     _pvzWidth = rect.right - rect.left;
-    rectPainter.SetRectColor(AArgb(0x7f, 0, 0, 0));
+    rectPainter.SetRectColor(_rectColor);
 }
 
 bool __AGameControllor::_CheckSkipTick()
@@ -53,7 +54,7 @@ void __AGameControllor::SkipTick(int wave, int time)
     });
 }
 
-void __AGameControllor::SetAdvancedPause(bool isAdvancedPaused)
+void __AGameControllor::SetAdvancedPause(bool isAdvancedPaused, bool isPlaySound, DWORD rectColor)
 {
     if (this->isAdvancedPaused == isAdvancedPaused) {
         return;
@@ -63,13 +64,18 @@ void __AGameControllor::SetAdvancedPause(bool isAdvancedPaused)
         return;
     }
     this->isAdvancedPaused = isAdvancedPaused;
-    if (isAdvancedPaused) {
-        std::copy(_updateNopAsm.begin(), _updateNopAsm.end(), (uint8_t*)_UPDATE_ASM_ADDR_BEGIN);
-        AAsm::PlaySample(0x15); // 暂停音效
-    } else {
-        std::copy(_updateOriAsm.begin(), _updateOriAsm.end(), (uint8_t*)_UPDATE_ASM_ADDR_BEGIN);
-        AAsm::PlaySample(0x3A); // 继续音效
+    auto asmCode = isAdvancedPaused ? _JMP_ASM : _oriAsm;
+    auto soundIdx = isAdvancedPaused ? 0x15 : 0x3A;
+    AMRef<uint16_t>(_UPDATE_ASM_ADDR_BEGIN) = asmCode;
+    if (isPlaySound) {
+        AAsm::PlaySample(soundIdx);
     }
+    rectPainter.SetRectColor(rectColor);
+}
+
+void __AGameControllor::SetUpdateWindow(bool isUpdateWindow)
+{
+    this->isUpdateWindow = isUpdateWindow;
 }
 
 void __AGameControllor::UpdateAdvancedPause()
@@ -104,5 +110,6 @@ void __AGameControllor::_ExitFight()
         return false;
     };
     // 恢复原函数调用
-    std::copy(_updateOriAsm.begin(), _updateOriAsm.end(), (uint8_t*)_UPDATE_ASM_ADDR_BEGIN);
+    AMRef<uint16_t>(_UPDATE_ASM_ADDR_BEGIN) = _oriAsm;
+    isUpdateWindow = true;
 }

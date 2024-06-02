@@ -34,13 +34,18 @@ public:
 
     void Stop();
 
+    operator bool()
+    {
+        return _iter != std::nullopt;
+    }
+
 protected:
     TimeIter _iter;
     ATime _time;
 };
 
 // 创建一条连接, 连接创建成功之后会返回一个类型为 AConnectHandle 的对象作为连接控制器
-// *** 特别注意：如果连接创建失败, 连接控制器将被赋值为 nullptr. 并且时间连接没有返回值
+// *** 特别注意：如果连接创建失败, 连接控制器将被赋值为 nullptr.
 // AConnect 最后一个参数为运行方式
 // 运行方式为 true 时, AConnect 创建的连接选卡界面和高级暂停时都生效, 反之不生效
 // *** 使用示例:

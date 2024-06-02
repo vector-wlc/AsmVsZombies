@@ -45,13 +45,34 @@ public:
     }
     void SkipTick(int wave, int time);
 
-    void SetAdvancedPause(bool isAdvancedPaused);
+    void SetAdvancedPause(bool isAdvancedPaused, bool isPlaySound = true, DWORD rectColor = AArgb(0x7f, 0, 0, 0));
+
+    void SetUpdateWindow(bool isUpdateWindow);
 
     // 用于在高级暂停下的游戏刷新处理
     // 让高级暂停更加丝滑
     void UpdateAdvancedPause();
 
     bool isAdvancedPaused = false;
+
+    bool isUpdateWindow = true;
+
+    // 确保能否刷新游戏主要对象
+    class UpdateGameObjGuard {
+    public:
+        UpdateGameObjGuard()
+        {
+            _asmBackup = AMRef<uint16_t>(_UPDATE_ASM_ADDR_BEGIN);
+            AMRef<uint16_t>(_UPDATE_ASM_ADDR_BEGIN) = _oriAsm;
+        }
+        ~UpdateGameObjGuard()
+        {
+            AMRef<uint16_t>(_UPDATE_ASM_ADDR_BEGIN) = _asmBackup;
+        }
+
+    private:
+        uint16_t _asmBackup = 0;
+    };
 
 protected:
     virtual void _ExitFight() override;
@@ -61,15 +82,17 @@ protected:
     // pvz 每帧的更新汇编代码起始地址
     static constexpr uintptr_t _UPDATE_ASM_ADDR_BEGIN = 0x41600E;
 
-    // pvz 每帧的更新汇编代码结束地址
-    static constexpr uintptr_t _UPDATE_ASM_ADDR_END = 0x416039 + 1;
-    static constexpr uintptr_t _UPDATE_ASM_ADDR_SIZE = _UPDATE_ASM_ADDR_END - _UPDATE_ASM_ADDR_BEGIN;
+    // 跳过游戏更新的汇编代码
+    // jmp 2a
+    static constexpr uint16_t _JMP_ASM = 0x2AEB;
 
-    std::vector<uint8_t> _updateOriAsm;
-    std::vector<uint8_t> _updateNopAsm;
+    // 保存原本的机器码
+    static uint16_t _oriAsm;
 
     int _pvzHeight = 0;
     int _pvzWidth = 0;
+
+    DWORD _rectColor = AArgb(0x7f, 0, 0, 0);
 };
 
 inline __AGameControllor __aGameControllor;
@@ -112,8 +135,21 @@ void ASkipTick(Args&&... args)
 // *** 使用示例
 // ASetAdvancedPause(true) ------ 开启高级暂停
 // ASetAdvancedPause(false) ------ 关闭高级暂停
-inline void ASetAdvancedPause(bool isAdvancedPaused)
+// ASetAdvancedPause(true, true) ------ 开启高级暂停，并播放相关音效
+// ASetAdvancedPause(true, AArgb(0x7f, 0, 0, 0)) ------ 开启高级暂停，并在暂停时在 pvz 顶层绘制颜色为 AArgb(0x7f, 0, 0, 0) 的全屏矩形
+inline void ASetAdvancedPause(bool isAdvancedPaused, bool isPlaySound = true, DWORD rectColor = AArgb(0x7f, 0, 0, 0))
 {
-    __aGameControllor.SetAdvancedPause(isAdvancedPaused);
+    __aGameControllor.SetAdvancedPause(isAdvancedPaused, isPlaySound, rectColor);
+}
+
+// 设定游戏窗口是否更新
+// *** 注意此函数与高级暂停的区别是：高级暂停开启时鼠标和种植物的渲染动画还是在的，
+//     但是此函数设置为 false 时，游戏都不会渲染
+// *** 使用示例
+// ASetUpdateWindow(true) ------ 游戏更新窗口
+// ASetUpdateWindow(false) ------ 游戏不更新窗口
+inline void ASetUpdateWindow(bool isUpdateWindow)
+{
+    __aGameControllor.SetUpdateWindow(isUpdateWindow);
 }
 #endif

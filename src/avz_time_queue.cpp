@@ -40,7 +40,7 @@ __AOpQueueManager::Push(const ATime& time, __ABoolOperation&& timeOp)
         (time.wave == startTime.wave && time.time < startTime.time)) {
         __aig.loggerPtr->Info("当前连接时间 ("
             + std::to_string(time.wave) + ", " + std::to_string(time.time)
-            + ") 小于开始时间 (" + std::to_string(time.wave) + ", " + std::to_string(time.time)
+            + ") 小于开始时间 (" + std::to_string(startTime.wave) + ", " + std::to_string(startTime.time)
             + "), 因此未建立连接");
         return std::nullopt;
     }
@@ -92,6 +92,9 @@ void __AOpQueueManager::RunOperation()
 
 void __AOpQueueManager::UpdateRefreshTime()
 {
+    if (AGetPvzBase()->GameUi() != 3) {
+        return;
+    }
     auto mainObject = AGetMainObject();
     int wave = mainObject->Wave();
     if (wave == mainObject->TotalWave()) {
@@ -296,4 +299,20 @@ int ANowTime(int wave)
     return refreshTime == __AOperationQueue::UNINIT //
         ? __AOperationQueue::UNINIT
         : AGetMainObject()->GameClock() - refreshTime;
+}
+
+// 得到当前时间的延迟时间
+__ANodiscard int ANowDelayTime(int wave, int delayTime)
+{
+    AWaitForFight();
+    return ANowTime(wave) + delayTime;
+}
+
+// 得到当前时间的延迟时间
+__ANodiscard ATime ANowDelayTime(int delayTime)
+{
+    AWaitForFight();
+    auto time = ANowTime();
+    time.time += delayTime;
+    return time;
 }

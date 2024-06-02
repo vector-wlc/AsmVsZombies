@@ -56,6 +56,7 @@ void __AScriptManager::LoadScript()
     }
     isLoaded = true;
     __APublicBeforeScriptHook::RunAll();
+    __aOpQueueManager.UpdateRefreshTime(); // 刷新一次
     void AScript();
     AScript();
     __APublicAfterScriptHook::RunAll();
@@ -93,7 +94,7 @@ void __AScriptManager::RunScript()
 {
     int gameUi = AGetPvzBase()->GameUi();
 
-    if (gameUi == 2) {
+    if (gameUi == 2 || !__aGameControllor.isUpdateWindow) {
         __aig.tickManagers[ATickRunner::GLOBAL].RunQueue();
         return;
     }
@@ -198,8 +199,10 @@ void __AScriptManager::ScriptHook()
 {
     RunTotal();
 
+    if (!__aGameControllor.isUpdateWindow) {
+        return;
+    }
     AAsm::GameTotalLoop();
-
     while (__aGameControllor.isSkipTick() //
         && AGetPvzBase()->MainObject()) {
         RunTotal();
@@ -222,6 +225,9 @@ void __AScriptManager::ScriptHook()
 
 void __AScriptManager::WaitForFight(bool isSkipTick)
 {
+    if (AGetPvzBase()->GameUi() == 3) {
+        return;
+    }
     if (!isBlockable) {
         __aig.loggerPtr->Error("连接和帧运行内部不允许调用 WaitForFight");
         return;

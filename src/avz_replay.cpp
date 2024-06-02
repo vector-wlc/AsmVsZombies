@@ -460,6 +460,7 @@ void AReplay::_PlayTick()
     ++counter;
     bool isPlay = (counter % _playInterval) == 0;
 
+    __AGameControllor::UpdateGameObjGuard _;
     if (_isInterpolate && !isPlay) { // 如果插帧
         _ShowTickInfo();
         AAsm::GameTotalLoop();
@@ -547,7 +548,7 @@ void AReplay::StartPlay(int interval, int64_t startIdx)
         return;
     }
 
-    ASetAdvancedPause(true);
+    ASetUpdateWindow(false);
     SavePvzState();
     _ReadInfo();
     _lastPackIdx = INT_MIN;
@@ -614,7 +615,7 @@ void AReplay::Stop()
     _state = REST;
     _infoTickRunner.Stop();
     _tickRunner.Stop();
-    ASetAdvancedPause(false);
+    ASetUpdateWindow(true);
 }
 
 void AReplay::_ReadInfo()
