@@ -17,7 +17,7 @@ void __AScriptManager::GlobalInit()
     isInit = true;
     static ALogger<AMsgBox> logger;
     logger.SetLevel({ALogLevel::ERROR, ALogLevel::WARNING});
-    __aig.loggerPtr = &logger;
+    aLogger = &logger;
     static __ATickManager tickManagers[ATickRunner::__COUNT];
     __aig.tickManagers = tickManagers;
     __aig.tickManagers[ATickRunner::AFTER_INJECT].SetRunMode(ATickRunner::AFTER_INJECT);
@@ -178,12 +178,12 @@ void __AScriptManager::RunTotal()
         if (exceMsg != ASTR_GAME_RET_MAIN_UI) {
             willBeExit = true;
             exceMsg = "catch avz exception: " + exceMsg + stopWorkingStr;
-            __aig.loggerPtr->Info(exceMsg.c_str());
+            aLogger->Info(exceMsg.c_str());
         } else {
             // 当递归深度为 0 和 scriptReloadMode > 0 时, 才能重置 isLoaded
             isLoaded = !(int(scriptReloadMode) > 0 && blockDepth == 0);
             willBeExit = isLoaded;
-            __aig.loggerPtr->Info(exceMsg.c_str());
+            aLogger->Info(exceMsg.c_str());
             __APublicExitFightHook::RunAll();
         }
     } catch (std::exception& exce) {
@@ -229,12 +229,12 @@ void __AScriptManager::WaitForFight(bool isSkipTick)
         return;
     }
     if (!isBlockable) {
-        __aig.loggerPtr->Error("连接和帧运行内部不允许调用 WaitForFight");
+        aLogger->Error("连接和帧运行内部不允许调用 WaitForFight");
         return;
     }
 
     if (blockDepth != 0) {
-        __aig.loggerPtr->Error("请等待上一个阻塞函数时间到达之后再调用 WaitForFight");
+        aLogger->Error("请等待上一个阻塞函数时间到达之后再调用 WaitForFight");
         return;
     }
 
@@ -265,12 +265,12 @@ void __AScriptManager::WaitForFight(bool isSkipTick)
 void __AScriptManager::WaitUntil(int wave, int time)
 {
     if (!isBlockable) {
-        __aig.loggerPtr->Error("连接和帧运行内部不允许调用 AWaitUntil");
+        aLogger->Error("连接和帧运行内部不允许调用 AWaitUntil");
         return;
     }
 
     if (blockDepth != 0) {
-        __aig.loggerPtr->Error("请等待上一个阻塞函数时间到达之后再调用 AWaitUntil");
+        aLogger->Error("请等待上一个阻塞函数时间到达之后再调用 AWaitUntil");
         return;
     }
     blockTime.time = time;
@@ -278,10 +278,8 @@ void __AScriptManager::WaitUntil(int wave, int time)
     WaitForFight(false);
     auto nowTime = ANowTime(wave);
     if (nowTime > time) {
-        auto&& pattern = __aig.loggerPtr->GetPattern();
-        __aig.loggerPtr->Warning("现在的时间点已到 (" + pattern + ", " + pattern +                  //
-                "), 但是您要求的阻塞结束时间点为 (" + pattern + ", " + pattern + "), 此阻塞无意义", //
-            wave, nowTime, wave, time);
+        aLogger->Warning("现在的时间点已到 {}, 但是您要求的阻塞结束时间点为 {}, 此阻塞无意义",
+            ATime(wave, nowTime), ATime(wave, time));
         return;
     }
     if (nowTime == time) {

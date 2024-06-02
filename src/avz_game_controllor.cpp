@@ -29,12 +29,12 @@ __AGameControllor::__AGameControllor()
 bool __AGameControllor::_CheckSkipTick()
 {
     if (isAdvancedPaused) {
-        __aig.loggerPtr->Error("开启高级暂停或者暂停时不能启用跳帧");
+        aLogger->Error("开启高级暂停或者暂停时不能启用跳帧");
         return false;
     }
 
     if (isSkipTick()) {
-        __aig.loggerPtr->Error("请等待上一个跳帧条件达到后的下一帧再设定跳帧条件");
+        aLogger->Error("请等待上一个跳帧条件达到后的下一帧再设定跳帧条件");
         return false;
     }
 
@@ -48,7 +48,7 @@ void __AGameControllor::SkipTick(int wave, int time)
             return true;
         }
         if (nowTime > time) { // 时间已到达
-            __aig.loggerPtr->Error("无法回跳时间点");
+            aLogger->Error("无法回跳时间点");
         }
         return false;
     });
@@ -60,7 +60,7 @@ void __AGameControllor::SetAdvancedPause(bool isAdvancedPaused, bool isPlaySound
         return;
     }
     if (isAdvancedPaused && AGetPvzBase()->GameUi() != 3) {
-        AGetInternalLogger()->Error("高级暂停仅能在战斗界面使用");
+        aLogger->Error("高级暂停仅能在战斗界面使用");
         return;
     }
     this->isAdvancedPaused = isAdvancedPaused;

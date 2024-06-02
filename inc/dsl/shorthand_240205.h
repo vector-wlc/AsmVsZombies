@@ -120,7 +120,7 @@ inline ATimeline P(ACobManager& cm, int row, float col)
     std::vector<int> rows;
     for (char r : std::to_string(row)) {
         if (r < '1' || r > '0' + aFieldInfo.nRows) {
-            AGetInternalLogger()->Error(std::format("P: 输入的行数 {} 不合法", row));
+            aLogger->Error(std::format("P: 输入的行数 {} 不合法", row));
             return {};
         }
         rows.push_back(r - '0');
@@ -385,7 +385,7 @@ inline ATimeline I(int row, float col, bool tryImitator = true)
 inline ATimeline I(AIceFiller& if_ = aIceFiller)
 {
     if (aFieldInfo.isNight) {
-        AGetInternalLogger()->Error("I: 需要指定放置寒冰菇的位置");
+        aLogger->Error("I: 需要指定放置寒冰菇的位置");
         return {};
     }
     return At(-299_cs)[=, &if_]
@@ -436,7 +436,7 @@ protected:
         for (auto [row, col] : positions)
             for (char r : std::to_string(row)) {
                 if (r < '1' || r > '0' + aFieldInfo.nRows) {
-                    AGetInternalLogger()->Error(std::format("AFodder: 输入的行数 {} 不合法", row));
+                    aLogger->Error(std::format("AFodder: 输入的行数 {} 不合法", row));
                     return {};
                 }
                 ret.push_back({r - '0', col});
@@ -449,7 +449,7 @@ protected:
         std::string log = "AFodder: 垫";
         for (auto [row, col] : positions)
             log += std::format(" {}-{}", row, col);
-        AGetInternalLogger()->Info(log);
+        aLogger->Info(log);
 
         auto currentSeed = _seeds.begin();
         std::vector<AShovelPosition> shovelTargets;
@@ -461,7 +461,7 @@ protected:
                 for (auto& seedType : _seeds)
                     if (ASeed* seed = AGetSeedPtr(seedType))
                         cd = std::min(cd, seed->InitialCd() - seed->Cd() + 1);
-                AGetInternalLogger()->Error(std::format("AFodder: 距下一个垫材可用还有 {} cs", cd));
+                aLogger->Error(std::format("AFodder: 距下一个垫材可用还有 {} cs", cd));
                 break;
             }
             ACard(*currentSeed, row, col);

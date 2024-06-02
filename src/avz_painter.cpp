@@ -69,7 +69,7 @@ void APainter::Draw(const ARect& rect, int duration)
     }
 
     if (!_basicPainter.IsOpen3dAcceleration()) {
-        __aig.loggerPtr->Warning("您尚未开启 3D 加速，无法使用绘制类");
+        aLogger->Warning("您尚未开启 3D 加速，无法使用绘制类");
         return;
     }
     __ABasicPainter::DrawInfo info;
@@ -96,7 +96,7 @@ void APainter::Draw(const AText& posText, int duration)
     }
 
     if (!_basicPainter.IsOpen3dAcceleration()) {
-        __aig.loggerPtr->Warning("您尚未开启 3D 加速，无法使用绘制类");
+        aLogger->Warning("您尚未开启 3D 加速，无法使用绘制类");
         return;
     }
     if (posText.text.empty()) {

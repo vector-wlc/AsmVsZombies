@@ -13,7 +13,7 @@ namespace stdFs = std::filesystem;
 #define __ACheckASCII(path, info, ret)                                                                                      \
     for (auto c : path) {                                                                                                   \
         if (uint8_t(c) > 127) {                                                                                             \
-            AGetInternalLogger()->Error(info ": 您设定的路径: [" + path + "] 含有非英文字符(ASCII), 请更换其为纯英文路径"); \
+            aLogger->Error(info ": 您设定的路径: [" + path + "] 含有非英文字符(ASCII), 请更换其为纯英文路径"); \
             return ret;                                                                                                     \
         }                                                                                                                   \
     }
@@ -46,7 +46,7 @@ void A7zCompressor::_BeforeScript()
             } else {
                 compressCmd = _compressCmd;
             }
-            // AGetInternalLogger()->Info(_7zPath + " " + compressCmd + " \"" + _filePath + "\" \"" + fileName + "\"");
+            // aLogger->Info(_7zPath + " " + compressCmd + " \"" + _filePath + "\" \"" + fileName + "\"");
             _RunExe(_7zPath, std::move(compressCmd) + " \"" + _filePath + "\" \"" + fileName + "\"");
             {
                 std::lock_guard<std::mutex> lk(_lock);
@@ -72,7 +72,7 @@ void A7zCompressor::_BeforeScript()
                 }
                 info = _decompressList.front();
             }
-            // AGetInternalLogger()->Info("x -aoa \"" + _filePath + "\" -o\"" + info.dstPath + "\" \"" + info.srcPath + "\"");
+            // aLogger->Info("x -aoa \"" + _filePath + "\" -o\"" + info.dstPath + "\" \"" + info.srcPath + "\"");
             _RunExe(_7zPath, "x -aoa \"" + _filePath + "\" -o\"" + info.dstPath + "\" \"" + info.srcPath + "\"");
 
             {
@@ -214,11 +214,11 @@ void AReplay::SetSaveDirPath(const std::string& path)
 void AReplay::SetMaxSaveCnt(int64_t maxSaveCnt)
 {
     if (_state != REST) {
-        AGetInternalLogger()->Error("SetMaxSaveCnt : 请先停止 Replay 的运行再设置最大保存帧数");
+        aLogger->Error("SetMaxSaveCnt : 请先停止 Replay 的运行再设置最大保存帧数");
         return;
     }
     if (maxSaveCnt < 1) {
-        AGetInternalLogger()->Error("SetMaxSaveCnt : 最大使用帧数必须为正数");
+        aLogger->Error("SetMaxSaveCnt : 最大使用帧数必须为正数");
         return;
     }
     _maxSaveCnt = maxSaveCnt;
@@ -227,11 +227,11 @@ void AReplay::SetMaxSaveCnt(int64_t maxSaveCnt)
 void AReplay::SetPackTickCnt(int packTickCnt)
 {
     if (_state != REST) {
-        AGetInternalLogger()->Error("SetPackTickCnt : 请先停止 Replay 的运行再设置每个包的包含帧数");
+        aLogger->Error("SetPackTickCnt : 请先停止 Replay 的运行再设置每个包的包含帧数");
         return;
     }
     if (packTickCnt < 1) {
-        AGetInternalLogger()->Error("SetPackTickCnt : 每个包的包含帧数必须为正数");
+        aLogger->Error("SetPackTickCnt : 每个包的包含帧数必须为正数");
         return;
     }
     _packTickCnt = packTickCnt;
@@ -304,7 +304,7 @@ void AReplay::_RecordTick()
 void AReplay::StartRecord(int interval, int64_t startIdx)
 {
     if (AGetPvzBase()->GameUi() != 3) {
-        AGetInternalLogger()->Error("StartRecord : AReplay 只能在战斗界面使用");
+        aLogger->Error("StartRecord : AReplay 只能在战斗界面使用");
         return;
     }
     _startIdx = startIdx;
@@ -312,12 +312,12 @@ void AReplay::StartRecord(int interval, int64_t startIdx)
     _maxSavePackCnt = _maxSaveCnt / _packTickCnt;
     _maxSavePackCnt += ((_maxSaveCnt % _packTickCnt > 0) ? 1 : 0);
     if (interval < 1) {
-        AGetInternalLogger()->Error("StartRecord : interval 的范围为 [1, ], 您当前的 interval 为: " + std::to_string(interval));
+        aLogger->Error("StartRecord : interval 的值应为正整数");
         return;
     }
     _recordInterval = interval;
     if (_state != REST) {
-        AGetInternalLogger()->Error("StartRecord : 请先停止 Replay 的运行再进行记录");
+        aLogger->Error("StartRecord : 请先停止 Replay 的运行再进行记录");
         return;
     }
     _state = RECORDING;
@@ -327,9 +327,8 @@ void AReplay::StartRecord(int interval, int64_t startIdx)
         if (!_isShowInfo || __aGameControllor.isSkipTick()) {
             return;
         }
-        _painter.Draw(AText("AReplay : 共录制 [" + std::to_string(_startIdx)
-                + "-" + std::to_string(_endIdx) + "] 帧",
-            _showPosX, _showPosY));
+        std::string msg = std::format("AReplay : 共录制 [{}-{}] 帧", _startIdx, _endIdx);
+        _painter.Draw(AText(msg, _showPosX, _showPosY));
     },
         true);
 }
@@ -343,11 +342,11 @@ void AReplay::SetInfoPos(int x, int y)
 bool AReplay::ShowOneTick(int64_t tick)
 {
     if (AGetPvzBase()->GameUi() != 3) {
-        AGetInternalLogger()->Error("ShowOneTick : AReplay 只能在战斗界面使用");
+        aLogger->Error("ShowOneTick : AReplay 只能在战斗界面使用");
         return false;
     }
     if (_state == REST) {
-        AGetInternalLogger()->Error("ShowOneTick : 请先调用 StartPlay 或者 StartRecord 再使用此接口");
+        aLogger->Error("ShowOneTick : 请先调用 StartPlay 或者 StartRecord 再使用此接口");
         return false;
     }
     if (tick < _startIdx || tick >= _endIdx) {
@@ -398,7 +397,7 @@ bool AReplay::_PreparePack()
     auto decompressingList = _compressor->GetDecompressingList();
     for (auto&& path : decompressingList) {
         if (path.srcPath == dirName) {
-            AGetInternalLogger()->Info("AReplay : 解压过载，请尝试更高的录制播放间隔以降低硬件的压力");
+            aLogger->Info("AReplay : 解压过载，请尝试更高的录制播放间隔以降低硬件的压力");
             return false;
         }
     }
@@ -442,7 +441,7 @@ bool AReplay::_PreparePack()
             std::error_code ec;
             stdFs::remove_all(dirPath, ec);
             if (ec) {
-                AGetInternalLogger()->Error("Replay:" + ec.message());
+                aLogger->Error("Replay:" + ec.message());
             }
         }
     }
@@ -536,15 +535,15 @@ void AReplay::_ShowTickInfo()
 void AReplay::StartPlay(int interval, int64_t startIdx)
 {
     if (AGetPvzBase()->GameUi() != 3) {
-        AGetInternalLogger()->Error("StartPlay : AReplay 只能在战斗界面使用");
+        aLogger->Error("StartPlay : AReplay 只能在战斗界面使用");
         return;
     }
     if (_state != REST) {
-        AGetInternalLogger()->Error("StartPlay : 请先停止 Replay 的运行再进行播放");
+        aLogger->Error("StartPlay : 请先停止 Replay 的运行再进行播放");
         return;
     }
     if (__aGameControllor.isSkipTick()) {
-        AGetInternalLogger()->Error("StartPlay : 请先停止帧运行再进行播放");
+        aLogger->Error("StartPlay : 请先停止帧运行再进行播放");
         return;
     }
 
@@ -656,7 +655,7 @@ void AReplay::_WriteInfo()
     auto infoFilePath = stdFs::path(_savePath) / _INFO_FILE_STR;
     std::ofstream infoFile(infoFilePath.c_str());
     if (!infoFile.good()) {
-        AGetInternalLogger()->Error("保存回放文件信息失败");
+        aLogger->Error("保存回放文件信息失败");
     } else {
         infoFile << _MAX_SAVE_CNT_KEY << " " << _maxSaveCnt << "\n"
                  << _PACK_TICK_CNT_KEY << " " << _packTickCnt << "\n"
@@ -676,7 +675,7 @@ void AReplay::_SaveTickInfo()
     auto infoFilePath = stdFs::path(_savePath) / _TICK_INFO_FILE_STR;
     std::ofstream infoFile(infoFilePath.c_str(), std::ios_base::binary);
     if (!infoFile.good()) {
-        AGetInternalLogger()->Error("保存帧信息回放文件信息失败");
+        aLogger->Error("保存帧信息回放文件信息失败");
     } else {
         std::vector<AClockTickInfo> tmp;
         for (auto&& e : _tickInfos) {
@@ -696,7 +695,7 @@ void AReplay::_LoadTickInfo()
     auto infoFilePath = stdFs::path(_savePath) / _TICK_INFO_FILE_STR;
     std::ifstream infoFile(infoFilePath.c_str(), std::ios_base::binary);
     if (!infoFile.good()) {
-        AGetInternalLogger()->Error("载入帧信息回放文件信息失败");
+        aLogger->Error("载入帧信息回放文件信息失败");
     } else {
         size_t size = 0;
         infoFile.read((char*)(&size), sizeof(size));
@@ -810,7 +809,7 @@ void AReplay::SetCompressor(AAbstractCompressor& compressor)
 {
     _compressor = nullptr;
     if (!compressor.IsOk()) {
-        AGetInternalLogger()->Error("压缩对象未准备好，无法开启压缩模式");
+        aLogger->Error("压缩对象未准备好，无法开启压缩模式");
         return;
     }
     _compressor = &compressor;

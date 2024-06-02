@@ -152,7 +152,7 @@ public:
     {
         auto&& pool = _priQue[_PriToIdx(priority)];
         auto&& ret = pool.Insert(std::forward<Op>(op));
-        AGetInternalLogger()->Info("增加" + _GetInfoStr(priority, ret.idx));
+        aLogger->Info("增加 {}", _GetInfoStr(priority, ret.idx));
         return ret;
     }
 
@@ -260,7 +260,7 @@ protected:
     {
         constexpr auto PRI_MAX = __ATickManager::PRIORITY_SIZE / 2;
         if (_priority < -PRI_MAX || _priority > PRI_MAX) {
-            AGetInternalLogger()->Error("优先级设置范围为 [{}, {}], 您设置的优先级数值为 {}, 已溢出", -PRI_MAX, PRI_MAX, priority);
+            aLogger->Error("优先级设置范围为 [{}, {}], 您设置的优先级数值为 {}, 已溢出", -PRI_MAX, PRI_MAX, priority);
             return;
         }
         _runMode = runMode;
@@ -293,7 +293,7 @@ public:
     void Start(Op&& op, int runMode = ONLY_FIGHT, int priority = 0)
     {
         if (!IsStopped()) {
-            AGetInternalLogger()->Error("ATickRunner 不允许同时运行两个操作");
+            aLogger->Error("ATickRunner 不允许同时运行两个操作");
             return;
         }
         _Start(std::forward<Op>(op), runMode, priority);

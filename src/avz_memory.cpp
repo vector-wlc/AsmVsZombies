@@ -188,7 +188,7 @@ void ASetPlantActiveTime(APlantType plantType, int delayTime)
                 if (std::abs(plant->ExplodeCountdown() - 10) < 10) {
                     plant->ExplodeCountdown() = 10;
                 } else {
-                    __aig.loggerPtr->Error("ASetPlantActiveTime 不允许修改的生效时间超过 3cs");
+                    aLogger->Error("ASetPlantActiveTime 不允许修改的生效时间超过 3cs");
                 }
                 return;
             }
@@ -227,7 +227,7 @@ void ASetZombies(const std::vector<int>& zombieType, ASetZombieMode mode)
 
     if (mode == ASetZombieMode::INTERNAL) {
         if (typeList[AZOMBIE] == false) {
-            AGetInternalLogger()->Warning("自然出怪模式下出怪类型必须有普僵，已自动添加");
+            aLogger->Warning("自然出怪模式下出怪类型必须有普僵，已自动添加");
             typeList[AZOMBIE] = 1;
         }
         AAsm::PickZombieWaves();
@@ -304,8 +304,8 @@ std::vector<int> ACreateRandomTypeList(const std::vector<int>& required, const s
     }
     for (int type : required) {
         if (requirements.contains(type) && !requirements[type]) {
-            std::string msg = "无法满足出怪类型中包含 " + std::to_string(type) + " 的要求";
-            __aig.loggerPtr->Error(msg);
+            std::string msg = std::format("无法满足出怪类型中包含 {} 的要求", type);
+            aLogger->Error(msg);
             throw AException(msg);
         } else {
             requirements[type] = true;
@@ -313,8 +313,8 @@ std::vector<int> ACreateRandomTypeList(const std::vector<int>& required, const s
     }
     for (int type : banned) {
         if (requirements.contains(type) && requirements[type]) {
-            std::string msg = "无法满足出怪类型中不包含 " + std::to_string(type) + " 的要求";
-            __aig.loggerPtr->Error(msg);
+            std::string msg = std::format("无法满足出怪类型中不包含 {} 的要求", type);
+            aLogger->Error(msg);
             throw AException(msg);
         } else {
             requirements[type] = false;
@@ -327,7 +327,7 @@ std::vector<int> ACreateRandomTypeList(const std::vector<int>& required, const s
         bool banNewspaper = requirements.contains(ANEWSPAPER_ZOMBIE) && !requirements[ANEWSPAPER_ZOMBIE];
         if (banConehead && banNewspaper) {
             std::string msg = "自然出怪中路障僵尸和读报僵尸至少出现其一";
-            __aig.loggerPtr->Error(msg);
+            aLogger->Error(msg);
             throw AException(msg);
         }
         if (banConehead) {
@@ -350,8 +350,8 @@ std::vector<int> ACreateRandomTypeList(const std::vector<int>& required, const s
         }
     }
     if (typeList.size() > 11) {
-        std::string msg = "已指定 " + std::to_string(typeList.size()) + " 种必选出怪，而自然出怪的上限为 11 种";
-        __aig.loggerPtr->Error(msg);
+        std::string msg = std::format("已指定 {} 种必选出怪，而自然出怪的上限为 11 种", typeList.size());
+        aLogger->Error(msg);
         throw AException(msg);
     }
     for (int type : aRandom.Sample(candidates, 11 - typeList.size())) {
@@ -380,7 +380,7 @@ void __AGameSpeedManager::_ExitFight()
 void __AGameSpeedManager::Set(float x)
 {
     if (x < 0.05 || x > 10) {
-        __aig.loggerPtr->Error(
+        aLogger->Error(
             "SetGameSpeed : 倍速设置失败，倍速设置的合法范围为 [0.05, 10]");
         return;
     }
@@ -493,7 +493,7 @@ __ANodiscard bool AIsSeedUsable(ASeed* seed)
 __ANodiscard int AGetCobRecoverTime(int index)
 {
     if (index < 0 || index >= AGetMainObject()->PlantCountMax()) {
-        __aig.loggerPtr->Error("AGetCobRecoverTime(int) 参数值为:" + std::to_string(index) + ", 不合法");
+        aLogger->Error("AGetCobRecoverTime 参数值不合法");
         return INT_MIN;
     }
     return AGetCobRecoverTime(AGetMainObject()->PlantArray() + index);
@@ -502,7 +502,7 @@ __ANodiscard int AGetCobRecoverTime(int index)
 __ANodiscard int AGetCobRecoverTime(APlant* cob)
 {
     if (cob == nullptr || cob->IsDisappeared() || cob->Type() != ACOB_CANNON) {
-        __aig.loggerPtr->Error("AGetCobRecoverTime(APlant*) 参数值不合法");
+        aLogger->Error("AGetCobRecoverTime 参数值不合法");
         return INT_MIN;
     }
     auto animationMemory = AGetPvzBase()->AnimationMain()->AnimationOffset()->AnimationArray() + cob->AnimationCode();

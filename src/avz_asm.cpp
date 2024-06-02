@@ -780,7 +780,7 @@ void __ABeforeMakeNewBoard(std::vector<int>& zombieMusicRefCnts, std::vector<int
             AAsm::PlayFoleyPitch(idx);
         }
     }
-    // AGetInternalLogger()->Info("{} {}", __LINE__, AMRef<int>(0x6A9Ec0, 0x784, 0xa4 * AAsm::JACK_MUSIC_IDX + 0x4));
+    // aLogger->Info("{} {}", __LINE__, AMRef<int>(0x6A9Ec0, 0x784, 0xa4 * AAsm::JACK_MUSIC_IDX + 0x4));
 
     // 舞王和小丑的音效
     auto&& mjMusicRefCnt = AMRef<int>(0x6A9Ec0, 0x784, 0xa4 * AAsm::MJ_MUSIC_IDX + 0x4);
@@ -847,12 +847,12 @@ void AAsm::LoadGame(const std::string& file)
     for (int i = 0; i < 2; ++i) {
         // 先增加音效的引用计数
         // 防止 MakeNewBoard 停止音乐
-        // AGetInternalLogger()->Info("{} {}", __LINE__, AMRef<int>(0x6A9Ec0, 0x784, 0xa4 * JACK_MUSIC_IDX + 0x4));
+        // aLogger->Info("{} {}", __LINE__, AMRef<int>(0x6A9Ec0, 0x784, 0xa4 * JACK_MUSIC_IDX + 0x4));
         std::vector<int> zombieMusicRefCnts;
         std::vector<int> zombieMusicIdxs = {AAsm::JACK_MUSIC_IDX, AAsm::DIGGER_MUSIC_IDX};
         __ABeforeMakeNewBoard(zombieMusicRefCnts, zombieMusicIdxs);
         MakeNewBoard();
-        // AGetInternalLogger()->Info("{} {}", __LINE__, AMRef<int>(0x6A9Ec0, 0x784, 0xa4 * JACK_MUSIC_IDX + 0x4));
+        // aLogger->Info("{} {}", __LINE__, AMRef<int>(0x6A9Ec0, 0x784, 0xa4 * JACK_MUSIC_IDX + 0x4));
 
         if (i == 0) { // 首先尝试调用 LawnLoadGame
             __asm__ __volatile__(
@@ -878,9 +878,9 @@ void AAsm::LoadGame(const std::string& file)
                 : [tmpPtr] "m"(tmpPtr)
                 : ASaveAllRegister);
         }
-        // AGetInternalLogger()->Info("{} {}", __LINE__, AMRef<int>(0x6A9Ec0, 0x784, 0xa4 * JACK_MUSIC_IDX + 0x4));
+        // aLogger->Info("{} {}", __LINE__, AMRef<int>(0x6A9Ec0, 0x784, 0xa4 * JACK_MUSIC_IDX + 0x4));
         __AAfterLoadGame(zombieMusicRefCnts, zombieMusicIdxs);
-        // AGetInternalLogger()->Info("{} {}", __LINE__, AMRef<int>(0x6A9Ec0, 0x784, 0xa4 * JACK_MUSIC_IDX + 0x4));
+        // aLogger->Info("{} {}", __LINE__, AMRef<int>(0x6A9Ec0, 0x784, 0xa4 * JACK_MUSIC_IDX + 0x4));
 
         // 这说明需要切换场景
         if (scene == AGetMainObject()->Scene()) {
@@ -898,7 +898,7 @@ void AAsm::LoadGame(const std::string& file)
         :
         : [tmpPtr] "m"(tmpPtr)
         : ASaveAllRegister);
-    // AGetInternalLogger()->Info("{} {}", __LINE__, AMRef<int>(0x6A9Ec0, 0x784, 0xa4 * _JACK_MUSIC_IDX + 0x4));
+    // aLogger->Info("{} {}", __LINE__, AMRef<int>(0x6A9Ec0, 0x784, 0xa4 * _JACK_MUSIC_IDX + 0x4));
 
     FreePvzString(&pvzStr);
 }

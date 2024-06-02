@@ -86,7 +86,7 @@ struct __ACoNodiscard ACoroutine {
         void return_void() { }
         ~promise_type()
         {
-            AGetInternalLogger()->Info("协程退出");
+            aLogger->Info("协程退出");
         }
     };
 

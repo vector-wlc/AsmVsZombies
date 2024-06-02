@@ -15,7 +15,7 @@ void __AOpQueueManager::_SetRefreshTime(int wave, int refreshTime)
 
     if (wave != 0) {
         auto wavelength = queueIter->memRefreshTime - (queueIter - 1)->memRefreshTime;
-        __aig.loggerPtr->Info("下一波即将刷新，第 " + std::to_string(wave) + " 波的波长为 " + std::to_string(wavelength));
+        aLogger->Info("下一波即将刷新，第 {} 波的波长为 {}", wave, wavelength);
     }
 
     auto nextQueueIter = queueIter + 1;
@@ -30,18 +30,13 @@ std::optional<__ATimeIter>
 __AOpQueueManager::Push(const ATime& time, __ABoolOperation&& timeOp)
 {
     if (time.wave < 1 || time.wave > container.size()) {
-        __aig.loggerPtr->Error(
-            "您连接设定的 wave 参数为 " + //
-            std::to_string(time.wave) + ", 超出有效范围");
+        aLogger->Error("连接设定的 wave 参数为 {}, 超出有效范围", time.wave);
         return std::nullopt;
     }
 
     if (time.wave < startTime.wave || //
         (time.wave == startTime.wave && time.time < startTime.time)) {
-        __aig.loggerPtr->Info("当前连接时间 ("
-            + std::to_string(time.wave) + ", " + std::to_string(time.time)
-            + ") 小于开始时间 (" + std::to_string(startTime.wave) + ", " + std::to_string(startTime.time)
-            + "), 因此未建立连接");
+        aLogger->Info("当前连接时间 {} 小于开始时间 {}, 因此未建立连接", time, startTime);
         return std::nullopt;
     }
 
@@ -54,8 +49,7 @@ __AOpQueueManager::Push(const ATime& time, __ABoolOperation&& timeOp)
 
     auto&& queue = container[time.wave - 1].queue;
     auto ret = queue.emplace(time.time, std::move(timeOp));
-    __aig.loggerPtr->Info("建立 时间-操作 [" + std::to_string(time.wave)
-        + ", " + std::to_string(time.time) + "] 连接成功");
+    aLogger->Info("建立 时间-操作 {} 连接成功", time);
     return ret;
 }
 
@@ -143,7 +137,7 @@ void __AOpQueueManager::SetWavelength(const std::vector<ATime>& lst)
 {
     for (const auto& time : lst) {
         if (time.wave == AGetMainObject()->TotalWave()) {
-            __aig.loggerPtr->Error("SetWavelength 对最后一波无效");
+            aLogger->Error("SetWavelength 对最后一波无效");
             continue;
         }
         if (!_CheckWavelength(time)) {
@@ -184,10 +178,9 @@ void __AOpQueueManager::AssumeWavelength(const std::vector<ATime>& lst)
 void __AOpQueueManager::_PrintLog(const ATime& time, int nowTime)
 {
     if (nowTime > time.time) {
-        __aig.loggerPtr->Warning("时间-操作 [" + std::to_string(time.wave) + ", " + std::to_string(time.time) + //
-            "] 但是现在时间已到 [" + std::to_string(time.wave) + ", " + std::to_string(nowTime) + "]");
+        aLogger->Warning("时间-操作 {} 但是现在时间已到 {}", time, ATime(time.wave, nowTime));
     }
-    __aig.loggerPtr->Info("运行 时间-操作 [" + std::to_string(time.wave) + ", " + std::to_string(time.time) + "]");
+    aLogger->Info("运行 时间-操作 {}", time);
 }
 
 bool __AOpQueueManager::_CheckWavelength(const ATime& time)
@@ -197,23 +190,17 @@ bool __AOpQueueManager::_CheckWavelength(const ATime& time)
     }
 
     if (time.time < (time.wave % 10 == 9 ? 1346 : 601)) {
-        __aig.loggerPtr->Error(
-            "您当前设定的第 " + std::to_string(time.wave)         //
-            + " 波 的 time 参数为 " + std::to_string(time.time) + //
-            ", 超出有效范围");
+        aLogger->Error("您当前设定的第 {} 波 的 time 参数为 {}, 超出有效范围", time.wave, time.time);
         return false;
     }
 
     if (container[time.wave - 1].wavelength != -1) {
-        __aig.loggerPtr->Warning("您第 " + std::to_string(time.wave) + " 波已经设置过波长，此次设置无效");
+        aLogger->Warning("您第 {} 波已经设置过波长，此次设置无效", time.wave);
         return false;
     }
 
     if (time.time > (time.wave % 10 == 9 ? 5245 : 3100)) {
-        __aig.loggerPtr->Warning(
-            "您当前设定的第 " + std::to_string(time.wave)         //
-            + " 波 的 time 参数为 " + std::to_string(time.time) + //
-            ", 超出有效范围");
+        aLogger->Warning("您当前设定的第 {} 波 的 time 参数为 {}, 超出有效范围", time.wave, time.time);
     }
 
     return true;
@@ -233,13 +220,12 @@ void __AOpQueueManager::_CheckAssumeWavelength(int wave)
         int totalHp = AGetMainObject()->MRef<int>(0x5598);
         float refreshRatio = float(totalHp - currentHp) / (totalHp - refreshHp);
 
-        str = "但下一波僵尸尚未刷新，目前僵尸总血量为 " + std::to_string(currentHp) //
-            + " 刷新血量为 " + std::to_string(refreshHp)
-            + " 刷新进度为 " + std::to_string(refreshRatio);
+        str = std::format("但下一波僵尸尚未刷新，目前僵尸总血量为 {} 刷新血量为 {} 刷新进度为 {:.2f}%",
+            currentHp, refreshHp, refreshRatio);
     } else {
         auto trueWavelength = nextRefreshTime - currentRefreshTime;
         if (trueWavelength != currentTimeQueue.wavelength) {
-            str = "但实际波长为" + std::to_string(trueWavelength);
+            str = std::format("但实际波长为 {}", trueWavelength);
         }
     }
 
@@ -250,10 +236,7 @@ void __AOpQueueManager::_CheckAssumeWavelength(int wave)
             container[waveIter].calRefreshTime = __AOperationQueue::UNINIT;
         }
 
-        __aig.loggerPtr->Error(
-            "AssumeWavelength : 您第 "
-            + std::to_string(wave) + " 波假定的波长为 "
-            + std::to_string(currentTimeQueue.wavelength) + ", " + str);
+        aLogger->Error("AssumeWavelength : 您第 {} 波假定的波长为 {}, {}", wave, currentTimeQueue.wavelength, str);
     }
 }
 
@@ -282,11 +265,7 @@ int ANowTime(int wave)
     ++depth;
     auto maxWave = AGetMainObject()->TotalWave();
     if (wave <= 0 || wave > maxWave) {
-        auto&& pattern = __aig.loggerPtr->GetPattern();
-        // 此处会造成递归调用
-        __aig.loggerPtr->Error("ANowTime 输入参数范围 [1, " + pattern + //
-                "], 您输入的参数为 " + pattern + ", 已经超出了此范围",
-            maxWave, wave);
+        aLogger->Error("ANowTime : 波次的合法范围为 [1, {}], 您输入的参数为 {}", maxWave, wave);
         --depth;
         return __AOperationQueue::UNINIT;
     }

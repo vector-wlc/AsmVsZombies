@@ -145,7 +145,7 @@ void __ACardManager::_EnterFight()
 const std::string& __ACardManager::GetCardName(APlantType type)
 {
     if (std::size_t(type) > _cardName.size() - 1) {
-        AGetInternalLogger()->Error("GetCardName : 您选择的代号为 " + std::to_string(type) + " 的卡片在 PvZ 中不存在");
+        aLogger->Error("GetCardName : 您选择的代号为 {} 的卡片在 PvZ 中不存在", int(type));
         return _cardName.back();
     }
     return _cardName[std::size_t(type)];
@@ -154,7 +154,7 @@ const std::string& __ACardManager::GetCardName(APlantType type)
 const std::string& __ACardManager::GetCardName(ASeed* seed)
 {
     if (seed == nullptr) {
-        AGetInternalLogger()->Error("GetCardName : 您传入的参数为 nullptr");
+        aLogger->Error("GetCardName : 您传入的参数为 nullptr");
         return _cardName.back();
     }
     int type = seed->Type();
@@ -212,38 +212,35 @@ void __ACardManager::_ChooseSingleCard()
 void __ACardManager::SelectCards(const std::vector<int>& lst, int selectInterval)
 {
     if (selectInterval < 0) {
-        __aig.loggerPtr->Error("ASelectCards 不允许选卡间隔小于 0cs");
+        aLogger->Error("ASelectCards 不允许选卡间隔小于 0cs");
         return;
     }
     if (lst.size() > AGetMainObject()->SeedArray()->Count()) {
-        __aig.loggerPtr->Error("ASelectCards 不允许选卡的数量大于卡片的数量");
+        aLogger->Error("ASelectCards 不允许选卡的数量大于卡片的数量");
         return;
     }
     _selectInterval = std::max(1, selectInterval);
-
-    auto&& pattern = __aig.loggerPtr->GetPattern();
 
     _selectCardVec.clear();
     std::unordered_set<int> repetitiveTypeSet;
     bool isImitatorSelected = false;
     for (const auto& cardType : lst) {
         if (cardType > AM_MELON_PULT) {
-            __aig.loggerPtr->Error("您选择的代号为 " + pattern + " 的卡片在 PvZ 中不存在",
-                cardType);
+            aLogger->Error("您选择的代号为 {} 的卡片在 PvZ 中不存在", cardType);
             return;
         }
 
         if (repetitiveTypeSet.find(cardType) == repetitiveTypeSet.end()) { // 没有被选择的卡片
             repetitiveTypeSet.insert(cardType);
         } else {
-            __aig.loggerPtr->Error("您重复选择了 " + GetCardName(APlantType(cardType)) + " 卡片");
+            aLogger->Error("您重复选择了 {} 卡片", GetCardName(APlantType(cardType)));
             return;
         }
 
         if (!isImitatorSelected) {
             isImitatorSelected = (cardType > AIMITATOR);
         } else if (cardType > AIMITATOR) {
-            __aig.loggerPtr->Error("您重复选择了模仿者卡片");
+            aLogger->Error("您重复选择了模仿者卡片");
             return;
         }
     }
@@ -258,11 +255,10 @@ APlant* __ACardManager::_CardWithoutCheck(int seedIndex, int row, float col)
     auto mainObject = AGetMainObject();
     auto seed = mainObject->SeedArray() + seedIndex - 1;
     col = int(col + 0.5);
-    std::string msg = "放置" + GetCardName(seed) + "卡片到 ("
-        + std::to_string(row) + ", " + AGetInternalLogger()->GetPattern() + ") ";
+    std::string msg = std::format("放置 {} 卡片到 {}", GetCardName(seed), APosition(row, col));
     int type = seed->Type() == AIMITATOR ? seed->ImitatorType() : seed->Type();
     if (AAsm::GetPlantRejectType(type, row - 1, col - 1) != AAsm::NIL) {
-        AGetInternalLogger()->Info(msg + "失败", col);
+        aLogger->Info(msg + " 失败");
         return nullptr;
     }
     auto [x, y] = AGridToCoordinate(row, col);
@@ -270,13 +266,13 @@ APlant* __ACardManager::_CardWithoutCheck(int seedIndex, int row, float col)
     AAsm::PlantCard(x, y, seedIndex - 1);
     AAsm::ReleaseMouse();
     if (currentIdx != mainObject->PlantNext()) {
-        AGetInternalLogger()->Info(msg + "成功", col);
+        aLogger->Info(msg + " 成功");
         return mainObject->PlantArray() + currentIdx;
     }
 
     // 这里几乎不可能执行
     // 因为前面已经做了检查
-    AGetInternalLogger()->Info(msg + "失败", col);
+    aLogger->Info(msg + " 失败");
     return nullptr;
 }
 
@@ -284,8 +280,7 @@ bool __ACardManager::_CheckCard(int seedIndex)
 {
     auto seedCount = AGetMainObject()->SeedArray()->Count();
     if (seedIndex > seedCount || seedIndex < 1) {
-        __aig.loggerPtr->Error(
-            "Card : 您填写的参数 " + std::to_string(seedIndex) + " 已溢出");
+        aLogger->Error("Card : 您填写的参数 {} 已溢出", seedIndex);
         return false;
     }
     AAsm::ReleaseMouse();
@@ -293,13 +288,9 @@ bool __ACardManager::_CheckCard(int seedIndex)
     if (!AIsSeedUsable(seed)) {
         int cd = seed->InitialCd() - seed->Cd() + 1;
         if (cd > 0) {
-            __aig.loggerPtr->Error(
-                "Card : " + GetCardName(seed) + "卡片还有 "
-                + std::to_string(cd) // PvZ计算问题导致+1
-                + " cs 才能使用");
+            aLogger->Error("Card : {} 卡片还有 {} cs 才能使用", GetCardName(seed), cd);
         } else {
-            __aig.loggerPtr->Error(
-                "Card : " + GetCardName(seed) + "卡片无法使用，这可能是因为阳光不足或者未放置相应的绿卡");
+            aLogger->Error("Card : {} 卡片无法使用，这可能是因为阳光不足或者未放置相应的绿卡", GetCardName(seed));
         }
         return false;
     }
@@ -351,7 +342,7 @@ APlant* __ACardManager::Card(APlantType plantType, int row, float col)
 {
     int seedIndex = GetCardIndex(plantType);
     if (seedIndex == -1) {
-        __aig.loggerPtr->Error("您没有选择" + GetCardName(plantType) + "卡片");
+        aLogger->Error("您没有选择 {} 卡片", GetCardName(plantType));
         return nullptr;
     }
     return _BasicCard(seedIndex + 1, row, col);
@@ -375,7 +366,7 @@ APlant* __ACardManager::Card(APlantType plantType, const std::vector<APosition>&
 {
     int seedIndex = GetCardIndex(plantType);
     if (seedIndex == -1) {
-        __aig.loggerPtr->Error("您没有选择" + GetCardName(plantType) + "卡片");
+        aLogger->Error("您没有选择 {} 卡片", GetCardName(plantType));
         return nullptr;
     }
     return _BasicCard(seedIndex + 1, lst);

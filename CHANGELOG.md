@@ -5,12 +5,14 @@ AvZ Nightly
 * 高级暂停时鼠标指针可以正常响应
 * 为 `ACobManager`、`AIceFiller` 和 `APlantFixer` 添加了增量改变位置列表的成员函数
 * DSL 连接轨道的语法更加自然
+* `AGrid`、`APosition` 和 `ATime` 可以直接被 `ALogger` 格式化
+* 可以直接通过指针变量 `aLogger` 访问默认日志对象，无需调用 `AGetInternalLogger()`
 
 AvZ 2.7.1 2024_05_10 (Vector Final Version)
 
 * 修复 Card 函数无法正常种植模仿者卡片的问题
 * PvZGui 日志对象可以多行平滑移动显示
-* 日志对象内部使用了 C++20 format 作为格式化方式，{} 是固定的 pattern
+* 日志对象内部使用了 C++20 format 作为格式化方式，`{}` 是固定的 pattern
 * 回放功能进行了大优化
 
 AvZ 2.7.0 2024_02_05 (DSL)

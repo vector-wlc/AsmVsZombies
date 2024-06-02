@@ -89,12 +89,10 @@ __ANodiscard std::vector<T> __AMoveToBottom(const std::vector<T>& vec, const std
     return result;
 }
 
-class AAbstractLogger;
 class __ATickManager;
 
 struct __AInternalGlobal {
     HINSTANCE hInstance = nullptr;
-    AAbstractLogger* loggerPtr = nullptr;
     // 这个指针指向的是一个数组 !!!
     // 大小为 ATickRunner::__COUNT
     __ATickManager* tickManagers = nullptr;
@@ -109,11 +107,6 @@ struct __AInternalGlobal {
 
 extern __AInternalGlobal __aig;
 
-inline void ASetInternalLogger(AAbstractLogger& logger)
-{
-    __aig.loggerPtr = &logger;
-}
-
 inline HINSTANCE AGetDllInstance()
 {
     return __aig.hInstance;
@@ -123,12 +116,6 @@ template <typename Op>
 inline void __ARegisterInitOp(Op&& op)
 {
     __aig.GetInitOps().emplace_back(std::forward<Op>(op));
-}
-
-// 注意这个函数返回的是对象指针
-inline AAbstractLogger* AGetInternalLogger()
-{
-    return __aig.loggerPtr;
 }
 
 // 随机数产生类

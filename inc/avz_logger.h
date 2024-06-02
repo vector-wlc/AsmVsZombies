@@ -239,4 +239,17 @@ protected:
     virtual void _BeforeScript() override;
 };
 
+inline AAbstractLogger* aLogger;
+
+// 注意这个函数返回的是对象指针
+inline AAbstractLogger* AGetInternalLogger()
+{
+    return aLogger;
+}
+
+inline void ASetInternalLogger(AAbstractLogger& logger)
+{
+    aLogger = &logger;
+}
+
 #endif

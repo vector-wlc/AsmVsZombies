@@ -15,9 +15,7 @@ void ATimeConnectHandle::Stop()
             return;
         }
     }
-    auto&& pattern = __aig.loggerPtr->GetPattern();
-    __aig.loggerPtr->Warning("时间连接 [" + pattern + ", " + pattern + "] 连接已失效, Stop 无效调用",
-        _time.wave, _time.time);
+    aLogger->Warning("时间连接 {} 已失效, Stop 无效调用", _time);
 }
 
 std::vector<std::string> __AKeyManager::_keyVec;
@@ -32,19 +30,14 @@ __AKeyManager::KeyState __AKeyManager::ToVaildKey(AKey& key)
     }
 
     if (keyState == UNKNOWN) {
-        __aig.loggerPtr->Error("不允许绑定未知的按键 : " + //
-                __aig.loggerPtr->GetPattern(),
-            key);
+        aLogger->Error("不允许绑定未知的按键 {}", key);
         return UNKNOWN;
     }
     auto iter = _keyMap.find(key);
     if (iter == _keyMap.end() || iter->second.IsStopped()) {
         return VALID;
     } else {
-        __aig.loggerPtr->Error("按键 : " + //
-                __aig.loggerPtr->GetPattern()
-                + "已被绑定, AConnect(AKey, AOperation) 不允许重复绑定按键",
-            __AKeyManager::ToName(key));
+        aLogger->Error("按键 {} 已被绑定", __AKeyManager::ToName(key));
         return REPEAT;
     }
 }

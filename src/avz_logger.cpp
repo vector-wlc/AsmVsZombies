@@ -42,8 +42,8 @@ void ALogger<AFile>::_Output(ALogLevel level, std::string&& str)
 {
     if (!_outFile.is_open()) {
         _outFile.open(_fileName, std::ios::out | std::ios::app);
-        if (!_outFile.good() && AGetInternalLogger() != this) {
-            AGetInternalLogger()->Error("无法打开 #", _fileName);
+        if (!_outFile.good() && aLogger != this) {
+            aLogger->Error("无法打开 #", _fileName);
             return;
         }
         _outFile.imbue(std::locale(""));
@@ -67,8 +67,8 @@ bool ALogger<AFile>::Clear()
     }
     _outFile.close();
     _outFile.open(_fileName, std::ios::out);
-    if (!_outFile.good() && AGetInternalLogger() != this) {
-        AGetInternalLogger()->Error("无法打开 " + _fileName);
+    if (!_outFile.good() && aLogger != this) {
+        aLogger->Error("无法打开 {}", _fileName);
         return false;
     }
     _outFile.imbue(std::locale(""));

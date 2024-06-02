@@ -7,7 +7,9 @@
 
 #ifndef __AVZ_TYPES_H__
 #define __AVZ_TYPES_H__
+
 #include <cstdint>
+#include <format>
 #include <functional>
 #include <set>
 #include <stack>
@@ -47,12 +49,46 @@ struct AGrid {
     int row;
     int col;
 
+    AGrid() = default;
+
+    AGrid(int row, int col)
+        : row(row)
+        , col(col)
+    {
+    }
+
     auto operator<=>(const AGrid&) const = default;
+};
+
+template <>
+struct std::formatter<AGrid> : std::formatter<std::string> {
+    auto format(AGrid grid, auto& ctx) const {
+        std::string result = std::format("({}, {})", grid.row, grid.col);
+        return formatter<std::string>::format(result, ctx);
+    }
 };
 
 struct APosition {
     int row;
     float col;
+
+    APosition() = default;
+
+    APosition(int row, float col)
+        : row(row)
+        , col(col)
+    {
+    }
+
+    auto operator<=>(const APosition&) const = default;
+};
+
+template <>
+struct std::formatter<APosition> : std::formatter<std::string> {
+    auto format(APosition pos, auto& ctx) const {
+        std::string result = std::format("({}, {})", pos.row, int(pos.col * 80.0 + 1e-3) / 80.0);
+        return formatter<std::string>::format(result, ctx);
+    }
 };
 
 struct ATime {
@@ -61,10 +97,18 @@ struct ATime {
 
     ATime() = default;
 
-    explicit ATime(int wave, int time)
+    ATime(int wave, int time)
         : time(time)
         , wave(wave)
     {
+    }
+};
+
+template <>
+struct std::formatter<ATime> : std::formatter<std::string> {
+    auto format(ATime t, auto& ctx) const {
+        std::string result = std::format("[{}, {}]", t.wave, t.time);
+        return formatter<std::string>::format(result, ctx);
     }
 };
 

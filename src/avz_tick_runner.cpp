@@ -24,10 +24,10 @@ void __ATickManager::Remove(int priority, std::size_t idx)
 {
     auto&& pool = _priQue[_PriToIdx(priority)];
     if (!pool.Remove(idx)) {
-        AGetInternalLogger()->Error("无法移除" + _GetInfoStr(priority, idx));
+        aLogger->Error("无法移除 {}", _GetInfoStr(priority, idx));
         return;
     }
-    AGetInternalLogger()->Info("移除" + _GetInfoStr(priority, idx));
+    aLogger->Info("移除 {}", _GetInfoStr(priority, idx));
 }
 
 void __ATickManager::_BeforeScript()
@@ -43,26 +43,23 @@ void __ATickManager::_BeforeScript()
 
 std::string __ATickManager::_GetInfoStr(int priority, std::size_t idx)
 {
-    std::string info = "帧运行 : (模式: ";
+    std::string mode;
     switch (_runMode) {
     case ATickRunner::ONLY_FIGHT:
-        info += "ONLY_FIGHT";
+        mode = "ONLY_FIGHT";
         break;
     case ATickRunner::GLOBAL:
-        info += "GLOBAL";
+        mode = "GLOBAL";
         break;
     case ATickRunner::AFTER_INJECT:
-        info += "AFTER_INJECT";
+        mode = "AFTER_INJECT";
         break;
     default:
-        info += "UNKNOWN";
-        break;
+        mode = "UNKNOWN";
     }
     auto&& pool = _priQue[_PriToIdx(priority)];
-    return info + ") (ID: " + std::to_string(pool.GetId(idx))
-        + ") (索引: " + std::to_string(idx)
-        + ") (优先级: " + std::to_string(priority)
-        + ") (池容量: " + std::to_string(pool.Size()) + ")";
+    return std::format("帧运行 : (模式: {}) (ID: {}) (索引: {}) (优先级: {}) (池容量: {})",
+        mode, pool.GetId(idx), idx, priority, pool.Size());
 }
 
 ATickHandle& ATickHandle::operator=(const ATickHandle& rhs)
@@ -102,7 +99,7 @@ bool ATickHandle::IsPaused() const noexcept
 void ATickHandle::GoOn() noexcept
 {
     if (IsStopped()) {
-        AGetInternalLogger()->Error("帧运行已停止，无法继续运行");
+        aLogger->Error("帧运行已停止，无法继续运行");
         return;
     }
     __aig.tickManagers[_runMode].At(_priority, _idx).isRunning = true;

@@ -28,8 +28,7 @@ void AItemCollector::_EnterFight()
 void AItemCollector::SetInterval(int timeInterval)
 {
     if (timeInterval < 1) {
-        auto&& pattern = __aig.loggerPtr->GetPattern();
-        __aig.loggerPtr->Error("自动收集类时间间隔范围为:[1, 正无穷], 你现在设定的参数为 " + pattern, timeInterval);
+        aLogger->Error("自动收集类收集间隔应大于 0");
         return;
     }
     this->_timeInterval = timeInterval;
@@ -40,7 +39,7 @@ void AItemCollector::SetTypeList(const std::vector<int>& types)
     _types.fill(false);
     for (auto type : types) {
         if (type < 1 && type >= _TYPE_SIZE) {
-            AGetInternalLogger()->Warning("AItemCollector::SetTypeList : 您设置的收集物类型: {} 不存在", type);
+            aLogger->Warning("AItemCollector::SetTypeList : 您设置的收集物类型 {} 不存在", type);
             continue;
         }
         _types[type] = true;
@@ -97,11 +96,8 @@ void AIceFiller::SetIceSeedList(const std::vector<int>& lst)
     // 未运行即进行检查是否为冰卡
     for (const auto& seedType : lst) {
         if (seedType != AICE_SHROOM && seedType != AM_ICE_SHROOM) {
-            auto&& pattern = __aig.loggerPtr->GetPattern();
-            __aig.loggerPtr->Error(
-                "resetIceSeedList : 您填写的参数为 " + pattern + //
-                    " , 然而此函数只接受植物类型为寒冰菇或模仿寒冰菇的参数",
-                seedType);
+            aLogger->Error("resetIceSeedList : 您填写的参数为 {}, "
+                "然而此函数只接受植物类型为寒冰菇或模仿寒冰菇的参数", seedType);
             return;
         }
     }
@@ -111,7 +107,7 @@ void AIceFiller::SetIceSeedList(const std::vector<int>& lst)
     for (const auto& seedType : lst) {
         iceIdx = AGetSeedIndex(AICE_SHROOM, seedType / AM_PEASHOOTER);
         if (iceIdx == -1) {
-            __aig.loggerPtr->Error("resetIceSeedList : 您没有选择对应的冰卡");
+            aLogger->Error("resetIceSeedList : 您没有选择对应的冰卡");
             continue;
         }
         _iceSeedIdxVec.push_back(iceIdx);
@@ -195,11 +191,11 @@ void AIceFiller::_Run()
 void AIceFiller::Coffee()
 {
     if (_coffeeSeedIdx == -1) {
-        __aig.loggerPtr->Error("你没有选择咖啡豆卡片!");
+        aLogger->Error("你没有选择咖啡豆卡片!");
         return;
     }
     if (_fillIceGridVec.empty()) {
-        __aig.loggerPtr->Error("你还未为自动存冰对象初始化存冰列表");
+        aLogger->Error("你还未为自动存冰对象初始化存冰列表");
         return;
     }
     auto icePlantIdxVec = AGetPlantIndices(_fillIceGridVec, AICE_SHROOM);
@@ -212,7 +208,7 @@ void AIceFiller::Coffee()
         AAsm::ReleaseMouse();
         return;
     }
-    __aig.loggerPtr->Error("Coffee : 未找到可用的存冰");
+    aLogger->Error("Coffee : 未找到可用的存冰");
 }
 
 /////////////////////////////////////////////////
@@ -292,7 +288,7 @@ void APlantFixer::_GetSeedList()
         _seedIdxVec.push_back(seedIndex);
     }
     if (_seedIdxVec.size() == 0) {
-        __aig.loggerPtr->Error("您没有选择修补该植物的卡片！");
+        aLogger->Error("您没有选择修补该植物的卡片！");
     }
     _coffeeSeedIdx = AGetSeedIndex(ACOFFEE_BEAN);
 }
@@ -301,12 +297,12 @@ void APlantFixer::Start(int plantType, const std::vector<AGrid>& lst,
     int fixHp)
 {
     if (plantType == ACOFFEE_BEAN) {
-        __aig.loggerPtr->Error("PlantFixer 不支持修补咖啡豆");
+        aLogger->Error("PlantFixer 不支持修补咖啡豆");
         return;
     }
 
     if (plantType >= AGATLING_PEA) {
-        __aig.loggerPtr->Error("修补植物类仅支持绿卡");
+        aLogger->Error("修补植物类仅支持绿卡");
         return;
     }
 

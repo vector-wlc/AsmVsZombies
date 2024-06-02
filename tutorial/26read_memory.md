@@ -2,7 +2,7 @@
  * @Coding: utf-8
  * @Author: vector-wlc
  * @Date: 2022-11-19 23:56:22
- * @Description: 
+ * @Description:
 -->
 # 内存读取
 
@@ -43,7 +43,7 @@
 
 咱们发现他的地址是 454，先记下来，然后咱们发现 454 左边是有一个竖线的，
 说明它上面还有`爸爸`，咱们得找到他`爸爸的地址`才行，咱们就顺着这个竖线往上爬，
-最后找到了的地址如下 
+最后找到了的地址如下
 ```
 ┌─6A9EC0\\基址
 ├─C\\[std::string]公司名称
@@ -72,7 +72,7 @@ void AScript()
     // 实际上就是对上面代码的封装
     // int tickInterval = AMRef<int>(0x6A9EC0, 0x454);
 
-    console.Info(std::to_string(tickInterval));
+    console.Info("{}", tickInterval);
 }
 ```
 
@@ -93,7 +93,7 @@ MPtr 来读，然后 `<APvzStruct>` 是啥？首先 `<>` 在 C++ 中代表模板
 这里先给大家挖个坑，不给大家解释 APvzStruct 是啥，咱们看最后的 0x6A9EC0，你会发现咱们找到
 的地址是 6A9EC0，前面没有 0x，怎么这里多了一个 0x？
 实际上指针表中的所有数值都是**十六进制数**，在 C++ 语言中，表示一个十六进制数就得用前缀 0x，
-所以就是 0x6A9EC0 了，介绍完了这一个，继续介绍 `MRef<int>(0x454)`是什么东西，首先 MRef 
+所以就是 0x6A9EC0 了，介绍完了这一个，继续介绍 `MRef<int>(0x454)`是什么东西，首先 MRef
 这个接口的意思是读取数据的引用，它适用于**该地址下没有孩子的情况**， 0x454 是一个数据，他下面
 没有孩子，那么为什么 `<>` 中是 int 呢？那么现在大家需要记住一个隐形规则，
 **指针表中没有指定类型的数据，一律当作 int 来处理**，0x454 没有标明数据的类型，所以他就是 int,
@@ -120,7 +120,7 @@ MPtr 来读，然后 `<APvzStruct>` 是啥？首先 `<>` 在 C++ 中代表模板
 45DEE0\\[2字节]非阳光植物攻击初始倒计时误差修正
 ```
 还有要注意的一点是，你发现 45DEE0 这个地址前面没有竖线，这咋读？
-很简单这么读: 
+很简单这么读:
 ```C++
 AMRef<uint16_t>(0x45DEE0);
 ```
@@ -152,7 +152,7 @@ void AScript()
     int sunVal = AMPtr<APvzStruct>(0x6A9EC0)->MPtr<APvzStruct>(0x768)->MRef<int>(0x5560);
     // 同理可写成：
     // int sunVal = AMRef<int>(0x6A9EC0, 0x768, 0x5560);
-    console.Info(std::to_string(sunVal));
+    console.Info("{}", sunVal);
 }
 ```
 运行结果:
@@ -178,10 +178,10 @@ void AScript()
 {
     // 这里就直接使用简写形式了
     int x = AMRef<int>(0x6a9ec0, 0x768, 0xac, 0x8);
-    console.Info(std::to_string(x));
+    console.Info("{}", x);
 }
 ```
-结果是: 
+结果是:
 ```
 [1, -2147483648][INFO] 40
 ```
@@ -195,13 +195,13 @@ ALogger<AConsole> console;
 void AScript()
 {
     int x = AMRef<int>(0x6A9EC0, 0x768, 0xAC + 0x14C * 1, 0x8);
-    console.Info(std::to_string(x));
+    console.Info("{}", x);
 }
 ```
 指针表里面都说了，+14C 下一个，所以咱们就应该这么读，看看都不对，发现一运行，很快啊，啪的一声游戏崩溃了，
 你会疑惑这是为啥？ 原因很简单，因为咱们加错地方了，咱们换个加的地方不就行了。
 ```C++
-// 0x6a9ec0 -> 0x768 -> 0xac -> 0x8 + 0x14C * i 
+// 0x6a9ec0 -> 0x768 -> 0xac -> 0x8 + 0x14C * i
 #include <avz.h>
 
 ALogger<AConsole> console;
@@ -209,7 +209,7 @@ ALogger<AConsole> console;
 void AScript()
 {
     int x = AMRef<int>(0x6A9EC0, 0x768, 0xAC, 0x8 + 0x14C * 1);
-    console.Info(std::to_string(x));
+    console.Info("{}", x);
 }
 ```
 你会发现，这次咱们运行对了，所以下一个的意思就是让咱们**加到最后的数据层**，至于为啥就不解释了，
@@ -234,7 +234,7 @@ void AScript()
     int plantArraySize = AMRef<int>(0x6A9EC0, 0x768, 0xB0);
     for (int i = 0; i < plantArraySize; ++i) {
         int x = AMRef<int>(0x6A9EC0, 0x768, 0xAC, 0x8 + 0x14C * i);
-        console.Info(std::to_string(x));
+        console.Info("{}", x);
     }
 }
 ```
@@ -274,7 +274,7 @@ void AScript()
     auto plantArray = AMPtr<Plant>(0x6A9EC0, 0x768, 0xAC);
     for (int i = 0; i < plantArraySize; ++i) {
         int x = (plantArray + i)->MRef<int>(0x8);
-        console.Info(std::to_string(x));
+        console.Info("{}", x);
     }
 }
 ```
@@ -295,7 +295,7 @@ void AScript()
     auto plantArray = AMPtr<Plant>(0x6A9EC0, 0x768, 0xAC);
     for (int i = 0; i < plantArraySize; ++i) {
         int x = plantArray[i].MRef<int>(0x8);
-        console.Info(std::to_string(x));
+        console.Info("{}", x);
     }
 }
 ```
@@ -323,7 +323,7 @@ void AScript()
     for (int i = 0; i < plantArraySize; ++i) {
         // 使用这个加的函数
         int x = plantArray[i].X();
-        console.Info(std::to_string(x));
+        console.Info("{}", x);
     }
 }
 ```
@@ -386,7 +386,7 @@ uint32_t* ZombieList() noexcept
 
 最后咱们还需要介绍的是，为了方便大家编写脚本，本框架已经贴心的将很多内存地址封装了，
 例如 0x6a9ec0 这个地址大家可以用 AGetPvzBase 这个函数获取，0x768 可以用 AGetMainObject 获取，
-然后咱们读的阳光值已经封装好了，就是 AGetMainObject()->Sun()，植物僵尸卡片内存数组也有，他们分别的是 
+然后咱们读的阳光值已经封装好了，就是 AGetMainObject()->Sun()，植物僵尸卡片内存数组也有，他们分别的是
 AGetMainObject()->PlantArray()， AGetMainObject()->ZombieArray()， AGetMainObject()->SeedArray()，
 封装方式就是咱们之前说的那些，不信你去看源码，然后为了更更更方便大家去读这些内存数组的，本框架还设计了
 对象过滤器，也就是 [对象过滤迭代器]，读到这里，是不是所有的知识都串起来了！
@@ -398,4 +398,4 @@ OK，这就是本节的全部内容了，实际上这节的内容只为了一些
 所以你至少要知道这两个头文件中的内容才能做好更深层次的内容，好了就是这样了。
 
 
-[目录](./0catalogue.md) 
+[目录](./0catalogue.md)

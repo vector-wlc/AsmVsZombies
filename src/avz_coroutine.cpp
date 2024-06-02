@@ -24,13 +24,11 @@ bool __AWait::await_ready() const
             return true;
         }
     } else { // time 形式
-        int nowTime = ANowTime(_time.wave);
-        if (nowTime > _time.time) {
-            __aig.loggerPtr->Warning("co_await 等待的时间为 ["
-                + std::to_string(_time.wave) + "," + std::to_string(_time.time)
-                + "], 但是现在时间已到 [" + std::to_string(_time.wave) + "," + std::to_string(nowTime) + "]");
+        ATime nowTime = ATime(_time.wave, ANowTime(_time.wave));
+        if (nowTime.time > _time.time) {
+            aLogger->Warning("co_await 等待的时间为 {}, 但是现在时间已到 {}", _time, nowTime);
         }
-        if (nowTime >= _time.time) {
+        if (nowTime.time >= _time.time) {
             return true;
         }
     }

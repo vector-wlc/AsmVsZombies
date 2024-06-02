@@ -332,7 +332,7 @@ public:
         if (auto timeline = std::get_if<ATimeline>(&_value))
             return *timeline;
         else if (auto sequence = std::get_if<ASequence>(&_value))
-            AGetInternalLogger()->Error("ASequence 只能连接至 AWave 对象");
+            aLogger->Error("ASequence 只能连接至 AWave 对象");
         return {};
     }
 

@@ -55,7 +55,7 @@ for (auto& plant : aAlivePlantFilter) {
         cobcnt += isAvailable;
     }
 }
-AGetInternalLogger()->Info("当前有 # 门炮可用", cobCnt);
+aLogger->Info("当前有 {} 门炮可用", cobCnt);
 
 // 如果一个比较复杂的条件多次被使用，可以预先定义一个附带条件的对象过滤器
 // 条件过滤器定义后可以随时使用，什么时候使用就基于什么时候的数据遍历，不像变量一样定义了之后就不会改了
