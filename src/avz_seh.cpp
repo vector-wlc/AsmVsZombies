@@ -54,7 +54,7 @@ ASeh::~ASeh()
     SetUnhandledExceptionFilter(previousFilter);
 }
 
-long __stdcall ASeh::UnhandledExceptionFilter(LPEXCEPTION_POINTERS lpExceptPtr)
+long __stdcall ASeh::UnhandledExceptionFilter(LPEXCEPTION_POINTERS lpEP)
 {
     // #ifndef __MINGW32__
     //     __asm__ __volatile__(
@@ -81,25 +81,24 @@ long __stdcall ASeh::UnhandledExceptionFilter(LPEXCEPTION_POINTERS lpExceptPtr)
     //     // }
     // #endif
 
-    DoHandleDebugEvent(lpExceptPtr);
-    SetErrorMode(SEM_NOGPFAULTERRORBOX);
-    return EXCEPTION_CONTINUE_SEARCH;
-}
-
-bool ASeh::CheckImageHelp()
-{
-    SymSetOptions(SYMOPT_DEFERRED_LOADS);
-    GetModuleFileNameA(0, globalBuffer, 2048);
-    char* lastdir = strrchr(globalBuffer, '/');
-    if (!lastdir)
-        lastdir = strrchr(globalBuffer, '\\');
-    if (lastdir)
-        lastdir[0] = '\0';
-    return SymInitialize(GetCurrentProcess(), globalBuffer[0] ? globalBuffer : nullptr, true);
-}
-
-void ASeh::DoHandleDebugEvent(LPEXCEPTION_POINTERS lpEP)
-{
+    if (lpEP->ExceptionRecord->ExceptionCode == STATUS_BREAKPOINT) {
+        auto range = ABreakPoint::breakpoints.equal_range((unsigned char*)lpEP->ContextRecord->Eip);
+        for (auto info = range.first; info != range.second; ++info)
+            info->second.callback(lpEP->ContextRecord);
+        if (range.first != range.second) {
+            auto info = range.first;
+            *info->first = info->second.origin;
+            ABreakPoint::lastaddr = info->first;
+            lpEP->ContextRecord->EFlags |= 1 << 8;
+            return EXCEPTION_CONTINUE_EXECUTION;
+        }
+    } else if (lpEP->ExceptionRecord->ExceptionCode == STATUS_SINGLE_STEP) {
+        if (ABreakPoint::lastaddr) {
+            *ABreakPoint::lastaddr = 0xcc;
+            ABreakPoint::lastaddr = nullptr;
+            return EXCEPTION_CONTINUE_EXECUTION;
+        }
+    }
     bool hasImageHelp = CheckImageHelp();
     std::string errorTitle;
     errorTitle.reserve(2048);
@@ -133,6 +132,19 @@ void ASeh::DoHandleDebugEvent(LPEXCEPTION_POINTERS lpEP)
     errorText = walkString + errorTitle;
     std::ofstream("crash.txt") << errorText << std::endl;
     ShowErrorDialog(errorTitle.data(), errorText.data());
+    SetErrorMode(SEM_NOGPFAULTERRORBOX);
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+
+bool ASeh::CheckImageHelp() {
+    SymSetOptions(SYMOPT_DEFERRED_LOADS);
+    GetModuleFileNameA(0, globalBuffer, 2048);
+    char* lastdir = strrchr(globalBuffer, '/');
+    if (!lastdir)
+        lastdir = strrchr(globalBuffer, '\\');
+    if (lastdir)
+        lastdir[0] = '\0';
+    return SymInitialize(GetCurrentProcess(), globalBuffer[0] ? globalBuffer : nullptr, true);
 }
 
 std::string ASeh::IntelWalk(PCONTEXT theContext, int theSkipCount)
@@ -307,18 +319,18 @@ void ASeh::ShowErrorDialog(const char* theErrorTitle, const char* theErrorText)
         height + 30,
         0, 0, hInstance, 0);
     SendMessage(CreateWindowA("EDIT", theErrorTitle, WS_VISIBLE | WS_CHILD | ES_MULTILINE | ES_READONLY,
-                    8, 8, width - 16, 120, HWnd, 0, hInstance, 0),
+        8, 8, width - 16, 120, HWnd, 0, hInstance, 0),
         WM_SETFONT, (WPARAM)font, 0);
     SendMessage(CreateWindowA("EDIT", theErrorText, WS_VISIBLE | WS_CHILD | ES_MULTILINE | WS_BORDER | WS_VSCROLL | ES_READONLY,
-                    8, 136, width - 16, height - 176, HWnd, 0, hInstance, 0),
+        8, 136, width - 16, height - 176, HWnd, 0, hInstance, 0),
         WM_SETFONT, (WPARAM)font, 0);
     constexpr int buttonNum = 2;
     int buttonWidth = (width - (buttonNum + 1) * 8) / buttonNum;
     SendMessage(buttonClose = CreateWindowA("BUTTON", "Close", WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON | BS_PUSHBUTTON,
-                    8, height - 32, buttonWidth, 24, HWnd, 0, hInstance, 0),
+        8, height - 32, buttonWidth, 24, HWnd, 0, hInstance, 0),
         WM_SETFONT, (WPARAM)font, 0);
     SendMessage(buttonCopy = CreateWindowA("BUTTON", "Copy", WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON | BS_PUSHBUTTON,
-                    16 + buttonWidth, height - 32, buttonWidth, 24, HWnd, 0, hInstance, 0),
+        16 + buttonWidth, height - 32, buttonWidth, 24, HWnd, 0, hInstance, 0),
         WM_SETFONT, (WPARAM)font, 0);
     ShowWindow(HWnd, SW_NORMAL);
     MSG msg;
@@ -328,4 +340,25 @@ void ASeh::ShowErrorDialog(const char* theErrorTitle, const char* theErrorText)
     }
     DestroyWindow(HWnd);
     DeleteObject(font);
+}
+
+ABreakPoint::ABreakPoint(void* addr, std::function<void(CONTEXT*)> callback)
+{
+    auto other = breakpoints.find((unsigned char*)addr);
+    if (other != breakpoints.end()) {
+        info = breakpoints.insert(std::make_pair(other->first, Info{ other->second.origin, callback }));
+    } else {
+        info = breakpoints.insert(std::make_pair((unsigned char*)addr, Info{ *(unsigned char*)addr, callback }));
+        DWORD t;
+        VirtualProtect(info->first, 1, PAGE_EXECUTE_READWRITE, &t);
+        *info->first = 0xcc;
+    }
+}
+
+ABreakPoint::~ABreakPoint()
+{
+    auto p = info->first;
+    auto v = info->second.origin;
+    breakpoints.erase(info);
+    if (!breakpoints.contains(p)) *p = v;
 }
