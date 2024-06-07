@@ -31,6 +31,8 @@ inline ATimeline Trig(bool force = false)
     };
 }
 
+#define TrigAt(...) (__VA_ARGS__) <<= Trig() & (__ADSLCastHelper)
+
 class ARoofCobManager : public ACobManager {
 protected:
     std::vector<int> _columns;
@@ -132,7 +134,7 @@ inline ATimeline P(ACobManager& cm, int row, float col)
             offset = -387;
         else
             offset = (aFieldInfo.rowType[row] == ARowType::POOL ? -378 : -373);
-        ret += At(offset)[=, &cm]
+        ret &= At(offset)[=, &cm]
         {
             if constexpr (policy == INSTANT_FIRE) {
                 aFieldInfo.isRoof ? cm.RoofFire(row, col) : cm.Fire(row, col);
@@ -180,7 +182,7 @@ D 支持的参数和 P 相同，但不包含 RECOVER_FIRE（指定延迟和自�
 template <ATimeOffset delay = 0>
 inline ATimeline D(auto&&... args)
 {
-    return P(std::forward<decltype(args)>(args)...).Offset(delay);
+    return P(std::forward<decltype(args)>(args)...) + delay;
 }
 
 /*
@@ -189,7 +191,7 @@ DD<110>(8.75) // 在六行场地炸 1、5 路；在五行场地炸 1、4 路
 template <ATimeOffset delay = 0>
 inline ATimeline DD(float col)
 {
-    return P(aFieldInfo.nRows == 5 ? 14 : 15, col).Offset(delay);
+    return P(aFieldInfo.nRows == 5 ? 14 : 15, col) + delay;
 }
 
 inline APlant* __CardInstant(APlantType seed, int row, float col)

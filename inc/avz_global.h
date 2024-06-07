@@ -282,4 +282,13 @@ protected:
 
 inline ARandom aRandom;
 
+template <typename... Ts>
+class AAlwaysTrue {
+public:
+    bool operator()(Ts&&...) const
+    {
+        return true;
+    }
+};
+
 #endif

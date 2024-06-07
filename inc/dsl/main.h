@@ -305,7 +305,7 @@ __DeclareRange(40);
 
 inline ATimeline operator<<=(ATimeOffset offset, const ATimeline& timeline)
 {
-    return timeline.Offset(offset);
+    return timeline + offset;
 }
 
 inline void operator<<=(ATime time, const ATimeline& timeline)
@@ -347,7 +347,7 @@ public:
     ATimeline operator<<=(const ATimeline& timeline) const
     {
         if (auto offset = std::get_if<ATimeOffset>(&_value))
-            return timeline.Offset(*offset);
+            return timeline + *offset;
         return {};
     }
 };

@@ -14,87 +14,91 @@ struct __AFilterTrait;
 
 template <>
 struct __AFilterTrait<APlant> {
-    __ANodiscard static APlant* GetEnd()
-    {
-        return AGetMainObject()->PlantArray() + //
-            AGetMainObject()->PlantTotal();
-    }
     __ANodiscard static APlant* GetBegin()
     {
         return AGetMainObject()->PlantArray();
     }
-    __ANodiscard static __APredicateT<APlant> GetAlivePredicate()
+
+    __ANodiscard static APlant* GetEnd()
     {
-        return [](APlant* ptr) -> bool { return !ptr->IsDisappeared() && !ptr->IsCrushed(); };
+        return AGetMainObject()->PlantArray() + AGetMainObject()->PlantTotal();
+    }
+
+    __ANodiscard static bool IsAlive(APlant* ptr)
+    {
+        return !ptr->IsDisappeared() && !ptr->IsCrushed();
     }
 };
 
 template <>
 struct __AFilterTrait<AZombie> {
-    __ANodiscard static AZombie* GetEnd()
-    {
-        return AGetMainObject()->ZombieArray() + //
-            AGetMainObject()->ZombieTotal();
-    }
     __ANodiscard static AZombie* GetBegin()
     {
         return AGetMainObject()->ZombieArray();
     }
-    __ANodiscard static __APredicateT<AZombie> GetAlivePredicate()
+
+    __ANodiscard static AZombie* GetEnd()
     {
-        return [](AZombie* ptr) -> bool { return !ptr->IsDisappeared() && !ptr->IsDead(); };
+        return AGetMainObject()->ZombieArray() + AGetMainObject()->ZombieTotal();
+    }
+
+    __ANodiscard static bool IsAlive(AZombie* ptr)
+    {
+        return !ptr->IsDisappeared() && !ptr->IsDead();
     }
 };
 
 template <>
 struct __AFilterTrait<AItem> {
-    __ANodiscard static AItem* GetEnd()
-    {
-        return AGetMainObject()->ItemArray() + //
-            AGetMainObject()->ItemTotal();
-    }
     __ANodiscard static AItem* GetBegin()
     {
         return AGetMainObject()->ItemArray();
     }
-    __ANodiscard static __APredicateT<AItem> GetAlivePredicate()
+
+    __ANodiscard static AItem* GetEnd()
     {
-        return [](AItem* ptr) -> bool { return !ptr->IsDisappeared() && !ptr->IsCollected(); };
+        return AGetMainObject()->ItemArray() + AGetMainObject()->ItemTotal();
+    }
+
+    __ANodiscard static bool IsAlive(AItem* ptr)
+    {
+        return !ptr->IsDisappeared() && !ptr->IsCollected();
     }
 };
 
 template <>
 struct __AFilterTrait<ASeed> {
-    __ANodiscard static ASeed* GetEnd()
-    {
-        return AGetMainObject()->SeedArray() + //
-            AGetMainObject()->SeedArray()->Count();
-    }
     __ANodiscard static ASeed* GetBegin()
     {
         return AGetMainObject()->SeedArray();
     }
-    __ANodiscard static __APredicateT<ASeed> GetAlivePredicate()
+
+    __ANodiscard static ASeed* GetEnd()
     {
-        bool AIsSeedUsable(ASeed * seed);
-        return [](ASeed* ptr) -> bool { return AIsSeedUsable(ptr); };
+        return AGetMainObject()->SeedArray() + AGetMainObject()->SeedArray()->Count();
+    }
+
+    __ANodiscard static bool IsAlive(ASeed* ptr)
+    {
+        return AIsSeedUsable(ptr);
     }
 };
 
 template <>
 struct __AFilterTrait<APlaceItem> {
-    __ANodiscard static APlaceItem* GetEnd()
-    {
-        return AGetMainObject()->PlaceItemArray() + //
-            AGetMainObject()->PlaceItemTotal();
-    }
     __ANodiscard static APlaceItem* GetBegin()
     {
         return AGetMainObject()->PlaceItemArray();
     }
-    __ANodiscard static __APredicateT<APlaceItem> GetAlivePredicate()
+
+    __ANodiscard static APlaceItem* GetEnd()
     {
-        return [](APlaceItem* ptr) -> bool { return !ptr->IsDisappeared(); };
+        return AGetMainObject()->PlaceItemArray() + AGetMainObject()->PlaceItemTotal();
+    }
+
+    __ANodiscard static bool IsAlive(APlaceItem* ptr)
+    {
+        return !ptr->IsDisappeared();
     }
 };
 
@@ -116,9 +120,11 @@ protected:
 public:
     using iterator_category = std::forward_iterator_tag;
     using value_type = T;
-    using difference_type = void;
+    using difference_type = std::ptrdiff_t;
     using pointer = T*;
     using reference = value_type&;
+
+    AFilterIterator() {}
 
     AFilterIterator(pointer ptr, __APredicateT<T>&& func)
         : _cur(ptr)
@@ -196,9 +202,10 @@ protected:
 
 public:
     using Iterator = AFilterIterator<T>;
+    static_assert(std::forward_iterator<Iterator>);
 
     ABasicFilter()
-        : _pred([](T*) { return true; })
+        : _pred(AAlwaysTrue<T*>())
     {
     }
 
@@ -231,43 +238,52 @@ public:
     {
         return Iterator(__AFilterTrait<T>::GetEnd(), this->_pred);
     }
+
+    __ANodiscard bool Empty()
+    {
+        return begin() == end();
+    }
+
+    __ANodiscard std::size_t Count()
+    {
+        std::size_t count = 0;
+        for (auto& _ : *this) {
+            (void)_; // suppress "unused variable" warning
+            ++count;
+        }
+        return count;
+    }
 };
 
 template <typename T>
 class AAliveFilter : public ABasicFilter<T> {
-protected:
-    __APredicateT<T> _alivePred;
-
 public:
     AAliveFilter()
-        : _alivePred(__AFilterTrait<T>::GetAlivePredicate())
     {
-        this->_pred = this->_alivePred;
+        this->_pred = __AFilterTrait<T>::IsAlive;
     }
 
     AAliveFilter(__APredicateT<T>&& func)
-        : _alivePred(__AFilterTrait<T>::GetAlivePredicate())
     {
         SetPredicate(std::move(func));
     }
 
     AAliveFilter(const __APredicateT<T>& func)
-        : _alivePred(__AFilterTrait<T>::GetAlivePredicate())
     {
         SetPredicate(func);
     }
 
     virtual void SetPredicate(__APredicateT<T>&& func) override
     {
-        this->_pred = [this, func = std::move(func)](T* ptr) -> bool {
-            return this->_alivePred(ptr) && func(ptr);
+        this->_pred = [func = std::move(func)](T* ptr) -> bool {
+            return __AFilterTrait<T>::IsAlive(ptr) && func(ptr);
         };
     }
 
     virtual void SetPredicate(const __APredicateT<T>& func) override
     {
-        this->_pred = [this, func](T* ptr) -> bool {
-            return this->_alivePred(ptr) && func(ptr);
+        this->_pred = [func](T* ptr) -> bool {
+            return __AFilterTrait<T>::IsAlive(ptr) && func(ptr);
         };
     }
 };

@@ -7,6 +7,9 @@ AvZ Nightly
 * DSL 连接轨道的语法更加自然
 * `AGrid`、`APosition` 和 `ATime` 可以直接被 `ALogger` 格式化
 * 可以直接通过指针变量 `aLogger` 访问默认日志对象，无需调用 `AGetInternalLogger()`
+* `AAliveFilter` 增加了 `Empty` 和 `Count` 成员函数
+* `ATimeline` 的合并运算符改为 `&`
+* 增加 `ATimeline + ATimeOffset` 运算，表示对时间轴应用时间偏移
 
 AvZ 2.7.1 2024_05_10 (Vector Final Version)
 
@@ -22,7 +25,7 @@ AvZ 2.7.0 2024_02_05 (DSL)
 * 修复设置出怪函数的崩溃 BUG（0218）
 * 修复回放若干 BUG (0218)
 * ACobManager 添加成员对象 `GetUsableList`，使用此函数可快速获取当前炮列表中可用炮的数量（0216）
-* 修复 DSL 的若干BUG（0216）
+* 修复 DSL 的若干 BUG（0216）
 * 修复协程的 1cs 延迟问题（0216）
 * 添加 DSL 组件以高效完成定态脚本
 * ACobManager 添加新的炮序模式 `PRIORITY`，该模式每次都从炮列表中的第一门炮寻找能够使用的炮

@@ -22,20 +22,11 @@ void AScript()
     ATimeline ice = I(3, 5), doom = N({{3, 8}, {3, 9}, {4, 9}});
 
     // 冰波：I-PP 1976
-    ATimeline i = {
-        At(11_cs) ice,
-        At(1776_cs) PP(8.75) + Trig(),
-    };
-
+    ATimeline i = { At(11_cs) ice, TrigAt(1776_cs) PP(8.75) };
     // 加速波 1：N 750
-    ATimeline n = {
-        At(550_cs) doom + Trig(),
-    };
-
+    ATimeline n = { TrigAt(550_cs) doom };
     // 加速波 2：PP 749
-    ATimeline p = {
-        At(549_cs) PP(8.75) + Trig(),
-    };
+    ATimeline p = { TrigAt(549_cs) PP(8.75) };
 
     // 主循环：第 1 波首代，第 2 波开始循环
     // 注意 1_1 % 4 不能写成 1 % 4，后者会被当作算术运算
@@ -43,9 +34,8 @@ void AScript()
 
     // 第 10 波 PPAa 消延迟
     OnWave(10) {
-        At(341_cs) PP() + Trig(),
-        At(401_cs) A(2, 9),
-        At(401_cs) a(5, 9),
+        TrigAt(341_cs) PP(),
+        At(401_cs) A(2, 9) & a(5, 9),
     };
 
     // 第 9、19 波额外补一波操作

@@ -187,16 +187,17 @@ public:
         }
     }
 
-    ATimeline& operator+=(const ATimeline& rhs)
+    ATimeline& operator&=(const ATimeline& rhs)
     {
         _entries.reserve(_entries.size() + rhs._entries.size());
         _entries.insert(_entries.end(), rhs._entries.begin(), rhs._entries.end());
         return *this;
     }
 
-    friend ATimeline operator+(ATimeline lhs, const ATimeline& rhs)
+    __ADeprecated("请使用 & 运算符合并 ATimeline")
+    ATimeline& operator+=(const ATimeline& rhs)
     {
-        return lhs += rhs;
+        return *this &= rhs;
     }
 
     ATimeline Offset(ATimeOffset offset) const
@@ -209,13 +210,29 @@ public:
         return ATimeline(ATimeOffset(wave, time), *this);
     }
 
+    ATimeline& operator+=(ATimeOffset offset)
+    {
+        for (auto&& entry : _entries) {
+            entry.offset += offset;
+        }
+        return *this;
+    }
+
+    ATimeline& operator-=(ATimeOffset offset)
+    {
+        for (auto&& entry : _entries) {
+            entry.offset -= offset;
+        }
+        return *this;
+    }
+
     friend std::vector<ATimeConnectHandle> AConnect(const ATime& time, const ATimeline& timeline)
     {
         std::vector<ATimeConnectHandle> handles;
         for (auto&& entry : timeline._entries) {
             ATime entryTime = time + entry.offset;
             if (auto action = std::get_if<AOperation>(&entry.action)) {
-                handles.emplace_back(AConnect(entryTime, *action));
+                handles.push_back(AConnect(entryTime, *action));
             } else if (auto hook = std::get_if<TimelineHook>(&entry.action)) {
                 std::invoke(*hook, entryTime);
             }
@@ -223,6 +240,32 @@ public:
         return handles;
     }
 };
+
+inline ATimeline operator&(const ATimeline& lhs, const ATimeline& rhs)
+{
+    return {lhs, rhs};
+}
+
+__ADeprecated("请使用 & 运算符合并 ATimeline")
+inline ATimeline operator+(const ATimeline& lhs, const ATimeline& rhs)
+{
+    return {lhs, rhs};
+}
+
+inline ATimeline operator+(const ATimeline& timeline, ATimeOffset offset)
+{
+    return timeline.Offset(offset);
+}
+
+inline ATimeline operator+(ATimeOffset offset, const ATimeline& timeline)
+{
+    return timeline.Offset(offset);
+}
+
+inline ATimeline operator-(const ATimeline& timeline, ATimeOffset offset)
+{
+    return timeline.Offset(-offset);
+}
 
 using ARelOp __ADeprecated("请使用 ATimeline") = ATimeline;
 
