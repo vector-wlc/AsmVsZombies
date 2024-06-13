@@ -10,6 +10,7 @@ AvZ Nightly
 * `AAliveFilter` 增加了 `Empty` 和 `Count` 成员函数
 * `ATimeline` 的合并运算符改为 `&`
 * 增加 `ATimeline + ATimeOffset` 运算，表示对时间轴应用时间偏移
+* 增加场地物品类型常量
 
 AvZ 2.7.1 2024_05_10 (Vector Final Version)
 

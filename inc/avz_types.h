@@ -446,4 +446,19 @@ constexpr AZombieType AXG_24 = AIMP;                    // 小鬼
 constexpr AZombieType AJB_25 = ADR_ZOMBOSS;             // 僵博
 constexpr AZombieType AHY_32 = AGIGA_GARGANTUAR;        // 红眼
 
+namespace APlaceItemType {
+    constexpr int GRAVESTONE = 1;
+    constexpr int CRATER = 2;
+    constexpr int LADDER = 3;
+    constexpr int PORTAL_CIRCLE = 4;
+    constexpr int PORTAL_SQUARE = 5;
+    constexpr int BRAIN = 6;
+    constexpr int SCARY_POT = 7;
+    constexpr int SQUIRREL = 8;
+    constexpr int ZEN_TOOL = 9;
+    constexpr int STINKY = 10;
+    constexpr int RAKE = 11;
+    constexpr int IZOMBIE_BRAIN = 12;
+};
+
 #endif

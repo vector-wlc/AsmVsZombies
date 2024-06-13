@@ -3,6 +3,8 @@
 #ifndef __ADSL_SHORTHAND__
 #define __ADSL_SHORTHAND__
 
+#define __DSL_SHORTHAND_VERSION__ 240205
+
 #include "main.h"
 #include <format>
 

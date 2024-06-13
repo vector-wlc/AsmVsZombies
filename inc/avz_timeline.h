@@ -239,6 +239,13 @@ public:
         }
         return handles;
     }
+
+    friend AConnectHandle AConnect(AKey key, const ATimeline& timeline)
+    {
+        return AConnect(key, [=] {
+            AConnect(ANowTime(), timeline);
+        });
+    }
 };
 
 inline ATimeline operator&(const ATimeline& lhs, const ATimeline& rhs)
