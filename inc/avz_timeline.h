@@ -240,9 +240,9 @@ public:
         return handles;
     }
 
-    friend AConnectHandle AConnect(AKey key, const ATimeline& timeline)
+    friend auto AConnect(const auto& condition, const ATimeline& timeline)
     {
-        return AConnect(key, [=] {
+        return AConnect(condition, [=] {
             AConnect(ANowTime(), timeline);
         });
     }

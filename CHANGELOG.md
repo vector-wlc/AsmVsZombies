@@ -11,6 +11,8 @@ AvZ Nightly
 * `ATimeline` 的合并运算符改为 `&`
 * 增加 `ATimeline + ATimeOffset` 运算，表示对时间轴应用时间偏移
 * 增加场地物品类型常量
+* `AAsm::RemoveZombie` 不再会产生死亡动画或掉落战利品
+* `ATimeline` 可以连接到按键和谓词函数
 
 AvZ 2.7.1 2024_05_10 (Vector Final Version)
 

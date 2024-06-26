@@ -117,6 +117,7 @@ public:
 
     static void RemovePlant(APlant* plant);
 
+    static void KillZombie(AZombie* zombie);
     static void RemoveZombie(AZombie* zombie);
 
     static bool IsSeedUsable(ASeed* seed);

@@ -2,15 +2,20 @@
  * @Coding: utf-8
  * @Author: vector-wlc
  * @Date: 2022-09-19 18:36:24
- * @Description: 
+ * @Description:
 -->
 ## 版本迁移文档
 
-### 2.7.0_240205 -> 2.7.1_240510
+### 2.7.1 240510 -> Nightly
+
+1. `ATimeline` 的合并运算符改为 `&`，`ATimeline + ATimeline` 被弃用
+2. `AAsm::RemoveZombie` 不再会产生死亡动画或掉落战利品；原本的函数改名为 `AAsm::KillZombie`
+
+### 2.7.0 240205 -> 2.7.1 240510
 
 1. 日志类内部实现更改为 `std::format`，因此 `{}` 在任何情况下都能作为格式化字符串使用，如果想显示出 `{}`，请使用 `{{}}`
 
-### 2.2.6_230405 -> 2.3.3_230501
+### 2.2.6 230405 -> 2.3.3 230501
 
 1. AWaitUntil 弃用，请使用 co_await 来代替此函数
 
@@ -19,10 +24,10 @@
 1. AStateHook 的四个虚函数的名字发生了变化
 
 ```C++
-BeforeScript() -> _BeforeScript()  
-AfterScript() -> _AfterScript()  
-EnterFight() -> _EnterFight()  
-ExitFight() -> _ExitFight()  
+BeforeScript() -> _BeforeScript()
+AfterScript() -> _AfterScript()
+EnterFight() -> _EnterFight()
+ExitFight() -> _ExitFight()
 ```
 
 ### 221001 -> 221124 2.0.0 preview
@@ -48,16 +53,15 @@ Zombie* zombie_array = GetMainObject()->zombieArray();
 zombie_array.toUnsafe(); // 错误
 ```
 
-注意 : 使用习惯为 `auto` 的用户可以无视 
+注意 : 使用习惯为 `auto` 的用户可以无视
 
-2. 由于一个设计失误, `Fliter` 的 `*` 运算符在之前的版本返回了错误的结果, 
-为了兼容性, 221001 版本依然支持之前的写法, 但是不推荐使用(已弃用). 
-
+2. 由于一个设计失误, `Fliter` 的 `*` 运算符在之前的版本返回了错误的结果,
+为了兼容性, 221001 版本依然支持之前的写法, 但是不推荐使用(已弃用).
 
 ```C++
 // 220630
 // 已弃用
-AliveFilter<Zombie> zombie_filter; 
+AliveFilter<Zombie> zombie_filter;
 for (auto&& zombie : zombie_filter) {
     if (zombie->type() == HY_32) {
         // some code

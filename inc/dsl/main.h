@@ -308,9 +308,11 @@ inline ATimeline operator<<=(ATimeOffset offset, const ATimeline& timeline)
     return timeline + offset;
 }
 
-inline void operator<<=(ATime time, const ATimeline& timeline)
+template <typename T>
+    requires(!std::integral<T> || std::same_as<T, char>)
+inline void operator<<=(const T& condition, const ATimeline& timeline)
 {
-    AConnect(time, timeline);
+    AConnect(condition, timeline);
 }
 
 class __ADSLCastHelper {

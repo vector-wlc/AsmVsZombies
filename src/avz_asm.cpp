@@ -597,13 +597,26 @@ void AAsm::RemovePlant(APlant* plant)
         : ASaveAllRegister);
 }
 
-void AAsm::RemoveZombie(AZombie* zombie)
+void AAsm::KillZombie(AZombie* zombie)
 {
     __zombie = zombie;
     __asm__ __volatile__(
 
         "movl %[__zombie], %%ecx;"
         "movl $0x5302f0, %%edx;"
+        "calll *%%edx;"
+        :
+        : [__zombie] "m"(__zombie)
+        : ASaveAllRegister);
+}
+
+void AAsm::RemoveZombie(AZombie* zombie)
+{
+    __zombie = zombie;
+    __asm__ __volatile__(
+
+        "movl %[__zombie], %%ecx;"
+        "movl $0x530510, %%edx;"
         "calll *%%edx;"
         :
         : [__zombie] "m"(__zombie)
