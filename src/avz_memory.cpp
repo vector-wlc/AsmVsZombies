@@ -177,15 +177,13 @@ bool AIsZombieExist(int type, int row)
 
 void ASetPlantActiveTime(APlantType plantType, int delayTime)
 {
-    auto activeTime = ANowTime();
-    activeTime.time += delayTime - 10;
-    auto tmp = [=]() {
+    AConnect(ANowDelayTime(delayTime - 10), [=]() {
         // 这里不做植物类型检测
         auto plant = AGetMainObject()->PlantArray();
         for (int index = 0; index < AGetMainObject()->PlantCountMax();
              ++index, ++plant) {
             if (!plant->IsDisappeared() && !plant->IsCrushed() && plant->Type() == plantType && plant->State() == 2) {
-                if (std::abs(plant->ExplodeCountdown() - 10) < 10) {
+                if (std::abs(plant->ExplodeCountdown() - 10) <= 3) {
                     plant->ExplodeCountdown() = 10;
                 } else {
                     aLogger->Error("ASetPlantActiveTime 不允许修改的生效时间超过 3cs");
@@ -193,8 +191,7 @@ void ASetPlantActiveTime(APlantType plantType, int delayTime)
                 return;
             }
         }
-    };
-    AConnect(activeTime, std::move(tmp));
+    });
 }
 
 void AUpdateZombiesPreview()

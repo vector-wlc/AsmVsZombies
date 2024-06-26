@@ -365,6 +365,12 @@ public:
         return MRef<int>(0x55a4);
     }
 
+    // 关卡结束倒计时
+    __ANodiscard int& LevelEndCountdown() noexcept
+    {
+        return MRef<int>(0x5604);
+    }
+
     // 总波数
     __ANodiscard int& TotalWave() noexcept
     {

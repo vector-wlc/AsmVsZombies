@@ -34,7 +34,7 @@ std::string AAbstractLogger::_CreateHeader(ALogLevel level)
     _Replace(headerFormat, _pattern + "wave", "{0}");
     _Replace(headerFormat, _pattern + "time", "{1}");
     _Replace(headerFormat, _pattern + "level", "{2}");
-    auto now = ANowTime();
+    auto now = ANowTime(false);
     return std::vformat(headerFormat, std::make_format_args(now.wave, now.time, _levelStr[int(level)]));
 }
 
