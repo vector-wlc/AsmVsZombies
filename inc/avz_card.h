@@ -94,8 +94,7 @@ inline __ACardManager __aCardManager;
 // ASelectCards({
 //     AICE_SHROOM,   // 寒冰菇
 // }, 0); --------------------------- 将选卡间隔更改为 0cs 以进行极速选卡，注意 0 为特殊值，效果为瞬间跳到战斗界面，然后剩下的九个卡槽会被随机填充
-inline void ASelectCards(const std::vector<int>& lst = {}, int selectInterval = 17)
-{
+inline void ASelectCards(const std::vector<int>& lst = {}, int selectInterval = 17) {
     __aCardManager.SelectCards(lst, selectInterval);
 }
 
@@ -103,8 +102,7 @@ inline void ASelectCards(const std::vector<int>& lst = {}, int selectInterval = 
 // *** 注意：卡片索引从 0 开始, 不存在返回 -1
 // *** 使用示例：
 // AGetCardIndex(AICE_SHROOM) ---- 得到寒冰菇的卡片索引
-__ANodiscard inline int AGetCardIndex(APlantType plantType)
-{
+__ANodiscard inline int AGetCardIndex(APlantType plantType) {
     return __aCardManager.GetCardIndex(plantType);
 }
 
@@ -126,29 +124,15 @@ __ANodiscard ASeed* AGetCardPtr(APlantType plantType);
 // ACard({AHY_16, AHMG_15, AKFD_35, ANGT_30}, 2, 3) ----- 将荷叶，毁灭菇，咖啡豆，南瓜头放在二行三列
 // ACard({AHY_16, AHMG_15, AKFD_35, ANGT_30}, {{3, 2}, {3, 3}, {3, 4}}) ---- 将荷叶，毁灭菇，咖啡豆，南瓜头放在二行三列 三行三列 三行四列
 //                                                                           注意是先将第一颗植物尝试所有位置，在进行下一个植物的尝试
-inline std::vector<APlant*> ACard(const std::vector<ACardName>& lst)
-{
-    return __aCardManager.Card(lst);
-}
-inline APlant* ACard(int seedIndex, int row, float col)
-{
-    return __aCardManager.Card(seedIndex, row, col);
-}
-inline APlant* ACard(int seedIndex, const std::vector<APosition>& lst)
-{
-    return __aCardManager.Card(seedIndex, lst);
-}
-inline APlant* ACard(APlantType plantType, int row, float col)
-{
-    return __aCardManager.Card(plantType, row, col);
-}
-inline APlant* ACard(APlantType plantType, const std::vector<APosition>& lst)
-{
-    return __aCardManager.Card(plantType, lst);
-}
-
+std::vector<APlant*> ACard(const std::vector<ACardName>& lst);
+APlant* ACard(int seedIndex, int row, float col);
+APlant* ACard(int seedIndex, const std::vector<APosition>& lst);
+APlant* ACard(int seedIndex, const std::vector<AGrid>& lst);
+APlant* ACard(APlantType plantType, int row, float col);
+APlant* ACard(APlantType plantType, const std::vector<APosition>& lst);
+APlant* ACard(APlantType plantType, const std::vector<AGrid>& lst);
 std::vector<APlant*> ACard(const std::vector<APlantType>& plantTypeVec, int row, float col);
-
 std::vector<APlant*> ACard(const std::vector<APlantType>& plantTypeVec, const std::vector<APosition>& lst);
+std::vector<APlant*> ACard(const std::vector<APlantType>& plantTypeVec, const std::vector<AGrid>& lst);
 
 #endif

@@ -1,4 +1,8 @@
-BasedOnStyle: Chromium
-IndentWidth: 4
-ColumnLimit: 0
-AccessModifierOffset: -4
+BasedOnStyle: WebKit
+AlignTrailingComments: true
+Cpp11BracedListStyle: true
+
+BreakBeforeBraces: Attach
+PackConstructorInitializers: NextLineOnly
+SpaceInEmptyBlock: false
+#RemoveBracesLLVM: true

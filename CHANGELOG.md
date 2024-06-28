@@ -14,6 +14,7 @@ AvZ Nightly
 * `AAsm::RemoveZombie` 不再会产生死亡动画或掉落战利品
 * `ATimeline` 可以连接到按键和谓词函数
 * 增加第 0 波（基准时间为战斗开始，最早可操作时间为 1）和第 21 波（基准时间为战斗结束，最晚可操作时间为 -1）
+* 增加函数 `AGetGraves`，用于获取场上的墓碑位置
 
 AvZ 2.7.1 2024_05_10 (Vector Final Version)
 

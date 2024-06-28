@@ -45,29 +45,6 @@ public:                                              \
                                                      \
 protected:
 
-struct AGrid {
-    int row;
-    int col;
-
-    AGrid() = default;
-
-    AGrid(int row, int col)
-        : row(row)
-        , col(col)
-    {
-    }
-
-    auto operator<=>(const AGrid&) const = default;
-};
-
-template <>
-struct std::formatter<AGrid> : std::formatter<std::string> {
-    auto format(AGrid grid, auto& ctx) const {
-        std::string result = std::format("({}, {})", grid.row, grid.col);
-        return formatter<std::string>::format(result, ctx);
-    }
-};
-
 struct APosition {
     int row;
     float col;
@@ -75,10 +52,7 @@ struct APosition {
     APosition() = default;
 
     APosition(int row, float col)
-        : row(row)
-        , col(col)
-    {
-    }
+        : row(row), col(col) {}
 
     auto operator<=>(const APosition&) const = default;
 };
@@ -91,6 +65,30 @@ struct std::formatter<APosition> : std::formatter<std::string> {
     }
 };
 
+struct AGrid {
+    int row;
+    int col;
+
+    AGrid() = default;
+
+    AGrid(int row, int col)
+        : row(row), col(col) {}
+
+    auto operator<=>(const AGrid&) const = default;
+
+    operator APosition() const {
+        return APosition(row, col);
+    }
+};
+
+template <>
+struct std::formatter<AGrid> : std::formatter<std::string> {
+    auto format(AGrid grid, auto& ctx) const {
+        std::string result = std::format("({}, {})", grid.row, grid.col);
+        return formatter<std::string>::format(result, ctx);
+    }
+};
+
 struct ATime {
     int time;
     int wave;
@@ -98,10 +96,7 @@ struct ATime {
     ATime() = default;
 
     ATime(int wave, int time)
-        : time(time)
-        , wave(wave)
-    {
-    }
+        : time(time), wave(wave) {}
 };
 
 template <>
@@ -134,13 +129,7 @@ struct ARect {
     ARect() = default;
 
     explicit ARect(int x, int y, int width, int height, APos pos = APos::RIGHT_BUTTOM)
-        : x(x)
-        , y(y)
-        , width(width)
-        , height(height)
-        , pos(pos)
-    {
-    }
+        : x(x), y(y), width(width), height(height), pos(pos) {}
 };
 
 struct AText {
@@ -150,25 +139,11 @@ struct AText {
     APos pos;
     bool isHasBkg;
 
-    explicit AText(const std::string& text, int x, int y,
-        APos pos = APos::RIGHT_BUTTOM, bool isHasBkg = true)
-        : text(text)
-        , x(x)
-        , y(y)
-        , pos(pos)
-        , isHasBkg(true)
-    {
-    }
+    explicit AText(const std::string& text, int x, int y, APos pos = APos::RIGHT_BUTTOM, bool isHasBkg = true)
+        : text(text), x(x), y(y), pos(pos), isHasBkg(isHasBkg) {}
 
-    explicit AText(std::string&& text, int x, int y,
-        APos pos = APos::RIGHT_BUTTOM, bool isHasBkg = true)
-        : text(std::move(text))
-        , x(x)
-        , y(y)
-        , pos(pos)
-        , isHasBkg(true)
-    {
-    }
+    explicit AText(std::string&& text, int x, int y, APos pos = APos::RIGHT_BUTTOM, bool isHasBkg = true)
+        : text(std::move(text)), x(x), y(y), pos(pos), isHasBkg(isHasBkg) {}
 };
 
 struct ACursor {
@@ -178,12 +153,7 @@ struct ACursor {
     int pressType;
     ACursor() = default;
     explicit ACursor(int x, int y, int type = 0, int pressType = 0)
-        : x(x)
-        , y(y)
-        , type(type)
-        , pressType(pressType)
-    {
-    }
+        : x(x), y(y), type(type), pressType(pressType) {}
 };
 
 enum class AReloadMode {
@@ -447,18 +417,18 @@ constexpr AZombieType AJB_25 = ADR_ZOMBOSS;             // 僵博
 constexpr AZombieType AHY_32 = AGIGA_GARGANTUAR;        // 红眼
 
 namespace APlaceItemType {
-    constexpr int GRAVESTONE = 1;
-    constexpr int CRATER = 2;
-    constexpr int LADDER = 3;
-    constexpr int PORTAL_CIRCLE = 4;
-    constexpr int PORTAL_SQUARE = 5;
-    constexpr int BRAIN = 6;
-    constexpr int SCARY_POT = 7;
-    constexpr int SQUIRREL = 8;
-    constexpr int ZEN_TOOL = 9;
-    constexpr int STINKY = 10;
-    constexpr int RAKE = 11;
-    constexpr int IZOMBIE_BRAIN = 12;
-};
+constexpr int GRAVESTONE = 1;
+constexpr int CRATER = 2;
+constexpr int LADDER = 3;
+constexpr int PORTAL_CIRCLE = 4;
+constexpr int PORTAL_SQUARE = 5;
+constexpr int BRAIN = 6;
+constexpr int SCARY_POT = 7;
+constexpr int SQUIRREL = 8;
+constexpr int ZEN_TOOL = 9;
+constexpr int STINKY = 10;
+constexpr int RAKE = 11;
+constexpr int IZOMBIE_BRAIN = 12;
+}; // namespace APlaceItemType
 
 #endif

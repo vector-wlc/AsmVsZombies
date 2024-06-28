@@ -34,11 +34,8 @@ void __AOpQueueManager::_CalculateRefreshTime(int startWave) {
 }
 
 void __AOpQueueManager::_RecordRefresh(int wave, int refreshTime) {
-    if (queues[wave].memRefreshTime != __AOperationQueue::UNINIT) {
-        if (queues[wave].memRefreshTime != refreshTime)
-            aLogger->Error("ACobManager 内部错误，请联系开发者修复");
+    if (queues[wave].memRefreshTime != __AOperationQueue::UNINIT)
         return;
-    }
     queues[wave].memRefreshTime = queues[wave].calRefreshTime = refreshTime;
     if (wave > 1) {
         int waveLength = queues[wave].memRefreshTime - queues[wave - 1].memRefreshTime;
@@ -59,10 +56,10 @@ std::optional<__ATimeIter> __AOpQueueManager::Push(const ATime& time, __ABoolOpe
     }
 
     int nowTime = ANowTime(time.wave);
-    if (nowTime >= time.time) {  // 现在要立即运行的操作
+    if (nowTime >= time.time) { // 现在要立即运行的操作
         _PrintLog(time, nowTime);
         timeOp.operation();
-        return std::nullopt;  // 无法控制这种操作的运行状态
+        return std::nullopt; // 无法控制这种操作的运行状态
     }
 
     auto ret = queues[time.wave].queue.emplace(time.time, std::move(timeOp));
@@ -74,7 +71,7 @@ void __AOpQueueManager::RunOperation() {
     int nowTime = AGetMainObject()->GameClock();
     for (int wave = 0; wave <= totalWave + 1; ++wave) {
         auto& opQueue = queues[wave];
-        if (opQueue.calRefreshTime == __AOperationQueue::UNINIT) {  // 本波还未到达
+        if (opQueue.calRefreshTime == __AOperationQueue::UNINIT) { // 本波还未到达
             continue;
         }
         for (auto iter = opQueue.queue.begin(); iter != opQueue.queue.end(); iter = opQueue.queue.erase(iter)) {
@@ -86,7 +83,7 @@ void __AOpQueueManager::RunOperation() {
             _PrintLog(ATime(wave, iter->first), queueNowTime);
             iter->second.operation();
             if (AGetPvzBase()->GameUi() != 3)
-                return;  // 在非战斗界面需要立即退出
+                return; // 在非战斗界面需要立即退出
         }
     }
 }
@@ -174,21 +171,21 @@ void __AOpQueueManager::_CheckAssumeWavelength(int wave) {
     auto currentRefreshTime = currentQueue.memRefreshTime;
     auto nextRefreshTime = nextQueue.memRefreshTime;
     std::string errorMsg;
-    if (nextRefreshTime == __AOperationQueue::UNINIT) {  // 下波的实际时间还未到
+    if (nextRefreshTime == __AOperationQueue::UNINIT) { // 下波的实际时间还未到
         // 计算当前僵尸的血量
         int currentHp = AAsm::ZombieTotalHp(wave - 1);
         int refreshHp = AGetMainObject()->ZombieRefreshHp();
         int totalHp = AGetMainObject()->MRef<int>(0x5598);
         double refreshRatio = double(totalHp - currentHp) / (totalHp - refreshHp);
         errorMsg = std::format("但下一波僵尸尚未刷新，目前僵尸总血量为 {} 刷新血量为 {} 刷新进度为 {:.2f}%",
-                               currentHp, refreshHp, refreshRatio * 100);
+            currentHp, refreshHp, refreshRatio * 100);
     } else {
         int trueWavelength = nextRefreshTime - currentRefreshTime;
         if (trueWavelength != currentQueue.waveLength)
             errorMsg = std::format("但实际波长为 {}", trueWavelength);
     }
 
-    if (!errorMsg.empty()) {  // str 不为空说明有错误
+    if (!errorMsg.empty()) { // str 不为空说明有错误
         // 将已经设置的 calRefreshTime 设置回 UNINIT
         for (int w = wave + 1; w <= totalWave + 1; ++w)
             queues[w].calRefreshTime = __AOperationQueue::UNINIT;

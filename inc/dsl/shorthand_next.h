@@ -4,7 +4,6 @@
 #define __ADSL_SHORTHAND__
 
 #include "main.h"
-#include <format>
 
 using namespace ALiterals;
 
@@ -77,11 +76,17 @@ RP(1, 1, 3, 9) // 发射炮尾位于 1-1 的炮，落点为 3-9
 */
 inline ATimeline RP(int cobRow, int cobCol, int row, float col) {
     if (aFieldInfo.isRoof)
-        return At(-387_cs) Do { ACobManager::RawRoofFire(cobRow, cobCol, row, col); };
+        return At(-387_cs) Do {
+            ACobManager::RawRoofFire(cobRow, cobCol, row, col);
+        };
     else if (aFieldInfo.rowType[row] == ARowType::POOL)
-        return At(-378_cs) Do { ACobManager::RawFire(cobRow, cobCol, row, col); };
+        return At(-378_cs) Do {
+            ACobManager::RawFire(cobRow, cobCol, row, col);
+        };
     else
-        return At(-373_cs) Do { ACobManager::RawFire(cobRow, cobCol, row, col); };
+        return At(-373_cs) Do {
+            ACobManager::RawFire(cobRow, cobCol, row, col);
+        };
 }
 
 enum AFirePolicy {
@@ -195,7 +200,9 @@ Card(ASPIKEWEED, 1, 9) // 在 1-9 种地刺
 Card 与 ACard 用法相同，但 Card 会自动补种荷叶和花盆
 */
 inline ATimeline Card(APlantType seed, int row, float col) {
-    return Do { __CardInstant(seed, row, col); };
+    return Do {
+        __CardInstant(seed, row, col);
+    };
 }
 
 inline ATimeline Card(const std::vector<ACardName>& cards) {
@@ -213,7 +220,9 @@ inline ATimeline Card(const std::vector<APlantType>& seeds, int row, float col) 
 }
 
 inline ATimeline Card(APlantType seed, const std::vector<APosition>& positions) {
-    return Do { __CardInstant(seed, positions); };
+    return Do {
+        __CardInstant(seed, positions);
+    };
 }
 
 inline ATimeline Card(const std::vector<APlantType>& seeds, const std::vector<APosition>& positions) {
@@ -228,15 +237,21 @@ Shovel(1, 9) // 铲 1-9 的普通植物
 Shovel(1, 9, APUMPKIN) // 铲 1-9 的南瓜（没有则不铲除）
 */
 inline ATimeline Shovel(int row, int col, int targetType = -1) {
-    return Do { AShovel(row, col, targetType); };
+    return Do {
+        AShovel(row, col, targetType);
+    };
 }
 
 inline ATimeline Shovel(int row, int col, bool pumpkin) {
-    return Do { AShovel(row, col, pumpkin); };
+    return Do {
+        AShovel(row, col, pumpkin);
+    };
 }
 
 inline ATimeline Shovel(const std::vector<AShovelPosition>& positions) {
-    return Do { AShovel(positions); };
+    return Do {
+        AShovel(positions);
+    };
 }
 
 /*
@@ -561,7 +576,7 @@ public:
 
     TriggerByProxy TriggerBy(std::convertible_to<Constraint> auto&&... constraints) const
         requires(sizeof...(constraints) > 0)
-{
+    {
         return TriggerBy(std::vector<Constraint>{constraints...});
     }
 

@@ -9,12 +9,15 @@
 
 #include "avz_state_hook.h"
 
-__ANodiscard inline APvzBase* AGetPvzBase() { return *(APvzBase**)0x6a9ec0; }
+__ANodiscard inline APvzBase* AGetPvzBase() {
+    return *(APvzBase**)0x6a9ec0;
+}
 
-__ANodiscard inline AMainObject* AGetMainObject() { return AGetPvzBase()->MainObject(); }
+__ANodiscard inline AMainObject* AGetMainObject() {
+    return AGetPvzBase()->MainObject();
+}
 
-__ANodiscard inline AAnimation* AGetAnimationArray()
-{
+__ANodiscard inline AAnimation* AGetAnimationArray() {
     return AGetPvzBase()->AnimationMain()->AnimationOffset()->AnimationArray();
 }
 
@@ -26,27 +29,27 @@ __ANodiscard float AMouseCol();
 
 // 获取指定类型植物的卡槽对象序列 植物类型与图鉴顺序相同，从0开始
 // 返回的卡片对象序列范围：[0,9]
-// AGetSeedIndex(16)------------获得荷叶的卡槽对象序列
-// AGetSeedIndex(16, true)-------获得模仿者荷叶的卡槽对象序列
+// AGetSeedIndex(16)-----------获得荷叶的卡槽对象序列
+// AGetSeedIndex(16, true)-----获得模仿者荷叶的卡槽对象序列
 __ANodiscard int AGetSeedIndex(int type, bool imitator = false);
 
 // 获取指定类型植物的卡槽对象指针
-// AGetSeedIndex(16)------------获得荷叶的卡槽对象指针
-// AGetSeedIndex(16, true)-------获得模仿者荷叶的卡槽对象指针
+// AGetSeedIndex(16)-----------获得荷叶的卡槽对象指针
+// AGetSeedIndex(16, true)-----获得模仿者荷叶的卡槽对象指针
 __ANodiscard ASeed* AGetSeedPtr(int type, bool imitator = false);
 
 // 得到指定位置和类型的植物对象序列
 // 当参数type为默认值-1时该函数无视南瓜花盆荷叶咖啡豆
 // *** 使用示例：
-// GetPlantIndex(3, 4)------如果三行四列有除南瓜花盆荷叶咖啡豆之外的植物时，返回该植物的对象序列，否则返回-1
-// GetPlantIndex(3, 4, 47)---如果三行四列有春哥，返回其对象序列，如果有其他植物，返回-2，否则返回-1
+// GetPlantIndex(3, 4)---------如果三行四列有除南瓜花盆荷叶咖啡豆之外的植物时，返回该植物的对象序列，否则返回-1
+// GetPlantIndex(3, 4, 47)-----如果三行四列有春哥，返回其对象序列，如果有其他植物，返回-2，否则返回-1
 __ANodiscard int AGetPlantIndex(int row, int col, int type = -1);
 
 // 得到指定位置和类型的植物对象指针
 // 当参数type为默认值-1时该函数无视南瓜花盆荷叶咖啡豆
 // *** 使用示例：
-// GetPlantIndex(3, 4)------如果三行四列有除南瓜花盆荷叶咖啡豆之外的植物时，返回该植物的指针，否则返回 nullptr
-// GetPlantIndex(3, 4, 47)---如果三行四列有春哥，返回该春哥的指针，否则返回 nullptr
+// GetPlantIndex(3, 4)---------如果三行四列有除南瓜花盆荷叶咖啡豆之外的植物时，返回该植物的指针，否则返回 nullptr
+// GetPlantIndex(3, 4, 47)-----如果三行四列有春哥，返回该春哥的指针，否则返回 nullptr
 __ANodiscard APlant* AGetPlantPtr(int row, int col, int type = -1);
 
 // 得到一组指定位置的植物的对象序列
@@ -67,11 +70,15 @@ __ANodiscard std::vector<APlant*> AGetPlantPtrs(const std::vector<AGrid>& lst, i
 
 // 检查僵尸是否存在
 // *** 使用示例
-// AIsZombieExist()-------检查场上是否存在僵尸
+// AIsZombieExist()---------检查场上是否存在僵尸
 // AIsZombieExist(23)-------检查场上是否存在巨人僵尸
 // AIsZombieExist(-1,4)-----检查第四行是否有僵尸存在
 // AIsZombieExist(23,4)-----检查第四行是否有巨人僵尸存在
 __ANodiscard bool AIsZombieExist(int type = -1, int row = -1);
+
+// 获取场上所有墓碑的位置
+// ACard(AGRAVE_BUSTER, AGetGraves())-----在编号最小的墓碑上种植墓碑吞噬者
+__ANodiscard std::vector<AGrid> AGetGraves();
 
 __ANodiscard int AGetSeedSunVal(APlantType type);
 
@@ -95,8 +102,7 @@ void ASetPlantActiveTime(APlantType plantType, int delayTime);
 // 之前的 Ice3 由于作者比较脑瘫, 整错了一秒, 这里进行修正
 // *** 使用示例：
 // AIce3(298) --------- 修正寒冰菇生效时间点至当前时刻的 298cs 后
-inline void AIce3(int delayTime)
-{
+inline void AIce3(int delayTime) {
     ASetPlantActiveTime(AICE_SHROOM, delayTime);
 }
 
@@ -200,8 +206,7 @@ protected:
 // *** 使用示例
 // ASetGameSpeed(5) ---- 将游戏速度设置为 5 倍速
 // ASetGameSpeed(0.1) --- 将游戏速度设置为 0.1 倍速
-inline void ASetGameSpeed(float x)
-{
+inline void ASetGameSpeed(float x) {
     __AGameSpeedManager::Set(x);
 }
 
@@ -214,42 +219,36 @@ public:
     static constexpr uint32_t MC_MOVE = 0x00E9B890;
     static constexpr uint32_t MC_STOP = 0x838808B;
 
-    static uint32_t& Phase()
-    {
+    static uint32_t& Phase() {
         return AMRef<uint32_t>(0x52DFC9);
     }
 
     // 召唤舞伴
     // 舞王不前进且每帧尝试召唤舞伴
-    static void CallPartner()
-    {
+    static void CallPartner() {
         Phase() = MC_CALL_PARTNER;
     }
 
     // 跳舞
     // 舞王不前进且不会召唤舞伴
-    static void Dancing()
-    {
+    static void Dancing() {
         Phase() = MC_DANCING;
     }
 
     // 保持前进
     // 舞王一直前进
-    static void Move()
-    {
+    static void Move() {
         Phase() = MC_MOVE;
     }
 
     // 停止女仆秘籍
     // 恢复游戏原样
-    static void Stop()
-    {
+    static void Stop() {
         Phase() = MC_STOP;
     }
 
 protected:
-    virtual void _ExitFight() override
-    {
+    virtual void _ExitFight() override {
         Stop();
     }
 };

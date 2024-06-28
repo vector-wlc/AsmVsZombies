@@ -1,11 +1,4 @@
-#include "avz_card.h"
-#include "avz_asm.h"
-#include "avz_click.h"
-#include "avz_logger.h"
-#include "avz_memory.h"
-#include "avz_script.h"
-#include "avz_tick_runner.h"
-#include <unordered_set>
+#include "libavz.h"
 
 std::vector<std::string> __ACardManager::_cardName = {
     "豌豆射手",
@@ -100,28 +93,24 @@ std::vector<std::string> __ACardManager::_cardName = {
     "未知",
 };
 
-void __ACardManager::_BeforeScript()
-{
+void __ACardManager::_BeforeScript() {
     _isSelectCards = false;
     _tickRunner.Start([this] {
         _selectInterval = std::max(1, _selectInterval);
-        if (AGetMainObject()->GlobalClock() % _selectInterval != 0) {
+        if (AGetMainObject()->GlobalClock() % _selectInterval != 0)
             return; // 选卡间隔为 _selectInterval
-        }
         __aCardManager._ChooseSingleCard();
     },
         ATickRunner::GLOBAL);
 }
 
-void __ACardManager::_EnterFight()
-{
+void __ACardManager::_EnterFight() {
     _tickRunner.Stop();
     _cardNameToIndexMap.clear();
     _selectCardVec.clear();
 
-    if (AGetPvzBase()->GameUi() != 3) {
+    if (AGetPvzBase()->GameUi() != 3)
         return;
-    }
 
     auto seed = AGetMainObject()->SeedArray();
     int seedCount = seed->Count();
@@ -142,8 +131,7 @@ void __ACardManager::_EnterFight()
     }
 }
 
-const std::string& __ACardManager::GetCardName(APlantType type)
-{
+const std::string& __ACardManager::GetCardName(APlantType type) {
     if (std::size_t(type) > _cardName.size() - 1) {
         aLogger->Error("GetCardName : 您选择的代号为 {} 的卡片在 PvZ 中不存在", int(type));
         return _cardName.back();
@@ -151,21 +139,18 @@ const std::string& __ACardManager::GetCardName(APlantType type)
     return _cardName[std::size_t(type)];
 }
 
-const std::string& __ACardManager::GetCardName(ASeed* seed)
-{
+const std::string& __ACardManager::GetCardName(ASeed* seed) {
     if (seed == nullptr) {
         aLogger->Error("GetCardName : 您传入的参数为 nullptr");
         return _cardName.back();
     }
     int type = seed->Type();
-    if (type == AIMITATOR) {
+    if (type == AIMITATOR)
         type = AM_PEASHOOTER + seed->ImitatorType();
-    }
     return GetCardName(APlantType(type));
 }
 
-void __ACardManager::_ChooseSingleCard()
-{
+void __ACardManager::_ChooseSingleCard() {
     static auto iter = _selectCardVec.begin();
     if (AGetMainObject()->Words()->DisappearCountdown() || //
         AGetMainObject()->SelectCardUi_m()->OrizontalScreenOffset() != 4250) {
@@ -173,16 +158,14 @@ void __ACardManager::_ChooseSingleCard()
         return;
     }
 
-    if (!_isSelectCards) {
+    if (!_isSelectCards)
         return;
-    }
 
     if (iter != _selectCardVec.end()) {
-        if (*iter >= AM_PEASHOOTER) {
+        if (*iter >= AM_PEASHOOTER)
             AAsm::ChooseImitatorCard(*iter - AM_PEASHOOTER);
-        } else {
+        else
             AAsm::ChooseCard(*iter);
-        }
         ++iter;
         return;
     }
@@ -191,9 +174,8 @@ void __ACardManager::_ChooseSingleCard()
     for (auto&& type : _selectCardVec) {
         int idx = std::min(48, type);
         int state = AGetPvzBase()->SelectCardUi_p()->CardMoveState(idx);
-        if (state == 1 || state == 0) {
+        if (state == 1 || state == 0)
             ++okCnt;
-        }
     }
 
     if (okCnt != _selectCardVec.size()) {
@@ -209,8 +191,7 @@ void __ACardManager::_ChooseSingleCard()
     AAsm::PickRandomSeeds();
 }
 
-void __ACardManager::SelectCards(const std::vector<int>& lst, int selectInterval)
-{
+void __ACardManager::SelectCards(const std::vector<int>& lst, int selectInterval) {
     if (selectInterval < 0) {
         aLogger->Error("ASelectCards 不允许选卡间隔小于 0cs");
         return;
@@ -250,8 +231,7 @@ void __ACardManager::SelectCards(const std::vector<int>& lst, int selectInterval
     AWaitForFight(selectInterval == 0);
 }
 
-APlant* __ACardManager::_CardWithoutCheck(int seedIndex, int row, float col)
-{
+APlant* __ACardManager::_CardWithoutCheck(int seedIndex, int row, float col) {
     auto mainObject = AGetMainObject();
     auto seed = mainObject->SeedArray() + seedIndex - 1;
     col = int(col + 0.5);
@@ -276,8 +256,7 @@ APlant* __ACardManager::_CardWithoutCheck(int seedIndex, int row, float col)
     return nullptr;
 }
 
-bool __ACardManager::_CheckCard(int seedIndex)
-{
+bool __ACardManager::_CheckCard(int seedIndex) {
     auto seedCount = AGetMainObject()->SeedArray()->Count();
     if (seedIndex > seedCount || seedIndex < 1) {
         aLogger->Error("Card : 您填写的参数 {} 已溢出", seedIndex);
@@ -287,59 +266,49 @@ bool __ACardManager::_CheckCard(int seedIndex)
     auto seed = AGetMainObject()->SeedArray() + seedIndex - 1;
     if (!AIsSeedUsable(seed)) {
         int cd = seed->InitialCd() - seed->Cd() + 1;
-        if (cd > 0) {
+        if (cd > 0)
             aLogger->Error("Card : {} 卡片还有 {} cs 才能使用", GetCardName(seed), cd);
-        } else {
+        else
             aLogger->Error("Card : {} 卡片无法使用，这可能是因为阳光不足或者未放置相应的绿卡", GetCardName(seed));
-        }
         return false;
     }
     return true;
 }
 
-APlant* __ACardManager::_BasicCard(int seedIndex, int row, float col)
-{
-    if (!_CheckCard(seedIndex)) {
+APlant* __ACardManager::_BasicCard(int seedIndex, int row, float col) {
+    if (!_CheckCard(seedIndex))
         return nullptr;
-    }
 
     return _CardWithoutCheck(seedIndex, row, col);
 }
 
-APlant* __ACardManager::_BasicCard(int seedIndex, const std::vector<APosition>& lst)
-{
-    if (!_CheckCard(seedIndex)) {
+APlant* __ACardManager::_BasicCard(int seedIndex, const std::vector<APosition>& lst) {
+    if (!_CheckCard(seedIndex))
         return nullptr;
-    }
 
     for (auto&& [row, col] : lst) {
         auto ret = _CardWithoutCheck(seedIndex, row, col);
-        if (ret != nullptr) {
+        if (ret != nullptr)
             return ret;
-        }
     }
     return nullptr;
 }
 
-int __ACardManager::GetCardIndex(APlantType plantType)
-{
+int __ACardManager::GetCardIndex(APlantType plantType) {
     auto it = _cardNameToIndexMap.find(plantType);
     return it == _cardNameToIndexMap.end() ? -1 : it->second;
 }
 
-__ANodiscard ASeed* AGetCardPtr(APlantType plantType)
-{
+__ANodiscard ASeed* AGetCardPtr(APlantType plantType) {
     auto index = __aCardManager.GetCardIndex(plantType);
     return index < 0 ? nullptr : AGetMainObject()->SeedArray() + index;
 }
 
-APlant* __ACardManager::Card(int seedIndex, int row, float col)
-{
+APlant* __ACardManager::Card(int seedIndex, int row, float col) {
     return _BasicCard(seedIndex, row, col);
 }
 
-APlant* __ACardManager::Card(APlantType plantType, int row, float col)
-{
+APlant* __ACardManager::Card(APlantType plantType, int row, float col) {
     int seedIndex = GetCardIndex(plantType);
     if (seedIndex == -1) {
         aLogger->Error("您没有选择 {} 卡片", GetCardName(plantType));
@@ -348,22 +317,18 @@ APlant* __ACardManager::Card(APlantType plantType, int row, float col)
     return _BasicCard(seedIndex + 1, row, col);
 }
 
-std::vector<APlant*> __ACardManager::Card(const std::vector<ACardName>& lst)
-{
+std::vector<APlant*> __ACardManager::Card(const std::vector<ACardName>& lst) {
     std::vector<APlant*> vec;
-    for (const auto& each : lst) {
+    for (const auto& each : lst)
         vec.push_back(Card(each.plantType, each.row, each.col));
-    }
     return vec;
 }
 
-APlant* __ACardManager::Card(int seedIndex, const std::vector<APosition>& lst)
-{
+APlant* __ACardManager::Card(int seedIndex, const std::vector<APosition>& lst) {
     return _BasicCard(seedIndex, lst);
 }
 
-APlant* __ACardManager::Card(APlantType plantType, const std::vector<APosition>& lst)
-{
+APlant* __ACardManager::Card(APlantType plantType, const std::vector<APosition>& lst) {
     int seedIndex = GetCardIndex(plantType);
     if (seedIndex == -1) {
         aLogger->Error("您没有选择 {} 卡片", GetCardName(plantType));
@@ -372,17 +337,50 @@ APlant* __ACardManager::Card(APlantType plantType, const std::vector<APosition>&
     return _BasicCard(seedIndex + 1, lst);
 }
 
-std::vector<APlant*> ACard(const std::vector<APlantType>& plantTypeVec, int row, float col)
-{
-    std::vector<APlant*> ret;
-    for (auto&& plantType : plantTypeVec) {
-        ret.push_back(__aCardManager.Card(plantType, row, col));
-    }
+std::vector<APosition> __AVecGridToVecPosition(const std::vector<AGrid>& lst) {
+    std::vector<APosition> ret;
+    ret.reserve(lst.size());
+    for (auto&& grid : lst)
+        ret.emplace_back(grid.row, grid.col);
     return ret;
 }
 
-std::vector<APlant*> ACard(const std::vector<APlantType>& plantTypeVec, const std::vector<APosition>& lst)
-{
+std::vector<APlant*> ACard(const std::vector<ACardName>& lst) {
+    return __aCardManager.Card(lst);
+}
+
+APlant* ACard(int seedIndex, int row, float col) {
+    return __aCardManager.Card(seedIndex, row, col);
+}
+
+APlant* ACard(int seedIndex, const std::vector<APosition>& lst) {
+    return __aCardManager.Card(seedIndex, lst);
+}
+
+APlant* ACard(int seedIndex, const std::vector<AGrid>& lst) {
+    return __aCardManager.Card(seedIndex, __AVecGridToVecPosition(lst));
+}
+
+APlant* ACard(APlantType plantType, int row, float col) {
+    return __aCardManager.Card(plantType, row, col);
+}
+
+APlant* ACard(APlantType plantType, const std::vector<APosition>& lst) {
+    return __aCardManager.Card(plantType, lst);
+}
+
+APlant* ACard(APlantType plantType, const std::vector<AGrid>& lst) {
+    return __aCardManager.Card(plantType, __AVecGridToVecPosition(lst));
+}
+
+std::vector<APlant*> ACard(const std::vector<APlantType>& plantTypeVec, int row, float col) {
+    std::vector<APlant*> ret;
+    for (auto&& plantType : plantTypeVec)
+        ret.push_back(__aCardManager.Card(plantType, row, col));
+    return ret;
+}
+
+std::vector<APlant*> ACard(const std::vector<APlantType>& plantTypeVec, const std::vector<APosition>& lst) {
     std::vector<APlant*> ret;
     for (auto&& plantType : plantTypeVec) {
         for (auto&& pos : lst) {
@@ -394,4 +392,8 @@ std::vector<APlant*> ACard(const std::vector<APlantType>& plantTypeVec, const st
         }
     }
     return ret;
+}
+
+std::vector<APlant*> ACard(const std::vector<APlantType>& plantTypeVec, const std::vector<AGrid>& lst) {
+    return ACard(plantTypeVec, __AVecGridToVecPosition(lst));
 }
