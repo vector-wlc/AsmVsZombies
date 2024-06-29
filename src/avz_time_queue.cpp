@@ -34,7 +34,7 @@ void __AOpQueueManager::_CalculateRefreshTime(int startWave) {
 }
 
 void __AOpQueueManager::_RecordRefresh(int wave, int refreshTime) {
-    if (queues[wave].memRefreshTime != __AOperationQueue::UNINIT)
+    if (queues[wave].memRefreshTime == refreshTime)
         return;
     queues[wave].memRefreshTime = queues[wave].calRefreshTime = refreshTime;
     if (wave > 1) {
@@ -206,12 +206,14 @@ void __AOpQueueManager::_EnterFight() {
 }
 
 int ANowWave() {
-    AWaitForFight();
+    if (AGetPvzBase()->GameUi() != 3)
+        return 0;
     return std::max(AGetMainObject()->Wave(), 1);
 }
 
 int ANowWave(bool allowNegativeTime) {
-    AWaitForFight();
+    if (AGetPvzBase()->GameUi() != 3)
+        return 0;
     int wave = AGetMainObject()->Wave();
     if (allowNegativeTime && __aOpQueueManager.queues[wave + 1].memRefreshTime != __AOperationQueue::UNINIT)
         wave++;

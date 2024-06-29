@@ -39,7 +39,7 @@ bool __AScriptManager::MemoryInit()
     auto mainObject = AGetPvzBase()->MainObject();
 
     // 假进入战斗界面直接返回
-    if (mainObject->LoadDataState() == 1) {
+    if (mainObject->LevelEndCountdown()) {
         return false;
     }
 
