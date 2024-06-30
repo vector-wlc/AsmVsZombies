@@ -1,51 +1,39 @@
-#include "avz_replay.h"
-#include "avz_asm.h"
-#include "avz_game_controllor.h"
-#include "avz_memory.h"
-#include "avz_script.h"
-#include "avz_connector.h"
-#include "avz_iterator.h"
-
 #include <filesystem>
+#include "libavz.h"
 
-namespace stdFs = std::filesystem;
+namespace fs = std::filesystem;
 
-#define __ACheckASCII(path, info, ret)                                                                                      \
-    for (auto c : path) {                                                                                                   \
-        if (uint8_t(c) > 127) {                                                                                             \
+#define __ACheckASCII(path, info, ret)                                                                         \
+    for (auto c : path) {                                                                                      \
+        if (uint8_t(c) > 127) {                                                                                \
             aLogger->Error(info ": 您设定的路径: [" + path + "] 含有非英文字符(ASCII), 请更换其为纯英文路径"); \
-            return ret;                                                                                                     \
-        }                                                                                                                   \
+            return ret;                                                                                        \
+        }                                                                                                      \
     }
 
-A7zCompressor::A7zCompressor(const std::string& path)
-{
+A7zCompressor::A7zCompressor(const std::string& path) {
     __ACheckASCII(path, "Compressor", );
     _7zPath = path;
 }
 
-void A7zCompressor::_BeforeScript()
-{
+void A7zCompressor::_BeforeScript() {
     _isRunning = true;
     _compressTask = std::make_unique<std::thread>([this] {
         for (; _isRunning || !_compressList.empty();) {
             std::string fileName;
             {
                 std::unique_lock lk(_lock);
-                if (_compressList.empty()) {
+                if (_compressList.empty())
                     _compressCv.wait(lk);
-                }
-                if (_compressList.empty()) {
+                if (_compressList.empty())
                     return;
-                }
                 fileName = _compressList.front();
             }
             std::string compressCmd;
-            if (_compressCmd.empty()) {
+            if (_compressCmd.empty())
                 compressCmd = DEFAULT_CMD + std::to_string(_compressLevel);
-            } else {
+            else
                 compressCmd = _compressCmd;
-            }
             // aLogger->Info(_7zPath + " " + compressCmd + " \"" + _filePath + "\" \"" + fileName + "\"");
             _RunExe(_7zPath, std::move(compressCmd) + " \"" + _filePath + "\" \"" + fileName + "\"");
             {
@@ -64,12 +52,10 @@ void A7zCompressor::_BeforeScript()
             Info info;
             {
                 std::unique_lock lk(_lock);
-                if (_decompressList.empty()) {
+                if (_decompressList.empty())
                     _decompressCv.wait(lk);
-                }
-                if (_decompressList.empty()) {
+                if (_decompressList.empty())
                     return;
-                }
                 info = _decompressList.front();
             }
             // aLogger->Info("x -aoa \"" + _filePath + "\" -o\"" + info.dstPath + "\" \"" + info.srcPath + "\"");
@@ -89,8 +75,7 @@ void A7zCompressor::_BeforeScript()
     });
 }
 
-void A7zCompressor::_ExitFight()
-{
+void A7zCompressor::_ExitFight() {
     _isRunning = false;
     _compressCv.notify_all();
     _decompressCv.notify_all();
@@ -101,20 +86,17 @@ void A7zCompressor::_ExitFight()
     _decompressTask = nullptr;
 }
 
-std::vector<std::string> A7zCompressor::GetCompressingList()
-{
+std::vector<std::string> A7zCompressor::GetCompressingList() {
     std::lock_guard<std::mutex> lk(_lock);
     return {_compressList.begin(), _compressList.end()};
 }
 
-std::vector<A7zCompressor::Info> A7zCompressor::GetDecompressingList()
-{
+std::vector<A7zCompressor::Info> A7zCompressor::GetDecompressingList() {
     std::lock_guard<std::mutex> lk(_lock);
     return {_decompressList.begin(), _decompressList.end()};
 }
 
-std::vector<std::string> A7zCompressor::GetCompressedList()
-{
+std::vector<std::string> A7zCompressor::GetCompressedList() {
     std::vector<std::string> ret;
     std::lock_guard<std::mutex> lk(_lock);
     ret = std::move(_compressedList);
@@ -122,8 +104,7 @@ std::vector<std::string> A7zCompressor::GetCompressedList()
     return ret;
 }
 
-std::vector<A7zCompressor::Info> A7zCompressor::GetDecompressedList()
-{
+std::vector<A7zCompressor::Info> A7zCompressor::GetDecompressedList() {
     std::vector<Info> ret;
     std::lock_guard<std::mutex> lk(_lock);
     ret = std::move(_decompressedList);
@@ -131,51 +112,41 @@ std::vector<A7zCompressor::Info> A7zCompressor::GetDecompressedList()
     return ret;
 }
 
-void A7zCompressor::WaitForDone()
-{
+void A7zCompressor::WaitForDone() {
     for (;;) {
         std::unique_lock<std::mutex> lk(_lock);
-        if (_compressList.empty() && _decompressList.empty()) {
+        if (_compressList.empty() && _decompressList.empty())
             return;
-        }
         _waitDoneCv.wait(lk);
     }
 }
 
-bool A7zCompressor::IsWorking()
-{
+bool A7zCompressor::IsWorking() {
     std::lock_guard<std::mutex> lk(_lock);
     return (!_compressList.empty()) || (!_decompressList.empty());
 }
 
-bool A7zCompressor::IsOk()
-{
-    if (_7zPath.empty()) {
+bool A7zCompressor::IsOk() {
+    if (_7zPath.empty())
         return false;
-    }
-    return stdFs::exists(_7zPath);
+    return fs::exists(_7zPath);
 }
 
-void A7zCompressor::Compress(const std::string& srcPath)
-{
+void A7zCompressor::Compress(const std::string& srcPath) {
     std::lock_guard<std::mutex> lk(_lock);
     _compressList.push_back(srcPath);
-    if (_compressList.size() == 1) {
+    if (_compressList.size() == 1)
         _compressCv.notify_one();
-    }
 }
 
-void A7zCompressor::Decompress(const std::string& srcPath, const std::string& dstPath)
-{
+void A7zCompressor::Decompress(const std::string& srcPath, const std::string& dstPath) {
     std::lock_guard<std::mutex> lk(_lock);
     _decompressList.push_back({srcPath, dstPath});
-    if (_decompressList.size() == 1) {
+    if (_decompressList.size() == 1)
         _decompressCv.notify_one();
-    }
 }
 
-void A7zCompressor::_RunExe(const std::string& exe, const std::string& cmd)
-{
+void A7zCompressor::_RunExe(const std::string& exe, const std::string& cmd) {
     SHELLEXECUTEINFOA si;
     ZeroMemory(&si, sizeof(si));
     si.cbSize = sizeof(si);
@@ -197,22 +168,18 @@ void A7zCompressor::_RunExe(const std::string& exe, const std::string& cmd)
     CloseHandle(si.hProcess);
 }
 
-AReplay::AReplay()
-{
+AReplay::AReplay() {
     SetSaveDirPath("areplay");
 }
 
-void AReplay::SetSaveDirPath(const std::string& path)
-{
+void AReplay::SetSaveDirPath(const std::string& path) {
     __ACheckASCII(path, "AReplay::SetSaveDirPath", );
-    _savePath = stdFs::absolute(path).string();
-    if (!stdFs::exists(_savePath)) {
-        stdFs::create_directory(_savePath);
-    }
+    _savePath = fs::absolute(path).string();
+    if (!fs::exists(_savePath))
+        fs::create_directory(_savePath);
 }
 
-void AReplay::SetMaxSaveCnt(int64_t maxSaveCnt)
-{
+void AReplay::SetMaxSaveCnt(int64_t maxSaveCnt) {
     if (_state != REST) {
         aLogger->Error("SetMaxSaveCnt : 请先停止 Replay 的运行再设置最大保存帧数");
         return;
@@ -224,8 +191,7 @@ void AReplay::SetMaxSaveCnt(int64_t maxSaveCnt)
     _maxSaveCnt = maxSaveCnt;
 }
 
-void AReplay::SetPackTickCnt(int packTickCnt)
-{
+void AReplay::SetPackTickCnt(int packTickCnt) {
     if (_state != REST) {
         aLogger->Error("SetPackTickCnt : 请先停止 Replay 的运行再设置每个包的包含帧数");
         return;
@@ -237,8 +203,7 @@ void AReplay::SetPackTickCnt(int packTickCnt)
     _packTickCnt = packTickCnt;
 }
 
-void AReplay::_RecordTick()
-{
+void AReplay::_RecordTick() {
     // record tick
     int x = AGetPvzBase()->MouseWindow()->MouseAbscissa();
     int y = AGetPvzBase()->MouseWindow()->MouseOrdinate();
@@ -260,49 +225,40 @@ void AReplay::_RecordTick()
     tickInfo.cursor = ACursor(x, y, type, pressType);
     tickInfo.mjClock = AGetPvzBase()->MjClock();
     tickInfo.mjPhase = AMaidCheats::Phase();
-    if (clock % _recordInterval != 0) {
+    if (clock % _recordInterval != 0)
         return;
-    }
     // record dat
-    auto dirName = stdFs::path(std::to_string((_endIdx % _maxSaveCnt) / _packTickCnt));
-    auto fileName = stdFs::path(std::to_string(_endIdx % _maxSaveCnt % _packTickCnt) + ".dat");
-    if (_endIdx - _startIdx >= _maxSaveCnt) {
+    auto dirName = fs::path(std::to_string((_endIdx % _maxSaveCnt) / _packTickCnt));
+    auto fileName = fs::path(std::to_string(_endIdx % _maxSaveCnt % _packTickCnt) + ".dat");
+    if (_endIdx - _startIdx >= _maxSaveCnt)
         _startIdx = _endIdx - _maxSaveCnt + 1;
-    }
     int leftClock = clock - (_endIdx - _startIdx) * _recordInterval;
-    for (auto iter = _tickInfos.begin(); iter != _tickInfos.end(); iter = _tickInfos.erase(iter)) {
-        if (iter->first >= leftClock) {
+    for (auto iter = _tickInfos.begin(); iter != _tickInfos.end(); iter = _tickInfos.erase(iter))
+        if (iter->first >= leftClock)
             break;
-        }
-    }
 
     auto dirPath = _savePath / dirName;
     auto filePath = dirPath / fileName;
-    if (!stdFs::exists(dirPath)) {
-        stdFs::create_directory(dirPath);
-    }
-    if (stdFs::exists(filePath)) {
-        stdFs::remove(filePath);
-    }
+    if (!fs::exists(dirPath))
+        fs::create_directory(dirPath);
+    if (fs::exists(filePath))
+        fs::remove(filePath);
     AAsm::SaveGame(filePath.string());
 
     // 如果开启了压缩
     if (_compressor != nullptr) {
         int curPack = (_endIdx % _maxSaveCnt) / _packTickCnt;
         int nextPack = ((_endIdx + 1) % _maxSaveCnt) / _packTickCnt;
-        if (curPack != nextPack) {
+        if (curPack != nextPack)
             _compressor->Compress(dirPath.string());
-        }
         auto compressedList = _compressor->GetCompressedList();
-        for (auto&& path : compressedList) {
-            stdFs::remove_all(path);
-        }
+        for (auto&& path : compressedList)
+            fs::remove_all(path);
     }
     ++_endIdx;
 }
 
-void AReplay::StartRecord(int interval, int64_t startIdx)
-{
+void AReplay::StartRecord(int interval, int64_t startIdx) {
     if (AGetPvzBase()->GameUi() != 3) {
         aLogger->Error("StartRecord : AReplay 只能在战斗界面使用");
         return;
@@ -324,23 +280,20 @@ void AReplay::StartRecord(int interval, int64_t startIdx)
     _tickInfos.clear();
     _tickRunner.Start([this] { _RecordTick(); }, false);
     _infoTickRunner.Start([this] {
-        if (!_isShowInfo || __aGameControllor.isSkipTick()) {
+        if (!_isShowInfo || __aGameControllor.isSkipTick())
             return;
-        }
         std::string msg = std::format("AReplay : 共录制 [{}-{}] 帧", _startIdx, _endIdx);
         _painter.Draw(AText(msg, _showPosX, _showPosY));
     },
         true);
 }
 
-void AReplay::SetInfoPos(int x, int y)
-{
+void AReplay::SetInfoPos(int x, int y) {
     _showPosX = std::clamp(x, 0, 800);
     _showPosY = std::clamp(y, 0, 600);
 }
 
-bool AReplay::ShowOneTick(int64_t tick)
-{
+bool AReplay::ShowOneTick(int64_t tick) {
     if (AGetPvzBase()->GameUi() != 3) {
         aLogger->Error("ShowOneTick : AReplay 只能在战斗界面使用");
         return false;
@@ -349,23 +302,21 @@ bool AReplay::ShowOneTick(int64_t tick)
         aLogger->Error("ShowOneTick : 请先调用 StartPlay 或者 StartRecord 再使用此接口");
         return false;
     }
-    if (tick < _startIdx || tick >= _endIdx) {
+    if (tick < _startIdx || tick >= _endIdx)
         return false;
-    }
 
     // 对于播放模式，此函数会将播放的帧位设置为当前要显示的帧
     // 对于记录模式，此函数会将下一个记录的帧位设置为当前要显示的帧
-    if (_state == RECORDING) {
+    if (_state == RECORDING)
         _endIdx = tick;
-    } else if (_state == PLAYING) {
+    else if (_state == PLAYING)
         _playIdx = tick;
-    }
 
     tick = (tick + _maxSaveCnt) % _maxSaveCnt;
-    auto dirName = stdFs::path(std::to_string((tick / _packTickCnt)));
-    auto fileName = stdFs::path(std::to_string(tick % _packTickCnt) + ".dat");
+    auto dirName = fs::path(std::to_string((tick / _packTickCnt)));
+    auto fileName = fs::path(std::to_string(tick % _packTickCnt) + ".dat");
     auto filePath = _savePath / dirName / fileName;
-    if (stdFs::exists(filePath)) {
+    if (fs::exists(filePath)) {
         _ShowTickInfo();
         AAsm::LoadGame(filePath.string());
         return true;
@@ -375,7 +326,7 @@ bool AReplay::ShowOneTick(int64_t tick)
         // 所以需要从压缩包里面提取出来
         _compressor->Decompress((dirName / fileName).string(), _savePath);
         _compressor->WaitForDone();
-        if (stdFs::exists(filePath)) {
+        if (fs::exists(filePath)) {
             _ShowTickInfo();
             AAsm::LoadGame(filePath.string());
             return true;
@@ -384,12 +335,10 @@ bool AReplay::ShowOneTick(int64_t tick)
     return false;
 }
 
-bool AReplay::_PreparePack()
-{
+bool AReplay::_PreparePack() {
     int packIdx = ((_playIdx + _maxSaveCnt) % _maxSaveCnt) / _packTickCnt;
-    if (_lastPackIdx == packIdx) {
+    if (_lastPackIdx == packIdx)
         return true;
-    }
     _lastPackIdx = packIdx;
     auto dirName = std::to_string(packIdx);
     // 如果要播放的目录正在解压
@@ -402,55 +351,49 @@ bool AReplay::_PreparePack()
         }
     }
 
-    if (!decompressingList.empty()) {
+    if (!decompressingList.empty())
         return true;
-    }
 
     // 如果此时发现目标目录不存在在硬盘中
     // 说明还没有解压出来，需要进行解压
     // 这种情况一般出现在开始或者继续播放的时候
     // 所以需要等待压缩对象工作完毕
-    if (!stdFs::exists(stdFs::path(_savePath) / dirName)) {
+    if (!fs::exists(fs::path(_savePath) / dirName)) {
         _compressor->Decompress(dirName, _savePath);
         _compressor->WaitForDone();
     }
 
     // 如果下一个包不存在硬盘中，就提前将下一个包解压出来
     int nextPackIdx = packIdx + 1;
-    if (nextPackIdx < 0) {
+    if (nextPackIdx < 0)
         nextPackIdx += _maxSavePackCnt;
-    }
     nextPackIdx %= _maxSavePackCnt;
     if (nextPackIdx != packIdx) {
         dirName = std::to_string(nextPackIdx);
-        auto dirPath = stdFs::path(_savePath) / dirName;
-        if (!stdFs::exists(dirPath)) {
+        auto dirPath = fs::path(_savePath) / dirName;
+        if (!fs::exists(dirPath))
             _compressor->Decompress(dirName, _savePath);
-        }
     }
 
     // 删除之前存在的解压文件
     int prePackIdx = packIdx - 1;
-    if (prePackIdx < 0) {
+    if (prePackIdx < 0)
         prePackIdx += _maxSavePackCnt;
-    }
     prePackIdx %= _maxSavePackCnt;
     if (prePackIdx != packIdx) {
-        auto dirPath = stdFs::path(_savePath) / std::to_string(prePackIdx);
-        if (stdFs::exists(dirPath)) {
+        auto dirPath = fs::path(_savePath) / std::to_string(prePackIdx);
+        if (fs::exists(dirPath)) {
             std::error_code ec;
-            stdFs::remove_all(dirPath, ec);
-            if (ec) {
+            fs::remove_all(dirPath, ec);
+            if (ec)
                 aLogger->Error("Replay:" + ec.message());
-            }
         }
     }
 
     return true;
 }
 
-void AReplay::_PlayTick()
-{
+void AReplay::_PlayTick() {
     if (AGetPvzBase()->GameUi() != 3) {
         Stop();
         return;
@@ -464,25 +407,21 @@ void AReplay::_PlayTick()
         _ShowTickInfo();
         AAsm::GameTotalLoop();
     }
-    if (!isPlay) {
+    if (!isPlay)
         return;
-    }
     AAsm::GameTotalLoop();
     // 开启了压缩功能需要预先对压缩包里的内容解压
     // 并且销毁之前解压出来的内容
     if (_compressor != nullptr) {
-        if (!_PreparePack()) {
+        if (!_PreparePack())
             return;
-        }
     }
     int tmpPlayIdx = _playIdx + 1;
-    if (!ShowOneTick(tmpPlayIdx)) {
+    if (!ShowOneTick(tmpPlayIdx))
         _tickRunner.Pause();
-    }
 }
 
-void AReplay::_ShowTickInfo()
-{
+void AReplay::_ShowTickInfo() {
     int clock = AGetMainObject()->GameClock();
     auto iter = _tickInfos.find(clock);
     if (iter != _tickInfos.end()) {
@@ -490,11 +429,10 @@ void AReplay::_ShowTickInfo()
         AGetPvzBase()->MjClock() = info.mjClock;
         AMaidCheats::Phase() = info.mjPhase;
         if (info.cursor.pressType == 0
-            && _cursorLastPressType != 0 && _cursorLastPressType != INT_MIN) { // 鼠标抬起
+            && _cursorLastPressType != 0 && _cursorLastPressType != INT_MIN) // 鼠标抬起
             AAsm::MouseUp(info.cursor.x, info.cursor.y, _cursorLastPressType);
-        } else if (info.cursor.pressType != 0 && _cursorLastPressType == 0) { // 鼠标按下
+        else if (info.cursor.pressType != 0 && _cursorLastPressType == 0) // 鼠标按下
             AAsm::MouseDown(info.cursor.x, info.cursor.y, info.cursor.pressType);
-        }
         _cursorLastPressType = info.cursor.pressType;
         if (_isMouseVisible) {
             _painter.Draw(info.cursor, 1);
@@ -513,17 +451,15 @@ void AReplay::_ShowTickInfo()
     }
     lastRefreshCountdown = AGetMainObject()->RefreshCountdown();
 
-    if (nowWave < 1 || _lastWave == nowWave) {
+    if (nowWave < 1 || _lastWave == nowWave)
         return;
-    }
     // 播放僵尸的出场音效
     _lastWave = nowWave;
     for (auto&& zombie : AAliveFilter<AZombie>()) {
         int type = zombie.Type();
         if (zombie.ExistTime() < 50
-            && (type == AHT_14 || type == AZOMBIE || type == AQQ_16)) {
+            && (type == AHT_14 || type == AZOMBIE || type == AQQ_16))
             AAsm::PlayZombieAppearSound(&zombie);
-        }
     }
     int nowTime = ANowTime(nowWave);
     if ((nowWave % 10 == 0 || nowWave == 1) && nowTime >= 0 && nowTime < 50) {
@@ -532,8 +468,7 @@ void AReplay::_ShowTickInfo()
     }
 }
 
-void AReplay::StartPlay(int interval, int64_t startIdx)
-{
+void AReplay::StartPlay(int interval, int64_t startIdx) {
     if (AGetPvzBase()->GameUi() != 3) {
         aLogger->Error("StartPlay : AReplay 只能在战斗界面使用");
         return;
@@ -554,56 +489,46 @@ void AReplay::StartPlay(int interval, int64_t startIdx)
     _cursorLastPressType = INT_MIN;
     _lastWave = INT_MIN;
     _state = PLAYING;
-    if (interval > 0) {
+    if (interval > 0)
         _playInterval = interval;
-    }
     _playIdx = _startIdx + startIdx;
 
     _tickRunner.Start([this] {
-        if (!AGameIsPaused()) {
+        if (!AGameIsPaused())
             _PlayTick();
-        }
     },
         ATickRunner::GLOBAL);
 
     _infoTickRunner.Start([this] {
-        if (!_isShowInfo) {
+        if (!_isShowInfo)
             return;
-        }
         std::string str = std::to_string(_playIdx);
-        if (_endIdx != INT64_MAX) {
+        if (_endIdx != INT64_MAX)
             str += "/" + std::to_string(_endIdx);
-        }
         _painter.Draw(AText("AReplay : 播放第 " + std::move(str) + " 帧", _showPosX, _showPosY));
     },
         ATickRunner::GLOBAL);
 }
 
-void AReplay::Pause()
-{
+void AReplay::Pause() {
     _tickRunner.Pause();
 }
 
-bool AReplay::IsPaused()
-{
+bool AReplay::IsPaused() {
     return _tickRunner.IsPaused();
 }
 
-void AReplay::GoOn()
-{
-    if (_state != RECORDING) {
+void AReplay::GoOn() {
+    if (_state != RECORDING)
         _ClearDatFiles();
-    }
     // 高级暂停状态下，不调用一次 _RecordTick 就丢帧了
     if (AGetPvzBase()->GameUi() == 3 && _state == RECORDING
-        && __aGameControllor.isAdvancedPaused) {
+        && __aGameControllor.isAdvancedPaused)
         _RecordTick();
-    }
     _tickRunner.GoOn();
 }
 
-void AReplay::Stop()
-{
+void AReplay::Stop() {
     if (_state == RECORDING) {
         _WriteInfo();
         _CompressTailFiles();
@@ -617,14 +542,13 @@ void AReplay::Stop()
     ASetUpdateWindow(true);
 }
 
-void AReplay::_ReadInfo()
-{
+void AReplay::_ReadInfo() {
     if (_compressor != nullptr) {
         _compressor->Decompress(_INFO_FILE_STR, _savePath);
         _compressor->Decompress(_TICK_INFO_FILE_STR, _savePath);
         _compressor->WaitForDone();
     }
-    auto infoFilePath = stdFs::path(_savePath) / _INFO_FILE_STR;
+    auto infoFilePath = fs::path(_savePath) / _INFO_FILE_STR;
     std::ifstream infoFile(infoFilePath.c_str());
     if (!infoFile.good()) {
         _maxSaveCnt = INT64_MAX;
@@ -635,9 +559,8 @@ void AReplay::_ReadInfo()
         std::unordered_map<std::string, int> table;
         std::string key;
         int val = 0;
-        for (; (infoFile >> key) && (infoFile >> val);) {
+        for (; (infoFile >> key) && (infoFile >> val);)
             table[key] = val;
-        }
         _maxSaveCnt = table[_MAX_SAVE_CNT_KEY];
         _packTickCnt = table[_PACK_TICK_CNT_KEY];
         _startIdx = table[_START_IDX_KEY];
@@ -650,19 +573,17 @@ void AReplay::_ReadInfo()
     _LoadTickInfo();
 }
 
-void AReplay::_WriteInfo()
-{
-    auto infoFilePath = stdFs::path(_savePath) / _INFO_FILE_STR;
+void AReplay::_WriteInfo() {
+    auto infoFilePath = fs::path(_savePath) / _INFO_FILE_STR;
     std::ofstream infoFile(infoFilePath.c_str());
-    if (!infoFile.good()) {
+    if (!infoFile.good())
         aLogger->Error("保存回放文件信息失败");
-    } else {
+    else
         infoFile << _MAX_SAVE_CNT_KEY << " " << _maxSaveCnt << "\n"
                  << _PACK_TICK_CNT_KEY << " " << _packTickCnt << "\n"
                  << _START_IDX_KEY << " " << _startIdx << "\n"
                  << _END_IDX_KEY << " " << _endIdx << "\n"
                  << _RECORD_INTERVAL_KEY << " " << _recordInterval;
-    }
 
     infoFile.close();
     _SaveTickInfo();
@@ -670,17 +591,15 @@ void AReplay::_WriteInfo()
 
 using AClockTickInfo = std::pair<int, AReplay::TickInfo>;
 
-void AReplay::_SaveTickInfo()
-{
-    auto infoFilePath = stdFs::path(_savePath) / _TICK_INFO_FILE_STR;
+void AReplay::_SaveTickInfo() {
+    auto infoFilePath = fs::path(_savePath) / _TICK_INFO_FILE_STR;
     std::ofstream infoFile(infoFilePath.c_str(), std::ios_base::binary);
     if (!infoFile.good()) {
         aLogger->Error("保存帧信息回放文件信息失败");
     } else {
         std::vector<AClockTickInfo> tmp;
-        for (auto&& e : _tickInfos) {
+        for (auto&& e : _tickInfos)
             tmp.push_back(e);
-        }
         size_t size = tmp.size();
         infoFile.write((char*)(&size), sizeof(size));
         infoFile.write((char*)tmp.data(), size * sizeof(AClockTickInfo));
@@ -689,10 +608,9 @@ void AReplay::_SaveTickInfo()
     _tickInfos.clear();
 }
 
-void AReplay::_LoadTickInfo()
-{
+void AReplay::_LoadTickInfo() {
     _tickInfos.clear();
-    auto infoFilePath = stdFs::path(_savePath) / _TICK_INFO_FILE_STR;
+    auto infoFilePath = fs::path(_savePath) / _TICK_INFO_FILE_STR;
     std::ifstream infoFile(infoFilePath.c_str(), std::ios_base::binary);
     if (!infoFile.good()) {
         aLogger->Error("载入帧信息回放文件信息失败");
@@ -701,70 +619,57 @@ void AReplay::_LoadTickInfo()
         infoFile.read((char*)(&size), sizeof(size));
         std::vector<AClockTickInfo> tmp(size);
         infoFile.read((char*)tmp.data(), size * sizeof(AClockTickInfo));
-        for (auto&& e : tmp) {
+        for (auto&& e : tmp)
             _tickInfos.insert(e);
-        }
     }
     infoFile.close();
 }
 
-void AReplay::SavePvzState()
-{
+void AReplay::SavePvzState() {
     _mjPhaseRecover = AMaidCheats::Phase();
     _fallingSunCodeRecover = AMRef<uint8_t>(_FALLING_SUN_ADDR);
     AMRef<uint8_t>(_FALLING_SUN_ADDR) = _NO_FALLING_SUN_CODE;
     _zombieSpawnCodeRecover = AMRef<uint8_t>(_ZOMBIE_SPAWN_ADDR);
     AMRef<uint8_t>(_ZOMBIE_SPAWN_ADDR) = _STOP_ZOMBIE_SPAWN_CODE;
-    auto filePath = _savePath / stdFs::path(_RECOVER_DAT_STR);
-    if (stdFs::exists(filePath)) {
-        stdFs::remove(filePath);
-    }
+    auto filePath = _savePath / fs::path(_RECOVER_DAT_STR);
+    if (fs::exists(filePath))
+        fs::remove(filePath);
     AAsm::SaveGame(filePath.string());
 }
 
-void AReplay::_LoadPvzState()
-{
+void AReplay::_LoadPvzState() {
     AMaidCheats::Phase() = _mjPhaseRecover;
     AMRef<uint8_t>(_FALLING_SUN_ADDR) = _fallingSunCodeRecover;
     AMRef<uint8_t>(_ZOMBIE_SPAWN_ADDR) = _zombieSpawnCodeRecover;
-    if (!AGetPvzBase() || !AGetPvzBase()->MainObject() || AGetPvzBase()->GameUi() != 3) {
+    if (!AGetPvzBase() || !AGetPvzBase()->MainObject() || AGetPvzBase()->GameUi() != 3)
         return;
-    }
-    auto filePath = _savePath / stdFs::path(_RECOVER_DAT_STR);
-    if (stdFs::exists(filePath)) {
+    auto filePath = _savePath / fs::path(_RECOVER_DAT_STR);
+    if (fs::exists(filePath))
         AAsm::LoadGame(filePath.string());
-    }
 }
 
-void AReplay::_CompressTailFiles()
-{
-    if (_compressor == nullptr) {
+void AReplay::_CompressTailFiles() {
+    if (_compressor == nullptr)
         return;
-    }
 
-    auto infoPath = _savePath / stdFs::path(_INFO_FILE_STR);
-    auto mouseInfoPath = _savePath / stdFs::path(_TICK_INFO_FILE_STR);
-    auto dirName = stdFs::path(std::to_string((_endIdx % _maxSaveCnt) / _packTickCnt));
+    auto infoPath = _savePath / fs::path(_INFO_FILE_STR);
+    auto mouseInfoPath = _savePath / fs::path(_TICK_INFO_FILE_STR);
+    auto dirName = fs::path(std::to_string((_endIdx % _maxSaveCnt) / _packTickCnt));
     auto dirPath = _savePath / dirName;
 
-    if (stdFs::exists(infoPath)) {
+    if (fs::exists(infoPath))
         _compressor->Compress(infoPath.string());
-    }
-    if (stdFs::exists(mouseInfoPath)) {
+    if (fs::exists(mouseInfoPath))
         _compressor->Compress(mouseInfoPath.string());
-    }
-    if (stdFs::exists(dirPath)) {
+    if (fs::exists(dirPath))
         _compressor->Compress(dirPath.string());
-    }
     _compressor->WaitForDone();
 }
 
-void AReplay::_ClearDatFiles()
-{
+void AReplay::_ClearDatFiles() {
 
-    if (_compressor == nullptr) {
+    if (_compressor == nullptr)
         return;
-    }
     // 等待压缩任务全部完成
     _compressor->WaitForDone();
 
@@ -773,40 +678,33 @@ void AReplay::_ClearDatFiles()
         bool isNumber = true;
         auto str = dir.path().string();
         for (auto iter = str.rbegin(); iter != str.rend(); ++iter) {
-            if ((*iter) == '\\' || (*iter) == '/') {
+            if ((*iter) == '\\' || (*iter) == '/')
                 break;
-            }
             if (!std::isdigit(*iter)) {
                 isNumber = false;
                 break;
             }
         }
-        if (isNumber) {
-            stdFs::remove_all(dir);
-        }
+        if (isNumber)
+            fs::remove_all(dir);
     }
 }
 
-void AReplay::_ClearAllFiles()
-{
-    if (_compressor == nullptr) {
+void AReplay::_ClearAllFiles() {
+    if (_compressor == nullptr)
         return;
-    }
     _ClearDatFiles();
     // 删除 info.txt
-    auto infoPath = _savePath / stdFs::path(_INFO_FILE_STR);
-    if (stdFs::exists(infoPath)) {
-        stdFs::remove(infoPath);
-    }
+    auto infoPath = _savePath / fs::path(_INFO_FILE_STR);
+    if (fs::exists(infoPath))
+        fs::remove(infoPath);
     // 删除鼠标文件
-    auto mouseInfoPath = _savePath / stdFs::path(_TICK_INFO_FILE_STR);
-    if (stdFs::exists(mouseInfoPath)) {
-        stdFs::remove(mouseInfoPath);
-    }
+    auto mouseInfoPath = _savePath / fs::path(_TICK_INFO_FILE_STR);
+    if (fs::exists(mouseInfoPath))
+        fs::remove(mouseInfoPath);
 }
 
-void AReplay::SetCompressor(AAbstractCompressor& compressor)
-{
+void AReplay::SetCompressor(AAbstractCompressor& compressor) {
     _compressor = nullptr;
     if (!compressor.IsOk()) {
         aLogger->Error("压缩对象未准备好，无法开启压缩模式");

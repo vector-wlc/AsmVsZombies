@@ -72,13 +72,11 @@ public:
     // 重置存冰位置
     // *** 使用示例：
     // SetList({{3,4},{5,6}})-----将存冰位置重置为{3，4}，{5，6}
-    void SetList(const std::vector<AGrid>& lst)
-    {
+    void SetList(const std::vector<AGrid>& lst) {
         _fillIceGridVec = lst;
     }
 
-    const std::vector<AGrid>& GetList() const
-    {
+    const std::vector<AGrid>& GetList() const {
         return _fillIceGridVec;
     }
 
@@ -126,13 +124,11 @@ public:
     // 重置植物修补位置
     // *** 使用示例：
     // SetList({{2, 3},{3, 4}})-------位置被重置为{2，3}，{3，4}
-    void SetList(const std::vector<AGrid>& lst)
-    {
+    void SetList(const std::vector<AGrid>& lst) {
         _gridLst = lst;
     }
 
-    const std::vector<AGrid>& GetList() const
-    {
+    const std::vector<AGrid>& GetList() const {
         return _gridLst;
     }
 
@@ -154,9 +150,7 @@ public:
     void AutoSetList();
 
     // 自动得到修补的位置列表
-    // 此函数已弃用，请使用 AutoSetList();
-    __ADeprecated("请使用 AutoSetList()") void AutoGetList()
-    {
+    __ADeprecated("请使用 AutoSetList()") void AutoGetList() {
         AutoSetList();
     }
 
@@ -173,14 +167,12 @@ public:
     // 重置修补血量
     // *** 使用示例：
     // SetHp(200)------将修补触发血量改为200
-    void SetHp(int _fix_hp)
-    {
+    void SetHp(int _fix_hp) {
         _fixHp = _fix_hp;
     }
 
     // 是否使用咖啡豆
-    void SetIsUseCoffee(bool isUseCoffee)
-    {
+    void SetIsUseCoffee(bool isUseCoffee) {
         _isUseCoffee = isUseCoffee;
     }
 };

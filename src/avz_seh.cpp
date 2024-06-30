@@ -1,6 +1,6 @@
-#include "avz_seh.h"
-#include <fstream>
+#include "libavz.h"
 
+namespace {
 HINSTANCE hInstance;
 HWND buttonClose;
 HWND buttonCopy;
@@ -42,20 +42,18 @@ std::initializer_list<ErrorType> msgTable {
     {STATUS_PRIVILEGED_INSTRUCTION, "Privileged Instruction"},
     {STATUS_STACK_OVERFLOW, "Stack Overflow"},
     {STATUS_CONTROL_C_EXIT, "Ctrl+C Exit"}};
+}
 
-ASeh::ASeh()
-{
+ASeh::ASeh() {
     previousFilter = SetUnhandledExceptionFilter(UnhandledExceptionFilter);
     hInstance = GetModuleHandleA(nullptr);
 }
 
-ASeh::~ASeh()
-{
+ASeh::~ASeh() {
     SetUnhandledExceptionFilter(previousFilter);
 }
 
-long __stdcall ASeh::UnhandledExceptionFilter(LPEXCEPTION_POINTERS lpExceptPtr)
-{
+long __stdcall ASeh::UnhandledExceptionFilter(LPEXCEPTION_POINTERS lpExceptPtr) {
     // #ifndef __MINGW32__
     //     __asm__ __volatile__(
     //         "pushal;"
@@ -86,8 +84,7 @@ long __stdcall ASeh::UnhandledExceptionFilter(LPEXCEPTION_POINTERS lpExceptPtr)
     return EXCEPTION_CONTINUE_SEARCH;
 }
 
-bool ASeh::CheckImageHelp()
-{
+bool ASeh::CheckImageHelp() {
     SymSetOptions(SYMOPT_DEFERRED_LOADS);
     GetModuleFileNameA(0, globalBuffer, 2048);
     char* lastdir = strrchr(globalBuffer, '/');
@@ -98,8 +95,7 @@ bool ASeh::CheckImageHelp()
     return SymInitialize(GetCurrentProcess(), globalBuffer[0] ? globalBuffer : nullptr, true);
 }
 
-void ASeh::DoHandleDebugEvent(LPEXCEPTION_POINTERS lpEP)
-{
+void ASeh::DoHandleDebugEvent(LPEXCEPTION_POINTERS lpEP) {
     bool hasImageHelp = CheckImageHelp();
     std::string errorTitle;
     errorTitle.reserve(2048);
@@ -135,8 +131,7 @@ void ASeh::DoHandleDebugEvent(LPEXCEPTION_POINTERS lpEP)
     ShowErrorDialog(errorTitle.data(), errorText.data());
 }
 
-std::string ASeh::IntelWalk(PCONTEXT theContext, int theSkipCount)
-{
+std::string ASeh::IntelWalk(PCONTEXT theContext, int theSkipCount) {
     std::string dump;
     DWORD pc = theContext->Eip;
     PDWORD pFrame, pPrevFrame;
@@ -157,8 +152,7 @@ std::string ASeh::IntelWalk(PCONTEXT theContext, int theSkipCount)
     return dump;
 }
 
-std::string ASeh::ImageHelpWalk(PCONTEXT theContext, int theSkipCount)
-{
+std::string ASeh::ImageHelpWalk(PCONTEXT theContext, int theSkipCount) {
     std::string dump;
     STACKFRAME sf;
     memset(&sf, 0, sizeof(sf));
@@ -212,8 +206,7 @@ std::string ASeh::ImageHelpWalk(PCONTEXT theContext, int theSkipCount)
     return dump;
 }
 
-bool ASeh::GetLogicalAddress(void* addr, char* szModule, DWORD len, DWORD& section, DWORD& offset)
-{
+bool ASeh::GetLogicalAddress(void* addr, char* szModule, DWORD len, DWORD& section, DWORD& offset) {
     MEMORY_BASIC_INFORMATION mbi;
     if (!VirtualQuery(addr, &mbi, sizeof(mbi)))
         return false;
@@ -237,8 +230,7 @@ bool ASeh::GetLogicalAddress(void* addr, char* szModule, DWORD len, DWORD& secti
     return false;
 }
 
-const char* ASeh::GetFilename(const char* thePath)
-{
+const char* ASeh::GetFilename(const char* thePath) {
     const char* ans = strrchr(thePath, '/');
     if (!ans)
         ans = strrchr(thePath, '\\');
@@ -247,8 +239,7 @@ const char* ASeh::GetFilename(const char* thePath)
     return ans + 1;
 }
 
-LRESULT CALLBACK ASeh::SEHWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
+LRESULT CALLBACK ASeh::SEHWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
     case WM_COMMAND:
         if ((HWND)lParam == buttonClose)
@@ -276,8 +267,7 @@ LRESULT CALLBACK ASeh::SEHWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
     return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
-void ASeh::ShowErrorDialog(const char* theErrorTitle, const char* theErrorText)
-{
+void ASeh::ShowErrorDialog(const char* theErrorTitle, const char* theErrorText) {
     HFONT font = ::CreateFontA(-MulDiv(8, 96, 72), 0, 0, 0, FW_NORMAL, FALSE, FALSE, false, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "Consolas");
     ::SetCursor(::LoadCursor(NULL, IDC_ARROW));
     WNDCLASSA wc;

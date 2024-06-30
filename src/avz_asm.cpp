@@ -1,38 +1,27 @@
-/*
- * @coding: utf-8
- * @Author: yuchexi0_0
- * @Date: 2020-02-06 10:22:46
- * @Description: pvzfunc
- */
+#include "libavz.h"
 
-#include "avz_asm.h"
-#include "avz_memory.h"
-#include <filesystem>
+namespace {
+AMainObject* __level;
+AMouseWindow* __mw;
+int __x;
+int __y;
+int __key;
+int __rank;
+int __index;
+int __cardType;
+int __row;
+int __col;
+int __reject_type;
+APlant* __plant;
+AZombie* __zombie;
+int __type;
+int __imitatorType;
+void* __p;
+DWORD __board;
+DWORD __levelprop;
+}
 
-#include "avz_logger.h"
-#include "avz_iterator.h"
-
-static AMainObject* __level;
-static AMouseWindow* __mw;
-static int __x;
-static int __y;
-static int __key;
-static int __rank;
-static int __index;
-static int __cardType;
-static int __row;
-static int __col;
-static int __reject_type;
-static APlant* __plant;
-static AZombie* __zombie;
-static int __type;
-static int __imitatorType;
-static void* __p;
-static DWORD __board;
-static DWORD __levelprop;
-
-void AAsm::ClickScene(AMainObject* level, int x, int y, int key)
-{
+void AAsm::ClickScene(AMainObject* level, int x, int y, int key) {
     __level = level;
     __x = x;
     __y = y;
@@ -40,61 +29,54 @@ void AAsm::ClickScene(AMainObject* level, int x, int y, int key)
     _ClickScene();
 }
 
-void AAsm::Click(AMouseWindow* mw, int x, int y, int key)
-{
+void AAsm::Click(AMouseWindow* mw, int x, int y, int key) {
     __mw = mw;
     __x = x;
     __y = y;
     __key = key;
     _Click();
 }
-void AAsm::MouseClick(int x, int y, int key)
-{
+
+void AAsm::MouseClick(int x, int y, int key) {
     __x = x;
     __y = y;
     __key = key;
     _MouseClick();
 }
 
-void AAsm::Fire(int x, int y, int rank)
-{
+void AAsm::Fire(int x, int y, int rank) {
     __x = x;
     __y = y;
     __rank = rank;
     _ShootPao();
 }
 
-void AAsm::PlantCard(int x, int y, int index)
-{
+void AAsm::PlantCard(int x, int y, int index) {
     __x = x;
     __y = y;
     __index = index;
     _PlantCard();
 }
 
-void AAsm::ShovelPlant(int x, int y)
-{
+void AAsm::ShovelPlant(int x, int y) {
     __x = x;
     __y = y;
     _ShovelPlant();
 }
 
 // 选择卡片
-void AAsm::ChooseCard(int cardType)
-{
+void AAsm::ChooseCard(int cardType) {
     __cardType = cardType;
     _ChooseCard();
 }
 
 // 选择模仿者卡片
-void AAsm::ChooseImitatorCard(int cardType)
-{
+void AAsm::ChooseImitatorCard(int cardType) {
     __cardType = cardType;
     _ChooseImitatorCard();
 }
 
-int AAsm::GetPlantRejectType(int cardType, int row, int col)
-{
+int AAsm::GetPlantRejectType(int cardType, int row, int col) {
     __cardType = cardType;
     __row = row;
     __col = col;
@@ -102,9 +84,7 @@ int AAsm::GetPlantRejectType(int cardType, int row, int col)
     return __reject_type;
 }
 
-void AAsm::GameFightLoop()
-{
-
+void AAsm::GameFightLoop() {
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%ecx;"
         "movl 0x768(%%ecx), %%ecx;"
@@ -115,8 +95,7 @@ void AAsm::GameFightLoop()
         : ASaveAllRegister);
 }
 
-void AAsm::GameTotalLoop()
-{
+void AAsm::GameTotalLoop() {
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%ecx;"
         "movl $0x452650, %%eax;"
@@ -126,8 +105,7 @@ void AAsm::GameTotalLoop()
         : ASaveAllRegister);
 }
 
-void AAsm::GameSleepLoop()
-{
+void AAsm::GameSleepLoop() {
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%ecx;"
         "movl $0x453a50, %%eax;"
@@ -137,10 +115,7 @@ void AAsm::GameSleepLoop()
         : ASaveAllRegister);
 }
 
-// 5D59A0
-//   54B980
-void AAsm::UpdateFrame()
-{
+void AAsm::UpdateFrame() {
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%edi;"
         "movl 0x320(%%edi), %%edi;"
@@ -151,8 +126,7 @@ void AAsm::UpdateFrame()
         : ASaveAllRegister);
 }
 
-void AAsm::ClearObjectMemory()
-{
+void AAsm::ClearObjectMemory() {
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%ebx;"
         "movl 0x768(%%ebx), %%esi;"
@@ -169,8 +143,7 @@ void AAsm::ClearObjectMemory()
         : ASaveAllRegister);
 }
 
-void AAsm::KillZombiesPreview()
-{
+void AAsm::KillZombiesPreview() {
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%ebx;"
         "movl 0x768(%%ebx), %%ebx;"
@@ -181,13 +154,11 @@ void AAsm::KillZombiesPreview()
         : ASaveAllRegister);
 }
 
-void AAsm::SetImprovePerformance(bool is_improve_performance)
-{
+void AAsm::SetImprovePerformance(bool is_improve_performance) {
     *(bool*)(0x6a66f4) = !is_improve_performance;
 }
 
-void AAsm::CheckFightExit()
-{
+void AAsm::CheckFightExit() {
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%eax;"
         "movl $0x4524f0, %%ecx;"
@@ -197,8 +168,7 @@ void AAsm::CheckFightExit()
         : ASaveAllRegister);
 }
 
-void AAsm::SaveData()
-{
+void AAsm::SaveData() {
     __asm__ __volatile__(
 
         "movl 0x6a9ec0, %%eax;"
@@ -212,8 +182,7 @@ void AAsm::SaveData()
         : ASaveAllRegister);
 }
 
-void AAsm::LoadData()
-{
+void AAsm::LoadData() {
     __asm__ __volatile__(
 
         "movl 0x6a9ec0, %%eax;"
@@ -226,8 +195,7 @@ void AAsm::LoadData()
         : ASaveAllRegister);
 }
 
-void AAsm::Rock()
-{
+void AAsm::Rock() {
     __asm__ __volatile__(
 
         "movl 0x6a9ec0, %%ebx;"
@@ -243,11 +211,9 @@ void AAsm::Rock()
         : ASaveAllRegister);
 }
 
-void AAsm::_ClickScene()
-{
-    if ((*(APvzBase**)0x6a9ec0)->GameUi() != 3) {
+void AAsm::_ClickScene() {
+    if ((*(APvzBase**)0x6a9ec0)->GameUi() != 3)
         return;
-    }
     __asm__ __volatile__(
         "pushl %0;"
         "pushl %1;"
@@ -260,8 +226,7 @@ void AAsm::_ClickScene()
         : ASaveAllRegister);
 }
 
-void AAsm::_Click()
-{
+void AAsm::_Click() {
     __asm__ __volatile__(
         "pushl %0;"
         "movl %1, %%ebx;"
@@ -274,8 +239,7 @@ void AAsm::_Click()
         : ASaveAllRegister);
 }
 
-void AAsm::_MouseClick()
-{
+void AAsm::_MouseClick() {
     int curX = AGetPvzBase()->MouseWindow()->MouseAbscissa();
     int curY = AGetPvzBase()->MouseWindow()->MouseOrdinate();
     MouseDown(__x, __y, __key);
@@ -284,8 +248,7 @@ void AAsm::_MouseClick()
 }
 
 // 鼠标按下
-void AAsm::MouseDown(int x, int y, int key)
-{
+void AAsm::MouseDown(int x, int y, int key) {
     __asm__ __volatile__(
         "pushl %[x];"
         "movl %[y], %%eax;"
@@ -300,8 +263,7 @@ void AAsm::MouseDown(int x, int y, int key)
 }
 
 // 鼠标松开
-void AAsm::MouseUp(int x, int y, int key)
-{
+void AAsm::MouseUp(int x, int y, int key) {
     __asm__ __volatile__(
         "pushl %[key];"
         "pushl %[x];"
@@ -316,8 +278,7 @@ void AAsm::MouseUp(int x, int y, int key)
 }
 
 // 移动鼠标
-void AAsm::MouseMove(int x, int y)
-{
+void AAsm::MouseMove(int x, int y) {
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%edx;"
         "movl 0x320(%%edx), %%edx;"
@@ -330,11 +291,8 @@ void AAsm::MouseMove(int x, int y)
         : ASaveAllRegister);
 }
 
-void AAsm::_ShootPao()
-{
-
+void AAsm::_ShootPao() {
     __asm__ __volatile__(
-
         "movl 0x6a9ec0, %%eax;"
         "movl 0x768(%%eax), %%edi;"
         "movl 0xac(%%edi), %%eax;"
@@ -351,8 +309,7 @@ void AAsm::_ShootPao()
         : ASaveAllRegister);
 }
 
-void AAsm::_PlantCard()
-{
+void AAsm::_PlantCard() {
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%eax;"
         "movl 0x768(%%eax), %%edi;"
@@ -370,16 +327,12 @@ void AAsm::_PlantCard()
         "movl $0x1, %%ecx;"
         "movl $0x40fd30, %%edx;"
         "calll *%%edx;"
-
         :
         : [__x] "m"(__x), [__y] "m"(__y), [__index] "m"(__index)
         : ASaveAllRegister);
 }
-void AAsm::_ShovelPlant()
-{
-
+void AAsm::_ShovelPlant() {
     __asm__ __volatile__(
-
         "pushl $0x6;"
         "pushl $0x1;"
         "movl %[__y], %%ecx;"
@@ -393,10 +346,9 @@ void AAsm::_ShovelPlant()
         : [__x] "m"(__x), [__y] "m"(__y)
         : ASaveAllRegister);
 }
-void AAsm::_ChooseCard()
-{
-    __asm__ __volatile__(
 
+void AAsm::_ChooseCard() {
+    __asm__ __volatile__(
         "movl $0x6a9ec0, %%eax;"
         "movl (%%eax), %%eax;"
         "movl 0x774(%%eax), %%eax;"
@@ -409,16 +361,13 @@ void AAsm::_ChooseCard()
         "pushl %%edx;"
         "movl $0x486030, %%ecx;"
         "calll *%%ecx;"
-
         :
         : [__cardType] "m"(__cardType)
         : ASaveAllRegister);
 }
-void AAsm::_ChooseImitatorCard()
-{
 
+void AAsm::_ChooseImitatorCard() {
     __asm__ __volatile__(
-
         "movl $0x6a9ec0, %%eax;"
         "movl (%%eax), %%eax;"
         "movl 0x774(%%eax), %%eax;"
@@ -445,16 +394,13 @@ void AAsm::_ChooseImitatorCard()
         "calll *%%edx;"
         "movl $0x4866e0, %%edx;"
         "calll *%%edx;"
-
         :
         : [__cardType] "m"(__cardType)
         : ASaveAllRegister);
 }
 
-void AAsm::_GetPlantRejectType()
-{
+void AAsm::_GetPlantRejectType() {
     __asm__ __volatile__(
-
         "movl %[__row], %%eax;"
         "pushl %[__cardType];"
         "pushl %[__col];"
@@ -465,32 +411,26 @@ void AAsm::_GetPlantRejectType()
         "movl $0x40e020, %%edx;"
         "calll *%%edx;"
         "movl %%eax, %[__reject_type];"
-
         :
         : [__cardType] "m"(__cardType), [__row] "m"(__row), [__col] "m"(__col), [__reject_type] "m"(__reject_type)
         : ASaveAllRegister);
 }
 
-void AAsm::ReleaseMouse()
-{
+void AAsm::ReleaseMouse() {
     __asm__ __volatile__(
-
         "movl 0x6a9ec0, %%eax;"
         "movl 0x768(%%eax), %%eax;"
         "movl $0x40cd80, %%edx;"
         "calll *%%edx;"
-
         :
         :
         : ASaveAllRegister);
 }
 
-int AAsm::GridToAbscissa(int row, int col)
-{
+int AAsm::GridToAbscissa(int row, int col) {
     __row = row;
     __col = col;
     __asm__ __volatile__(
-
         "movl 0x6a9ec0, %%ecx;"
         "movl 0x768(%%ecx), %%ecx;"
         "movl %[__col], %%eax;"
@@ -498,7 +438,6 @@ int AAsm::GridToAbscissa(int row, int col)
         "movl $0x41c680, %%edx;"
         "calll *%%edx;"
         "movl %%eax, %[__x];"
-
         :
         : [__col] "m"(__col), [__row] "m"(__row), [__x] "m"(__x)
         : ASaveAllRegister);
@@ -506,8 +445,7 @@ int AAsm::GridToAbscissa(int row, int col)
     return __x;
 }
 
-int AAsm::GridToOrdinate(int row, int col)
-{
+int AAsm::GridToOrdinate(int row, int col) {
     __row = row;
     __col = col;
     __asm__ __volatile__(
@@ -525,8 +463,7 @@ int AAsm::GridToOrdinate(int row, int col)
     return __y;
 }
 
-AZombie* AAsm::PutZombie(int row, int col, AZombieType type)
-{
+AZombie* AAsm::PutZombie(int row, int col, AZombieType type) {
     auto zombieArray = AGetMainObject()->ZombieArray();
     auto num = AGetMainObject()->ZombieNext();
     __row = row;
@@ -548,11 +485,9 @@ AZombie* AAsm::PutZombie(int row, int col, AZombieType type)
     return zombieArray + num;
 }
 
-APlant* AAsm::PutPlant(int row, int col, APlantType type)
-{
-    if (type == AIMITATOR) {
+APlant* AAsm::PutPlant(int row, int col, APlantType type) {
+    if (type == AIMITATOR)
         return nullptr; // 不可能出现这种情况
-    }
     auto plantArray = AGetMainObject()->PlantArray();
     auto num = AGetMainObject()->PlantNext();
     __row = row;
@@ -565,7 +500,6 @@ APlant* AAsm::PutPlant(int row, int col, APlantType type)
         __type = AIMITATOR;
     }
     __asm__ __volatile__(
-
         "pushl %[__imitatorType];"
         "pushl %[__type];"
         "movl %[__row], %%eax;"
@@ -575,7 +509,6 @@ APlant* AAsm::PutPlant(int row, int col, APlantType type)
         "pushl %%edi;"
         "movl $0x40d120, %%edx;"
         "calll *%%edx;"
-
         :
         : [__imitatorType] "m"(__imitatorType), [__type] "m"(__type), [__row] "m"(__row), [__col] "m"(__col)
         : ASaveAllRegister);
@@ -583,25 +516,20 @@ APlant* AAsm::PutPlant(int row, int col, APlantType type)
     return plantArray + num;
 }
 
-void AAsm::RemovePlant(APlant* plant)
-{
+void AAsm::RemovePlant(APlant* plant) {
     __plant = plant;
     __asm__ __volatile__(
-
         "pushl %[__plant];"
         "movl $0x4679b0, %%edx;"
         "calll *%%edx;"
-
         :
         : [__plant] "m"(__plant)
         : ASaveAllRegister);
 }
 
-void AAsm::KillZombie(AZombie* zombie)
-{
+void AAsm::KillZombie(AZombie* zombie) {
     __zombie = zombie;
     __asm__ __volatile__(
-
         "movl %[__zombie], %%ecx;"
         "movl $0x5302f0, %%edx;"
         "calll *%%edx;"
@@ -610,11 +538,9 @@ void AAsm::KillZombie(AZombie* zombie)
         : ASaveAllRegister);
 }
 
-void AAsm::RemoveZombie(AZombie* zombie)
-{
+void AAsm::RemoveZombie(AZombie* zombie) {
     __zombie = zombie;
     __asm__ __volatile__(
-
         "movl %[__zombie], %%ecx;"
         "movl $0x530510, %%edx;"
         "calll *%%edx;"
@@ -623,8 +549,7 @@ void AAsm::RemoveZombie(AZombie* zombie)
         : ASaveAllRegister);
 }
 
-void* AAsm::SaveToMemory()
-{
+void* AAsm::SaveToMemory() {
     __p = malloc(0x24);
     memset(__p, 0, 0x24);
     __board = (DWORD)AGetMainObject();
@@ -643,11 +568,9 @@ void* AAsm::SaveToMemory()
     return __p;
 }
 
-void AAsm::FreeMemory(void*& p)
-{
-    if (!p) {
+void AAsm::FreeMemory(void*& p) {
+    if (!p)
         return;
-    }
     __p = p;
     __asm__ __volatile__(
         "movl %[__p], %%ecx;"
@@ -661,11 +584,9 @@ void AAsm::FreeMemory(void*& p)
     p = nullptr;
 }
 
-void AAsm::LoadFromMemory(void*& p)
-{
-    if (!p) {
+void AAsm::LoadFromMemory(void*& p) {
+    if (!p)
         return;
-    }
     __p = p;
     __levelprop = ((DWORD***)nullptr)[0x6a9ec0 / 4][0x768 / 4][0x160 / 4];
 
@@ -690,8 +611,7 @@ void AAsm::LoadFromMemory(void*& p)
     FreeMemory(p);
 }
 
-bool AAsm::IsSeedUsable(ASeed* seed)
-{
+bool AAsm::IsSeedUsable(ASeed* seed) {
     uint8_t* ptr = (uint8_t*)seed;
     ptr += 0x28;
     int ret = 0;
@@ -707,8 +627,7 @@ bool AAsm::IsSeedUsable(ASeed* seed)
     return *((bool*)(&ret));
 }
 
-int AAsm::GetSeedSunVal(int type, int iType)
-{
+int AAsm::GetSeedSunVal(int type, int iType) {
     int ret = 0;
     __asm__ __volatile__(
         "movl %[type], %%eax;"
@@ -725,8 +644,7 @@ int AAsm::GetSeedSunVal(int type, int iType)
     return ret;
 }
 
-void AAsm::UpdateMousePos()
-{
+void AAsm::UpdateMousePos() {
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%eax;"
         "movl 0x768(%%eax), %%eax;"
@@ -737,8 +655,7 @@ void AAsm::UpdateMousePos()
         : ASaveAllRegister);
 }
 
-void AAsm::MakePvzString(const char* str, void* strObj)
-{
+void AAsm::MakePvzString(const char* str, void* strObj) {
     __asm__ __volatile__(
         "movl %[str], %%ecx;"
         "pushl %%ecx;"
@@ -750,21 +667,17 @@ void AAsm::MakePvzString(const char* str, void* strObj)
         : ASaveAllRegister);
 }
 
-void AAsm::FreePvzString(void* strObj)
-{
+void AAsm::FreePvzString(void* strObj) {
     __asm__ __volatile__(
-
         "movl %[strObj], %%ecx;"
         "movl $0x404420, %%eax;"
         "calll *%%eax;"
-
         :
         : [strObj] "m"(strObj)
         : ASaveAllRegister);
 }
 
-void AAsm::MakeNewBoard()
-{
+void AAsm::MakeNewBoard() {
     int scene = AGetMainObject()->Scene();
     __asm__ __volatile__(
         // MakeNewBoard
@@ -784,8 +697,7 @@ void AAsm::MakeNewBoard()
 }
 
 // 此函数是为了防止 LoadGame 过长的
-void __ABeforeMakeNewBoard(std::vector<int>& zombieMusicRefCnts, std::vector<int>& zombieMusicIdxs)
-{
+void __ABeforeMakeNewBoard(std::vector<int>& zombieMusicRefCnts, std::vector<int>& zombieMusicIdxs) {
     for (auto idx : zombieMusicIdxs) {
         zombieMusicRefCnts.push_back(AMRef<int>(0x6A9Ec0, 0x784, 0xa4 * idx + 0x4));
         if (zombieMusicRefCnts.back() != 0) {
@@ -808,8 +720,7 @@ void __ABeforeMakeNewBoard(std::vector<int>& zombieMusicRefCnts, std::vector<int
 }
 
 // 此函数是为了防止 LoadGame 过长的
-void __AAfterLoadGame(std::vector<int>& zombieMusicRefCnts, std::vector<int>& zombieMusicIdxs)
-{
+void __AAfterLoadGame(std::vector<int>& zombieMusicRefCnts, std::vector<int>& zombieMusicIdxs) {
     // 如果没有舞王和舞伴就删除音效
     int mjCnt = 0;
     for (auto&& zombie : AAliveFilter<AZombie>()) {
@@ -834,21 +745,17 @@ void __AAfterLoadGame(std::vector<int>& zombieMusicRefCnts, std::vector<int>& zo
     }
     if (mjCnt == 0) {
         int refCnt = AMRef<int>(0x6A9Ec0, 0x784, 0xa4 * AAsm::MJ_MUSIC_IDX + 0x4);
-        for (int i = 0; i < refCnt; ++i) {
+        for (int i = 0; i < refCnt; ++i)
             AAsm::StopFoley(AAsm::MJ_MUSIC_IDX);
-        }
     }
 
     // 把之前增加的减回去
-    for (int i = 0; i < zombieMusicIdxs.size(); ++i) {
-        if (zombieMusicRefCnts[i] != 0) {
+    for (int i = 0; i < zombieMusicIdxs.size(); ++i)
+        if (zombieMusicRefCnts[i] != 0)
             AAsm::StopFoley(zombieMusicIdxs[i]);
-        }
-    }
 }
 
-void AAsm::LoadGame(const std::string& file)
-{
+void AAsm::LoadGame(const std::string& file) {
     // 此函数需要根据场景调用不同的函数
     // 如果没有切换场景，调用 LawnLoadGame 481FE0
     // 如果切换场景，调用 LoadGame 408DE0
@@ -867,7 +774,7 @@ void AAsm::LoadGame(const std::string& file)
         MakeNewBoard();
         // aLogger->Info("{} {}", __LINE__, AMRef<int>(0x6A9Ec0, 0x784, 0xa4 * JACK_MUSIC_IDX + 0x4));
 
-        if (i == 0) { // 首先尝试调用 LawnLoadGame
+        if (i == 0) // 首先尝试调用 LawnLoadGame
             __asm__ __volatile__(
                 // LawnLoadGame
                 "pushl %[tmpPtr];"
@@ -879,7 +786,7 @@ void AAsm::LoadGame(const std::string& file)
                 :
                 : [tmpPtr] "m"(tmpPtr)
                 : ASaveAllRegister);
-        } else { // 场景切换需要调用 LoadGame
+        else // 场景切换需要调用 LoadGame
             __asm__ __volatile__(
                 // LoadGame
                 "movl %[tmpPtr], %%eax;"
@@ -890,15 +797,13 @@ void AAsm::LoadGame(const std::string& file)
                 :
                 : [tmpPtr] "m"(tmpPtr)
                 : ASaveAllRegister);
-        }
         // aLogger->Info("{} {}", __LINE__, AMRef<int>(0x6A9Ec0, 0x784, 0xa4 * JACK_MUSIC_IDX + 0x4));
         __AAfterLoadGame(zombieMusicRefCnts, zombieMusicIdxs);
         // aLogger->Info("{} {}", __LINE__, AMRef<int>(0x6A9Ec0, 0x784, 0xa4 * JACK_MUSIC_IDX + 0x4));
 
         // 这说明需要切换场景
-        if (scene == AGetMainObject()->Scene()) {
+        if (scene == AGetMainObject()->Scene())
             break;
-        }
     }
 
     __asm__ __volatile__(
@@ -916,14 +821,11 @@ void AAsm::LoadGame(const std::string& file)
     FreePvzString(&pvzStr);
 }
 
-void AAsm::SaveGame(const std::string& file)
-{
-    for (auto&& zombie : AAliveFilter<AZombie>()) {
+void AAsm::SaveGame(const std::string& file) {
+    for (auto&& zombie : AAliveFilter<AZombie>())
         if ((zombie.FixationCountdown() != 0 || zombie.FreezeCountdown() != 0)
-            && zombie.Type() == AXC_15 && zombie.State() == 15) {
+            && zombie.Type() == AXC_15 && zombie.State() == 15)
             zombie.MRef<bool>(0x104) = zombie.MRef<bool>(0xba);
-        }
-    }
     uint8_t pvzStr[28] = {0};
     void* tmpPtr = &pvzStr;
     MakePvzString(file.c_str(), &pvzStr);
@@ -940,8 +842,7 @@ void AAsm::SaveGame(const std::string& file)
     FreePvzString(&pvzStr);
 }
 
-bool AAsm::CanSpawnZombies(int row)
-{
+bool AAsm::CanSpawnZombies(int row) {
     int ret;
     __asm__ __volatile__(
         "movl %[row], %%eax;"
@@ -956,8 +857,7 @@ bool AAsm::CanSpawnZombies(int row)
     return ret & 0xff;
 }
 
-bool AAsm::IsNight()
-{
+bool AAsm::IsNight() {
     int ret;
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%eax;"
@@ -971,8 +871,7 @@ bool AAsm::IsNight()
     return ret & 0xff;
 }
 
-bool AAsm::IsRoof()
-{
+bool AAsm::IsRoof() {
     int ret;
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%eax;"
@@ -986,8 +885,7 @@ bool AAsm::IsRoof()
     return ret & 0xff;
 }
 
-bool AAsm::HasGrave()
-{
+bool AAsm::HasGrave() {
     int ret;
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%edx;"
@@ -1001,8 +899,7 @@ bool AAsm::HasGrave()
     return ret & 0xff;
 }
 
-bool AAsm::HasPool()
-{
+bool AAsm::HasPool() {
     int ret;
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%eax;"
@@ -1016,8 +913,7 @@ bool AAsm::HasPool()
     return ret & 0xff;
 }
 
-int AAsm::ZombieTotalHp(int wave)
-{
+int AAsm::ZombieTotalHp(int wave) {
     int ret;
     __asm__ __volatile__(
         "pushl %[wave];"
@@ -1032,15 +928,13 @@ int AAsm::ZombieTotalHp(int wave)
     return ret;
 }
 
-void AAsm::EnterGame(int gameMode)
-{
-    auto gameUi = AMPtr<APvzBase>(0x6a9ec0)->GameUi();
-    if (gameUi == LEVEL_INTRO || gameUi == PLAYING) {
+void AAsm::EnterGame(int gameMode) {
+    auto gameUi = AGetPvzBase()->GameUi();
+    if (gameUi == LEVEL_INTRO || gameUi == PLAYING)
         return; // 在选卡界面或者战斗界面此函数无效
-    }
 
     if (gameUi == 0 || gameUi == 1) {
-        if (gameUi == 0) { // 载入界面，需要直接删除载入界面进入主界面
+        if (gameUi == 0) // 载入界面，需要直接删除载入界面进入主界面
             __asm__ __volatile__(
                 "movl 0x6a9ec0, %%ecx;"
                 "movl $0x452cb0, %%ebx;"
@@ -1048,7 +942,6 @@ void AAsm::EnterGame(int gameMode)
                 :
                 :
                 : ASaveAllRegister);
-        }
 
         __asm__ __volatile__( // 删除主界面
             "movl 0x6a9ec0, %%esi;"
@@ -1059,7 +952,7 @@ void AAsm::EnterGame(int gameMode)
             : ASaveAllRegister);
     }
 
-    if (gameUi == 7) {        // 选项卡界面
+    if (gameUi == 7)          // 选项卡界面
         __asm__ __volatile__( // 删除选项卡界面
             "movl 0x6a9ec0, %%esi;"
             "movl $0x44fd00, %%eax;"
@@ -1067,7 +960,6 @@ void AAsm::EnterGame(int gameMode)
             :
             :
             : ASaveAllRegister);
-    }
 
     // 进入战斗或者选卡界面
     bool ok = 1;
@@ -1082,12 +974,10 @@ void AAsm::EnterGame(int gameMode)
         : ASaveAllRegister);
 }
 
-void AAsm::DoBackToMain()
-{
-    auto gameUi = AMPtr<APvzBase>(0x6a9ec0)->GameUi();
-    if (gameUi != PLAYING) {
+void AAsm::DoBackToMain() {
+    auto gameUi = AGetPvzBase()->GameUi();
+    if (gameUi != PLAYING)
         return; // 在非战斗界面此函数无效
-    }
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%eax;"
         "movl $0x44feb0, %%ebx;"
@@ -1097,8 +987,7 @@ void AAsm::DoBackToMain()
         : ASaveAllRegister);
 }
 
-void AAsm::PickZombieWaves()
-{
+void AAsm::PickZombieWaves() {
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%edi;"
         "movl 0x768(%%edi), %%edi;"
@@ -1109,8 +998,7 @@ void AAsm::PickZombieWaves()
         : ASaveAllRegister);
 }
 
-void AAsm::PickRandomSeeds()
-{
+void AAsm::PickRandomSeeds() {
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%ebx;"
         "movl 0x774(%%ebx), %%ebx;"
@@ -1122,8 +1010,7 @@ void AAsm::PickRandomSeeds()
         : ASaveAllRegister);
 }
 
-void AAsm::PlayFoleyPitch(int idx)
-{
+void AAsm::PlayFoleyPitch(int idx) {
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%ecx;"
         "movl 0x784(%%ecx), %%ecx;"
@@ -1136,8 +1023,7 @@ void AAsm::PlayFoleyPitch(int idx)
         : ASaveAllRegister);
 }
 
-void AAsm::StopFoley(int idx)
-{
+void AAsm::StopFoley(int idx) {
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%edi;"
         "movl 0x784(%%edi), %%edi;"
@@ -1150,8 +1036,7 @@ void AAsm::StopFoley(int idx)
 }
 
 // 播放僵尸的出场音效
-void AAsm::PlayZombieAppearSound(AZombie* zombie)
-{
+void AAsm::PlayZombieAppearSound(AZombie* zombie) {
     __asm__ __volatile__(
         "movl %[zombie], %%ecx;"
         "movl $0x530640, %%eax;"
@@ -1162,8 +1047,7 @@ void AAsm::PlayZombieAppearSound(AZombie* zombie)
 }
 
 // 播放音乐
-void AAsm::PlaySample(int idx)
-{
+void AAsm::PlaySample(int idx) {
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%ecx;"
         "pushl %[idx];"
@@ -1174,8 +1058,7 @@ void AAsm::PlaySample(int idx)
         : ASaveAllRegister);
 }
 
-void AAsm::UpdateCursorObjectAndPreview()
-{
+void AAsm::UpdateCursorObjectAndPreview() {
     __asm__ __volatile__(
         // CursorObject::Update
         "movl 0x6a9ec0, %%esi;"
@@ -1195,8 +1078,7 @@ void AAsm::UpdateCursorObjectAndPreview()
         : "esi", "ebx", "edi");
 }
 
-void AAsm::RefreshAllSeedPackets()
-{
+void AAsm::RefreshAllSeedPackets() {
     __asm__ __volatile__(
         "movl 0x6a9ec0, %%esi;"
         "movl 0x768(%%esi), %%esi;"

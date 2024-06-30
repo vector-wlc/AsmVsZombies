@@ -1,10 +1,3 @@
-/*
- * @Coding: utf-8
- * @Author: vector-wlc
- * @Date: 2022-11-06 15:34:36
- * @Description:
- */
-
 #ifndef __AVZ_TYPES_H__
 #define __AVZ_TYPES_H__
 

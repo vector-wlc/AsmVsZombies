@@ -1,48 +1,25 @@
-/*
- * @Coding: utf-8
- * @Author: vector-wlc
- * @Date: 2022-11-06 15:35:57
- * @Description:
- */
-
 #ifndef __AVZ_PAINTER_H__
 #define __AVZ_PAINTER_H__
 
 #include "avz_state_hook.h"
 #include <d3d.h>
 #include <list>
+#include <memory>
 #include <unordered_map>
 #include <unordered_set>
-#include <memory>
 
 struct __AGeoVertex {
     float __x, __y, __z, __rhw;
     DWORD __color;
 
     __AGeoVertex()
-        : __x(0.0f)
-        , __y(0.0f)
-        , __z(0.0f)
-        , __rhw(0.0f)
-        , __color(0)
-    {
-    }
+        : __x(0.0f), __y(0.0f), __z(0.0f), __rhw(0.0f), __color(0) {}
+
     __AGeoVertex(float x, float y, DWORD color)
-        : __x(x)
-        , __y(y)
-        , __z(0.0f)
-        , __rhw(1.0f)
-        , __color(color)
-    {
-    }
+        : __x(x), __y(y), __z(0.0f), __rhw(1.0f), __color(color) {}
+
     __AGeoVertex(int x, int y, DWORD color)
-        : __x((float)x)
-        , __y((float)y)
-        , __z(0.0f)
-        , __rhw(1.0f)
-        , __color(color)
-    {
-    }
+        : __x((float)x), __y((float)y), __z(0.0f), __rhw(1.0f), __color(color) {}
 };
 
 struct __ATexVertex {
@@ -51,38 +28,13 @@ struct __ATexVertex {
     float __u, __v;
 
     __ATexVertex()
-        : __x(0.0f)
-        , __y(0.0f)
-        , __z(0.0f)
-        , __rhw(0.0f)
-        , __color(0)
-        , __spec(0)
-        , __u(0)
-        , __v(0)
-    {
-    }
+        : __x(0.0f), __y(0.0f), __z(0.0f), __rhw(0.0f), __color(0), __spec(0), __u(0), __v(0) {}
+
     __ATexVertex(float x, float y, DWORD color, float u, float v)
-        : __x(x)
-        , __y(y)
-        , __z(0.0f)
-        , __rhw(1.0f)
-        , __color(color)
-        , __spec(0)
-        , __u(u)
-        , __v(v)
-    {
-    }
+        : __x(x), __y(y), __z(0.0f), __rhw(1.0f), __color(color), __spec(0), __u(u), __v(v) {}
+
     __ATexVertex(int x, int y, DWORD color, float u, float v)
-        : __x((float)x)
-        , __y((float)y)
-        , __z(0.0f)
-        , __rhw(1.0f)
-        , __color(color)
-        , __spec(0)
-        , __u(u)
-        , __v(v)
-    {
-    }
+        : __x((float)x), __y((float)y), __z(0.0f), __rhw(1.0f), __color(color), __spec(0), __u(u), __v(v) {}
 };
 
 struct __AD3dInfo {
@@ -108,8 +60,7 @@ struct __ACursorInfo : public __AD3dInfo {
 // B 表示 蓝色, 数值范围为 [0, 255]
 // 其他颜色需要使用这三原色混合出来
 // 例如完全不透明的黄色就是 AArgb(0xff, 0xff, 0xff, 0);
-inline constexpr uint32_t AArgb(uint8_t a, uint8_t r, uint8_t g, uint8_t b)
-{
+inline constexpr uint32_t AArgb(uint8_t a, uint8_t r, uint8_t g, uint8_t b) {
     return uint32_t(a << 24) | uint32_t(r << 16) | uint32_t(g << 8) | uint32_t(b);
 }
 
@@ -157,13 +108,9 @@ public:
             , textVec(std::move(rhs.textVec))
             , rectColor(rhs.rectColor)
             , textColor(rhs.textColor)
-            , duration(rhs.duration)
+            , duration(rhs.duration) {}
 
-        {
-        }
-
-        DrawInfo& operator=(DrawInfo&& rhs)
-        {
+        DrawInfo& operator=(DrawInfo&& rhs) {
             this->rect = rhs.rect;
             this->textVec = std::move(rhs.textVec);
             this->rectColor = rhs.rectColor;
@@ -173,13 +120,11 @@ public:
         }
     };
 
-    __ABasicPainter()
-    {
+    __ABasicPainter() {
         GetPainterSet().insert(this);
     }
 
-    ~__ABasicPainter()
-    {
+    ~__ABasicPainter() {
         GetPainterSet().erase(this);
     }
 
@@ -201,8 +146,7 @@ public:
     bool Refresh();
     bool IsOpen3dAcceleration();
 
-    static std::unordered_set<__ABasicPainter*>& GetPainterSet()
-    {
+    static std::unordered_set<__ABasicPainter*>& GetPainterSet() {
         static std::unordered_set<__ABasicPainter*> __;
         return __;
     }
@@ -277,8 +221,7 @@ public:
     // 这个容量是为了防止内存泄露的
     // 设置的越小就会限制在屏幕中显示的数目
     // 设置的越大就越可能导致跳帧时的内存泄露
-    void SetMaxQueueSize(std::size_t size)
-    {
+    void SetMaxQueueSize(std::size_t size) {
         _maxQueueSize = size;
     }
 
@@ -288,4 +231,5 @@ protected:
     __ABasicPainter _basicPainter;
     std::size_t _maxQueueSize = 1e4;
 };
+
 #endif

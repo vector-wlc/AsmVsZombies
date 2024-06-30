@@ -1,27 +1,14 @@
-/*
- * @Author: lmintlcx, modified by yuchenxi0_0
- * @Date: 2018-06-27 21:53:24
- * @Description: Read and write memory.
- */
-
 #pragma once
-#include <cassert>
-#include <functional>
-#include <initializer_list>
-#include <iomanip>
-#include <iostream>
-#include <process.h>
-#include <sstream>
-#include <string>
 
 #include <Windows.h>
-#include <tlhelp32.h>
+#include <initializer_list>
+#include <string>
+#include <vector>
 
 class Process {
 public:
     template <typename T, typename... Args>
-    static T ReadMemory(HANDLE handle, Args... args)
-    {
+    static T ReadMemory(HANDLE handle, Args... args) {
         std::initializer_list<uintptr_t> lst = {static_cast<uintptr_t>(args)...};
         uintptr_t buff = 0;
         T result = T();

@@ -1,5 +1,3 @@
-// Copyright (c) 2024 Reisen (https://github.com/alumkal)
-
 #ifndef __ADSL_SHORTHAND__
 #define __ADSL_SHORTHAND__
 
@@ -12,8 +10,7 @@ using namespace ALiterals;
 
 class {
 public:
-    operator ATime() const
-    {
+    operator ATime() const {
         return ANowTime();
     }
 } inline constexpr now;
@@ -23,8 +20,7 @@ OnWave(1) At(341_cs) Trig(); // 把第 1 波的波长设为 601cs
 OnWave(2) At(1538_cs) Trig(true); // 强制第 2 波 在 1538cs 时激活，相当于波长 1738cs
 第 9、19、20 波的 Trig() 会被忽略
 */
-inline ATimeline Trig(bool force = false)
-{
+inline ATimeline Trig(bool force = false) {
     return [=](ATime time) {
         if (time.wave % 10 == 9 || time.wave == AGetMainObject()->TotalWave())
             return;
@@ -39,8 +35,7 @@ class ARoofCobManager : public ACobManager {
 protected:
     std::vector<int> _columns;
 
-    void _BeforeScript() override
-    {
+    void _BeforeScript() override {
         ACobManager::_BeforeScript();
         RefreshCobList();
     }
@@ -51,24 +46,20 @@ protected:
 public:
     ARoofCobManager(const std::vector<int>& columns)
         : ACobManager(PRIORITY)
-        , _columns(columns)
-    {
+        , _columns(columns) {
     }
     ARoofCobManager(std::convertible_to<int> auto... column)
         requires(sizeof...(column) > 0)
         : ACobManager(PRIORITY)
-        , _columns {column...}
-    {
+        , _columns {column...} {
     }
 
-    void SetColumns(const std::vector<int>& columns)
-    {
+    void SetColumns(const std::vector<int>& columns) {
         _columns = columns;
         RefreshCobList();
     }
 
-    void RefreshCobList()
-    {
+    void RefreshCobList() {
         std::vector<int> cobs[9];
         for (auto& plant : aAlivePlantFilter)
             if (plant.Type() == ACOB_CANNON)
@@ -86,21 +77,17 @@ public:
 /*
 RP(1, 1, 3, 9) // 发射炮尾位于 1-1 的炮，落点为 3-9
 */
-inline ATimeline RP(int cobRow, int cobCol, int row, float col)
-{
+inline ATimeline RP(int cobRow, int cobCol, int row, float col) {
     if (aFieldInfo.isRoof)
-        return At(-387_cs) Do
-        {
+        return At(-387_cs) Do {
             ACobManager::RawRoofFire(cobRow, cobCol, row, col);
         };
     else if (aFieldInfo.rowType[row] == ARowType::POOL)
-        return At(-378_cs) Do
-        {
+        return At(-378_cs) Do {
             ACobManager::RawFire(cobRow, cobCol, row, col);
         };
     else
-        return At(-373_cs) Do
-        {
+        return At(-373_cs) Do {
             ACobManager::RawFire(cobRow, cobCol, row, col);
         };
 }
@@ -119,8 +106,7 @@ P(slope, 2, 9) + P(flat, 4, 9) // 风炮炸 2-9，平炮炸 4-9
 P(slope, 2, 9, flat, 4, 9) // 同上
 */
 template <AFirePolicy policy = INSTANT_FIRE>
-inline ATimeline P(ACobManager& cm, int row, float col)
-{
+inline ATimeline P(ACobManager& cm, int row, float col) {
     std::vector<int> rows;
     for (char r : std::to_string(row)) {
         if (r < '1' || r > '0' + aFieldInfo.nRows) {
@@ -136,33 +122,28 @@ inline ATimeline P(ACobManager& cm, int row, float col)
             offset = -387;
         else
             offset = (aFieldInfo.rowType[row] == ARowType::POOL ? -378 : -373);
-        ret &= At(offset)[=, &cm]
-        {
-            if constexpr (policy == INSTANT_FIRE) {
+        ret &= At(offset)[=, &cm] {
+            if constexpr (policy == INSTANT_FIRE)
                 aFieldInfo.isRoof ? cm.RoofFire(row, col) : cm.Fire(row, col);
-            } else {
+            else
                 aFieldInfo.isRoof ? cm.RecoverRoofFire(row, col) : cm.RecoverFire(row, col);
-            }
         };
     }
     return ret;
 }
 
 template <AFirePolicy policy = INSTANT_FIRE>
-inline ATimeline P(ACobManager& cm, int row, float col, ACobManager& cm2, auto&&... args)
-{
+inline ATimeline P(ACobManager& cm, int row, float col, ACobManager& cm2, auto&&... args) {
     return P<policy>(cm, row, col) + P<policy>(cm2, std::forward<decltype(args)>(args)...);
 }
 
 template <AFirePolicy policy = INSTANT_FIRE>
-inline ATimeline P(ACobManager& cm, int row, float col, int row2, float col2, auto&&... args)
-{
+inline ATimeline P(ACobManager& cm, int row, float col, int row2, float col2, auto&&... args) {
     return P<policy>(cm, row, col) + P<policy>(cm, row2, col2, std::forward<decltype(args)>(args)...);
 }
 
 template <AFirePolicy policy = INSTANT_FIRE>
-inline ATimeline P(int row, float col, auto&&... args)
-{
+inline ATimeline P(int row, float col, auto&&... args) {
     return P<policy>(aCobManager, row, col, std::forward<decltype(args)>(args)...);
 }
 
@@ -172,8 +153,7 @@ PP() // 等效于 PP(9)
 PP<RECOVER_FIRE>() // 等效于 P<RECOVER_FIRE>(24 或 25, 9)
 */
 template <AFirePolicy policy = INSTANT_FIRE>
-inline ATimeline PP(float col = 9)
-{
+inline ATimeline PP(float col = 9) {
     return P<policy>(aFieldInfo.nRows == 5 ? 24 : 25, col);
 }
 
@@ -182,8 +162,7 @@ D<110>(1, 8.75) // 等效于 At(110) P(1, 8.75)（注意 <> 里的数值必须�
 D 支持的参数和 P 相同，但不包含 RECOVER_FIRE（指定延迟和自动发炮本身就是冲突的）
 */
 template <ATimeOffset delay = 0>
-inline ATimeline D(auto&&... args)
-{
+inline ATimeline D(auto&&... args) {
     return P(std::forward<decltype(args)>(args)...) + delay;
 }
 
@@ -191,13 +170,11 @@ inline ATimeline D(auto&&... args)
 DD<110>(8.75) // 在六行场地炸 1、5 路；在五行场地炸 1、4 路
 */
 template <ATimeOffset delay = 0>
-inline ATimeline DD(float col)
-{
+inline ATimeline DD(float col) {
     return P(aFieldInfo.nRows == 5 ? 14 : 15, col) + delay;
 }
 
-inline APlant* __CardInstant(APlantType seed, int row, float col)
-{
+inline APlant* __CardInstant(APlantType seed, int row, float col) {
     int seed_ = seed % AM_PEASHOOTER;
     if (AAsm::GetPlantRejectType(seed_, row - 1, int(col - 0.5)) == AAsm::NEEDS_POT)
         ACard(AFLOWER_POT, row, col);
@@ -206,8 +183,7 @@ inline APlant* __CardInstant(APlantType seed, int row, float col)
     return ACard(seed, row, col);
 }
 
-inline APlant* __CardInstant(APlantType seed, const std::vector<APosition>& positions)
-{
+inline APlant* __CardInstant(APlantType seed, const std::vector<APosition>& positions) {
     int seed_ = seed % AM_PEASHOOTER;
     for (auto [row, col] : positions) {
         int rejectType = AAsm::GetPlantRejectType(seed_, row - 1, int(col - 0.5));
@@ -226,37 +202,30 @@ inline APlant* __CardInstant(APlantType seed, const std::vector<APosition>& posi
 Card(ASPIKEWEED, 1, 9) // 在 1-9 种地刺
 Card 与 ACard 用法相同，但 Card 会自动补种荷叶和花盆
 */
-inline ATimeline Card(APlantType seed, int row, float col)
-{
+inline ATimeline Card(APlantType seed, int row, float col) {
     return Do { __CardInstant(seed, row, col); };
 }
 
-inline ATimeline Card(const std::vector<ACardName>& cards)
-{
-    return Do
-    {
+inline ATimeline Card(const std::vector<ACardName>& cards) {
+    return Do {
         for (auto [seed, row, col] : cards)
             __CardInstant(seed, row, col);
     };
 }
 
-inline ATimeline Card(const std::vector<APlantType>& seeds, int row, float col)
-{
+inline ATimeline Card(const std::vector<APlantType>& seeds, int row, float col) {
     std::vector<ACardName> cards;
     for (auto seed : seeds)
         cards.push_back({seed, row, col});
     return Card(cards);
 }
 
-inline ATimeline Card(APlantType seed, const std::vector<APosition>& positions)
-{
+inline ATimeline Card(APlantType seed, const std::vector<APosition>& positions) {
     return Do { __CardInstant(seed, positions); };
 }
 
-inline ATimeline Card(const std::vector<APlantType>& seeds, const std::vector<APosition>& positions)
-{
-    return Do
-    {
+inline ATimeline Card(const std::vector<APlantType>& seeds, const std::vector<APosition>& positions) {
+    return Do {
         for (auto seed : seeds)
             __CardInstant(seed, positions);
     };
@@ -266,58 +235,49 @@ inline ATimeline Card(const std::vector<APlantType>& seeds, const std::vector<AP
 Shovel(1, 9) // 铲 1-9 的普通植物
 Shovel(1, 9, APUMPKIN) // 铲 1-9 的南瓜（没有则不铲除）
 */
-inline ATimeline Shovel(int row, int col, int targetType = -1)
-{
+inline ATimeline Shovel(int row, int col, int targetType = -1) {
     return Do { AShovel(row, col, targetType); };
 }
 
-inline ATimeline Shovel(int row, int col, bool pumpkin)
-{
+inline ATimeline Shovel(int row, int col, bool pumpkin) {
     return Do { AShovel(row, col, pumpkin); };
 }
 
-inline ATimeline Shovel(const std::vector<AShovelPosition>& positions)
-{
+inline ATimeline Shovel(const std::vector<AShovelPosition>& positions) {
     return Do { AShovel(positions); };
 }
 
 /*
 A(2, 9) // 在 2-9 使用樱桃（与 Card 相比附加了 -100cs 的偏移，相当于以生效时间为基准；下同）
 */
-inline ATimeline A(int row, float col)
-{
+inline ATimeline A(int row, float col) {
     return At(-100_cs) Card(ACHERRY_BOMB, row, col);
 }
 
 /*
 J(2, 9) // 使用辣椒
 */
-inline ATimeline J(int row, float col)
-{
+inline ATimeline J(int row, float col) {
     return At(-100_cs) Card(AJALAPENO, row, col);
 }
 
 /*
 a(2, 9) // 使用窝瓜
 */
-inline ATimeline a(int row, float col)
-{
+inline ATimeline a(int row, float col) {
     return At(-182_cs) Card(ASQUASH, row, col);
 }
 
-inline ATimeline __UseMushroomDay(APlantType type, int row, float col, bool tryImitator)
-{
+inline ATimeline __UseMushroomDay(APlantType type, int row, float col, bool tryImitator) {
     APlantType imitatorType = APlantType(type + AM_PEASHOOTER);
     if (!tryImitator)
-        return At(-299_cs) Do
-        {
+        return At(-299_cs) Do {
             __CardInstant(type, row, col);
             ACard(ACOFFEE_BEAN, row, col);
             ASetPlantActiveTime(type, 299);
         };
     else
-        return At(-619_cs) Do
-        {
+        return At(-619_cs) Do {
             if (AIsSeedUsable(imitatorType)) {
                 __CardInstant(imitatorType, row, col);
                 ASetPlantActiveTime(type, 619);
@@ -327,14 +287,12 @@ inline ATimeline __UseMushroomDay(APlantType type, int row, float col, bool tryI
         };
 }
 
-inline ATimeline __UseMushroomNight(APlantType type, int row, float col, bool tryImitator)
-{
+inline ATimeline __UseMushroomNight(APlantType type, int row, float col, bool tryImitator) {
     APlantType imitatorType = APlantType(type + AM_PEASHOOTER);
     if (!tryImitator)
         return At(-100_cs) Card(type, row, col);
     else
-        return At(-420_cs) Do
-        {
+        return At(-420_cs) Do {
             if (AIsSeedUsable(imitatorType)) {
                 __CardInstant(imitatorType, row, col);
                 ASetPlantActiveTime(type, 420);
@@ -348,21 +306,18 @@ N(2, 9) // 使用毁灭菇（自动使用咖啡豆，自动校正生效时间；
 N(3, 9, true) // 优先使用模仿者卡片，其次使用原版卡片
 N({{3, 8}, {3, 9}, {4, 9}}) // 从位置列表中挑选第一个可用位置使用
 */
-inline ATimeline N(int row, float col, bool tryImitator = false)
-{
+inline ATimeline N(int row, float col, bool tryImitator = false) {
     if (aFieldInfo.isNight)
         return __UseMushroomNight(ADOOM_SHROOM, row, col, tryImitator);
     else
         return __UseMushroomDay(ADOOM_SHROOM, row, col, tryImitator);
 }
 
-inline ATimeline N(const std::vector<APosition>& positions, bool tryImitator = false)
-{
+inline ATimeline N(const std::vector<APosition>& positions, bool tryImitator = false) {
     ATimeOffset offset = aFieldInfo.isNight ? -100_cs : -299_cs;
     if (tryImitator)
         offset -= 320_cs;
-    return At(offset) Do
-    {
+    return At(offset) Do {
         for (auto [row, col] : positions) {
             if (ARangeIn(AAsm::GetPlantRejectType(ADOOM_SHROOM, row - 1, col - 1),
                     {AAsm::NIL, AAsm::NOT_ON_WATER, AAsm::NEEDS_POT})) {
@@ -378,22 +333,19 @@ I(1, 1) // 优先使用模仿者卡片，其次使用原版卡片
 I(1, 1, false) // 只尝试使用原版卡片
 I() // 仅限白天：使用 aIceFiller 中的存冰
 */
-inline ATimeline I(int row, float col, bool tryImitator = true)
-{
+inline ATimeline I(int row, float col, bool tryImitator = true) {
     if (aFieldInfo.isNight)
         return __UseMushroomNight(AICE_SHROOM, row, col, tryImitator);
     else
         return __UseMushroomDay(AICE_SHROOM, row, col, tryImitator);
 }
 
-inline ATimeline I(AIceFiller& if_ = aIceFiller)
-{
+inline ATimeline I(AIceFiller& if_ = aIceFiller) {
     if (aFieldInfo.isNight) {
         aLogger->Error("I: 需要指定放置寒冰菇的位置");
         return {};
     }
-    return At(-299_cs)[=, &if_]
-    {
+    return At(-299_cs)[=, &if_] {
         if_.Coffee();
         ASetPlantActiveTime(AICE_SHROOM, 299);
     };
@@ -413,8 +365,7 @@ protected:
     std::vector<APlantType> _seeds;
     bool _manuallyInitialized = false;
 
-    virtual void _EnterFight() override
-    {
+    virtual void _EnterFight() override {
         if (_manuallyInitialized)
             return;
         std::vector<std::pair<int, int>> candidates;
@@ -434,8 +385,7 @@ protected:
             _seeds.push_back(APlantType(seed_type));
     }
 
-    static std::vector<APosition> _ParseRow(const std::vector<APosition>& positions)
-    {
+    static std::vector<APosition> _ParseRow(const std::vector<APosition>& positions) {
         std::vector<APosition> ret;
         for (auto [row, col] : positions)
             for (char r : std::to_string(row)) {
@@ -448,8 +398,7 @@ protected:
         return ret;
     }
 
-    void _Fodder(int removalDelay, const std::vector<APosition>& positions) const
-    {
+    void _Fodder(int removalDelay, const std::vector<APosition>& positions) const {
         std::string log = "AFodder: 垫";
         for (auto [row, col] : positions)
             log += std::format(" {}-{}", row, col);
@@ -475,8 +424,7 @@ protected:
 
         if (removalDelay <= 0)
             return;
-        At(now + removalDelay) Do
-        {
+        At(now + removalDelay) Do {
             for (auto [row, col, type] : shovelTargets) {
                 if (!AGetPlantPtr(row, col, type % AM_PEASHOOTER) && !AGetPlantPtr(row, col, std::min(type, AIMITATOR + 0)))
                     continue;
@@ -496,27 +444,22 @@ public:
         template <typename Pred>
             requires(std::is_invocable_r_v<bool, Pred, AZombie*> && !std::is_same_v<std::remove_cvref_t<Pred>, Constraint>)
         Constraint(Pred&& pred)
-            : _preds {std::forward<Pred>(pred)}
-        {
+            : _preds {std::forward<Pred>(pred)} {
         }
         Constraint(AZombieType type)
-            : _preds {[=](AZombie* zombie) { return zombie->Type() == type; }}
-        {
+            : _preds {[=](AZombie* zombie) { return zombie->Type() == type; }} {
         }
 
-        Constraint& operator&=(const Constraint& rhs)
-        {
+        Constraint& operator&=(const Constraint& rhs) {
             _preds.insert(_preds.end(), rhs._preds.begin(), rhs._preds.end());
             return *this;
         }
 
-        friend Constraint operator&(Constraint lhs, const Constraint& rhs)
-        {
+        friend Constraint operator&(Constraint lhs, const Constraint& rhs) {
             return lhs &= rhs;
         }
 
-        bool operator()(AZombie* zombie) const
-        {
+        bool operator()(AZombie* zombie) const {
             for (auto& pred : _preds)
                 if (!pred(zombie))
                     return false;
@@ -533,12 +476,10 @@ public:
 
         TriggerByProxy(const AFodder* fodder, const std::vector<Constraint>& constraints)
             : _fodder(fodder)
-            , _constraints(constraints)
-        {
+            , _constraints(constraints) {
         }
 
-        std::set<int> _GetTriggeredRows() const
-        {
+        std::set<int> _GetTriggeredRows() const {
             std::set<int> triggeredRows;
             for (auto& zombie : aAliveZombieFilter) {
                 if (triggeredRows.contains(zombie.Row() + 1))
@@ -553,8 +494,7 @@ public:
         }
 
     public:
-        ATimeline operator()(int removalDelay, const std::vector<APosition>& positions) const
-        {
+        ATimeline operator()(int removalDelay, const std::vector<APosition>& positions) const {
             return [=, *this, positions = _ParseRow(positions)] {
                 std::set<int> triggeredRows = _GetTriggeredRows();
                 std::vector<APosition> triggeredPositions;
@@ -565,18 +505,15 @@ public:
             };
         }
 
-        ATimeline operator()(int removalDelay, APosition position) const
-        {
+        ATimeline operator()(int removalDelay, APosition position) const {
             return operator()(removalDelay, std::vector<APosition> {position});
         }
 
-        ATimeline operator()(int removalDelay, int row) const
-        {
+        ATimeline operator()(int removalDelay, int row) const {
             return operator()(removalDelay, {row, 9});
         }
 
-        ATimeline operator()(int removalDelay) const
-        {
+        ATimeline operator()(int removalDelay) const {
             std::vector<APosition> positions;
             for (int row = 1; row <= aFieldInfo.nRows; ++row)
                 if (aFieldInfo.rowType[row] == ARowType::LAND)
@@ -588,24 +525,20 @@ public:
     AFodder() = default;
     AFodder(const std::vector<APlantType>& seeds)
         : _seeds(seeds)
-        , _manuallyInitialized(true)
-    {
+        , _manuallyInitialized(true) {
     }
     AFodder(std::convertible_to<int> auto... seed)
         requires(sizeof...(seed) > 0)
         : _seeds {seed...}
-        , _manuallyInitialized(true)
-    {
+        , _manuallyInitialized(true) {
     }
 
-    void SetCards(const std::vector<APlantType>& seeds)
-    {
+    void SetCards(const std::vector<APlantType>& seeds) {
         _seeds = seeds;
         _manuallyInitialized = true;
     }
 
-    TriggerByProxy TriggerBy(const std::vector<Constraint>& constraints) const
-    {
+    TriggerByProxy TriggerBy(const std::vector<Constraint>& constraints) const {
         return {this, constraints};
     }
 
@@ -616,8 +549,7 @@ public:
     }
 
     // 返回 maxCd cs 之内可用的垫材数量
-    int AvailableCount(int maxCd = 0) const
-    {
+    int AvailableCount(int maxCd = 0) const {
         int cnt = 0;
         for (auto& seedType : _seeds)
             if (ASeed* seed = AGetSeedPtr(seedType))
@@ -625,23 +557,19 @@ public:
         return cnt;
     }
 
-    ATimeline operator()(int removalDelay, const std::vector<APosition>& positions) const
-    {
+    ATimeline operator()(int removalDelay, const std::vector<APosition>& positions) const {
         return [=, this, positions = _ParseRow(positions)] { _Fodder(removalDelay, positions); };
     }
 
-    ATimeline operator()(int removalDelay, APosition position) const
-    {
+    ATimeline operator()(int removalDelay, APosition position) const {
         return operator()(removalDelay, std::vector<APosition> {position});
     }
 
-    ATimeline operator()(int removalDelay, int row) const
-    {
+    ATimeline operator()(int removalDelay, int row) const {
         return operator()(removalDelay, {row, 9});
     }
 
-    ATimeline operator()(int removalDelay) const
-    {
+    ATimeline operator()(int removalDelay) const {
         std::vector<APosition> positions;
         for (int row = 1; row <= aFieldInfo.nRows; ++row)
             if (aFieldInfo.rowType[row] == ARowType::LAND)
@@ -658,15 +586,13 @@ inline const AFodder::Constraint PREV_WAVES = [](AZombie* zombie) {
     return zombie->AtWave() + 1 < ANowWave();
 };
 
-inline AFodder::Constraint WaveIn(const std::set<int>& waves)
-{
+inline AFodder::Constraint WaveIn(const std::set<int>& waves) {
     return [=](AZombie* zombie) {
         return waves.contains(zombie->AtWave() + 1 - ANowWave());
     };
 }
 
-inline AFodder::Constraint WaveIn(const std::vector<int>& waves)
-{
+inline AFodder::Constraint WaveIn(const std::vector<int>& waves) {
     return WaveIn(std::set<int>(waves.begin(), waves.end()));
 }
 
@@ -676,8 +602,7 @@ inline AFodder::Constraint WaveIn(std::convertible_to<int> auto... waves)
     return WaveIn(std::set<int> {waves...});
 }
 
-inline AFodder::Constraint AbscIn(int l, int r)
-{
+inline AFodder::Constraint AbscIn(int l, int r) {
     return [=](AZombie* zombie) {
         return l <= int(zombie->Abscissa()) && int(zombie->Abscissa()) <= r;
     };
@@ -693,7 +618,7 @@ inline void AAverageSpawn(const std::set<int>& types = {}) {
     for (int i = 0; i < aFieldInfo.nRows; ++i)
         if (aFieldInfo.rowType[i + 1] == ARowType::LAND)
             default_rows.push_back(i);
-    OnWave(1_20) [=] {
+    OnWave(1_20)[=] {
         std::vector<int> rows[33];
         int cur[33];
         for (int type = 0; type < 33; ++type) {

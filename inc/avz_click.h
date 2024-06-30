@@ -1,10 +1,3 @@
-/*
- * @Coding: utf-8
- * @Author: vector-wlc
- * @Date: 2022-11-06 15:48:38
- * @Description:
- */
-
 #ifndef __AVZ_CLICK_H__
 #define __AVZ_CLICK_H__
 
@@ -18,15 +11,12 @@ struct AShovelPosition {
     AShovelPosition(int row_, float col_, int targetType_ = -1)
         : row(row_)
         , col(col_)
-        , targetType(targetType_)
-    {
-    }
+        , targetType(targetType_) {}
+
     AShovelPosition(int row_, float col_, bool pumpkin)
         : row(row_)
         , col(col_)
-        , targetType(pumpkin ? -2 : -1)
-    {
-    }
+        , targetType(pumpkin ? -2 : -1) {}
 };
 
 // 将格子转换成坐标

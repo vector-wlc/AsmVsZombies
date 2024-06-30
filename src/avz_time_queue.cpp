@@ -1,10 +1,3 @@
-/*
- * @Coding: utf-8
- * @Author: vector-wlc
- * @Date: 2022-11-10 15:28:33
- * @Description:
- */
-
 #include "libavz.h"
 
 std::optional<int> __AOpQueueManager::_GetNextWaveCountdown() {
@@ -71,9 +64,8 @@ void __AOpQueueManager::RunOperation() {
     int nowTime = AGetMainObject()->GameClock();
     for (int wave = 0; wave <= totalWave + 1; ++wave) {
         auto& opQueue = queues[wave];
-        if (opQueue.calRefreshTime == __AOperationQueue::UNINIT) { // 本波还未到达
+        if (opQueue.calRefreshTime == __AOperationQueue::UNINIT) // 本波还未到达
             continue;
-        }
         for (auto iter = opQueue.queue.begin(); iter != opQueue.queue.end(); iter = opQueue.queue.erase(iter)) {
             int queueNowTime = nowTime - opQueue.calRefreshTime;
             if (iter->first > queueNowTime) // 时间未到达

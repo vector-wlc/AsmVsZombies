@@ -1,14 +1,8 @@
-/*
- * @Coding: utf-8
- * @Author: vector-wlc
- * @Date: 2022-11-13 15:54:19
- * @Description:
- */
 #ifndef __AVZ_GAME_CONTROLLOR_H__
 #define __AVZ_GAME_CONTROLLOR_H__
 
-#include "avz_memory.h"
 #include "avz_logger.h"
+#include "avz_memory.h"
 
 class __AGameControllor : public AOrderedExitFightHook<-1> {
 public:
@@ -19,28 +13,23 @@ public:
 
     template <typename Pre, typename CallBack>
         requires __AIsPredication<Pre> && __AIsOperation<CallBack>
-    void SkipTick(Pre&& pre, CallBack&& callback)
-    {
-        if (!_CheckSkipTick()) {
+    void SkipTick(Pre&& pre, CallBack&& callback) {
+        if (!_CheckSkipTick())
             return;
-        }
         isSkipTick = [pre = std::forward<Pre>(pre), //
                          callback = std::forward<CallBack>(callback), this]() mutable {
             auto gameUi = AGetPvzBase()->GameUi();
-            if (gameUi == 3 && pre()) {
+            if (gameUi == 3 && pre())
                 return true;
-            }
             isSkipTick = []() -> bool { return false; };
-            if (gameUi == 3) {
+            if (gameUi == 3)
                 callback();
-            }
             return false;
         };
     }
     template <typename Pre>
         requires __AIsPredication<Pre>
-    void SkipTick(Pre&& pre)
-    {
+    void SkipTick(Pre&& pre) {
         SkipTick(std::forward<Pre>(pre), [] {});
     }
     void SkipTick(int wave, int time);
@@ -60,13 +49,11 @@ public:
     // 确保能否刷新游戏主要对象
     class UpdateGameObjGuard {
     public:
-        UpdateGameObjGuard()
-        {
+        UpdateGameObjGuard() {
             _asmBackup = AMRef<uint16_t>(_UPDATE_ASM_ADDR_BEGIN);
             AMRef<uint16_t>(_UPDATE_ASM_ADDR_BEGIN) = _oriAsm;
         }
-        ~UpdateGameObjGuard()
-        {
+        ~UpdateGameObjGuard() {
             AMRef<uint16_t>(_UPDATE_ASM_ADDR_BEGIN) = _asmBackup;
         }
 
@@ -123,8 +110,7 @@ inline __AGameControllor __aGameControllor;
 //
 // ASkipTick(condition, callback);
 template <typename... Args>
-void ASkipTick(Args&&... args)
-{
+void ASkipTick(Args&&... args) {
     __aGameControllor.SkipTick(std::forward<Args>(args)...);
 }
 
@@ -137,8 +123,7 @@ void ASkipTick(Args&&... args)
 // ASetAdvancedPause(false) ------ 关闭高级暂停
 // ASetAdvancedPause(true, true) ------ 开启高级暂停，并播放相关音效
 // ASetAdvancedPause(true, AArgb(0x7f, 0, 0, 0)) ------ 开启高级暂停，并在暂停时在 pvz 顶层绘制颜色为 AArgb(0x7f, 0, 0, 0) 的全屏矩形
-inline void ASetAdvancedPause(bool isAdvancedPaused, bool isPlaySound = true, DWORD rectColor = AArgb(0x7f, 0, 0, 0))
-{
+inline void ASetAdvancedPause(bool isAdvancedPaused, bool isPlaySound = true, DWORD rectColor = AArgb(0x7f, 0, 0, 0)) {
     __aGameControllor.SetAdvancedPause(isAdvancedPaused, isPlaySound, rectColor);
 }
 
@@ -148,8 +133,8 @@ inline void ASetAdvancedPause(bool isAdvancedPaused, bool isPlaySound = true, DW
 // *** 使用示例
 // ASetUpdateWindow(true) ------ 游戏更新窗口
 // ASetUpdateWindow(false) ------ 游戏不更新窗口
-inline void ASetUpdateWindow(bool isUpdateWindow)
-{
+inline void ASetUpdateWindow(bool isUpdateWindow) {
     __aGameControllor.SetUpdateWindow(isUpdateWindow);
 }
+
 #endif

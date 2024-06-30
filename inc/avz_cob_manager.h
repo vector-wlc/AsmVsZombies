@@ -45,9 +45,7 @@ public:
 
 public:
     ACobManager(SequentialMode sequentialMode = TIME)
-        : _sequentialMode(sequentialMode)
-    {
-    }
+        : _sequentialMode(sequentialMode) {}
 
     static constexpr int NO_EXIST_RECOVER_TIME = INT_MIN;
 
@@ -91,8 +89,7 @@ public:
     // *** 使用示例：
     // SetSequentialMode(ACobManager::SPACE) ---- 设置为空间模式
     // SetSequentialMode(ACobManager::PRIORITY) ---- 设置为优先级模式
-    void SetSequentialMode(SequentialMode sequentialMode)
-    {
+    void SetSequentialMode(SequentialMode sequentialMode) {
         _sequentialMode = sequentialMode;
     }
 
@@ -176,8 +173,7 @@ public:
     // 获取炮列表
     // *** 使用示例:
     // std::vector<AGrid> lst = GetList();
-    const std::vector<AGrid>& GetList() const
-    {
+    const std::vector<AGrid>& GetList() const {
         return _gridVec;
     }
 
@@ -188,8 +184,7 @@ public:
     // 自动填充炮列表
     // *** 注意：此函数无条件将场地上的所有炮填充至此炮列表
     // 此函数已弃用，请使用 AutoSetList();
-    __ADeprecated("请使用 AutoSetList()") void AutoGetList()
-    {
+    __ADeprecated("请使用 AutoSetList()") void AutoGetList() {
         AutoSetList();
     }
 
@@ -312,8 +307,7 @@ protected:
     int _UpdateNextCob(bool isDelay = false, float dropCol = -1, bool isShowError = true);
 
     // 更新最近发炮的信息
-    void _UpdateLastestMsg(int fireTime, int index)
-    {
+    void _UpdateLastestMsg(int fireTime, int index) {
         if (_lastestMsg.isWritable) {
             _lastestMsg.fireTime = fireTime;
             _lastestMsg.vecIndex = index;

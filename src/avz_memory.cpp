@@ -1,10 +1,3 @@
-/*
- * @Coding: utf-8
- * @Author: vector-wlc
- * @Date: 2022-11-14 11:25:07
- * @Description:
- */
-
 #include "libavz.h"
 
 // 返回鼠标所在行

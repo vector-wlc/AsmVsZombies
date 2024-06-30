@@ -1,9 +1,3 @@
-/*
- * @Coding: utf-8
- * @Author: vector-wlc
- * @Date: 2022-11-06 15:33:36
- * @Description:
- */
 #ifndef __AVZ_CONNECTOR_H__
 #define __AVZ_CONNECTOR_H__
 
@@ -13,30 +7,15 @@
 class ATimeConnectHandle {
 public:
     using TimeIter = std::optional<__ATimeIter>;
-    ATimeConnectHandle(TimeIter iter, const ATime& time)
-        : _iter(iter)
-        , _time(time)
-    {
-    }
-    ATimeConnectHandle() = default;
-    ATimeConnectHandle(const ATimeConnectHandle& rhs)
-        : _iter(rhs._iter)
-        , _time(rhs._time)
-    {
-    }
 
-    ATimeConnectHandle& operator=(const ATimeConnectHandle& rhs)
-    {
-        _iter = rhs._iter;
-        _time = rhs._time;
-        return *this;
-    }
+    ATimeConnectHandle() = default;
+    ATimeConnectHandle(TimeIter iter, const ATime& time)
+        : _iter(iter), _time(time) {}
 
     void Stop();
 
-    operator bool()
-    {
-        return _iter != std::nullopt;
+    operator bool() {
+        return _iter.has_value();
     }
 
 protected:
@@ -100,29 +79,25 @@ protected:
 // }
 template <typename Op>
     requires __AIsOperation<Op>
-ATimeConnectHandle AConnect(const ATime& time, Op&& op)
-{
+ATimeConnectHandle AConnect(const ATime& time, Op&& op) {
     auto timeIter = __aOpQueueManager.Push(time, __ABoolOperation(std::forward<Op>(op)));
     return ATimeConnectHandle(timeIter, time);
 }
 
 template <typename Op>
     requires __AIsCoroutineOp<Op>
-ATimeConnectHandle AConnect(const ATime& time, Op&& op)
-{
+ATimeConnectHandle AConnect(const ATime& time, Op&& op) {
     return AConnect(time, ACoFunctor(std::forward<Op>(op)));
 }
 
 template <typename Sess>
     requires __AIsPredication<Sess>
-ATimeConnectHandle AConnect(const ATime& time, Sess&& func)
-{
+ATimeConnectHandle AConnect(const ATime& time, Sess&& func) {
     return AConnect(time, [func = std::forward<Sess>(func)]() mutable {
         auto tickRunner = std::make_shared<ATickRunner>();
         tickRunner->Start([func = std::move(func), tickRunner] {
-            if(!func()) {
-                tickRunner->Stop();
-            } }, false);
+            if(!func())
+                tickRunner->Stop(); }, false);
     });
 }
 
@@ -130,20 +105,18 @@ using AConnectHandle = ATickHandle;
 
 template <typename Pre, typename Op>
     requires __AIsPredication<Pre> && __AIsOperation<Op>
-AConnectHandle AConnect(Pre&& pre, Op&& op, int runMode = ATickRunner::ONLY_FIGHT, int priority = 0)
-{
+AConnectHandle AConnect(Pre&& pre, Op&& op, int runMode = ATickRunner::ONLY_FIGHT, int priority = 0) {
     auto func = [pre = std::forward<Pre>(pre), op = std::forward<Op>(op)]() mutable {
-        if (pre()) {
+        if (pre())
             op();
-        } };
+    };
     auto&& ret = __aig.tickManagers[runMode].Insert(std::move(func), priority);
     return AConnectHandle(ret.idx, ret.id, runMode, priority);
 }
 
 template <typename Pre, typename Op>
     requires __AIsPredication<Pre> && __AIsCoroutineOp<Op>
-AConnectHandle AConnect(Pre&& pre, Op&& op, int runMode = ATickRunner::ONLY_FIGHT, int priority = 0)
-{
+AConnectHandle AConnect(Pre&& pre, Op&& op, int runMode = ATickRunner::ONLY_FIGHT, int priority = 0) {
     return AConnect(std::forward<Pre>(pre), ACoFunctor(std::forward<Op>(op)), runMode, priority);
 }
 
@@ -155,21 +128,18 @@ public:
         REPEAT,
     };
     __AKeyManager();
-    static KeyState ToVaildKey(AKey& key);
-    static void AddKey(AKey key, AConnectHandle connectHandle)
-    {
+    static KeyState ToValidKey(AKey& key);
+    static void AddKey(AKey key, AConnectHandle connectHandle) {
         _keyMap.emplace(key, connectHandle);
     }
-    static const std::string& ToName(AKey key)
-    {
+    static const std::string& ToName(AKey key) {
         return _keyVec[key];
     }
 
 protected:
     static std::vector<std::string> _keyVec;
     static std::unordered_map<AKey, AConnectHandle> _keyMap;
-    virtual void _ExitFight() override
-    {
+    virtual void _ExitFight() override {
         _keyMap.clear();
     }
 };
@@ -178,11 +148,9 @@ inline __AKeyManager __akm; // AStateHook
 
 template <typename Op>
     requires __AIsCoOpOrOp<Op>
-AConnectHandle AConnect(AKey key, Op&& op, int priority = 0, int runMode = ATickRunner::GLOBAL)
-{
-    if (__AKeyManager::ToVaildKey(key) != __AKeyManager::VALID) {
+AConnectHandle AConnect(AKey key, Op&& op, int priority = 0, int runMode = ATickRunner::GLOBAL) {
+    if (__AKeyManager::ToValidKey(key) != __AKeyManager::VALID)
         return AConnectHandle();
-    }
     auto keyFunc = [key]() -> bool {
         auto pvzHandle = AGetPvzBase()->MRef<HWND>(0x350);
         return ((GetAsyncKeyState(key) & 0x8001) == 0x8001 && //

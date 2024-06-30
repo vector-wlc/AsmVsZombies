@@ -1,5 +1,3 @@
-// Copyright (c) 2024 Reisen (https://github.com/alumkal)
-
 #ifndef __DSL_MAIN_H__
 #define __DSL_MAIN_H__
 
@@ -30,7 +28,7 @@ public:
 };
 
 inline ASequence operator|(const ATimeline& lhs, const ATimeline& rhs) {
-    return ASequence{lhs, rhs};
+    return ASequence {lhs, rhs};
 }
 
 class AWave {

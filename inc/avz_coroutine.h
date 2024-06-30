@@ -1,20 +1,18 @@
 #ifndef __AVZ_COROUTINE_H__
 #define __AVZ_COROUTINE_H__
 
-#include <coroutine>
-#include <unordered_set>
 #include "avz_state_hook.h"
 #include "avz_time_queue.h"
+#include <coroutine>
+#include <unordered_set>
 
 class __ACoHandleManager : public AOrderedExitFightHook<-10> {
 public:
-    static void Add(std::coroutine_handle<> handle)
-    {
+    static void Add(std::coroutine_handle<> handle) {
         _handleSet.emplace(handle.address());
     }
 
-    static void Remove(std::coroutine_handle<> handle)
-    {
+    static void Remove(std::coroutine_handle<> handle) {
         _handleSet.erase(handle.address());
     }
 
@@ -27,17 +25,14 @@ class __AWait {
 public:
     __AWait() = default;
     __AWait(const ATime& time)
-        : _time(time)
-    {
-    }
+        : _time(time) {}
 
     template <typename Func>
         requires __AIsPredication<Func>
     __AWait(Func&& func)
         : _time(ATime(-1, -1))
-        , _predication(std::forward<Func>(func))
-    {
-    }
+        , _predication(std::forward<Func>(func)) {}
+
     bool await_ready() const;
     void await_resume();
     void await_suspend(std::coroutine_handle<> handle);
@@ -56,47 +51,38 @@ struct __ACoNodiscard ACoroutine {
 #undef __ACoNodiscard
     struct promise_type {
         std::shared_ptr<std::function<ACoroutine()>> ptr;
-        __AWait await_transform(int delayTime)
-        {
+        __AWait await_transform(int delayTime) {
             return ANowDelayTime(delayTime);
         }
-        __AWait await_transform(const ATime& time)
-        {
+        __AWait await_transform(const ATime& time) {
             return time;
         }
         template <typename Func>
             requires __AIsPredication<Func>
-        __AWait await_transform(Func&& func)
-        {
+        __AWait await_transform(Func&& func) {
             return std::forward<Func>(func);
         }
-        auto get_return_object()
-        {
+        auto get_return_object() {
             return ACoroutine {std::coroutine_handle<promise_type>::from_promise(*this)};
         }
-        auto initial_suspend()
-        {
+        auto initial_suspend() {
             return std::suspend_always {};
         }
-        auto final_suspend() noexcept
-        {
+        auto final_suspend() noexcept {
             return std::suspend_never {};
         }
-        void unhandled_exception() { }
-        void return_void() { }
-        ~promise_type()
-        {
+        void unhandled_exception() {}
+        void return_void() {}
+        ~promise_type() {
             aLogger->Info("协程退出");
         }
     };
 
     ACoroutine(std::coroutine_handle<promise_type> handle)
-        : _handle(handle)
-    {
+        : _handle(handle) {
     }
 
-    void SetPtr(std::shared_ptr<std::function<ACoroutine()>>& ptr)
-    {
+    void SetPtr(std::shared_ptr<std::function<ACoroutine()>>& ptr) {
         _handle.promise().ptr = ptr;
         _handle.resume();
     }
@@ -120,29 +106,24 @@ class ACoFunctor {
 public:
     template <typename Op>
         requires __AIsCoroutineOp<Op>
-    ACoFunctor(Op&& op)
-    {
+    ACoFunctor(Op&& op) {
         _functor = std::make_shared<ACoroutineOp>(std::forward<Op>(op));
     }
 
     ACoFunctor(ACoFunctor&& rhs)
-        : _functor(std::move(rhs._functor))
-    {
+        : _functor(std::move(rhs._functor)) {
     }
 
     ACoFunctor(const ACoFunctor& rhs)
-        : _functor(rhs._functor)
-    {
+        : _functor(rhs._functor) {
     }
 
-    ACoFunctor& operator=(ACoFunctor&& rhs)
-    {
+    ACoFunctor& operator=(ACoFunctor&& rhs) {
         this->_functor = std::move(rhs._functor);
         return *this;
     }
 
-    ACoFunctor& operator=(const ACoFunctor& rhs)
-    {
+    ACoFunctor& operator=(const ACoFunctor& rhs) {
         this->_functor = rhs._functor;
         return *this;
     }

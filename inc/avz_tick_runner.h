@@ -1,9 +1,3 @@
-/*
- * @Coding: utf-8
- * @Author: vector-wlc
- * @Date: 2022-11-06 15:34:05
- * @Description:
- */
 #ifndef __AVZ_TICK_RUNNER_H__
 #define __AVZ_TICK_RUNNER_H__
 

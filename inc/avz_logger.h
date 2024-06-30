@@ -1,9 +1,3 @@
-/*
- * @Coding: utf-8
- * @Author: vector-wlc
- * @Date: 2022-11-06 15:37:12
- * @Description:
- */
 #ifndef __AVZ_LOGGER_H__
 #define __AVZ_LOGGER_H__
 
@@ -23,49 +17,43 @@ enum class ALogLevel {
 
 class AAbstractLogger : public AOrderedBeforeScriptHook<-1> {
 public:
-    __ANodiscard const std::string& GetPattern() const { return _pattern; }
+    __ANodiscard const std::string& GetPattern() const {
+        return _pattern;
+    }
 
-    void SetPattern(std::string_view pattern)
-    {
+    void SetPattern(std::string_view pattern) {
         _pattern = pattern;
     }
 
-    void SetHeaderStyle(std::string_view headerStyle)
-    {
+    void SetHeaderStyle(std::string_view headerStyle) {
         _headerStyle = headerStyle;
     }
 
-    void SetLevel(const std::vector<ALogLevel>& levelVec)
-    {
+    void SetLevel(const std::vector<ALogLevel>& levelVec) {
         _level = 0;
-        for (auto&& level : levelVec) {
+        for (auto&& level : levelVec)
             _level |= (1 << int(level));
-        }
     }
 
     void SetSuffix(const std::string& suffix) { _suffix = suffix; }
 
     template <typename FormatStr, typename... Args>
-    void Info(FormatStr&& formatStr, Args&&... args)
-    {
+    void Info(FormatStr&& formatStr, Args&&... args) {
         _Format(ALogLevel::INFO, std::forward<FormatStr>(formatStr), std::forward<Args>(args)...);
     }
 
     template <typename FormatStr, typename... Args>
-    void Debug(FormatStr&& formatStr, Args&&... args)
-    {
+    void Debug(FormatStr&& formatStr, Args&&... args) {
         _Format(ALogLevel::DEBUG, std::forward<FormatStr>(formatStr), std::forward<Args>(args)...);
     }
 
     template <typename FormatStr, typename... Args>
-    void Warning(FormatStr&& formatStr, Args&&... args)
-    {
+    void Warning(FormatStr&& formatStr, Args&&... args) {
         _Format(ALogLevel::WARNING, std::forward<FormatStr>(formatStr), std::forward<Args>(args)...);
     }
 
     template <typename FormatStr, typename... Args>
-    void Error(FormatStr&& formatStr, Args&&... args)
-    {
+    void Error(FormatStr&& formatStr, Args&&... args) {
         _Format(ALogLevel::ERROR, std::forward<FormatStr>(formatStr), std::forward<Args>(args)...);
     }
 
@@ -88,11 +76,9 @@ protected:
 
     std::string _CreateHeader(ALogLevel level);
 
-    void _Format(ALogLevel level, std::string formatStr, auto&&... args)
-    {
-        if (((1 << int(level)) & _level) == 0) {
+    void _Format(ALogLevel level, std::string formatStr, auto&&... args) {
+        if (((1 << int(level)) & _level) == 0)
             return;
-        }
         auto header = _CreateHeader(level);
         _Replace(formatStr, _pattern, "{}");
         std::string message;
@@ -112,8 +98,7 @@ struct AConsole {
 struct APvzGui {
 };
 struct AMsgBox {
-    static void Show(const std::string& str)
-    {
+    static void Show(const std::string& str) {
         MessageBoxW(nullptr, AStrToWstr(str).c_str(), L"AMsgBox", MB_OK);
     }
 };
@@ -125,8 +110,7 @@ template <>
 class ALogger<AFile> : public AAbstractLogger, public AOrderedExitFightHook<-1> {
 public:
     ALogger(const std::string& fileName)
-        : _fileName(fileName)
-    {
+        : _fileName(fileName) {
     }
 
     // 清除文件中的所有内容
@@ -149,8 +133,7 @@ public:
     // 设置显示颜色
     // *** 使用示例:
     // SetColor(ALogLevel::INFO, FOREGROUND_BLUE) ------ 将 INFO 等级的显示颜色设置为蓝色
-    void SetColor(ALogLevel level, uint32_t color)
-    {
+    void SetColor(ALogLevel level, uint32_t color) {
         _color[int(level)] = color;
     }
 
@@ -172,8 +155,7 @@ public:
     // *** 使用示例:
     // SetColor(ALogLevel::INFO, AArgb(0xff, 0, 0, 0xff)) ------ 将 INFO 等级的显示颜色设置为蓝色
     // SetColor(ALogLevel::INFO, AArgb(0xff, 0, 0, 0xff), AArgb(0xff, 0, 0, 0)) ------ 将 INFO 等级的显示颜色设置为蓝色，并将背景色设置为黑色
-    void SetColor(ALogLevel level, uint32_t textColor, uint32_t bkgColor = AArgb(0xaf, 0, 0, 0))
-    {
+    void SetColor(ALogLevel level, uint32_t textColor, uint32_t bkgColor = AArgb(0xaf, 0, 0, 0)) {
         _textColors[int(level)] = textColor;
         _rectColors[int(level)] = bkgColor;
     }
@@ -181,32 +163,28 @@ public:
     // 设置背景颜色
     // *** 使用示例:
     // SetBkgColor(ALogLevel::INFO, AArgb(0xff, 0, 0, 0) ------- 将 INFO 等级的背景色设置为黑色
-    void SetBkgColor(ALogLevel level, uint32_t bkgColor)
-    {
+    void SetBkgColor(ALogLevel level, uint32_t bkgColor) {
         _rectColors[int(level)] = bkgColor;
     }
 
     // 设定显示持续时间
     // *** 使用示例:
     // SetRemainTime(100) ------- 将显示持续时间改为 100
-    void SetRemainTime(int remainTime)
-    {
+    void SetRemainTime(int remainTime) {
         _remainTime = std::clamp(remainTime, 0, INT_MAX);
     }
 
     // 设定显示持续时间
     // *** 使用示例:
     // SetPos(50, 100) ------- 将显示位置更改为 (50, 100) [最大为 800, 600]
-    void SetPos(int x, int y)
-    {
+    void SetPos(int x, int y) {
         _pixelDisplay.x = std::clamp(x, 0, 800);
         _pixelDisplay.y = std::clamp(y, 0, 600);
     }
 
     // 设置平滑过渡速度
     // 默认值为 3
-    void SetTransitSpeed(int speed)
-    {
+    void SetTransitSpeed(int speed) {
         _transitSpeed = std::clamp(speed, 1, INT_MAX);
     }
 
@@ -242,13 +220,11 @@ protected:
 inline AAbstractLogger* aLogger;
 
 // 注意这个函数返回的是对象指针
-inline AAbstractLogger* AGetInternalLogger()
-{
+inline AAbstractLogger* AGetInternalLogger() {
     return aLogger;
 }
 
-inline void ASetInternalLogger(AAbstractLogger& logger)
-{
+inline void ASetInternalLogger(AAbstractLogger& logger) {
     aLogger = &logger;
 }
 

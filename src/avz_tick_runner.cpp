@@ -1,27 +1,15 @@
-/*
- * @Coding: utf-8
- * @Author: vector-wlc
- * @Date: 2022-11-15 18:28:35
- * @Description:
- */
-#include "avz_tick_runner.h"
-#include "avz_memory.h"
-#include "avz_script.h"
+#include "libavz.h"
 
-void __ATickManager::RunQueue()
-{
+void __ATickManager::RunQueue() {
     for (auto&& pool : _priQue) {
         // 不用这种遍历如果中途新增了元素可能会访问非法内存
-        for (std::size_t idx = 0; idx < pool.Size(); ++idx) {
-            if (pool.IsAlive(idx) && pool[idx].isRunning) {
+        for (std::size_t idx = 0; idx < pool.Size(); ++idx)
+            if (pool.IsAlive(idx) && pool[idx].isRunning)
                 pool[idx].operation();
-            }
-        }
     }
 }
 
-void __ATickManager::Remove(int priority, std::size_t idx)
-{
+void __ATickManager::Remove(int priority, std::size_t idx) {
     auto&& pool = _priQue[_PriToIdx(priority)];
     if (!pool.Remove(idx)) {
         aLogger->Error("无法移除 {}", _GetInfoStr(priority, idx));
@@ -30,19 +18,15 @@ void __ATickManager::Remove(int priority, std::size_t idx)
     aLogger->Info("移除 {}", _GetInfoStr(priority, idx));
 }
 
-void __ATickManager::_BeforeScript()
-{
-    if (_runMode == ATickRunner::AFTER_INJECT) {
+void __ATickManager::_BeforeScript() {
+    if (_runMode == ATickRunner::AFTER_INJECT)
         return; // 如果是注入之后的运行帧则什么都不做
-    }
 
-    for (auto&& pool : _priQue) {
+    for (auto&& pool : _priQue)
         pool.Clear();
-    }
 }
 
-std::string __ATickManager::_GetInfoStr(int priority, std::size_t idx)
-{
+std::string __ATickManager::_GetInfoStr(int priority, std::size_t idx) {
     std::string mode;
     switch (_runMode) {
     case ATickRunner::ONLY_FIGHT:
@@ -62,8 +46,7 @@ std::string __ATickManager::_GetInfoStr(int priority, std::size_t idx)
         mode, pool.GetId(idx), idx, priority, pool.Size());
 }
 
-ATickHandle& ATickHandle::operator=(const ATickHandle& rhs)
-{
+ATickHandle& ATickHandle::operator=(const ATickHandle& rhs) {
     _idx = rhs._idx;
     _id = rhs._id;
     _runMode = rhs._runMode;
@@ -72,32 +55,25 @@ ATickHandle& ATickHandle::operator=(const ATickHandle& rhs)
     return *this;
 }
 
-bool ATickHandle::IsStopped() const noexcept
-{
-    if (_isStopped) {
+bool ATickHandle::IsStopped() const noexcept {
+    if (_isStopped)
         return true;
-    }
     return !__aig.tickManagers[_runMode].IsAlive(_priority, _idx, _id);
 }
 
-void ATickHandle::Pause() noexcept
-{
-    if (IsStopped()) {
+void ATickHandle::Pause() noexcept {
+    if (IsStopped())
         return;
-    }
     __aig.tickManagers[_runMode].At(_priority, _idx).isRunning = false;
 }
 
-bool ATickHandle::IsPaused() const noexcept
-{
-    if (IsStopped()) {
+bool ATickHandle::IsPaused() const noexcept {
+    if (IsStopped())
         return true;
-    }
     return !__aig.tickManagers[_runMode].At(_priority, _idx).isRunning;
 }
 
-void ATickHandle::GoOn() noexcept
-{
+void ATickHandle::GoOn() noexcept {
     if (IsStopped()) {
         aLogger->Error("帧运行已停止，无法继续运行");
         return;
@@ -105,13 +81,11 @@ void ATickHandle::GoOn() noexcept
     __aig.tickManagers[_runMode].At(_priority, _idx).isRunning = true;
 }
 
-void ATickHandle::Stop()
-{
+void ATickHandle::Stop() {
     // 卸载脚本行为会触发 Stop，
     // 此时不应该做任何事
-    if (__aScriptManager.willBeExit || IsStopped()) {
+    if (__aScriptManager.willBeExit || IsStopped())
         return;
-    }
     __aig.tickManagers[_runMode].Remove(_priority, _idx);
     _isStopped = true;
 }

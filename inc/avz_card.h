@@ -1,10 +1,3 @@
-/*
- * @Coding: utf-8
- * @Author: vector-wlc
- * @Date: 2022-11-06 15:40:52
- * @Description:
- */
-
 #ifndef __AVZ_CARD_H__
 #define __AVZ_CARD_H__
 
@@ -17,7 +10,7 @@ struct ACardName {
     float col;
 };
 
-class __ACardManager : public AOrderedBeforeScriptHook<-1>, //
+class __ACardManager : public AOrderedBeforeScriptHook<-1>,
                        public AOrderedEnterFightHook<-1> {
 public:
     void SelectCards(const std::vector<int>& lst, int selectInterval);

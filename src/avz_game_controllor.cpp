@@ -1,14 +1,8 @@
-/*
- * @Coding: utf-8
- * @Author: vector-wlc
- * @Date: 2022-11-13 16:04:38
- * @Description:
- */
-#include "avz_game_controllor.h"
-#include "avz_time_queue.h"
-#include "avz_asm.h"
+#include "libavz.h"
 
-static APainter rectPainter;
+namespace {
+APainter _rectPainter;
+}
 
 // 保存原本的机器码
 uint16_t __AGameControllor::_oriAsm = 0;
@@ -23,7 +17,7 @@ __AGameControllor::__AGameControllor()
     GetClientRect(AGetPvzBase()->MRef<HWND>(0x350), &rect);
     _pvzHeight = rect.bottom - rect.top;
     _pvzWidth = rect.right - rect.left;
-    rectPainter.SetRectColor(_rectColor);
+    _rectPainter.SetRectColor(_rectColor);
 }
 
 bool __AGameControllor::_CheckSkipTick()
@@ -70,7 +64,7 @@ void __AGameControllor::SetAdvancedPause(bool isAdvancedPaused, bool isPlaySound
     if (isPlaySound) {
         AAsm::PlaySample(soundIdx);
     }
-    rectPainter.SetRectColor(rectColor);
+    _rectPainter.SetRectColor(rectColor);
 }
 
 void __AGameControllor::SetUpdateWindow(bool isUpdateWindow)
@@ -80,7 +74,7 @@ void __AGameControllor::SetUpdateWindow(bool isUpdateWindow)
 
 void __AGameControllor::UpdateAdvancedPause()
 {
-    rectPainter.Draw(ARect(0, 0, _pvzWidth, _pvzHeight));
+    _rectPainter.Draw(ARect(0, 0, _pvzWidth, _pvzHeight));
     AAsm::UpdateCursorObjectAndPreview();
     AGetMainObject()->GlobalClock() -= 1;
     AGetPvzBase()->MjClock() -= 1;

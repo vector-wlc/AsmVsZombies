@@ -1,9 +1,3 @@
-/*
- * @Coding: utf-8
- * @Author: vector-wlc
- * @Date: 2022-11-16 19:24:35
- * @Description:
- */
 #include "libavz.h"
 
 AIceFiller aIceFiller;

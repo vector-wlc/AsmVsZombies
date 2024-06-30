@@ -1,34 +1,22 @@
-/*
- * @Coding: utf-8
- * @Author: vector-wlc
- * @Date: 2022-11-14 10:16:47
- * @Description:
- */
+#include "libavz.h"
 
-#include "avz_script.h"
-#include "avz_global.h"
-
-extern "C" __declspec(dllexport) void __cdecl __AScriptHook()
-{
+extern "C" __declspec(dllexport) void __cdecl __AScriptHook() {
     __aScriptManager.ScriptHook();
 }
 
-void __AInstallHook()
-{
+void __AInstallHook() {
     DWORD temp;
     VirtualProtect((void*)0x400000, 0x35E000, PAGE_EXECUTE_READWRITE, &temp);
     *(uint32_t*)0x667bc0 = (uint32_t)&__AScriptHook;
 }
 
-void __AUninstallHook()
-{
+void __AUninstallHook() {
     DWORD temp;
     VirtualProtect((void*)0x400000, 0x35E000, PAGE_EXECUTE_READWRITE, &temp);
     *(uint32_t*)0x667bc0 = 0x452650;
 }
 
-BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
-{
+BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
 
     switch (fdwReason) {
     case DLL_PROCESS_ATTACH:
@@ -41,9 +29,8 @@ BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
     case DLL_PROCESS_DETACH:
         // detach from process
         __aScriptManager.willBeExit = true;
-        for (int i = 0; !__aScriptManager.isExit && i < 50; ++i) {
+        for (int i = 0; !__aScriptManager.isExit && i < 50; ++i)
             Sleep(20);
-        }
         __AUninstallHook();
         break;
 

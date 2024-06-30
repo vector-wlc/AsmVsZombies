@@ -1,9 +1,3 @@
-/*
- * @Coding: utf-8
- * @Author: vector-wlc
- * @Date: 2022-11-09 10:45:11
- * @Description:
- */
 #ifndef __AVZ_MEMORY_H__
 #define __AVZ_MEMORY_H__
 

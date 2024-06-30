@@ -1,17 +1,12 @@
-/*
- * @Coding: utf-8
- * @Author: vector-wlc
- * @Date: 2023-03-25 10:14:38
- * @Description:
- */
 #ifndef __AVZ_REPLAY_H__
 #define __AVZ_REPLAY_H__
+
 #include "avz_tick_runner.h"
+#include <algorithm>
+#include <atomic>
+#include <map>
 #include <mutex>
 #include <thread>
-#include <atomic>
-#include <algorithm>
-#include <map>
 
 class AAbstractCompressor {
 public:
@@ -38,7 +33,7 @@ public:
     virtual bool IsWorking() = 0;
     // 压缩对象是否能够正常工作
     virtual bool IsOk() = 0;
-    virtual ~AAbstractCompressor() { }
+    virtual ~AAbstractCompressor() {}
 
 protected:
     std::string _filePath = "areplay.7z";
@@ -250,4 +245,5 @@ protected:
 };
 
 inline AReplay aReplay;
-#endif // ! __AVZ_REPLAY_H__
+
+#endif

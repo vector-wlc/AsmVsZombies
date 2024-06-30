@@ -1,64 +1,56 @@
 #include "injector.h"
+
+#include <TlHelp32.h>
 #include <Windows.h>
+#include <array>
 #include <direct.h>
 #include <filesystem>
 #include <iostream>
-#include <stdio.h>
+#include <cstdio>
 #include <string>
-#include <array>
 
-namespace stdFs = std::filesystem;
+namespace fs = std::filesystem;
 
-Process::Process()
-{
+Process::Process() {
     _selHwnd = nullptr;
     _pid = 0;
     _handle = nullptr;
 }
 
-Process::~Process()
-{
-    if (IsValid()) {
+Process::~Process() {
+    if (IsValid())
         CloseHandle(_handle);
-    }
 }
 
-BOOL CALLBACK Process::_EnumWindowsProc(HWND hwnd, LPARAM lParam)
-{
+BOOL CALLBACK Process::_EnumWindowsProc(HWND hwnd, LPARAM lParam) {
     Process* process = (Process*)lParam;
     DWORD pid;
     GetWindowThreadProcessId(hwnd, &pid);
-    if (pid == 0) {
+    if (pid == 0)
         return TRUE;
-    }
     auto handle = OpenProcess(PROCESS_ALL_ACCESS, false, pid);
 
-    if (!IsWindowVisible(hwnd)) {
+    if (!IsWindowVisible(hwnd))
         return TRUE;
-    }
 
     std::array<WCHAR, 1024> windowText;
     GetWindowTextW(hwnd, windowText.data(), (int)windowText.size());
     std::wstring title(windowText.data());
-    if (title != L"Plants vs. Zombies") {
+    if (title != L"Plants vs. Zombies")
         return TRUE;
-    }
 
     // 普通植物血量为 300, 南瓜头血量为 3000
-    if (ReadMemory<int>(handle, 0x45DC55) == 300 && ReadMemory<int>(handle, 0x45E445) == 4000) {
+    if (ReadMemory<int>(handle, 0x45DC55) == 300 && ReadMemory<int>(handle, 0x45E445) == 4000)
         process->_hwnds.push_back(hwnd);
-    }
     CloseHandle(handle);
     return TRUE;
 }
 
-void Process::_GetPvzHwnd()
-{
+void Process::_GetPvzHwnd() {
     EnumWindows(_EnumWindowsProc, (LPARAM)this);
 }
 
-void Process::_DealPvzWindow(HWND hwnd)
-{
+void Process::_DealPvzWindow(HWND hwnd) {
     HWND hForeWnd = ::GetForegroundWindow();
     DWORD dwForeID = ::GetWindowThreadProcessId(hForeWnd, NULL);
     DWORD dwCurID = ::GetCurrentThreadId();
@@ -70,8 +62,7 @@ void Process::_DealPvzWindow(HWND hwnd)
     AttachThreadInput(dwCurID, dwForeID, FALSE);
 }
 
-void Process::_SelectPvzHwnd()
-{
+void Process::_SelectPvzHwnd() {
     _selHwnd = nullptr;
     if (_hwnds.empty()) {
         wprintf(L"请打开 PvZ 或者不要把 PvZ 窗口最小化\n");
@@ -107,9 +98,8 @@ void Process::_SelectPvzHwnd()
             }
         }
 
-        if (targetHwnd == nullptr) {
+        if (targetHwnd == nullptr)
             continue;
-        }
         _DealPvzWindow(targetHwnd);
         if ((GetAsyncKeyState(VK_RBUTTON) & 0x8001) == 0x8001) {
             _selHwnd = targetHwnd;
@@ -118,26 +108,22 @@ void Process::_SelectPvzHwnd()
     }
 }
 
-bool Process::SelectWindow()
-{
-    if (IsValid()) {
+bool Process::SelectWindow() {
+    if (IsValid())
         CloseHandle(_handle);
-    }
     _GetPvzHwnd();
     _SelectPvzHwnd();
     while (_selHwnd == nullptr) {
         auto ret = MessageBoxW(NULL, L"您是否未打开游戏或者将游戏窗口最小化了? (注意必须是英文原版，steam 版也是不可以的！) \n 点击确定继续尝试注入，点击取消关闭注入", L"Warning", MB_ICONWARNING | MB_OK | MB_OKCANCEL);
-        if (ret == 2) {
+        if (ret == 2)
             return false;
-        }
         _GetPvzHwnd();
         _SelectPvzHwnd();
     }
 
     GetWindowThreadProcessId(_selHwnd, &_pid);
-    if (_pid != 0) {
+    if (_pid != 0)
         _handle = OpenProcess(PROCESS_ALL_ACCESS, false, _pid);
-    }
 
     if (ReadMemory<uint32_t>(_handle, 0x4140c5) != 0x0019b337) {
         MessageBoxW(NULL, L"您使用的游戏版本不是英文原版，请到下载安装包的链接下载 本框架 所支持的英文原版", L"Error", MB_ICONERROR);
@@ -154,20 +140,17 @@ bool Process::SelectWindow()
     return _selHwnd != nullptr;
 }
 
-void Process::_RemoveAllInjectedDll()
-{
-    for (auto&& file : stdFs::directory_iterator("./bin")) {
+void Process::_RemoveAllInjectedDll() {
+    for (auto&& file : fs::directory_iterator("./bin")) {
         auto fileName = file.path().generic_wstring();
         auto pos = fileName.find(L"libavz_inject");
-        if (pos == fileName.npos) {
+        if (pos == fileName.npos)
             continue;
-        }
         pos += 13 + 1;
         auto len = fileName.size() - 4 - pos;
         if (len <= 0 || pos >= fileName.size()
-            || fileName[pos] > '9' || fileName[pos] < '0') {
+            || fileName[pos] > '9' || fileName[pos] < '0')
             continue;
-        }
         auto pid = std::stoi(fileName.substr(pos, len));
         bool isDelete = true;
         for (auto hwnd : _hwnds) {
@@ -178,39 +161,35 @@ void Process::_RemoveAllInjectedDll()
                 break;
             }
         }
-        if (!isDelete) {
+        if (!isDelete)
             continue;
-        }
         std::error_code ec;
-        stdFs::remove(file, ec);
-        if (!ec) {
+        fs::remove(file, ec);
+        if (!ec)
             continue;
-        }
         auto handle = OpenProcess(PROCESS_ALL_ACCESS, false, pid);
         TerminateProcess(handle, 0);
         WaitForSingleObject(handle, 1e4);
         CloseHandle(handle);
-        stdFs::remove(file, ec);
-        if (ec) {
+        fs::remove(file, ec);
+        if (ec)
             wprintf(L"有后台 PvZ 进程，请使用任务管理器杀死 PvZ 进程: %d\n", pid);
-        }
     }
 }
 
-void Process::ManageDLL()
-{
+void Process::ManageDLL() {
     DWORD pid;
     GetWindowThreadProcessId(_selHwnd, &pid);
-    auto libavzInjectPath = stdFs::path(L"bin/libavz_inject_" + std::to_wstring((uintptr_t)pid) + L".dll");
+    auto libavzInjectPath = fs::path(L"bin/libavz_inject_" + std::to_wstring((uintptr_t)pid) + L".dll");
     EjectDLL(libavzInjectPath.string());
     _RemoveAllInjectedDll();
-    libavzInjectPath = stdFs::absolute(libavzInjectPath);
-    auto libavzPath = stdFs::path(L"bin/libavz.dll");
-    if (!stdFs::exists(libavzPath)) {
+    libavzInjectPath = fs::absolute(libavzInjectPath);
+    auto libavzPath = fs::path(L"bin/libavz.dll");
+    if (!fs::exists(libavzPath)) {
         MessageBoxW(NULL, L"未检测到 libavz.dll, 请检查您编写的脚本是否有语法错误？", L"Error", MB_ICONERROR);
         return;
     }
-    stdFs::rename(libavzPath, libavzInjectPath);
+    fs::rename(libavzPath, libavzInjectPath);
 
     if (!InjectDLL(libavzInjectPath.c_str())) {
         MessageBoxW(NULL, L"libavz.dll 注入失败，失败可能原因如下\n 1. 计算机开启了杀软，此行为被杀软拦截 \n 2. 脚本有语法错误，编译器无法生成动态库文件 \n 3. 本框架 项目路径需要管理员权限才可以进行文件的生成和复制", L"Error", MB_ICONERROR);
@@ -220,8 +199,7 @@ void Process::ManageDLL()
     wprintf(L"AvZ 注入成功，请到选卡界面或者战斗界面查看脚本的运行效果\n");
 }
 
-DWORD Process::EjectDLL(const std::string& dllPath)
-{
+DWORD Process::EjectDLL(const std::string& dllPath) {
     auto pos = dllPath.find_last_of("/");
     auto dllName = pos == dllPath.npos ? dllPath : dllPath.substr(pos + 1, dllPath.npos);
     const char* szDllName = dllName.c_str();
@@ -256,8 +234,7 @@ DWORD Process::EjectDLL(const std::string& dllPath)
     return TRUE;
 }
 
-DWORD Process::InjectDLL(PCWSTR pszLibFile)
-{
+DWORD Process::InjectDLL(PCWSTR pszLibFile) {
     // Calculate the number of bytes needed for the DLL's pathname
     DWORD dwSize = (lstrlenW(pszLibFile) + 1) * sizeof(wchar_t);
     if (_handle == NULL) {
@@ -290,27 +267,22 @@ DWORD Process::InjectDLL(PCWSTR pszLibFile)
     WaitForSingleObject(hThread, INFINITE);
 
     // Free the remote memory that contained the DLL's pathname and close Handles
-    if (pszLibFileRemote != NULL) {
+    if (pszLibFileRemote != NULL)
         VirtualFreeEx(_handle, pszLibFileRemote, 0, MEM_RELEASE);
-    }
 
-    if (hThread != NULL) {
+    if (hThread != NULL)
         CloseHandle(hThread);
-    }
 
     return TRUE;
 }
 
-void Process::Write(uintptr_t addr, size_t len, uint8_t* data)
-{
+void Process::Write(uintptr_t addr, size_t len, uint8_t* data) {
     WriteProcessMemory(_handle, (void*)addr, data, len, nullptr);
 }
 
-bool Process::IsValid()
-{
-    if (_handle == nullptr) {
+bool Process::IsValid() {
+    if (_handle == nullptr)
         return false;
-    }
     DWORD exit_code;
     GetExitCodeProcess(_handle, &exit_code);
     bool valid = (exit_code == STILL_ACTIVE);

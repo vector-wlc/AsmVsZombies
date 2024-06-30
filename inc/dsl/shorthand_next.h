@@ -1,5 +1,3 @@
-// Copyright (c) 2024 Reisen (https://github.com/alumkal)
-
 #ifndef __ADSL_SHORTHAND__
 #define __ADSL_SHORTHAND__
 

@@ -1,4 +1,4 @@
-#include "avz_state_hook.h"
+#include "libavz.h"
 
 #define __ADefineHookClassFuncs(HookName)                                                    \
     __APublic##HookName##Hook::__APublic##HookName##Hook(int runOrder)                       \

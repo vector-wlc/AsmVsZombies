@@ -1,9 +1,3 @@
-/*
- * @coding: utf-8
- * @Author: yuchexi0_0
- * @Date: 2020-02-06 10:22:46
- * @Description: pvz func click_scene
- */
 #ifndef __AVZ_ASM_H__
 #define __AVZ_ASM_H__
 
@@ -14,7 +8,6 @@
 
 // 使用汇编代码调用 PvZ 游戏内部的函数
 class AAsm {
-
 public:
     // key 1: left click
     // key -1: right click

@@ -1,45 +1,37 @@
-/*
- * @Coding: utf-8
- * @Author: vector-wlc
- * @Date: 2022-12-06 12:56:14
- * @Description:
- */
 #ifndef __AVZ_STATE_HOOK_H__
 #define __AVZ_STATE_HOOK_H__
 
 #include "avz_global.h"
 
-#define __ADefineHookClass(HookName)                                                    \
-    class __APublic##HookName##Hook {                                                   \
-    public:                                                                             \
-        using HookContainer = std::multimap<int, __APublic##HookName##Hook*>;           \
-        __APublic##HookName##Hook(int runOrder);                                        \
-        virtual ~__APublic##HookName##Hook();                                           \
-        void Run##HookName();                                                           \
-        static void Reset();                                                            \
-        static void RunAll();                                                           \
-                                                                                        \
-    protected:                                                                          \
-        static HookContainer& _GetHookContainer();                                      \
-        virtual void _##HookName() {};                                                  \
-        HookContainer::iterator _iter;                                                  \
-        bool _isRun = false;                                                            \
-        static bool _isRunAll;                                                          \
-    };                                                                                  \
-    template <int hookOrder>                                                            \
-    class AOrdered##HookName##Hook : protected __APublic##HookName##Hook {              \
-    public:                                                                             \
-        AOrdered##HookName##Hook()                                                      \
-            : __APublic##HookName##Hook(hookOrder)                                      \
-        {                                                                               \
-        }                                                                               \
-        static constexpr int HOOK_ORDER = hookOrder;                                    \
-    };                                                                                  \
-    using A##HookName##Hook = AOrdered##HookName##Hook<0>;                              \
-    template <int hookOrder>                                                            \
-    __APublic##HookName##Hook& AToPublicHook(AOrdered##HookName##Hook<hookOrder>& hook) \
-    {                                                                                   \
-        return *((__APublic##HookName##Hook*)(&hook));                                  \
+#define __ADefineHookClass(HookName)                                                      \
+    class __APublic##HookName##Hook {                                                     \
+    public:                                                                               \
+        using HookContainer = std::multimap<int, __APublic##HookName##Hook*>;             \
+        __APublic##HookName##Hook(int runOrder);                                          \
+        virtual ~__APublic##HookName##Hook();                                             \
+        void Run##HookName();                                                             \
+        static void Reset();                                                              \
+        static void RunAll();                                                             \
+                                                                                          \
+    protected:                                                                            \
+        static HookContainer& _GetHookContainer();                                        \
+        virtual void _##HookName() {};                                                    \
+        HookContainer::iterator _iter;                                                    \
+        bool _isRun = false;                                                              \
+        static bool _isRunAll;                                                            \
+    };                                                                                    \
+    template <int hookOrder>                                                              \
+    class AOrdered##HookName##Hook : protected __APublic##HookName##Hook {                \
+    public:                                                                               \
+        AOrdered##HookName##Hook()                                                        \
+            : __APublic##HookName##Hook(hookOrder) {                                      \
+        }                                                                                 \
+        static constexpr int HOOK_ORDER = hookOrder;                                      \
+    };                                                                                    \
+    using A##HookName##Hook = AOrdered##HookName##Hook<0>;                                \
+    template <int hookOrder>                                                              \
+    __APublic##HookName##Hook& AToPublicHook(AOrdered##HookName##Hook<hookOrder>& hook) { \
+        return *((__APublic##HookName##Hook*)(&hook));                                    \
     }
 
 // 此函数会在 本框架 基本内存信息初始化完成后且调用 void AScript() 之前运行
@@ -76,8 +68,7 @@ template <typename... Types>
 class __APublicStateHookT : public Types... {
 public:
     __APublicStateHookT(int hookOrder)
-        : Types(hookOrder)...
-    {
+        : Types(hookOrder)... {
     }
 };
 
@@ -95,15 +86,13 @@ template <int hookOrder>
 class AOrderedStateHook : protected __APublicStateHook {
 public:
     AOrderedStateHook()
-        : __APublicStateHook(hookOrder)
-    {
+        : __APublicStateHook(hookOrder) {
     }
     static constexpr int HOOK_ORDER = hookOrder;
 };
 
 template <int hookOrder>
-__APublicStateHook& AToPublicHook(AOrderedStateHook<hookOrder>& hook)
-{
+__APublicStateHook& AToPublicHook(AOrderedStateHook<hookOrder>& hook) {
     return *((__APublicStateHook*)(&hook));
 }
 

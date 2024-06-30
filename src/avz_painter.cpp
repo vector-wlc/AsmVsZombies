@@ -1,72 +1,50 @@
-/*
- * @Coding: utf-8
- * @Author: vector-wlc
- * @Date: 2022-11-09 09:56:27
- * @Description:
- */
-#include "avz_painter.h"
-#include "avz_logger.h"
-#include "avz_memory.h"
-#include "avz_game_controllor.h"
-#include "avz_tick_runner.h"
+#include "libavz.h"
 
-void APainter::SetFont(const std::string& name)
-{
+void APainter::SetFont(const std::string& name) {
     auto wstr = AStrToWstr(name);
-    if (_basicPainter.fontName == wstr) {
+    if (_basicPainter.fontName == wstr)
         return;
-    }
     _basicPainter.fontName = wstr;
     _basicPainter.ClearFont();
 }
 
 // 得到字体
-__ANodiscard std::string APainter::GetFont() const
-{
+__ANodiscard std::string APainter::GetFont() const {
     return AWStrToStr(_basicPainter.fontName);
 }
 
 // 得到字体的大小
-__ANodiscard int APainter::GetFontSize() const
-{
+__ANodiscard int APainter::GetFontSize() const {
     return _basicPainter.fontSize;
 }
 
-void APainter::SetFontSize(int size)
-{
-    if (_basicPainter.fontSize == size) {
+void APainter::SetFontSize(int size) {
+    if (_basicPainter.fontSize == size)
         return;
-    }
     _basicPainter.fontSize = size;
     _basicPainter.ClearFont();
 }
 
-void APainter::SetTextColor(DWORD color)
-{
+void APainter::SetTextColor(DWORD color) {
     _textColor = color;
 }
 
-DWORD APainter::GetRectColor() const
-{
+DWORD APainter::GetRectColor() const {
     return _rectColor;
 }
 
-void APainter::SetRectColor(DWORD color)
-{
+void APainter::SetRectColor(DWORD color) {
     _rectColor = color;
 }
 
-DWORD APainter::GetTextColor() const
-{
+DWORD APainter::GetTextColor() const {
     return _textColor;
 }
 
-void APainter::Draw(const ARect& rect, int duration)
-{
+void APainter::Draw(const ARect& rect, int duration) {
     // 跳帧模式下，绘制无效
-    if (__aGameControllor.isSkipTick()) {
+    if (__aGameControllor.isSkipTick())
         return;
-    }
 
     if (!_basicPainter.IsOpen3dAcceleration()) {
         aLogger->Warning("您尚未开启 3D 加速，无法使用绘制类");
@@ -81,27 +59,22 @@ void APainter::Draw(const ARect& rect, int duration)
     _basicPainter.drawInfoQueue.emplace_back(std::move(info));
 
     // 检测到超出阈值，直接开始删东西
-    if (_basicPainter.drawInfoQueue.size() > _maxQueueSize) {
-        for (; _basicPainter.drawInfoQueue.size() > _maxQueueSize / 2;) {
+    if (_basicPainter.drawInfoQueue.size() > _maxQueueSize)
+        for (; _basicPainter.drawInfoQueue.size() > _maxQueueSize / 2;)
             _basicPainter.drawInfoQueue.pop_front();
-        }
-    }
 }
 
-void APainter::Draw(const AText& posText, int duration)
-{
+void APainter::Draw(const AText& posText, int duration) {
     // 跳帧模式下，绘制无效
-    if (__aGameControllor.isSkipTick()) {
+    if (__aGameControllor.isSkipTick())
         return;
-    }
 
     if (!_basicPainter.IsOpen3dAcceleration()) {
         aLogger->Warning("您尚未开启 3D 加速，无法使用绘制类");
         return;
     }
-    if (posText.text.empty()) {
+    if (posText.text.empty())
         return;
-    }
     __ABasicPainter::DrawInfo info;
     std::wstring lineText;
     auto wText = AStrToWstr(posText.text);
@@ -143,27 +116,21 @@ void APainter::Draw(const AText& posText, int duration)
     _basicPainter.drawInfoQueue.emplace_back(std::move(info));
 
     // 检测到超出阈值，直接开始删东西
-    if (_basicPainter.drawInfoQueue.size() > _maxQueueSize) {
-        for (; _basicPainter.drawInfoQueue.size() > _maxQueueSize / 2;) {
+    if (_basicPainter.drawInfoQueue.size() > _maxQueueSize)
+        for (; _basicPainter.drawInfoQueue.size() > _maxQueueSize / 2;)
             _basicPainter.drawInfoQueue.pop_front();
-        }
-    }
 }
 
-void APainter::Draw(const ACursor& cursor, int duration)
-{
+void APainter::Draw(const ACursor& cursor, int duration) {
     // 跳帧模式下，绘制无效
-    if (__aGameControllor.isSkipTick()) {
+    if (__aGameControllor.isSkipTick())
         return;
-    }
     _basicPainter.cursorQueue.emplace_back(std::make_pair(cursor, duration));
 
     // 检测到超出阈值，直接开始删东西
-    if (_basicPainter.cursorQueue.size() > _maxQueueSize) {
-        for (; _basicPainter.cursorQueue.size() > _maxQueueSize / 2;) {
+    if (_basicPainter.cursorQueue.size() > _maxQueueSize)
+        for (; _basicPainter.cursorQueue.size() > _maxQueueSize / 2;)
             _basicPainter.cursorQueue.pop_front();
-        }
-    }
 }
 
 std::vector<std::vector<int>> __ABasicPainter::posDict = {
@@ -176,15 +143,13 @@ std::vector<std::vector<int>> __ABasicPainter::posDict = {
 HCURSOR __ABasicPainter::handCursor = nullptr;
 HCURSOR __ABasicPainter::arrowCursor = nullptr;
 
-void __ABasicPainter::ClearFont()
-{
+void __ABasicPainter::ClearFont() {
     DeleteObject(textInfo.HFont);
     textInfo.HFont = nullptr;
     textureDict.clear();
 }
 
-bool __ABasicPainter::IsOk()
-{
+bool __ABasicPainter::IsOk() {
     static int recordClock = 0;
     static bool isOk = false;
     int gameClock = AGetMainObject()->GlobalClock();
@@ -195,29 +160,23 @@ bool __ABasicPainter::IsOk()
     return isOk;
 }
 
-void __ABasicPainter::DrawEveryTick()
-{
+void __ABasicPainter::DrawEveryTick() {
     for (auto painter : GetPainterSet()) {
-        if (!painter->IsOk()) {
+        if (!painter->IsOk())
             return;
-        }
 
         // 绘制矩形或者文字
-        while (!painter->drawInfoQueue.empty()) {
-            if (painter->drawInfoQueue.front().duration <= 0) { // 释放已经不显示的内存
+        while (!painter->drawInfoQueue.empty())
+            if (painter->drawInfoQueue.front().duration <= 0) // 释放已经不显示的内存
                 painter->drawInfoQueue.pop_front();
-            } else {
+            else
                 break;
-            }
-        }
 
         for (auto&& info : painter->drawInfoQueue) {
-            if (info.duration <= 0) {
+            if (info.duration <= 0)
                 continue;
-            }
-            if (info.rect.width != -1) { // 需要绘制矩形
+            if (info.rect.width != -1) // 需要绘制矩形
                 painter->DrawRect(info.rect.x, info.rect.y, info.rect.width, info.rect.height, info.rectColor);
-            }
             if (!info.textVec.empty()) { // 需要绘制字符串
                 int y = info.rect.y;
                 int x = info.rect.x;
@@ -230,29 +189,24 @@ void __ABasicPainter::DrawEveryTick()
         }
 
         // 绘制鼠标
-        while (!painter->cursorQueue.empty()) {
-            if (painter->cursorQueue.front().second <= 0) { // 释放已经不显示的内存
+        while (!painter->cursorQueue.empty())
+            if (painter->cursorQueue.front().second <= 0) // 释放已经不显示的内存
                 painter->cursorQueue.pop_front();
-            } else {
+            else
                 break;
-            }
-        }
 
         for (auto&& [info, duration] : painter->cursorQueue) {
-            if (duration <= 0) {
+            if (duration <= 0)
                 continue;
-            }
             __ABasicPainter::DrawCursor(info.x, info.y, info.type);
             --duration;
         }
     }
 }
 
-void __ABasicPainter::_BeforeScript()
-{
-    if (!IsOpen3dAcceleration()) {
+void __ABasicPainter::_BeforeScript() {
+    if (!IsOpen3dAcceleration())
         return;
-    }
     // InstallDrawHook
     *(uint16_t*)0x54C8CD = 0x5890;
     *(uint32_t*)0x667D0C = (uint32_t)&AsmDraw;
@@ -260,11 +214,9 @@ void __ABasicPainter::_BeforeScript()
     *(uint32_t*)0x676968 = (uint32_t)&AsmDraw;
 }
 
-void __ABasicPainter::_ExitFight()
-{
-    if (!IsOpen3dAcceleration()) {
+void __ABasicPainter::_ExitFight() {
+    if (!IsOpen3dAcceleration())
         return;
-    }
     ClearFont();
     drawInfoQueue.clear();
     // UninstallDrawHook
@@ -274,36 +226,31 @@ void __ABasicPainter::_ExitFight()
     *(uint32_t*)0x676968 = 0x54C650;
 }
 
-void __ABasicPainter::_AfterInject()
-{
+void __ABasicPainter::_AfterInject() {
     // 获取 PvZ 鼠标的样式
     static ATickRunner tickRunner;
-    if (!tickRunner.IsStopped()) {
+    if (!tickRunner.IsStopped())
         return;
-    }
     tickRunner.Start([] {
         if (__ABasicPainter::arrowCursor && __ABasicPainter::handCursor) {
             tickRunner.Stop();
             return;
         }
-        if (!AGetPvzBase()->MouseWindow()->IsInWindow()) {
+        if (!AGetPvzBase()->MouseWindow()->IsInWindow())
             return;
-        }
         CURSORINFO cursorInfo;
         cursorInfo.cbSize = sizeof(CURSORINFO);
         GetCursorInfo(&cursorInfo);
         int cursorType = AGetPvzBase()->MRef<int>(0x4B0);
-        if (cursorType == 0) { // arrow
+        if (cursorType == 0) // arrow
             __ABasicPainter::arrowCursor = cursorInfo.hCursor;
-        } else if (cursorType == 1) { // hand
+        else if (cursorType == 1) // hand
             __ABasicPainter::handCursor = cursorInfo.hCursor;
-        }
     },
         ATickRunner::AFTER_INJECT);
 }
 
-bool __ABasicPainter::AsmDraw()
-{
+bool __ABasicPainter::AsmDraw() {
     static int __x = 0;
     __asm__ __volatile__(
         "pushal;"
@@ -339,8 +286,7 @@ bool __ABasicPainter::AsmDraw()
     return __x;
 }
 
-void __ABasicPainter::DrawRect(int x, int y, int w, int h, DWORD color)
-{
+void __ABasicPainter::DrawRect(int x, int y, int w, int h, DWORD color) {
     __AGeoVertex aVertex[4] = {
         {x, y, color},
         {x, y + h, color},
@@ -350,15 +296,13 @@ void __ABasicPainter::DrawRect(int x, int y, int w, int h, DWORD color)
     textInfo.device->DrawPrimitive(D3DPT_TRIANGLESTRIP, 68, aVertex, 4, 0);
 }
 
-void __ABasicPainter::DrawStr(const std::wstring& text, int x, int y, DWORD color)
-{
+void __ABasicPainter::DrawStr(const std::wstring& text, int x, int y, DWORD color) {
     for (auto&& ch : text) { // 绘制一行
         auto iter = textureDict.find(ch);
         if (iter == textureDict.end()) { // 将字符串存入字典
             auto info = GetTextNeedInfo();
-            if (info == nullptr) {
+            if (info == nullptr)
                 return;
-            }
             textureDict[ch] = std::make_shared<__ATexture>(ch, info);
         }
 
@@ -367,8 +311,7 @@ void __ABasicPainter::DrawStr(const std::wstring& text, int x, int y, DWORD colo
     }
 }
 
-void __ABasicPainter::DrawCursor(int x, int y, int type)
-{
+void __ABasicPainter::DrawCursor(int x, int y, int type) {
     static std::unordered_map<int, std::shared_ptr<__ATexture>> m;
     if (m[type] == nullptr) {
         __ACursorInfo cursorInfo;
@@ -383,8 +326,7 @@ void __ABasicPainter::DrawCursor(int x, int y, int type)
     m[type]->Draw(AArgb(0xff, 0xff, 0xff, 0xff), x, y);
 }
 
-__ATextInfo* __ABasicPainter::GetTextNeedInfo()
-{
+__ATextInfo* __ABasicPainter::GetTextNeedInfo() {
     if (!textInfo.HFont) {
         textInfo.HFont = CreateFontW(-fontSize, 0, 0, 0, 100, false, false, false, false, OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY, FIXED_PITCH | FF_DONTCARE, fontName.c_str());
         textInfo.fontW = fontSize * 1.1;
@@ -394,16 +336,13 @@ __ATextInfo* __ABasicPainter::GetTextNeedInfo()
     return textInfo.HFont == nullptr ? nullptr : &textInfo;
 }
 
-bool __ABasicPainter::IsOpen3dAcceleration()
-{
+bool __ABasicPainter::IsOpen3dAcceleration() {
     auto p2 = AGetPvzBase()->MPtr<APvzStruct>(0x36C);
-    if (!p2) {
+    if (!p2)
         return false;
-    }
     auto p3 = p2->MPtr<APvzStruct>(0x30);
-    if (!p3) {
+    if (!p3)
         return false;
-    }
     auto surface = p3->MPtr<IDirectDrawSurface7>(0x14);
     textInfo.device = p3->MPtr<IDirect3DDevice7>(0x20);
     textInfo.ddraw = p3->MPtr<IDirectDraw7>(0x10);
@@ -412,11 +351,9 @@ bool __ABasicPainter::IsOpen3dAcceleration()
         textInfo.ddraw != nullptr);
 }
 
-bool __ABasicPainter::Refresh()
-{
-    if (!IsOpen3dAcceleration()) {
+bool __ABasicPainter::Refresh() {
+    if (!IsOpen3dAcceleration())
         return false;
-    }
     textInfo.device->SetRenderState(D3DRENDERSTATE_SRCBLEND, D3DBLEND_SRCALPHA);
     textInfo.device->SetRenderState(D3DRENDERSTATE_DESTBLEND, D3DBLEND_INVSRCALPHA);
     textInfo.device->SetTextureStageState(0, D3DTSS_MINFILTER, D3DTFG_POINT);
@@ -437,8 +374,7 @@ __ATexture::__ATexture(wchar_t chr, __ATextInfo* _textInfo)
     , u(0)
     , v(0)
     , texture(nullptr)
-    , textInfo(_textInfo)
-{
+    , textInfo(_textInfo) {
     wchar_t str[2] = {chr, L'\0'};
     HDC hDc = CreateCompatibleDC(nullptr);
     HFONT anOldFont = (HFONT)SelectObject(hDc, textInfo->HFont);
@@ -461,9 +397,8 @@ __ATexture::__ATexture(wchar_t chr, __ATextInfo* _textInfo)
     aHeader.biCompression = BI_RGB;
     DWORD* aBits = nullptr;
     HBITMAP aBitmap = CreateDIBSection(hDc, &aBitmapInfo, DIB_RGB_COLORS, (void**)&aBits, nullptr, 0);
-    if (!aBitmap) {
+    if (!aBitmap)
         return;
-    }
     HBITMAP anOldBitmap = (HBITMAP)SelectObject(hDc, aBitmap);
     Rectangle(hDc, 0, 0, aRect.right, textInfo->fontH + 1);
     SetBkMode(hDc, TRANSPARENT);
@@ -495,18 +430,16 @@ __ATexture::__ATexture(wchar_t chr, __ATextInfo* _textInfo)
     DeleteObject(aBitmap);
 }
 
-void __ATexture::_DrawBlackBorder(DWORD* bits)
-{
+void __ATexture::_DrawBlackBorder(DWORD* bits) {
     // 左右扫描
     for (int i = 0; i < mHeight; ++i) {
         DWORD* preBit = bits;
         for (int j = 0; j < mWidth; ++j) {
             DWORD* curBit = bits + i * mWidth + j;
-            if (*preBit != 0xffffff && *curBit == 0xffffff) {
+            if (*preBit != 0xffffff && *curBit == 0xffffff)
                 *preBit = 0xff000000; // 左边
-            } else if (*preBit == 0xffffff && *curBit != 0xffffff) {
+            else if (*preBit == 0xffffff && *curBit != 0xffffff)
                 *curBit = 0xff000000; // 右边
-            }
             preBit = curBit;
         }
     }
@@ -516,18 +449,16 @@ void __ATexture::_DrawBlackBorder(DWORD* bits)
         DWORD* preBit = bits;
         for (int j = 0; j < mHeight; ++j) {
             DWORD* curBit = bits + j * mWidth + i;
-            if (*preBit != 0xffffff && *curBit == 0xffffff) {
+            if (*preBit != 0xffffff && *curBit == 0xffffff)
                 *preBit = 0xff000000; // 上边
-            } else if (*preBit == 0xffffff && *curBit != 0xffffff) {
+            else if (*preBit == 0xffffff && *curBit != 0xffffff)
                 *curBit = 0xff000000; // 下边
-            }
             preBit = curBit;
         }
     }
 }
 
-void __ATexture::_CopyBitsToSurface(DWORD* src, DDSURFACEDESC2& dst, __ACursorInfo* cursorInfo)
-{
+void __ATexture::_CopyBitsToSurface(DWORD* src, DDSURFACEDESC2& dst, __ACursorInfo* cursorInfo) {
     bool isSuccessGetPvzCursor = (cursorInfo->type == 0 && cursorInfo->hCursor != LoadCursor(NULL, IDC_ARROW))
         || (cursorInfo->type == 1 && cursorInfo->hCursor != LoadCursor(NULL, IDC_HAND));
     char* surface = (char*)dst.lpSurface;
@@ -543,13 +474,12 @@ void __ATexture::_CopyBitsToSurface(DWORD* src, DDSURFACEDESC2& dst, __ACursorIn
             DWORD* _bits = src;
             for (int j = 0; j < mWidth; ++j) {
                 auto val = *_bits++;
-                if (val == 0xffffff) {
+                if (val == 0xffffff)
                     *_dst++ = 0xffffffff;
-                } else if (val == 0) {
+                else if (val == 0)
                     *_dst++ = 0x00000000;
-                } else {
+                else
                     *_dst++ = 0xff000000;
-                }
             }
 
             src += mWidth;
@@ -559,9 +489,8 @@ void __ATexture::_CopyBitsToSurface(DWORD* src, DDSURFACEDESC2& dst, __ACursorIn
         for (int i = 0; i < mHeight; ++i) {
             DWORD* _dst = (DWORD*)surface;
             DWORD* _bits = src;
-            for (int j = 0; j < mWidth; ++j) {
+            for (int j = 0; j < mWidth; ++j)
                 *_dst++ = *_bits++;
-            }
 
             src += mWidth;
             surface += dst.lPitch;
@@ -574,8 +503,7 @@ __ATexture::__ATexture(__ACursorInfo* cursorInfo)
     , mHeight(0)
     , u(0)
     , v(0)
-    , texture(nullptr)
-{
+    , texture(nullptr) {
     mWidth = 1 + GetSystemMetrics(SM_CXCURSOR);
     mHeight = 1 + GetSystemMetrics(SM_CYCURSOR);
     HDC hDc = CreateCompatibleDC(nullptr);
@@ -591,9 +519,8 @@ __ATexture::__ATexture(__ACursorInfo* cursorInfo)
     aHeader.biCompression = BI_RGB;
     DWORD* aBits = nullptr;
     HBITMAP aBitmap = CreateDIBSection(hDc, &aBitmapInfo, DIB_RGB_COLORS, (void**)&aBits, nullptr, 0);
-    if (!aBitmap) {
+    if (!aBitmap)
         return;
-    }
     HBITMAP anOldBitmap = (HBITMAP)SelectObject(hDc, aBitmap);
     Rectangle(hDc, 0, 0, mWidth, mHeight);
     SetBkMode(hDc, TRANSPARENT);
@@ -612,15 +539,12 @@ __ATexture::__ATexture(__ACursorInfo* cursorInfo)
     DeleteObject(aBitmap);
 }
 
-__ATexture::~__ATexture()
-{
-    if (texture) {
+__ATexture::~__ATexture() {
+    if (texture)
         texture->Release();
-    }
 }
 
-void __ATexture::Draw(DWORD color, int x, int y) const
-{
+void __ATexture::Draw(DWORD color, int x, int y) const {
     __ATexVertex aVertex[4] = {
         {x, y, color, 0, 0},
         {x, y + mHeight, color, 0, v},
@@ -630,8 +554,7 @@ void __ATexture::Draw(DWORD color, int x, int y) const
     textInfo->device->DrawPrimitive(D3DPT_TRIANGLESTRIP, 452, aVertex, 4, 0);
 }
 
-IDirectDrawSurface7* __ATexture::CreateTextureSurface(int theWidth, int theHeight)
-{
+IDirectDrawSurface7* __ATexture::CreateTextureSurface(int theWidth, int theHeight) {
     textInfo->device->SetTexture(0, nullptr);
     DDSURFACEDESC2 aDesc;
     IDirectDrawSurface7* aSurface;

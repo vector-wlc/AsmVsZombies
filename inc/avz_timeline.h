@@ -12,85 +12,69 @@ struct ATimeOffset {
 
     constexpr ATimeOffset() = default;
     constexpr ATimeOffset(int time)
-        : time(time)
-    {
+        : time(time) {
     }
     constexpr ATimeOffset(int wave, int time)
         : wave(wave)
-        , time(time)
-    {
+        , time(time) {
     }
 
-    constexpr ATimeOffset operator+() const
-    {
+    constexpr ATimeOffset operator+() const {
         return *this;
     }
 
-    constexpr friend ATimeOffset operator+(ATimeOffset lhs, ATimeOffset rhs)
-    {
+    constexpr friend ATimeOffset operator+(ATimeOffset lhs, ATimeOffset rhs) {
         return {lhs.wave + rhs.wave, lhs.time + rhs.time};
     }
 
-    ATimeOffset& operator+=(ATimeOffset rhs)
-    {
+    ATimeOffset& operator+=(ATimeOffset rhs) {
         return *this = *this + rhs;
     }
 
-    constexpr ATimeOffset operator-() const
-    {
+    constexpr ATimeOffset operator-() const {
         return {-wave, -time};
     }
 
-    constexpr friend ATimeOffset operator-(ATimeOffset lhs, ATimeOffset rhs)
-    {
+    constexpr friend ATimeOffset operator-(ATimeOffset lhs, ATimeOffset rhs) {
         return {lhs.wave - rhs.wave, lhs.time - rhs.time};
     }
 
-    ATimeOffset& operator-=(ATimeOffset rhs)
-    {
+    ATimeOffset& operator-=(ATimeOffset rhs) {
         return *this = *this - rhs;
     }
 
-    constexpr friend ATimeOffset operator*(ATimeOffset offset, int n)
-    {
+    constexpr friend ATimeOffset operator*(ATimeOffset offset, int n) {
         return {offset.wave * n, offset.time * n};
     }
 
-    constexpr friend ATimeOffset operator*(int n, ATimeOffset offset)
-    {
+    constexpr friend ATimeOffset operator*(int n, ATimeOffset offset) {
         return {offset.wave * n, offset.time * n};
     }
 
-    ATimeOffset& operator*=(int n)
-    {
+    ATimeOffset& operator*=(int n) {
         return *this = *this * n;
     }
 
     auto operator<=>(const ATimeOffset&) const = default;
 };
 
-inline ATime operator+(ATime lhs, ATimeOffset rhs)
-{
+inline ATime operator+(ATime lhs, ATimeOffset rhs) {
     return ATime(lhs.wave + rhs.wave, lhs.time + rhs.time);
 }
 
-inline ATime operator+(ATimeOffset lhs, ATime rhs)
-{
+inline ATime operator+(ATimeOffset lhs, ATime rhs) {
     return ATime(lhs.wave + rhs.wave, lhs.time + rhs.time);
 }
 
-inline ATime& operator+=(ATime& lhs, ATimeOffset rhs)
-{
+inline ATime& operator+=(ATime& lhs, ATimeOffset rhs) {
     return lhs = lhs + rhs;
 }
 
-inline ATime operator-(ATime lhs, ATimeOffset rhs)
-{
+inline ATime operator-(ATime lhs, ATimeOffset rhs) {
     return ATime(lhs.wave - rhs.wave, lhs.time - rhs.time);
 }
 
-inline ATime& operator-=(ATime& lhs, ATimeOffset rhs)
-{
+inline ATime& operator-=(ATime& lhs, ATimeOffset rhs) {
     return lhs = lhs - rhs;
 }
 
@@ -98,8 +82,7 @@ namespace ALiterals {
 constexpr ATimeOffset prev_wave {-1, 0};
 constexpr ATimeOffset next_wave {1, 0};
 
-constexpr ATimeOffset operator""_cs(unsigned long long x)
-{
+constexpr ATimeOffset operator""_cs(unsigned long long x) {
     return x;
 }
 }; // namespace ALiterals
@@ -117,160 +100,129 @@ protected:
 
         Entry(ATimeOffset offset, auto&& action)
             : offset(offset)
-            , action(std::forward<decltype(action)>(action))
-        {
+            , action(std::forward<decltype(action)>(action)) {
         }
     };
 
     std::vector<Entry> _entries;
 
 public:
-    ATimeline()
-    {
+    ATimeline() {
     }
 
-    ATimeline(__AIsOperation auto&& action)
-    {
+    ATimeline(__AIsOperation auto&& action) {
         _entries.emplace_back(0, std::forward<decltype(action)>(action));
     }
 
-    ATimeline(__AIsCoroutineOp auto&& action)
-    {
+    ATimeline(__AIsCoroutineOp auto&& action) {
         _entries.emplace_back(0, ACoFunctor(std::forward<decltype(action)>(action)));
     }
 
-    ATimeline(__AIsTimelineHook auto&& hook)
-    {
+    ATimeline(__AIsTimelineHook auto&& hook) {
         _entries.emplace_back(0, std::forward<decltype(hook)>(hook));
     }
 
-    ATimeline(ATimeOffset offset, __AIsOperation auto&& action)
-    {
+    ATimeline(ATimeOffset offset, __AIsOperation auto&& action) {
         _entries.emplace_back(offset, std::forward<decltype(action)>(action));
     }
 
-    ATimeline(ATimeOffset offset, __AIsCoroutineOp auto&& action)
-    {
+    ATimeline(ATimeOffset offset, __AIsCoroutineOp auto&& action) {
         _entries.emplace_back(offset, ACoFunctor(std::forward<decltype(action)>(action)));
     }
 
-    ATimeline(ATimeOffset offset, __AIsTimelineHook auto&& hook)
-    {
+    ATimeline(ATimeOffset offset, __AIsTimelineHook auto&& hook) {
         _entries.emplace_back(offset, std::forward<decltype(hook)>(hook));
     }
 
-    ATimeline(ATimeOffset offset, const ATimeline& timeline)
-    {
+    ATimeline(ATimeOffset offset, const ATimeline& timeline) {
         _entries.reserve(timeline._entries.size());
-        for (auto&& entry : timeline._entries) {
+        for (auto&& entry : timeline._entries)
             _entries.emplace_back(offset + entry.offset, entry.action);
-        }
     }
 
-    ATimeline(ATimeOffset offset, ATimeline&& timeline)
-    {
+    ATimeline(ATimeOffset offset, ATimeline&& timeline) {
         _entries.reserve(timeline._entries.size());
-        for (auto&& entry : timeline._entries) {
+        for (auto&& entry : timeline._entries)
             _entries.emplace_back(offset + entry.offset, std::move(entry.action));
-        }
     }
 
-    ATimeline(std::initializer_list<ATimeline> timelines)
-    {
+    ATimeline(std::initializer_list<ATimeline> timelines) {
         size_t size = 0;
-        for (auto&& timeline : timelines) {
+        for (auto&& timeline : timelines)
             size += timeline._entries.size();
-        }
         _entries.reserve(size);
-        for (auto&& timeline : timelines) {
+        for (auto&& timeline : timelines)
             _entries.insert(_entries.end(), timeline._entries.begin(), timeline._entries.end());
-        }
     }
 
-    ATimeline& operator&=(const ATimeline& rhs)
-    {
+    ATimeline& operator&=(const ATimeline& rhs) {
         _entries.reserve(_entries.size() + rhs._entries.size());
         _entries.insert(_entries.end(), rhs._entries.begin(), rhs._entries.end());
         return *this;
     }
 
     __ADeprecated("请使用 & 运算符合并 ATimeline")
-    ATimeline& operator+=(const ATimeline& rhs)
-    {
+        ATimeline&
+        operator+=(const ATimeline& rhs) {
         return *this &= rhs;
     }
 
-    ATimeline Offset(ATimeOffset offset) const
-    {
+    ATimeline Offset(ATimeOffset offset) const {
         return ATimeline(offset, *this);
     }
 
-    ATimeline Offset(int wave, int time) const
-    {
+    ATimeline Offset(int wave, int time) const {
         return ATimeline(ATimeOffset(wave, time), *this);
     }
 
-    ATimeline& operator+=(ATimeOffset offset)
-    {
-        for (auto&& entry : _entries) {
+    ATimeline& operator+=(ATimeOffset offset) {
+        for (auto&& entry : _entries)
             entry.offset += offset;
-        }
         return *this;
     }
 
-    ATimeline& operator-=(ATimeOffset offset)
-    {
-        for (auto&& entry : _entries) {
+    ATimeline& operator-=(ATimeOffset offset) {
+        for (auto&& entry : _entries)
             entry.offset -= offset;
-        }
         return *this;
     }
 
-    friend std::vector<ATimeConnectHandle> AConnect(const ATime& time, const ATimeline& timeline)
-    {
+    friend std::vector<ATimeConnectHandle> AConnect(const ATime& time, const ATimeline& timeline) {
         std::vector<ATimeConnectHandle> handles;
         for (auto&& entry : timeline._entries) {
             ATime entryTime = time + entry.offset;
-            if (auto action = std::get_if<AOperation>(&entry.action)) {
+            if (auto action = std::get_if<AOperation>(&entry.action))
                 handles.push_back(AConnect(entryTime, *action));
-            } else if (auto hook = std::get_if<TimelineHook>(&entry.action)) {
+            else if (auto hook = std::get_if<TimelineHook>(&entry.action))
                 std::invoke(*hook, entryTime);
-            }
         }
         return handles;
     }
 
-    friend auto AConnect(const auto& condition, const ATimeline& timeline)
-    {
+    friend auto AConnect(const auto& condition, const ATimeline& timeline) {
         return AConnect(condition, [=] {
             AConnect(ANowTime(), timeline);
         });
     }
 };
 
-inline ATimeline operator&(const ATimeline& lhs, const ATimeline& rhs)
-{
+inline ATimeline operator&(const ATimeline& lhs, const ATimeline& rhs) {
     return {lhs, rhs};
 }
 
-__ADeprecated("请使用 & 运算符合并 ATimeline")
-inline ATimeline operator+(const ATimeline& lhs, const ATimeline& rhs)
-{
+__ADeprecated("请使用 & 运算符合并 ATimeline") inline ATimeline operator+(const ATimeline& lhs, const ATimeline& rhs) {
     return {lhs, rhs};
 }
 
-inline ATimeline operator+(const ATimeline& timeline, ATimeOffset offset)
-{
+inline ATimeline operator+(const ATimeline& timeline, ATimeOffset offset) {
     return timeline.Offset(offset);
 }
 
-inline ATimeline operator+(ATimeOffset offset, const ATimeline& timeline)
-{
+inline ATimeline operator+(ATimeOffset offset, const ATimeline& timeline) {
     return timeline.Offset(offset);
 }
 
-inline ATimeline operator-(const ATimeline& timeline, ATimeOffset offset)
-{
+inline ATimeline operator-(const ATimeline& timeline, ATimeOffset offset) {
     return timeline.Offset(-offset);
 }
 

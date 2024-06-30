@@ -1,10 +1,3 @@
-/*
- * @Coding: utf-8
- * @Author: vector-wlc
- * @Date: 2022-11-10 14:23:50
- * @Description:
- */
-
 #ifndef __AVZ_TIME_QUEUE_H__
 #define __AVZ_TIME_QUEUE_H__
 

@@ -1,14 +1,6 @@
-/*
- * @Coding: utf-8
- * @Author: vector-wlc
- * @Date: 2022-11-13 13:05:00
- * @Description:
- */
+#include "libavz.h"
 
-#include "avz_connector.h"
-
-void ATimeConnectHandle::Stop()
-{
+void ATimeConnectHandle::Stop() {
     if (_iter) {
         if (ANowTime(_time.wave) < _time.time) { // 操作尚未运行
             (*_iter)->second.isStopped = true;
@@ -21,13 +13,11 @@ void ATimeConnectHandle::Stop()
 std::vector<std::string> __AKeyManager::_keyVec;
 std::unordered_map<AKey, AConnectHandle> __AKeyManager::_keyMap;
 
-__AKeyManager::KeyState __AKeyManager::ToVaildKey(AKey& key)
-{
+__AKeyManager::KeyState __AKeyManager::ToValidKey(AKey& key) {
     KeyState keyState = VALID;
 
-    if (key >= _keyVec.size() || _keyVec[key].empty()) {
+    if (key >= _keyVec.size() || _keyVec[key].empty())
         keyState = UNKNOWN;
-    }
 
     if (keyState == UNKNOWN) {
         aLogger->Error("不允许绑定未知的按键 {}", key);
@@ -42,8 +32,7 @@ __AKeyManager::KeyState __AKeyManager::ToVaildKey(AKey& key)
     }
 }
 
-__AKeyManager::__AKeyManager()
-{
+__AKeyManager::__AKeyManager() {
     _keyVec.resize(0xFF);
 
 #define __AddKeyMap(keyName) _keyVec[keyName] = #keyName
