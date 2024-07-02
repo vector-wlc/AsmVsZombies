@@ -38,6 +38,14 @@ public:                                              \
                                                      \
 protected:
 
+#define __AImplementHash(T)                                                                \
+    template <>                                                                            \
+    struct std::hash<T> {                                                                  \
+        size_t operator()(const T& x) const {                                              \
+            return hash<std::string_view>()(std::string_view((const char*)&x, sizeof(x))); \
+        }                                                                                  \
+    };
+
 struct APosition {
     int row;
     float col;
@@ -49,6 +57,8 @@ struct APosition {
 
     auto operator<=>(const APosition&) const = default;
 };
+
+__AImplementHash(APosition)
 
 template <>
 struct std::formatter<APosition> : std::formatter<std::string> {
@@ -74,6 +84,8 @@ struct AGrid {
     }
 };
 
+__AImplementHash(AGrid)
+
 template <>
 struct std::formatter<AGrid> : std::formatter<std::string> {
     auto format(AGrid grid, auto& ctx) const {
@@ -92,6 +104,8 @@ struct ATime {
         : time(time), wave(wave) {}
 };
 
+__AImplementHash(ATime)
+
 template <>
 struct std::formatter<ATime> : std::formatter<std::string> {
     auto format(ATime t, auto& ctx) const {
@@ -100,10 +114,95 @@ struct std::formatter<ATime> : std::formatter<std::string> {
     }
 };
 
+struct ATimeOffset {
+    int wave = 0;
+    int time = 0;
+
+    constexpr ATimeOffset() = default;
+    constexpr ATimeOffset(int time)
+        : time(time) {
+    }
+    constexpr ATimeOffset(int wave, int time)
+        : wave(wave)
+        , time(time) {
+    }
+
+    constexpr ATimeOffset operator+() const {
+        return *this;
+    }
+
+    constexpr friend ATimeOffset operator+(ATimeOffset lhs, ATimeOffset rhs) {
+        return {lhs.wave + rhs.wave, lhs.time + rhs.time};
+    }
+
+    ATimeOffset& operator+=(ATimeOffset rhs) {
+        return *this = *this + rhs;
+    }
+
+    constexpr ATimeOffset operator-() const {
+        return {-wave, -time};
+    }
+
+    constexpr friend ATimeOffset operator-(ATimeOffset lhs, ATimeOffset rhs) {
+        return {lhs.wave - rhs.wave, lhs.time - rhs.time};
+    }
+
+    ATimeOffset& operator-=(ATimeOffset rhs) {
+        return *this = *this - rhs;
+    }
+
+    constexpr friend ATimeOffset operator*(ATimeOffset offset, int n) {
+        return {offset.wave * n, offset.time * n};
+    }
+
+    constexpr friend ATimeOffset operator*(int n, ATimeOffset offset) {
+        return {offset.wave * n, offset.time * n};
+    }
+
+    ATimeOffset& operator*=(int n) {
+        return *this = *this * n;
+    }
+
+    auto operator<=>(const ATimeOffset&) const = default;
+};
+
+inline ATime operator+(ATime lhs, ATimeOffset rhs) {
+    return ATime(lhs.wave + rhs.wave, lhs.time + rhs.time);
+}
+
+inline ATime operator+(ATimeOffset lhs, ATime rhs) {
+    return ATime(lhs.wave + rhs.wave, lhs.time + rhs.time);
+}
+
+inline ATime& operator+=(ATime& lhs, ATimeOffset rhs) {
+    return lhs = lhs + rhs;
+}
+
+inline ATime operator-(ATime lhs, ATimeOffset rhs) {
+    return ATime(lhs.wave - rhs.wave, lhs.time - rhs.time);
+}
+
+inline ATime& operator-=(ATime& lhs, ATimeOffset rhs) {
+    return lhs = lhs - rhs;
+}
+
+namespace ALiterals {
+constexpr ATimeOffset prev_wave {-1, 0};
+constexpr ATimeOffset next_wave {1, 0};
+
+constexpr ATimeOffset operator""_cs(unsigned long long x) {
+    return x;
+}
+}; // namespace ALiterals
+
+__AImplementHash(ATimeOffset)
+
 struct APixel {
     int x;
     int y;
 };
+
+__AImplementHash(APixel)
 
 enum class APos { // 控制文本矩形框出现在顶点的哪个方位
     RIGHT_TOP,
@@ -125,6 +224,8 @@ struct ARect {
         : x(x), y(y), width(width), height(height), pos(pos) {}
 };
 
+__AImplementHash(ARect)
+
 struct AText {
     std::string text;
     int x;
@@ -144,10 +245,13 @@ struct ACursor {
     int y;
     int type; // 0 为指针，1 为手形
     int pressType;
+
     ACursor() = default;
     explicit ACursor(int x, int y, int type = 0, int pressType = 0)
         : x(x), y(y), type(type), pressType(pressType) {}
 };
+
+__AImplementHash(ACursor)
 
 enum class AReloadMode {
     NONE,

@@ -19,7 +19,6 @@
 #include "avz_time_queue.h"
 #include "avz_timeline.h"
 
-
 inline AItemCollector aItemCollector;
 extern AIceFiller aIceFiller;
 extern APlantFixer aPlantFixer;
