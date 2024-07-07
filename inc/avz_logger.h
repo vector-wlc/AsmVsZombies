@@ -15,7 +15,7 @@ enum class ALogLevel {
     ERROR,
 };
 
-class AAbstractLogger : public AOrderedBeforeScriptHook<-1> {
+class AAbstractLogger : public AOrderedBeforeScriptHook<-32768> {
 public:
     __ANodiscard const std::string& GetPattern() const {
         return _pattern;
@@ -91,12 +91,9 @@ protected:
     }
 };
 
-struct AFile {
-};
-struct AConsole {
-};
-struct APvzGui {
-};
+struct AFile {};
+struct AConsole {};
+struct APvzGui {};
 struct AMsgBox {
     static void Show(const std::string& str) {
         MessageBoxW(nullptr, AStrToWstr(str).c_str(), L"AMsgBox", MB_OK);
@@ -107,11 +104,10 @@ template <typename T>
 class ALogger;
 
 template <>
-class ALogger<AFile> : public AAbstractLogger, public AOrderedExitFightHook<-1> {
+class ALogger<AFile> : public AAbstractLogger, public AOrderedExitFightHook<32767> {
 public:
     ALogger(const std::string& fileName)
-        : _fileName(fileName) {
-    }
+        : _fileName(fileName) {}
 
     // 清除文件中的所有内容
     // return true: 清除成功
@@ -119,6 +115,7 @@ public:
     bool Clear();
 
 protected:
+    virtual void _BeforeScript() override;
     virtual void _ExitFight() override;
     std::string _fileName;
     std::wofstream _outFile;

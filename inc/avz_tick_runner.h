@@ -1,8 +1,8 @@
 #ifndef __AVZ_TICK_RUNNER_H__
 #define __AVZ_TICK_RUNNER_H__
 
-#include "avz_logger.h"
 #include "avz_coroutine.h"
+#include "avz_logger.h"
 #include <array>
 
 struct __ATickOperation {
@@ -13,29 +13,7 @@ struct __ATickOperation {
         requires __AIsOperation<Op>
     __ATickOperation(Op&& operation)
         : operation(std::forward<Op>(operation))
-        , isRunning(true)
-    {
-    }
-
-    __ATickOperation(__ATickOperation&& rhs)
-    {
-        this->operation = std::move(rhs.operation);
-        this->isRunning = rhs.isRunning;
-    }
-
-    __ATickOperation& operator=(__ATickOperation&& rhs)
-    {
-        this->operation = std::move(rhs.operation);
-        this->isRunning = rhs.isRunning;
-        return *this;
-    }
-
-    __ATickOperation& operator=(const __ATickOperation& rhs)
-    {
-        this->operation = rhs.operation;
-        this->isRunning = rhs.isRunning;
-        return *this;
-    }
+        , isRunning(true) {}
 };
 
 // 一个非常简单的对象池
@@ -55,8 +33,7 @@ protected:
 
 public:
     template <typename... Args>
-    ObjInfo& Insert(Args&&... args)
-    {
+    ObjInfo& Insert(Args&&... args) {
         auto newIdx = _nextIdx;
         auto newId = ++__aig.objId;
         if (_nextIdx < _pool.size()) { // 直接用之前的缓存，不必开新空间
@@ -71,35 +48,28 @@ public:
         return _pool[newIdx];
     }
 
-    Obj& operator[](std::size_t idx) noexcept
-    {
+    Obj& operator[](std::size_t idx) noexcept {
         return _pool[idx].obj;
     }
 
-    const Obj& operator[](std::size_t idx) const noexcept
-    {
+    const Obj& operator[](std::size_t idx) const noexcept {
         return _pool[idx].obj;
     }
 
-    std::size_t Size() const noexcept
-    {
+    std::size_t Size() const noexcept {
         return _pool.size();
     }
 
-    bool Remove(std::size_t idx)
-    {
-        if (_isClearing) {
+    bool Remove(std::size_t idx) {
+        if (_isClearing)
             return true;
-        }
-        if (idx >= _pool.size()) {
+        if (idx >= _pool.size())
             return false;
-        }
         std::swap(_pool[idx].idx, _nextIdx);
         return true;
     }
 
-    void Clear()
-    {
+    void Clear() {
         // 这里可能会调用 Remove
         // 所以要标识 _isClearing
         _isClearing = true;
@@ -109,30 +79,25 @@ public:
     }
 
     // 仅检查 idx 处的对象是否存活
-    bool IsAlive(std::size_t idx) const noexcept
-    {
-        if (idx >= _pool.size()) {
+    bool IsAlive(std::size_t idx) const noexcept {
+        if (idx >= _pool.size())
             return false;
-        }
         return _pool[idx].idx == idx;
     }
 
     // 检查 idx 处的对象是否存活并且是否与相应的 id 匹配
-    bool IsAlive(std::size_t idx, std::size_t id) const noexcept
-    {
-        if (idx >= _pool.size()) {
+    bool IsAlive(std::size_t idx, std::size_t id) const noexcept {
+        if (idx >= _pool.size())
             return false;
-        }
         return _pool[idx].idx == idx && _pool[idx].id == id;
     }
 
-    std::size_t GetId(std::size_t idx) const noexcept
-    {
+    std::size_t GetId(std::size_t idx) const noexcept {
         return _pool[idx].id;
     }
 };
 
-class __ATickManager : public AOrderedBeforeScriptHook<INT_MIN> {
+class __ATickManager : public AOrderedBeforeScriptHook<-32768> {
 public:
     static constexpr int PRIORITY_SIZE = 41;
     using TickObjPool = __AObjectPool<__ATickOperation>;
@@ -142,8 +107,7 @@ public:
 
     template <typename Op>
         requires __AIsOperation<Op>
-    TickObjPool::ObjInfo& Insert(Op&& op, int priority)
-    {
+    TickObjPool::ObjInfo& Insert(Op&& op, int priority) {
         auto&& pool = _priQue[_PriToIdx(priority)];
         auto&& ret = pool.Insert(std::forward<Op>(op));
         aLogger->Info("增加 {}", _GetInfoStr(priority, ret.idx));
@@ -152,8 +116,7 @@ public:
 
     template <typename Op>
         requires __AIsCoroutineOp<Op>
-    TickObjPool::ObjInfo& Insert(Op&& op, int priority)
-    {
+    TickObjPool::ObjInfo& Insert(Op&& op, int priority) {
         return this->Insert(ACoFunctor(std::forward<Op>(op)), priority);
     }
 
@@ -164,8 +127,7 @@ public:
 
 protected:
     virtual void _BeforeScript() override;
-    static int _PriToIdx(int priority)
-    {
+    static int _PriToIdx(int priority) {
         return priority + PRIORITY_SIZE / 2;
     }
     std::string _GetInfoStr(int priority, std::size_t idx);
@@ -181,37 +143,27 @@ public:
         , _id(id)
         , _runMode(runMode)
         , _priority(priority)
-        , _isStopped(false)
-    {
-    }
+        , _isStopped(false) {}
 
     ATickHandle(const ATickHandle& rhs)
         : _idx(rhs._idx)
         , _id(rhs._id)
         , _runMode(rhs._runMode)
         , _priority(rhs._priority)
-        , _isStopped(rhs._isStopped)
-    {
-    }
+        , _isStopped(rhs._isStopped) {}
 
     ATickHandle& operator=(const ATickHandle& rhs);
 
     bool IsStopped() const noexcept;
-
     void Pause() noexcept;
-
     bool IsPaused() const noexcept;
-
     void GoOn() noexcept;
-
     void Stop();
 
-    __ADeprecated("请使用 IsStopped()") bool isStopped() const noexcept
-    {
+    __ADeprecated("请使用 IsStopped()") bool isStopped() const noexcept {
         return IsStopped();
     }
-    __ADeprecated("请使用 IsPaused()") bool isPaused() const noexcept
-    {
+    __ADeprecated("请使用 IsPaused()") bool isPaused() const noexcept {
         return IsPaused();
     }
 
@@ -239,8 +191,7 @@ public:
 
     template <typename Op>
         requires __AIsCoOpOrOp<Op>
-    explicit ATickRunnerWithNoStart(Op&& op, int runMode = ONLY_FIGHT, int priority = 0)
-    {
+    explicit ATickRunnerWithNoStart(Op&& op, int runMode = ONLY_FIGHT, int priority = 0) {
         _Start(std::forward<Op>(op), runMode, priority);
     }
 
@@ -250,8 +201,7 @@ protected:
     // 运行方式为 true 时, 在选卡界面和高级暂停时都生效, 反之不生效
     template <typename Op>
         requires __AIsCoOpOrOp<Op>
-    void _Start(Op&& operation, int runMode = ONLY_FIGHT, int priority = 0)
-    {
+    void _Start(Op&& operation, int runMode = ONLY_FIGHT, int priority = 0) {
         constexpr auto PRI_MAX = __ATickManager::PRIORITY_SIZE / 2;
         if (_priority < -PRI_MAX || _priority > PRI_MAX) {
             aLogger->Error("优先级设置范围为 [{}, {}], 您设置的优先级数值为 {}, 已溢出", -PRI_MAX, PRI_MAX, priority);
@@ -270,22 +220,19 @@ class ATickRunner : public ATickRunnerWithNoStart {
     __ADeleteCopyAndMove(ATickRunner);
 
 public:
-    ATickRunner()
-    {
+    ATickRunner() {
         _isStopped = true;
     }
 
     template <typename Op>
         requires __AIsCoOpOrOp<Op>
-    explicit ATickRunner(Op&& op, int runMode = ONLY_FIGHT, int priority = 0)
-    {
+    explicit ATickRunner(Op&& op, int runMode = ONLY_FIGHT, int priority = 0) {
         _Start(std::forward<Op>(op), runMode, priority);
     }
 
     template <typename Op>
         requires __AIsCoOpOrOp<Op>
-    void Start(Op&& op, int runMode = ONLY_FIGHT, int priority = 0)
-    {
+    void Start(Op&& op, int runMode = ONLY_FIGHT, int priority = 0) {
         if (!IsStopped()) {
             aLogger->Error("ATickRunner 不允许同时运行两个操作");
             return;

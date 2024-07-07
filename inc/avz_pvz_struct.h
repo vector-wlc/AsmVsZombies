@@ -379,6 +379,10 @@ public:
     __ANodiscard int& LoadDataState() noexcept {
         return MRef<int>(0x5604);
     }
+    
+    __ANodiscard int& CompletedRounds() noexcept {
+        return MPtr(0x160)->MRef<int>(0x6c);
+    }
 };
 
 // 植物内存属性

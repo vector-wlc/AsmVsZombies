@@ -2,7 +2,7 @@
 
 void AAbstractLogger::_BeforeScript() {
     _pattern = "#";
-    _headerStyle = "[#wave, #time][#level] ";
+    _headerStyle = "[{wave}, {time}][{level}] ";
 }
 
 void AAbstractLogger::_Replace(std::string& content, std::string_view pattern, std::string_view replaceStr) {
@@ -21,13 +21,27 @@ void AAbstractLogger::_Replace(std::string& content, std::string_view pattern, s
 std::string AAbstractLogger::_CreateHeader(ALogLevel level) {
     std::string headerFormat = _headerStyle;
     _Replace(headerFormat, _pattern + "wave", "{0}");
+    _Replace(headerFormat, "{wave", "{0");
     _Replace(headerFormat, _pattern + "time", "{1}");
+    _Replace(headerFormat, "{time", "{1");
     _Replace(headerFormat, _pattern + "level", "{2}");
-    auto now = ANowTime(false);
-    return std::vformat(headerFormat, std::make_format_args(now.wave, now.time, _levelStr[int(level)]));
+    _Replace(headerFormat, "{level", "{2");
+    _Replace(headerFormat, _pattern + "flag", "{3}");
+    _Replace(headerFormat, "{flag", "{3");
+    ATime now = ANowTime(false);
+    int flag = AGetMainObject() ? AGetMainObject()->CompletedRounds() * 2 : 0;
+    return std::vformat(headerFormat, std::make_format_args(now.wave, now.time, _levelStr[int(level)], flag));
 }
 
 void ALogger<AFile>::_Output(ALogLevel level, std::string&& str) {
+    if (_outFile.good()) {
+        _outFile << AStrToWstr(str);
+        _outFile.flush();
+    }
+}
+
+void ALogger<AFile>::_BeforeScript() {
+    AAbstractLogger::_BeforeScript();
     if (!_outFile.is_open()) {
         _outFile.open(_fileName, std::ios::out | std::ios::app);
         if (!_outFile.good() && aLogger != this) {
@@ -35,10 +49,6 @@ void ALogger<AFile>::_Output(ALogLevel level, std::string&& str) {
             return;
         }
         _outFile.imbue(std::locale(""));
-    }
-    if (_outFile.good()) {
-        _outFile << AStrToWstr(str);
-        _outFile.flush();
     }
 }
 
@@ -118,10 +128,7 @@ void ALogger<APvzGui>::_BeforeScript() {
     _curBottom = 0;
     _displayList.clear();
     _lastTick = INT_MIN;
-    _tickRunner = std::make_shared<ATickRunner>([this] {
-        this->_ShowTick();
-    },
-        ATickRunner::GLOBAL);
+    _tickRunner = std::make_shared<ATickRunner>([this] { this->_ShowTick(); }, ATickRunner::GLOBAL);
 }
 
 void ALogger<AMsgBox>::_Output(ALogLevel level, std::string&& str) {

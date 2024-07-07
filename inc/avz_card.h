@@ -121,11 +121,14 @@ std::vector<APlant*> ACard(const std::vector<ACardName>& lst);
 APlant* ACard(int seedIndex, int row, float col);
 APlant* ACard(int seedIndex, const std::vector<APosition>& lst);
 APlant* ACard(int seedIndex, const std::vector<AGrid>& lst);
+APlant* ACard(int seedIndex, const std::initializer_list<AGrid>& lst);
 APlant* ACard(APlantType plantType, int row, float col);
 APlant* ACard(APlantType plantType, const std::vector<APosition>& lst);
 APlant* ACard(APlantType plantType, const std::vector<AGrid>& lst);
+APlant* ACard(APlantType plantType, const std::initializer_list<AGrid>& lst);
 std::vector<APlant*> ACard(const std::vector<APlantType>& plantTypeVec, int row, float col);
 std::vector<APlant*> ACard(const std::vector<APlantType>& plantTypeVec, const std::vector<APosition>& lst);
 std::vector<APlant*> ACard(const std::vector<APlantType>& plantTypeVec, const std::vector<AGrid>& lst);
+std::vector<APlant*> ACard(const std::vector<APlantType>& plantTypeVec, const std::initializer_list<AGrid>& lst);
 
 #endif

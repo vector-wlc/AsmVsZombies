@@ -1,11 +1,11 @@
 #ifndef __AVZ_TIME_QUEUE_H__
 #define __AVZ_TIME_QUEUE_H__
 
-#include <map>
-#include <optional>
 #include "avz_global.h"
 #include "avz_logger.h"
 #include "avz_memory.h"
+#include <map>
+#include <optional>
 
 struct __ABoolOperation {
     AOperation operation;
@@ -23,12 +23,7 @@ struct __ATimeOperation {
     ATime time;
 
     __ATimeOperation(AOperation&& operation, const ATime& time)
-        : operation(std::move(operation)), time(time) {
-    }
-
-    __ATimeOperation(__ATimeOperation&& rhs)
-        : operation(std::move(rhs.operation)), time(rhs.time) {
-    }
+        : operation(std::move(operation)), time(time) {}
 };
 
 class __AOperationQueue {
@@ -36,18 +31,18 @@ public:
     using RunOrderQueue = std::multimap<int, __ABoolOperation>;
     constexpr static int UNINIT = INT_MIN;
     RunOrderQueue queue;
-    int calRefreshTime = UNINIT;  // 计算得到的刷新时间，操作队列都用此时间
-    int memRefreshTime = UNINIT;  // 通过读内存得到的真实刷新时间，用于检查用户设定的波长是否正确
+    int calRefreshTime = UNINIT; // 计算得到的刷新时间，操作队列都用此时间
+    int memRefreshTime = UNINIT; // 通过读内存得到的真实刷新时间，用于检查用户设定的波长是否正确
     int waveLength = -1;
 };
 
 using __ATimeIter = __AOperationQueue::RunOrderQueue::iterator;
 
-class __AOpQueueManager : public AOrderedBeforeScriptHook<INT_MIN>,  //
-                          public AOrderedEnterFightHook<INT_MIN> {
+class __AOpQueueManager : public AOrderedBeforeScriptHook<-32768>,
+                          public AOrderedEnterFightHook<-32768> {
 public:
     std::vector<__AOperationQueue> queues;
-    ATime startTime;  // 脚本设定的开始时间
+    ATime startTime; // 脚本设定的开始时间
     int totalWave;
     std::optional<__ATimeIter> Push(const ATime& time, __ABoolOperation&& timeOp);
     void UpdateRefreshTime();

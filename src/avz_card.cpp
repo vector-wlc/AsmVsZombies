@@ -361,6 +361,10 @@ APlant* ACard(int seedIndex, const std::vector<AGrid>& lst) {
     return __aCardManager.Card(seedIndex, __AVecGridToVecPosition(lst));
 }
 
+APlant* ACard(int seedIndex, const std::initializer_list<AGrid>& lst) {
+    return __aCardManager.Card(seedIndex, __AVecGridToVecPosition(lst));
+}
+
 APlant* ACard(APlantType plantType, int row, float col) {
     return __aCardManager.Card(plantType, row, col);
 }
@@ -370,6 +374,10 @@ APlant* ACard(APlantType plantType, const std::vector<APosition>& lst) {
 }
 
 APlant* ACard(APlantType plantType, const std::vector<AGrid>& lst) {
+    return __aCardManager.Card(plantType, __AVecGridToVecPosition(lst));
+}
+
+APlant* ACard(APlantType plantType, const std::initializer_list<AGrid>& lst) {
     return __aCardManager.Card(plantType, __AVecGridToVecPosition(lst));
 }
 
@@ -395,5 +403,9 @@ std::vector<APlant*> ACard(const std::vector<APlantType>& plantTypeVec, const st
 }
 
 std::vector<APlant*> ACard(const std::vector<APlantType>& plantTypeVec, const std::vector<AGrid>& lst) {
+    return ACard(plantTypeVec, __AVecGridToVecPosition(lst));
+}
+
+std::vector<APlant*> ACard(const std::vector<APlantType>& plantTypeVec, const std::initializer_list<AGrid>& lst) {
     return ACard(plantTypeVec, __AVecGridToVecPosition(lst));
 }

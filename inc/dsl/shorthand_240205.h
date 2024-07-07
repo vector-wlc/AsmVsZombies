@@ -134,12 +134,12 @@ inline ATimeline P(ACobManager& cm, int row, float col) {
 
 template <AFirePolicy policy = INSTANT_FIRE>
 inline ATimeline P(ACobManager& cm, int row, float col, ACobManager& cm2, auto&&... args) {
-    return P<policy>(cm, row, col) + P<policy>(cm2, std::forward<decltype(args)>(args)...);
+    return P<policy>(cm, row, col) & P<policy>(cm2, std::forward<decltype(args)>(args)...);
 }
 
 template <AFirePolicy policy = INSTANT_FIRE>
 inline ATimeline P(ACobManager& cm, int row, float col, int row2, float col2, auto&&... args) {
-    return P<policy>(cm, row, col) + P<policy>(cm, row2, col2, std::forward<decltype(args)>(args)...);
+    return P<policy>(cm, row, col) & P<policy>(cm, row2, col2, std::forward<decltype(args)>(args)...);
 }
 
 template <AFirePolicy policy = INSTANT_FIRE>

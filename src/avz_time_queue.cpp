@@ -30,7 +30,7 @@ void __AOpQueueManager::_RecordRefresh(int wave, int refreshTime) {
     if (queues[wave].memRefreshTime == refreshTime)
         return;
     queues[wave].memRefreshTime = queues[wave].calRefreshTime = refreshTime;
-    if (wave > 1) {
+    if (wave > 1 && queues[wave - 1].memRefreshTime != __AOperationQueue::UNINIT) {
         int waveLength = queues[wave].memRefreshTime - queues[wave - 1].memRefreshTime;
         queues[wave - 1].waveLength = waveLength;
         aLogger->Info("下一波即将刷新，第 {} 波的波长为 {}", wave - 1, waveLength);
@@ -85,7 +85,7 @@ void __AOpQueueManager::UpdateRefreshTime() {
         return;
     auto mo = AGetMainObject();
     int wave = mo->Wave(), gameClock = mo->GameClock();
-    if (mo->RefreshCountdown() > 200)
+    if (queues[wave].memRefreshTime == __AOperationQueue::UNINIT)
         _RecordRefresh(wave, gameClock + mo->RefreshCountdown() - mo->InitialCountdown());
     std::optional<int> countdown = _GetNextWaveCountdown();
     if (countdown.has_value())

@@ -2,7 +2,7 @@
  * @Coding: utf-8
  * @Author: vector-wlc
  * @Date: 2022-12-05 19:05:08
- * @Description: 
+ * @Description:
 -->
 # 状态钩
 
@@ -192,7 +192,7 @@ void AScript()
 // 这样做毫无疑问会导致游戏崩溃或者 demo 这个对象无法工作
 // 因为注入的时候是在游戏的主界面的，此时游戏战斗界面的内存根本就没有被分配
 // 而 aAliveSeedFilter 会访问这些内存，这就导致了访问野指针的行为，游戏大概率崩溃
-Demo demo; 
+Demo demo;
 
 void AScript()
 {
@@ -206,16 +206,16 @@ void AScript()
 {
     // 等待游戏进入战斗界面， 因为判断是否选用南瓜这个操作必须进了战斗界面才能确定
     // 选卡界面是正在选用卡片，所以选卡界面调用 aAliveSeedFilter 还是访问不了正确的内存
-    AWaitForFight(); 
+    AWaitForFight();
 
     // 创建一个局部对象，此时这个对象的构造函数调用时机正确
     // 但是随着 AScript() 函数调用结束，这个对象就会死亡，内存会被回收
-    Demo demo; 
+    Demo demo;
 
     AConnect(ATime(1, 0), [=]{ // 这个对象被 lambda = 捕获，也就是被拷贝了一次
-    
+
         // 这个 demo 对象和外面的那个 demo 并不是一个对象，而是拷贝
-        // 因此这种写法也不符合要求 
+        // 因此这种写法也不符合要求
         demo.xxx();
     });
 }
@@ -228,16 +228,16 @@ void AScript()
 {
     // 等待游戏进入战斗界面， 因为判断是否选用南瓜这个操作必须进了战斗界面才能确定
     // 选卡界面是正在选用卡片，所以选卡界面调用 aAliveSeedFilter 还是访问不了正确的内存
-    AWaitForFight(); 
+    AWaitForFight();
 
     // 创建一个局部对象，此时这个对象的构造函数调用时机正确
     // 但是随着 AScript() 函数调用结束，这个对象就会死亡，内存会被回收
-    Demo demo; 
+    Demo demo;
 
     AConnect(ATime(1, 0), [&]{ // 这个对象被 lambda & 捕获，也就是直接使用了对象本身
-    
+
         // 这个 demo 对象和外面的那个 demo 是一个对象，因为是引用
-        // 但是这种写法犯下的错误更加严重，因为游戏时间到达 ATime(1, 0)， 
+        // 但是这种写法犯下的错误更加严重，因为游戏时间到达 ATime(1, 0)，
         // 此时 demo 这个对象的内存早已不再，所以这样做还是访问了野指针
         // 轻则调用失效，重则游戏崩溃
         demo.xxx();
@@ -252,14 +252,14 @@ void AScript()
 {
     // 等待游戏进入战斗界面， 因为判断是否选用南瓜这个操作必须进了战斗界面才能确定
     // 选卡界面是正在选用卡片，所以选卡界面调用 aAliveSeedFilter 还是访问不了正确的内存
-    AWaitForFight(); 
+    AWaitForFight();
 
     // 创建一个局部静态对象，此时这个对象的构造函数调用时机正确
     // 局部静态对象内存存在时间和 libavz.dll 一致
     // 但是存在一个问题，就是当脚本使用了重新载入脚本函数之后
     // 由于 demo 对象只会初始化一次，因此第二次重新载入脚本之后
     // 该对象的状态就不对了
-    static Demo demo; 
+    static Demo demo;
 
     AConnect(ATime(1, 0), []{ // 静态对象不需要捕获
         // 如果没用重新载入脚本函数，没有问题
@@ -275,19 +275,19 @@ void AScript()
 {
     // 等待游戏进入战斗界面， 因为判断是否选用南瓜这个操作必须进了战斗界面才能确定
     // 选卡界面是正在选用卡片，所以选卡界面调用 aAliveSeedFilter 还是访问不了正确的内存
-    AWaitForFight(); 
+    AWaitForFight();
 
     // 创建一个局部对象，此时这个对象的构造函数调用时机正确
     // 由于使用了堆内存的管理方式，这个对象的内存并不会被自动回收
     // 但是如果不手动 delete 会导致内存泄漏
     // 关于 C++ 内存泄漏，如果不懂，请利用好你的浏览器
-    auto demo = new Demo; 
+    auto demo = new Demo;
 
     AConnect(ATime(1, 0), [=]{ // 这个对象指针被 lambda = 捕获
-    
+
         // 这个 demo 对象指针和外面那个对象指针指向同一块内存
         // 所以调用的函数肯定没有任何问题，但是新的问题就来了
-        // 啥时候析构这个对象呢？也就是啥时候 delete demo ? 
+        // 啥时候析构这个对象呢？也就是啥时候 delete demo ?
         // 这是一个非常重要的问题，因为如果这个脚本是为了长期挂机的
         // 那么有内存泄漏必定运行时间无法长久
         // 所以这个方式也不是很好
@@ -303,15 +303,15 @@ void AScript()
 {
     // 等待游戏进入战斗界面， 因为判断是否选用南瓜这个操作必须进了战斗界面才能确定
     // 选卡界面是正在选用卡片，所以选卡界面调用 aAliveSeedFilter 还是访问不了正确的内存
-    AWaitForFight(); 
+    AWaitForFight();
 
     // 创建一个局部对象，此时这个对象的构造函数调用时机正确
     // 由于使用了智能指针管理内存方式，这个对象的内存会被智能指针管理
     // 当这个对象的内存不再有引用时，智能指针会自动回收对象的内存
-    auto demo = std::make_shared<Demo>(); 
+    auto demo = std::make_shared<Demo>();
 
     AConnect(ATime(1, 0), [=]{ // 这个智能指针被 lambda = 捕获
-    
+
         // 这个 demo 智能指针和外面那个智能指针指向同一块内存
         // 所以调用的函数肯定没有任何问题，而且没有任何内存泄漏的问题
         // 所以这是不是一个完美解？看似是，但是这里我不给予任何评价
@@ -347,7 +347,7 @@ Demo demo; // 构造函数是默认的，几乎不会做出任何导致游戏崩
 
 void AScript()
 {
-    AWaitForFight(); 
+    AWaitForFight();
     demo.Init();  // 进行初始化工作
 
     AConnect(ATime(1, 0), []{ // 全局对象不需要被捕获
@@ -453,7 +453,7 @@ public:
 ```
 我相信你看到这可能已经麻了，但是不要放弃，咱们先看第 4 步的模板是干啥的，它实际上是一个专门继承别的类的工具模板类，
 大白话就是他就是偷懒用的，也就是为了少写代码和少出错。即使你没有理解这些代码，咱们还是可以直接看第三步，
-你可以理解成 `__APublicStateHook` 这个类继承了七个类: 
+你可以理解成 `__APublicStateHook` 这个类继承了七个类:
 
 * __APublicBeforeScriptHook
 * __APublicAfterScriptHook
@@ -564,20 +564,20 @@ int testhellotest;
 
 ```C++
 // 帧运行管理类
-class __ATickManager : public AOrderedBeforeScriptHook<INT_MIN>
+class __ATickManager : public AOrderedBeforeScriptHook<-32768>
 {
     // ...
 }
 
 // 操作队列管理类
-class __AOpQueueManager : public AOrderedBeforeScriptHook<INT_MIN>, //
-                          public AOrderedEnterFightHook<INT_MIN>
+class __AOpQueueManager : public AOrderedBeforeScriptHook<-32768>, //
+                          public AOrderedEnterFightHook<-32768>
 {
     // ...
 }
 ```
 
-你会发现这两个类的模板参数都是 INT_MIN，也就是整数中的最小值，这就保证了这两个类的运行优先顺序是顶级的，
+你会发现这两个类的模板参数都是 -32768，这就保证了这两个类的状态钩有非常高的运行优先级。
 所以当你需要为自己状态钩设置运行顺序的时候，一种方法就是指定模板参数，指定模板参数是有两种方式的：
 
 ```C++
