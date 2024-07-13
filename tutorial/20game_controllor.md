@@ -2,15 +2,14 @@
  * @Coding: utf-8
  * @Author: vector-wlc
  * @Date: 2022-02-12 11:05:57
- * @Description: 
+ * @Description:
 -->
 
 # 游戏控制函数
 
 ## 高级暂停
 
-高级暂停功能由 `ASetAdvancedPause`  
-
+高级暂停功能由 `ASetAdvancedPause` 提供。
 
 ```C++
 // 设定高级暂停
@@ -74,12 +73,13 @@ ASkipTick([=](){
 
 ```C++
 // 使得游戏接近 50 倍速运行
-// 原理解释：当游戏时钟对 50 取余值为 1 时，触发此连接的操作函数，
+// 原理解释：当游戏时钟对 50 取余值为 0 时，触发此连接的操作函数，
 // 操作函数运行即进行跳帧，跳帧依然对 50 取余，当此值为 0 时跳帧结束
 // 然后取余 0 的下一帧值又为 1，又触发了连接，便又开始跳帧，
 // 也就是游戏每隔 50cs 启用一次跳帧，跳帧会跳过 49 帧，这便突破了 ASetGameSpeed 10 倍以上的游戏运行速度
-AConnect([] { return AGetMainObject()->GameClock() % 50 == 1; }, 
-         [] { ASkipTick([] { return AGetMainObject()->GameClock() % 50; }); });
+AConnect([] { return AGetMainObject()->GameClock() % 50 == 0; }, [] {
+    ASkipTick([] { return AGetMainObject()->GameClock() % 50 != 0; });
+});
 ```
 
 ```C++

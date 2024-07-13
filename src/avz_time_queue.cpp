@@ -186,6 +186,7 @@ void __AOpQueueManager::_CheckAssumeWavelength(int wave) {
 }
 
 void __AOpQueueManager::_BeforeScript() {
+    isInitialized = true;
     startTime = ATime(0, __AOperationQueue::UNINIT);
     totalWave = AGetMainObject()->TotalWave();
     queues.clear();
@@ -197,14 +198,18 @@ void __AOpQueueManager::_EnterFight() {
     startTime = ANowTime();
 }
 
+void __AOpQueueManager::_ExitFight() {
+    isInitialized = false;
+}
+
 int ANowWave() {
-    if (AGetPvzBase()->GameUi() != 3)
+    if (!__aOpQueueManager.isInitialized || AGetPvzBase()->GameUi() != 3)
         return 0;
     return std::max(AGetMainObject()->Wave(), 1);
 }
 
 int ANowWave(bool allowNegativeTime) {
-    if (AGetPvzBase()->GameUi() != 3)
+    if (!__aOpQueueManager.isInitialized || AGetPvzBase()->GameUi() != 3)
         return 0;
     int wave = AGetMainObject()->Wave();
     if (allowNegativeTime && __aOpQueueManager.queues[wave + 1].memRefreshTime != __AOperationQueue::UNINIT)
@@ -213,7 +218,7 @@ int ANowWave(bool allowNegativeTime) {
 }
 
 int ANowTime(int wave) {
-    if (AGetPvzBase()->GameUi() != 3)
+    if (!__aOpQueueManager.isInitialized)
         return __AOperationQueue::UNINIT;
     if (wave < 0 || wave >= __aOpQueueManager.queues.size()) {
         aLogger->Error("ANowTime : 波次的合法范围为 [0, {}], 您输入的参数为 {}", __aOpQueueManager.totalWave + 1, wave);

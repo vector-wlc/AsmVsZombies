@@ -1,6 +1,8 @@
 #ifndef __ADSL_SHORTHAND__
 #define __ADSL_SHORTHAND__
 
+#define __DSL_SHORTHAND_VERSION__ 240713
+
 #include "main.h"
 
 using namespace ALiterals;
@@ -42,12 +44,11 @@ protected:
 
 public:
     ARoofCobManager(const std::vector<int>& columns)
-        : ACobManager(PRIORITY), _columns(columns) {
-    }
+        : ACobManager(PRIORITY), _columns(columns) {}
+
     ARoofCobManager(std::convertible_to<int> auto... column)
         requires(sizeof...(column) > 0)
-        : ACobManager(PRIORITY), _columns{column...} {
-    }
+        : ACobManager(PRIORITY), _columns {column...} {}
 
     void SetColumns(const std::vector<int>& columns) {
         _columns = columns;
@@ -325,7 +326,7 @@ inline ATimeline N(const std::vector<APosition>& positions, bool tryImitator = f
     return At(offset) Do {
         for (auto [row, col] : positions) {
             if (ARangeIn(AAsm::GetPlantRejectType(ADOOM_SHROOM, row - 1, col - 1),
-                         {AAsm::NIL, AAsm::NOT_ON_WATER, AAsm::NEEDS_POT})) {
+                    {AAsm::NIL, AAsm::NOT_ON_WATER, AAsm::NEEDS_POT})) {
                 At(now - offset) N(row, col, tryImitator);
                 break;
             }
@@ -434,10 +435,10 @@ public:
         template <typename Pred>
             requires(std::is_invocable_r_v<bool, Pred, AZombie*> && !std::is_same_v<std::remove_cvref_t<Pred>, Constraint>)
         Constraint(Pred&& pred)
-            : _preds{std::forward<Pred>(pred)} {
-        }
+            : _preds {std::forward<Pred>(pred)} {}
+
         Constraint(AZombieType type)
-            : _preds{[=](AZombie* zombie) { return zombie->Type() == type; }} {
+            : _preds {[=](AZombie* zombie) { return zombie->Type() == type; }} {
         }
 
         Constraint& operator&=(const Constraint& rhs) {
@@ -495,7 +496,7 @@ public:
         }
 
         ATimeline operator()(int removalDelay, APosition position) const {
-            return operator()(removalDelay, std::vector<APosition>{position});
+            return operator()(removalDelay, std::vector<APosition> {position});
         }
 
         ATimeline operator()(int removalDelay, int row) const {
@@ -512,13 +513,13 @@ public:
     };
 
     AFodder() = default;
+
     AFodder(const std::vector<APlantType>& seeds)
-        : _seeds(seeds), _manuallyInitialized(true) {
-    }
+        : _seeds(seeds), _manuallyInitialized(true) {}
+
     AFodder(std::convertible_to<int> auto... seed)
         requires(sizeof...(seed) > 0)
-        : _seeds{seed...}, _manuallyInitialized(true) {
-    }
+        : _seeds {seed...}, _manuallyInitialized(true) {}
 
     void SetCards(const std::vector<APlantType>& seeds) {
         _seeds = seeds;
@@ -549,7 +550,7 @@ public:
     }
 
     void EraseFromList(APlantType seed) {
-        EraseFromList(std::vector<APlantType>{seed});
+        EraseFromList(std::vector<APlantType> {seed});
     }
 
     void MoveToListTop(const std::vector<APlantType>& seeds) {
@@ -557,7 +558,7 @@ public:
     }
 
     void MoveToListTop(APlantType seed) {
-        MoveToListTop(std::vector<APlantType>{seed});
+        MoveToListTop(std::vector<APlantType> {seed});
     }
 
     void MoveToListBottom(const std::vector<APlantType>& seeds) {
@@ -565,7 +566,7 @@ public:
     }
 
     void MoveToListBottom(APlantType seed) {
-        MoveToListBottom(std::vector<APlantType>{seed});
+        MoveToListBottom(std::vector<APlantType> {seed});
     }
 
     TriggerByProxy TriggerBy(const std::vector<Constraint>& constraints) const {
@@ -575,7 +576,7 @@ public:
     TriggerByProxy TriggerBy(std::convertible_to<Constraint> auto&&... constraints) const
         requires(sizeof...(constraints) > 0)
     {
-        return TriggerBy(std::vector<Constraint>{constraints...});
+        return TriggerBy(std::vector<Constraint> {constraints...});
     }
 
     // 返回 maxCd cs 之内可用的垫材数量
@@ -592,7 +593,7 @@ public:
     }
 
     ATimeline operator()(int removalDelay, APosition position) const {
-        return operator()(removalDelay, std::vector<APosition>{position});
+        return operator()(removalDelay, std::vector<APosition> {position});
     }
 
     ATimeline operator()(int removalDelay, int row) const {
@@ -629,7 +630,7 @@ inline AFodder::Constraint WaveIn(const std::vector<int>& waves) {
 inline AFodder::Constraint WaveIn(std::convertible_to<int> auto... waves)
     requires(sizeof...(waves) > 0)
 {
-    return WaveIn(std::set<int>{waves...});
+    return WaveIn(std::set<int> {waves...});
 }
 
 inline AFodder::Constraint AbscIn(int l, int r) {
@@ -692,6 +693,110 @@ AAliveFilter<T> PropFilter(auto (T::*prop)(), const auto& op, auto value) {
 template <typename T>
 AAliveFilter<T> PropFilter(auto (T::*prop)(), auto value) {
     return PropFilter(prop, std::equal_to(), value);
+}
+
+inline void ASelectCards(const std::string& str, const std::vector<int>& lst, int selectInterval = 17) {
+    static const std::unordered_set<char32_t> separators {' ', ',', ';', U'　', U'，', U'；'};
+    static const std::unordered_map<char32_t, int> cardAbbr {
+        {'A', ACHERRY_BOMB},
+        {'B', ABLOVER},
+        {'F', AFLOWER_POT},
+        {'G', AGRAVE_BUSTER},
+        {'I', AICE_SHROOM},
+        {'J', AJALAPENO},
+        {'K', ACOFFEE_BEAN},
+        {'L', ALILY_PAD},
+        {'M', APOTATO_MINE},
+        {'N', ADOOM_SHROOM},
+        {'P', APUMPKIN},
+        {'T', ATALL_NUT},
+        {'U', AUMBRELLA_LEAF},
+        {'W', ASQUASH},
+        {'_', ASPIKEWEED},
+    }; // DEHOQRSVXYZ
+    static const std::array fodders {APUFF_SHROOM, AFLOWER_POT, ASCAREDY_SHROOM, ASUN_SHROOM, ASUNFLOWER};
+
+    std::vector<int> newList;
+    std::unordered_set<int> existedCards;
+    int fodderCount = 0;
+    for (auto ch : AStrToU32str(str)) {
+        if (separators.contains(ch))
+            continue;
+        else if (cardAbbr.contains(ch)) {
+            int card = cardAbbr.at(ch);
+            if (existedCards.contains(card))
+                card += 49;
+            newList.push_back(card);
+            existedCards.insert(card);
+        } else if (ch == 'C' || ch == 'c') {
+            while (fodderCount < fodders.size() && existedCards.contains(fodders[fodderCount]))
+                ++fodderCount;
+            if (fodderCount == fodders.size()) {
+                aLogger->Error("ASelectCards: 自动选择的垫材数量最大为 {}", fodders.size());
+                break;
+            }
+            newList.push_back(fodders[fodderCount]);
+            existedCards.insert(fodders[fodderCount]);
+        } else
+            aLogger->Error("ASelectCards: 未知的卡片缩写 {}", ch);
+    }
+    newList.insert(newList.end(), lst.begin(), lst.end());
+    ASelectCards(newList, selectInterval);
+}
+
+inline void ASelectCards(const std::string& str, std::initializer_list<int> lst, int selectInterval = 17) {
+    ASelectCards(str, std::vector<int>(lst), selectInterval);
+}
+
+inline void ASelectCards(const std::string& str, int selectInterval = 17) {
+    ASelectCards(str, {}, selectInterval);
+}
+
+inline void ASetZombies(const std::string& str, ASetZombieMode method = ASetZombieMode::INTERNAL) {
+    static const std::unordered_set<char32_t> separators {' ', ',', ';', U'　', U'，', U'；'};
+    static const std::unordered_map<char32_t, int> zombieAbbr {
+        {U'普', AZOMBIE},
+        {U'旗', AFLAG_ZOMBIE},
+        {U'障', ACONEHEAD_ZOMBIE},
+        {U'杆', APOLE_VAULTING_ZOMBIE},
+        {U'桶', ABUCKETHEAD_ZOMBIE},
+        {U'报', ANEWSPAPER_ZOMBIE},
+        {U'门', ASCREEN_DOOR_ZOMBIE},
+        {U'橄', AFOOTBALL_ZOMBIE},
+        {U'舞', ADANCING_ZOMBIE},
+        {U'潜', ASNORKEL_ZOMBIE},
+        {U'车', AZOMBONI},
+        {U'橇', AZOMBIE_BOBSLED_TEAM},
+        {U'豚', ADOLPHIN_RIDER_ZOMBIE},
+        {U'丑', AJACK_IN_THE_BOX_ZOMBIE},
+        {U'气', ABALLOON_ZOMBIE},
+        {U'矿', ADIGGER_ZOMBIE},
+        {U'跳', APOGO_ZOMBIE},
+        {U'雪', AZOMBIE_YETI},
+        {U'偷', ABUNGEE_ZOMBIE},
+        {U'梯', ALADDER_ZOMBIE},
+        {U'篮', ACATAPULT_ZOMBIE},
+        {U'白', AGARGANTUAR},
+        {U'博', ADR_ZOMBOSS},
+        {U'豌', APEASHOOTER_ZOMBIE},
+        {U'坚', AWALL_NUT_ZOMBIE},
+        {U'辣', AJALAPENO_ZOMBIE},
+        {U'枪', AGATLING_PEA_ZOMBIE},
+        {U'窝', ASQUASH_ZOMBIE},
+        {U'高', ATALL_NUT_ZOMBIE},
+        {U'红', AGIGA_GARGANTUAR},
+    };
+
+    std::vector<int> lst;
+    for (auto ch : AStrToU32str(str)) {
+        if (separators.contains(ch))
+            continue;
+        else if (zombieAbbr.contains(ch))
+            lst.push_back(zombieAbbr.at(ch));
+        else
+            aLogger->Error("ASetZombies: 未知的僵尸缩写 {}", ch);
+    }
+    ASetZombies(lst, method);
 }
 
 #endif

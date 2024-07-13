@@ -144,6 +144,10 @@ enum class ASetZombieMode {
 // 设置出怪类型为：铁桶 冰车 并且两种僵尸的比例为 1：2
 void ASetZombies(const std::vector<int>& zombieType, ASetZombieMode mode = ASetZombieMode::AVERAGE);
 
+inline void ASetZombies(std::initializer_list<int> zombieType, ASetZombieMode mode = ASetZombieMode::AVERAGE) {
+    ASetZombies(std::vector<int>(zombieType), mode);
+}
+
 // 参数命名规则：与英文原版图鉴名称一致
 // *** 使用示例：
 // ASetWaveZombies(1, {
@@ -193,7 +197,7 @@ protected:
     int _oriTickMs = 10;
     virtual void _BeforeScript() override;
     virtual void _ExitFight() override;
-};
+} inline __agsm;
 
 // 设置游戏倍速
 // *** 注意：倍速设置的范围为 [0.05, 10]
@@ -245,7 +249,7 @@ protected:
     virtual void _ExitFight() override {
         Stop();
     }
-};
+} inline __amc;
 
 // 判断游戏是否暂停
 bool AGameIsPaused();
@@ -289,7 +293,7 @@ enum class ARowType {
     UNSODDED, // 不能种植，出僵尸
 };
 
-class AFieldInfo : public AOrderedBeforeScriptHook<-2> {
+class AFieldInfo : public AOrderedBeforeScriptHook<-32768> {
 public:
     int nRows;           // 目前游戏中使用的行数
     int rowHeight;       // 一行有多高
@@ -301,9 +305,6 @@ public:
 
 protected:
     virtual void _BeforeScript() override;
-};
+} inline aFieldInfo;
 
-inline AFieldInfo aFieldInfo;      // AStateHook
-inline __AGameSpeedManager __agsm; // AStateHook
-inline AMaidCheats __amc;          // AStateHook
 #endif

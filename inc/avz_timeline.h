@@ -26,8 +26,7 @@ protected:
     std::vector<Entry> _entries;
 
 public:
-    ATimeline() {
-    }
+    ATimeline() = default;
 
     ATimeline(__AIsOperation auto&& action) {
         _entries.emplace_back(0, std::forward<decltype(action)>(action));
@@ -81,8 +80,7 @@ public:
     }
 
     __ADeprecated("请使用 & 运算符合并 ATimeline")
-        ATimeline&
-        operator+=(const ATimeline& rhs) {
+    ATimeline& operator+=(const ATimeline& rhs) {
         return *this &= rhs;
     }
 
@@ -129,7 +127,8 @@ inline ATimeline operator&(const ATimeline& lhs, const ATimeline& rhs) {
     return {lhs, rhs};
 }
 
-__ADeprecated("请使用 & 运算符合并 ATimeline") inline ATimeline operator+(const ATimeline& lhs, const ATimeline& rhs) {
+__ADeprecated("请使用 & 运算符合并 ATimeline")
+inline ATimeline operator+(const ATimeline& lhs, const ATimeline& rhs) {
     return {lhs, rhs};
 }
 

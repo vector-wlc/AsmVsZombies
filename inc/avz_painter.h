@@ -90,9 +90,9 @@ protected:
     void _CopyBitsToSurface(DWORD* src, DDSURFACEDESC2& dst, __ACursorInfo* cursorInfo);
 };
 
-class __ABasicPainter : public AOrderedBeforeScriptHook<-1>, //
-                        public AOrderedExitFightHook<-1>,
-                        public AOrderedAfterInjectHook<-1> {
+class __ABasicPainter : public AOrderedBeforeScriptHook<-32768>,
+                        public AOrderedExitFightHook<32767>,
+                        public AOrderedAfterInjectHook<-32768> {
     __ADeleteCopyAndMove(__ABasicPainter);
 
 public:
@@ -102,22 +102,6 @@ public:
         DWORD rectColor;
         DWORD textColor;
         int duration;
-        DrawInfo() = default;
-        DrawInfo(DrawInfo&& rhs)
-            : rect(rhs.rect)
-            , textVec(std::move(rhs.textVec))
-            , rectColor(rhs.rectColor)
-            , textColor(rhs.textColor)
-            , duration(rhs.duration) {}
-
-        DrawInfo& operator=(DrawInfo&& rhs) {
-            this->rect = rhs.rect;
-            this->textVec = std::move(rhs.textVec);
-            this->rectColor = rhs.rectColor;
-            this->textColor = rhs.textColor;
-            this->duration = rhs.duration;
-            return *this;
-        }
     };
 
     __ABasicPainter() {
@@ -134,8 +118,8 @@ public:
 
     bool IsOk();
     void ClearFont();
-    std::deque<DrawInfo> drawInfoQueue;
-    std::deque<std::pair<ACursor, int>> cursorQueue;
+    std::list<DrawInfo> drawInfoQueue;
+    std::list<std::pair<ACursor, int>> cursorQueue;
     std::unordered_map<wchar_t, std::shared_ptr<__ATexture>> textureDict;
     static std::vector<std::vector<int>> posDict;
 
@@ -147,8 +131,8 @@ public:
     bool IsOpen3dAcceleration();
 
     static std::unordered_set<__ABasicPainter*>& GetPainterSet() {
-        static std::unordered_set<__ABasicPainter*> __;
-        return __;
+        static std::unordered_set<__ABasicPainter*> painters;
+        return painters;
     }
 
     __ATextInfo textInfo;
@@ -219,8 +203,7 @@ public:
 
     // 设定队列最大容量
     // 这个容量是为了防止内存泄露的
-    // 设置的越小就会限制在屏幕中显示的数目
-    // 设置的越大就越可能导致跳帧时的内存泄露
+    // 设置的越小就会限制在屏幕中显示的数目；设置的越大就越难发现跳帧时的内存泄露
     void SetMaxQueueSize(std::size_t size) {
         _maxQueueSize = size;
     }

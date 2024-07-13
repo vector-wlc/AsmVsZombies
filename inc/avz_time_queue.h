@@ -22,12 +22,14 @@ struct __ATimeOperation {
     AOperation operation;
     ATime time;
 
+    __ATimeOperation(const AOperation& operation, const ATime& time)
+        : operation(operation), time(time) {}
+
     __ATimeOperation(AOperation&& operation, const ATime& time)
         : operation(std::move(operation)), time(time) {}
 };
 
-class __AOperationQueue {
-public:
+struct __AOperationQueue {
     using RunOrderQueue = std::multimap<int, __ABoolOperation>;
     constexpr static int UNINIT = INT_MIN;
     RunOrderQueue queue;
@@ -39,8 +41,10 @@ public:
 using __ATimeIter = __AOperationQueue::RunOrderQueue::iterator;
 
 class __AOpQueueManager : public AOrderedBeforeScriptHook<-32768>,
-                          public AOrderedEnterFightHook<-32768> {
+                          public AOrderedEnterFightHook<-32768>,
+                          public AOrderedExitFightHook<-32768> {
 public:
+    bool isInitialized = false;
     std::vector<__AOperationQueue> queues;
     ATime startTime; // 脚本设定的开始时间
     int totalWave;
@@ -59,9 +63,8 @@ protected:
     void _RecordRefresh(int wave, int refreshTime);
     virtual void _BeforeScript() override;
     virtual void _EnterFight() override;
-};
-
-inline __AOpQueueManager __aOpQueueManager;
+    virtual void _ExitFight() override;
+} inline __aOpQueueManager;
 
 // 得到当前游戏的波数
 __ANodiscard int ANowWave();

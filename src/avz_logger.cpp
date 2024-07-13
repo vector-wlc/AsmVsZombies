@@ -96,14 +96,10 @@ void ALogger<APvzGui>::_Output(ALogLevel level, std::string&& str) {
     _curBottom += lineCnt * _painter.GetFontSize();
     int globalClock = AGetMainObject()->GlobalClock();
     _displayList.push_back({level, std::move(str), globalClock, lineCnt});
-    _ShowTick();
 }
 
 void ALogger<APvzGui>::_ShowTick() {
     int globalClock = AGetMainObject()->GlobalClock();
-    if (globalClock == _lastTick)
-        return; // 一帧只显示一次
-    _lastTick = globalClock;
     int x = _pixelDisplay.x;
     int y = _pixelDisplay.y;
     int eraseCnt = _displayList.size();
@@ -127,8 +123,7 @@ void ALogger<APvzGui>::_BeforeScript() {
     AAbstractLogger::_BeforeScript();
     _curBottom = 0;
     _displayList.clear();
-    _lastTick = INT_MIN;
-    _tickRunner = std::make_shared<ATickRunner>([this] { this->_ShowTick(); }, ATickRunner::GLOBAL);
+    _tickRunner = std::make_shared<ATickRunner>([this] { _ShowTick(); }, ATickRunner::GLOBAL);
 }
 
 void ALogger<AMsgBox>::_Output(ALogLevel level, std::string&& str) {

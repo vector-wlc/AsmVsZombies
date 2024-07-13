@@ -15,7 +15,7 @@ void ACobManager::_Skip(int n) {
 
 void ACobManager::Skip(int n) {
     if (_sequentialMode == PRIORITY) {
-        aLogger->Error("Skip 在优先级模式下无效，请使用 MoveToListTop 和 MoveToListBottom 控制炮序");
+        aLogger->Error("ACobManager : Skip 在优先级模式下无效，请使用 MoveToListTop 和 MoveToListBottom 控制炮序");
         return;
     }
     _Skip(n);
@@ -169,7 +169,7 @@ void ACobManager::AutoSetList() {
 
 void ACobManager::SetNext(int tempNext) {
     if (_sequentialMode == PRIORITY) {
-        aLogger->Error("SetNext 在优先级模式下无效，请使用 MoveToListTop 和 MoveToListBottom 控制炮序");
+        aLogger->Error("ACobManager : SetNext 在优先级模式下无效，请使用 MoveToListTop 和 MoveToListBottom 控制炮序");
         return;
     }
 
@@ -182,7 +182,7 @@ void ACobManager::SetNext(int tempNext) {
 
 void ACobManager::SetNext(int row, int col) {
     if (_sequentialMode == PRIORITY) {
-        aLogger->Error("SetNext 在优先级模式下无效，请使用 MoveToListTop 和 MoveToListBottom 控制炮序");
+        aLogger->Error("ACobManager : SetNext 在优先级模式下无效，请使用 MoveToListTop 和 MoveToListBottom 控制炮序");
         return;
     }
 
@@ -207,7 +207,7 @@ void ACobManager::EraseFromList(int row, int col) {
 
 void ACobManager::MoveToListTop(const std::vector<AGrid>& lst) {
     if (_sequentialMode != PRIORITY) {
-        aLogger->Error("MoveToListTop 在非优先级模式下无效，请使用 SetNext 和 Skip 控制炮序");
+        aLogger->Error("ACobManager : MoveToListTop 在非优先级模式下无效，请使用 SetNext 和 Skip 控制炮序");
         return;
     }
     SetList(__AMoveToTop(_gridVec, lst));
@@ -219,7 +219,7 @@ void ACobManager::MoveToListTop(int row, int col) {
 
 void ACobManager::MoveToListBottom(const std::vector<AGrid>& lst) {
     if (_sequentialMode != PRIORITY) {
-        aLogger->Error("MoveToListBottom 在非优先级模式下无效，请使用 SetNext 和 Skip 控制炮序");
+        aLogger->Error("ACobManager : MoveToListBottom 在非优先级模式下无效，请使用 SetNext 和 Skip 控制炮序");
         return;
     }
     SetList(__AMoveToBottom(_gridVec, lst));
@@ -311,13 +311,17 @@ APlant* ACobManager::_BasicGetPtr(bool isRecover, float col) {
     auto tmpSeqMode = _sequentialMode;
     if (_sequentialMode == SPACE)
         _sequentialMode = TIME;
-    auto ret = _UpdateNextCob(isRecover, col, false);
+    if (_UpdateNextCob(isRecover, col, true) == NO_EXIST_RECOVER_TIME) {
+        _sequentialMode = tmpSeqMode;
+        return nullptr;
+    }
+    APlant* ret = AGetMainObject()->PlantArray() + _indexVec[_next];
     _next = tmpIdx;
     _sequentialMode = tmpSeqMode;
-    return ret == NO_EXIST_RECOVER_TIME ? nullptr : AGetMainObject()->PlantArray() + _indexVec[_next];
+    return ret;
 }
 
-__ANodiscard std::vector<ACobManager::RecoverInfo> ACobManager::_BasicGetRecoverList(float col) {
+std::vector<ACobManager::RecoverInfo> ACobManager::_BasicGetRecoverList(float col) {
     int iterCnt = _indexVec.size();
     std::vector<RecoverInfo> ret(iterCnt);
     int tmpNext = _next;
@@ -341,6 +345,9 @@ __ANodiscard std::vector<ACobManager::RecoverInfo> ACobManager::_BasicGetRecover
         int roofOffsetTime = col < 0 ? 0 : (387 - GetRoofFlyTime(_gridVec[_next].col, col));
         ret[i].recoverTime = std::max(0, ret[i].recoverTime - roofOffsetTime);
     }
+    std::stable_sort(ret.begin(), ret.end(), [](auto a, auto b) {
+        return a.recoverTime < b.recoverTime;
+    });
     _next = tmpNext;
     return ret;
 }
@@ -357,11 +364,11 @@ APlant* ACobManager::GetRoofUsablePtr(float col) {
     return _BasicGetPtr(false, col);
 }
 
-__ANodiscard APlant* ACobManager::GetRecoverPtr() {
+APlant* ACobManager::GetRecoverPtr() {
     return _BasicGetPtr(true, -1);
 }
 
-__ANodiscard APlant* ACobManager::GetRoofRecoverPtr(float col) {
+APlant* ACobManager::GetRoofRecoverPtr(float col) {
     if (col < 0 || col > 10) {
         aLogger->Error("ACobManager::GetNextRoofUsable 参数溢出, 范围为 [0, 10]");
         col = -1;
@@ -369,11 +376,11 @@ __ANodiscard APlant* ACobManager::GetRoofRecoverPtr(float col) {
     return _BasicGetPtr(true, col);
 }
 
-__ANodiscard std::vector<ACobManager::RecoverInfo> ACobManager::GetRecoverList() {
+std::vector<ACobManager::RecoverInfo> ACobManager::GetRecoverList() {
     return _BasicGetRecoverList(-1);
 }
 
-__ANodiscard std::vector<ACobManager::RecoverInfo> ACobManager::GetRoofRecoverList(float col) {
+std::vector<ACobManager::RecoverInfo> ACobManager::GetRoofRecoverList(float col) {
     if (col < 0 || col > 10) {
         aLogger->Error("ACobManager::GetRoofRecoverList 参数溢出, 范围为 [0, 10]");
         col = -1;
@@ -381,7 +388,7 @@ __ANodiscard std::vector<ACobManager::RecoverInfo> ACobManager::GetRoofRecoverLi
     return _BasicGetRecoverList(col);
 }
 
-__ANodiscard std::vector<APlant*> ACobManager::GetUsableList() {
+std::vector<APlant*> ACobManager::GetUsableList() {
     std::vector<APlant*> ret;
     for (auto&& [ptr, recoverTime] : GetRecoverList())
         if (ptr != nullptr && recoverTime == 0)
@@ -389,7 +396,7 @@ __ANodiscard std::vector<APlant*> ACobManager::GetUsableList() {
     return ret;
 }
 
-__ANodiscard std::vector<APlant*> ACobManager::GetRoofUsableList(float col) {
+std::vector<APlant*> ACobManager::GetRoofUsableList(float col) {
     std::vector<APlant*> ret;
     for (auto&& [ptr, recoverTime] : GetRoofRecoverList(col))
         if (ptr != nullptr && recoverTime == 0)

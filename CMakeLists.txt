@@ -19,6 +19,6 @@ add_custom_target(PackageAvz
     COMMAND powershell -c "\
         cd ${PROJECT_SOURCE_DIR}; \
         rm bin/*.dll; \
-        Compress-Archive -Path bin/,inc/,src/ -Force -DestinationPath release/env2/nightly.zip"
+        Compress-Archive -Path bin/,inc/,src/,metadata.json -Force -DestinationPath release/env2/nightly.zip"
     DEPENDS avz injector
 )

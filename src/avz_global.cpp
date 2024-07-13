@@ -1,4 +1,5 @@
 #include "libavz.h"
+#include <codecvt>
 
 __AInternalGlobal __aig;
 
@@ -25,4 +26,14 @@ std::string AWStrToStr(const std::wstring& input) {
     for (; !str.empty() && str.back() == 0;)
         str.pop_back();
     return str;
+}
+
+std::u32string AStrToU32str(const std::string& input) {
+    std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> converter;
+    return converter.from_bytes(input);
+}
+
+std::string AU32StrToStr(const std::u32string& input) {
+    std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> converter;
+    return converter.to_bytes(input);
 }

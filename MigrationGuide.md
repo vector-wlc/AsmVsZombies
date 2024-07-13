@@ -6,10 +6,11 @@
 -->
 ## 版本迁移文档
 
-### 2.7.1 240510 -> Nightly
+### 2.7.1 240510 -> 2.8.0 240713
 
 1. `ATimeline` 的合并运算符改为 `&`，`ATimeline + ATimeline` 被弃用
 2. `AAsm::RemoveZombie` 不再会产生死亡动画或掉落战利品；原本的函数改名为 `AAsm::KillZombie`
+3. 在 DSL Shorthand 240713 中，窝瓜函数的名称改为 `W`
 
 ### 2.7.0 240205 -> 2.7.1 240510
 

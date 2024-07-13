@@ -16,6 +16,29 @@
 
 __ANodiscard std::wstring AStrToWstr(const std::string& input);
 __ANodiscard std::string AWStrToStr(const std::wstring& input);
+__ANodiscard std::u32string AStrToU32str(const std::string& input);
+__ANodiscard std::string AU32StrToStr(const std::u32string& input);
+
+template <>
+struct std::formatter<std::u32string> : std::formatter<std::string> {
+    auto format(const std::u32string& str, auto& ctx) const {
+        return formatter<std::string>::format(AU32StrToStr(str), ctx);
+    }
+};
+
+template <>
+struct std::formatter<std::u32string_view> : std::formatter<std::string> {
+    auto format(std::u32string_view str, auto& ctx) const {
+        return formatter<std::string>::format(AU32StrToStr(std::u32string(str)), ctx);
+    }
+};
+
+template <>
+struct std::formatter<char32_t> : std::formatter<std::string> {
+    auto format(char32_t ch, auto& ctx) const {
+        return formatter<std::string>::format(AU32StrToStr(std::u32string(1, ch)), ctx);
+    }
+};
 
 // *** 函数功能：判断数字范围
 // *** 使用示例：

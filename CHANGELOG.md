@@ -1,6 +1,6 @@
 ## 更新日志
 
-AvZ Nightly
+AvZ 2.8.0 2024_07_13
 
 * 高级暂停时鼠标指针可以正常响应
 * 为 `ACobManager`、`AIceFiller` 和 `APlantFixer` 添加了增量改变位置列表的成员函数
@@ -16,6 +16,7 @@ AvZ Nightly
 * 增加第 0 波（基准时间为战斗开始，最早可操作时间为 1）和第 21 波（基准时间为战斗结束，最晚可操作时间为 -1）
 * 增加函数 `AGetGraves`，用于获取场上的墓碑位置
 * `ALogger` 的日志头支持显示已完成旗帜数
+* DSL Shorthand 增加快捷选卡选僵尸
 
 AvZ 2.7.1 2024_05_10 (Vector Final Version)
 
@@ -263,7 +264,7 @@ AvZ 2020_07_27 (2020_07_10 的优化版，因此框架代码中的版本号没�
 * 改进了注入程序的运行逻辑，减少不必要的注入错误
 * 削弱了 vector-wlc 的头发
 
-**AvZ 2020_07_10**
+AvZ 2020_07_10
 
 * 放弃对于 Visual Studio 的支持，提供新的无需配置的 AvZ [VSCode](https://code.visualstudio.com/) 环境包
 * 新增 setWavelength 设定波长函数，使用此函数可以使用小于 -200 的时间参数

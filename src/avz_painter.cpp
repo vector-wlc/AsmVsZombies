@@ -58,10 +58,10 @@ void APainter::Draw(const ARect& rect, int duration) {
     info.rectColor = _rectColor;
     _basicPainter.drawInfoQueue.emplace_back(std::move(info));
 
-    // 检测到超出阈值，直接开始删东西
-    if (_basicPainter.drawInfoQueue.size() > _maxQueueSize)
-        for (; _basicPainter.drawInfoQueue.size() > _maxQueueSize / 2;)
-            _basicPainter.drawInfoQueue.pop_front();
+    if (_basicPainter.drawInfoQueue.size() > _maxQueueSize) {
+        _basicPainter.drawInfoQueue.clear();
+        aLogger->Error("APainter : 绘制对象数量超过 {}，请检查是否有对象泄漏", _maxQueueSize);
+    }
 }
 
 void APainter::Draw(const AText& posText, int duration) {
@@ -115,10 +115,10 @@ void APainter::Draw(const AText& posText, int duration) {
     info.textColor = _textColor;
     _basicPainter.drawInfoQueue.emplace_back(std::move(info));
 
-    // 检测到超出阈值，直接开始删东西
-    if (_basicPainter.drawInfoQueue.size() > _maxQueueSize)
-        for (; _basicPainter.drawInfoQueue.size() > _maxQueueSize / 2;)
-            _basicPainter.drawInfoQueue.pop_front();
+    if (_basicPainter.drawInfoQueue.size() > _maxQueueSize) {
+        _basicPainter.drawInfoQueue.clear();
+        aLogger->Error("APainter : 绘制对象数量超过 {}，请检查是否有对象泄漏", _maxQueueSize);
+    }
 }
 
 void APainter::Draw(const ACursor& cursor, int duration) {
@@ -127,10 +127,10 @@ void APainter::Draw(const ACursor& cursor, int duration) {
         return;
     _basicPainter.cursorQueue.emplace_back(std::make_pair(cursor, duration));
 
-    // 检测到超出阈值，直接开始删东西
-    if (_basicPainter.cursorQueue.size() > _maxQueueSize)
-        for (; _basicPainter.cursorQueue.size() > _maxQueueSize / 2;)
-            _basicPainter.cursorQueue.pop_front();
+    if (_basicPainter.cursorQueue.size() > _maxQueueSize) {
+        _basicPainter.cursorQueue.clear();
+        aLogger->Error("APainter : 绘制对象数量超过 {}，请检查是否有对象泄漏", _maxQueueSize);
+    }
 }
 
 std::vector<std::vector<int>> __ABasicPainter::posDict = {
@@ -165,19 +165,30 @@ void __ABasicPainter::DrawEveryTick() {
         if (!painter->IsOk())
             return;
 
-        // 绘制矩形或者文字
-        while (!painter->drawInfoQueue.empty())
-            if (painter->drawInfoQueue.front().duration <= 0) // 释放已经不显示的内存
-                painter->drawInfoQueue.pop_front();
-            else
-                break;
+        // 更新存在时间
+        for (auto it = painter->drawInfoQueue.begin(); it != painter->drawInfoQueue.end();) {
+            if (it->duration == 0)
+                it = painter->drawInfoQueue.erase(it);
+            else {
+                if (it->duration > 0)
+                    --it->duration;
+                ++it;
+            }
+        }
+        for (auto it = painter->cursorQueue.begin(); it != painter->cursorQueue.end();) {
+            if (it->second == 0)
+                it = painter->cursorQueue.erase(it);
+            else {
+                if (it->second > 0)
+                    --it->second;
+                ++it;
+            }
+        }
 
         for (auto&& info : painter->drawInfoQueue) {
-            if (info.duration <= 0)
-                continue;
-            if (info.rect.width != -1) // 需要绘制矩形
+            if (info.rect.width != -1) // 绘制矩形
                 painter->DrawRect(info.rect.x, info.rect.y, info.rect.width, info.rect.height, info.rectColor);
-            if (!info.textVec.empty()) { // 需要绘制字符串
+            if (!info.textVec.empty()) { // 绘制文字
                 int y = info.rect.y;
                 int x = info.rect.x;
                 for (auto&& wstr : info.textVec) {
@@ -185,22 +196,11 @@ void __ABasicPainter::DrawEveryTick() {
                     y += painter->fontSize;
                 }
             }
-            --info.duration;
         }
 
         // 绘制鼠标
-        while (!painter->cursorQueue.empty())
-            if (painter->cursorQueue.front().second <= 0) // 释放已经不显示的内存
-                painter->cursorQueue.pop_front();
-            else
-                break;
-
-        for (auto&& [info, duration] : painter->cursorQueue) {
-            if (duration <= 0)
-                continue;
+        for (auto& [info, duration] : painter->cursorQueue)
             __ABasicPainter::DrawCursor(info.x, info.y, info.type);
-            --duration;
-        }
     }
 }
 

@@ -15,7 +15,7 @@ enum class ALogLevel {
     ERROR,
 };
 
-class AAbstractLogger : public AOrderedBeforeScriptHook<-32768> {
+class AAbstractLogger : public AOrderedBeforeScriptHook<-32767> {
 public:
     __ANodiscard const std::string& GetPattern() const {
         return _pattern;
@@ -199,7 +199,6 @@ protected:
     };
     std::shared_ptr<ATickRunner> _tickRunner;
     std::deque<_Display> _displayList;
-    int _lastTick = INT_MIN;
     int _curBottom = 0; // 为了平滑过渡使用的
     int _transitSpeed = 3;
     virtual void _BeforeScript() override;

@@ -153,6 +153,18 @@ public:
     __ANodiscard int& MjClock() noexcept {
         return MRef<int>(0x838);
     }
+
+    __ANodiscard HWND& Hwnd() noexcept {
+        return MRef<HWND>(0x350);
+    }
+
+    __ANodiscard int& WindowWidth() noexcept {
+        return MRef<int>(0xc0);
+    }
+
+    __ANodiscard int& WindowHeight() noexcept {
+        return MRef<int>(0xc4);
+    }
 };
 
 // 当前游戏信息和对象
@@ -379,7 +391,7 @@ public:
     __ANodiscard int& LoadDataState() noexcept {
         return MRef<int>(0x5604);
     }
-    
+
     __ANodiscard int& CompletedRounds() noexcept {
         return MPtr(0x160)->MRef<int>(0x6c);
     }

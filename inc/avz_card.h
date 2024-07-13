@@ -91,6 +91,10 @@ inline void ASelectCards(const std::vector<int>& lst = {}, int selectInterval = 
     __aCardManager.SelectCards(lst, selectInterval);
 }
 
+inline void ASelectCards(std::initializer_list<int> lst, int selectInterval = 17) {
+    __aCardManager.SelectCards(lst, selectInterval);
+}
+
 // 根据卡片名称得到卡片索引
 // *** 注意：卡片索引从 0 开始, 不存在返回 -1
 // *** 使用示例：
@@ -121,14 +125,14 @@ std::vector<APlant*> ACard(const std::vector<ACardName>& lst);
 APlant* ACard(int seedIndex, int row, float col);
 APlant* ACard(int seedIndex, const std::vector<APosition>& lst);
 APlant* ACard(int seedIndex, const std::vector<AGrid>& lst);
-APlant* ACard(int seedIndex, const std::initializer_list<AGrid>& lst);
+APlant* ACard(int seedIndex, std::initializer_list<AGrid> lst);
 APlant* ACard(APlantType plantType, int row, float col);
 APlant* ACard(APlantType plantType, const std::vector<APosition>& lst);
 APlant* ACard(APlantType plantType, const std::vector<AGrid>& lst);
-APlant* ACard(APlantType plantType, const std::initializer_list<AGrid>& lst);
+APlant* ACard(APlantType plantType, std::initializer_list<AGrid> lst);
 std::vector<APlant*> ACard(const std::vector<APlantType>& plantTypeVec, int row, float col);
 std::vector<APlant*> ACard(const std::vector<APlantType>& plantTypeVec, const std::vector<APosition>& lst);
 std::vector<APlant*> ACard(const std::vector<APlantType>& plantTypeVec, const std::vector<AGrid>& lst);
-std::vector<APlant*> ACard(const std::vector<APlantType>& plantTypeVec, const std::initializer_list<AGrid>& lst);
+std::vector<APlant*> ACard(const std::vector<APlantType>& plantTypeVec, std::initializer_list<AGrid> lst);
 
 #endif

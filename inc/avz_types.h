@@ -55,6 +55,7 @@ struct APosition {
     APosition(int row, float col)
         : row(row), col(col) {}
 
+    bool operator==(const APosition&) const = default;
     auto operator<=>(const APosition&) const = default;
 };
 
@@ -77,6 +78,7 @@ struct AGrid {
     AGrid(int row, int col)
         : row(row), col(col) {}
 
+    bool operator==(const AGrid&) const = default;
     auto operator<=>(const AGrid&) const = default;
 
     operator APosition() const {
@@ -163,6 +165,7 @@ struct ATimeOffset {
         return *this = *this * n;
     }
 
+    bool operator==(const ATimeOffset&) const = default;
     auto operator<=>(const ATimeOffset&) const = default;
 };
 
