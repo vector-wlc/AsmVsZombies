@@ -683,18 +683,6 @@ inline void AAverageSpawn(const std::set<int>& types = {}) {
     };
 }
 
-// PropFilter(&AZombie::Hp, greater(), 3000)
-template <typename T>
-AAliveFilter<T> PropFilter(auto (T::*prop)(), const auto& op, auto value) {
-    return AAliveFilter<T>([=](T* x) { return op((x->*prop)(), value); });
-}
-
-// PropFilter(&AZombie::Type, AGIGA_GARGANTUAR)
-template <typename T>
-AAliveFilter<T> PropFilter(auto (T::*prop)(), auto value) {
-    return PropFilter(prop, std::equal_to(), value);
-}
-
 inline void ASelectCards(const std::string& str, const std::vector<int>& lst, int selectInterval = 17) {
     static const std::unordered_set<char32_t> separators {' ', ',', ';', U'　', U'，', U'；'};
     static const std::unordered_map<char32_t, int> cardAbbr {

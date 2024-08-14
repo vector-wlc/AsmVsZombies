@@ -16,14 +16,11 @@ using APredication = ARetBoolFunc;
 using AOperation = ARetVoidFunc;
 using AKey = uint32_t;
 
-template <typename Functor, typename Ret>
-concept __ACheckRet = std::is_same_v<std::invoke_result_t<Functor>, Ret>;
+template <typename T>
+concept __AIsOperation = std::is_invocable_v<T>;
 
 template <typename T>
-concept __AIsOperation = std::is_convertible_v<T, AOperation> && __ACheckRet<T, void>;
-
-template <typename T>
-concept __AIsPredication = std::is_convertible_v<T, APredication> && __ACheckRet<T, bool>;
+concept __AIsPredicate = std::is_invocable_r_v<bool, T>;
 
 #define __ADeprecated(...) [[deprecated("此功能已弃用, 请尽量不要使用此功能. " __VA_ARGS__)]]
 

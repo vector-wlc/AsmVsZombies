@@ -29,6 +29,7 @@ void AShovel(int row, float col, int targetType) {
     aLogger->Info("Shovel {}", APosition(row, col));
     for (int i = 0; i < 10; ++i)
         ALeftClick(x, y);
+    AAsm::ReleaseMouse();
     AAsm::ShovelPlant(x, y);
     AAsm::ReleaseMouse();
 }

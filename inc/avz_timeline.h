@@ -7,7 +7,7 @@
 #define __ANoDiscardTimeline [[nodiscard("ATimeline 需要绑定到绝对时间才会执行")]]
 
 template <typename T>
-concept __AIsTimelineHook = std::is_convertible_v<T, std::function<void(ATime)>> && std::is_same_v<std::invoke_result_t<T, ATime>, void>;
+concept __AIsTimelineHook = std::is_invocable_v<T, ATime>;
 
 class __ANoDiscardTimeline ATimeline {
 protected:

@@ -243,4 +243,62 @@ public:
     }
 };
 
+template <typename T, typename Lhs, typename Rhs>
+struct __AObjSelectorArgPack {
+    Lhs (T::*prop)();
+    std::function<bool(Lhs, Rhs)> pred;
+    Rhs value;
+
+    template <typename Pred>
+    __AObjSelectorArgPack(Lhs (T::*prop)(), Pred pred, Rhs value)
+        requires std::is_invocable_r_v<bool, Pred, Lhs, Rhs>
+        : prop(prop), pred(pred), value(value) {}
+
+    __AObjSelectorArgPack(Lhs (T::*prop)(), Rhs value)
+        : prop(prop), pred(std::equal_to()), value(value) {}
+
+    bool operator()(T* obj) {
+        return std::invoke(pred, std::invoke(prop, obj), value);
+    }
+};
+
+template <typename T>
+std::vector<std::function<bool(T*)>> __AObjSelectorCollectArgs(auto (T::*prop)(), auto op, auto value) {
+    return {__AObjSelectorArgPack(prop, op, value)};
+}
+
+template <typename T>
+std::vector<std::function<bool(T*)>> __AObjSelectorCollectArgs(auto (T::*prop)(), auto value) {
+    return {__AObjSelectorArgPack(prop, value)};
+}
+
+template <typename T>
+std::vector<std::function<bool(T*)>> __AObjSelectorCollectArgs(auto (T::*prop)(), auto op, auto value, auto... args) {
+    if constexpr (std::is_member_pointer_v<decltype(value)>) {
+        auto ret = __AObjSelectorCollectArgs<T>(value, args...);
+        ret.push_back(__AObjSelectorArgPack(prop, op));
+        return ret;
+    } else {
+        auto ret = __AObjSelectorCollectArgs<T>(args...);
+        ret.push_back(__AObjSelectorArgPack(prop, op, value));
+        return ret;
+    }
+}
+
+// 简易的 PvZ 对象选择器，返回对应类型的 AAliveFilter
+// 第一个参数为 &[对象类型]::[属性名]，后续参数为比较函数（可选）和目标值
+// 可以传入多组比较条件，满足所有条件的对象才会被选择
+// *** 使用示例：
+// AObjSelector(&APlant::Type, ACOB_CANNON) // 选择所有玉米加农炮
+// AObjSelector(&AZombie::Type, AGIGA_GARGANTUAR, &AZombie::AtWave, less(), ANowWave() - 1) // 选择非本波红眼
+template <typename T>
+AAliveFilter<T> AObjSelector(auto (T::*prop)(), auto... args) {
+    return AAliveFilter<T>([preds = __AObjSelectorCollectArgs(prop, args...)](T* x) {
+        for (auto& pred : preds)
+            if (!pred(x))
+                return false;
+        return true;
+    });
+}
+
 #endif

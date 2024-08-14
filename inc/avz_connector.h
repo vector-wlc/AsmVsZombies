@@ -91,7 +91,7 @@ ATimeConnectHandle AConnect(const ATime& time, Op&& op) {
 }
 
 template <typename Sess>
-    requires __AIsPredication<Sess>
+    requires __AIsPredicate<Sess>
 ATimeConnectHandle AConnect(const ATime& time, Sess&& func) {
     return AConnect(time, [func = std::forward<Sess>(func)]() mutable {
         auto tickRunner = std::make_shared<ATickRunner>();
@@ -104,7 +104,7 @@ ATimeConnectHandle AConnect(const ATime& time, Sess&& func) {
 using AConnectHandle = ATickHandle;
 
 template <typename Pre, typename Op>
-    requires __AIsPredication<Pre> && __AIsOperation<Op>
+    requires __AIsPredicate<Pre> && __AIsOperation<Op>
 AConnectHandle AConnect(Pre&& pre, Op&& op, int runMode = ATickRunner::ONLY_FIGHT, int priority = 0) {
     auto func = [pre = std::forward<Pre>(pre), op = std::forward<Op>(op)]() mutable {
         if (pre())
@@ -115,7 +115,7 @@ AConnectHandle AConnect(Pre&& pre, Op&& op, int runMode = ATickRunner::ONLY_FIGH
 }
 
 template <typename Pre, typename Op>
-    requires __AIsPredication<Pre> && __AIsCoroutineOp<Op>
+    requires __AIsPredicate<Pre> && __AIsCoroutineOp<Op>
 AConnectHandle AConnect(Pre&& pre, Op&& op, int runMode = ATickRunner::ONLY_FIGHT, int priority = 0) {
     return AConnect(std::forward<Pre>(pre), ACoFunctor(std::forward<Op>(op)), runMode, priority);
 }

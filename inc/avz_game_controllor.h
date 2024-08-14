@@ -12,7 +12,7 @@ public:
     };
 
     template <typename Pre, typename CallBack>
-        requires __AIsPredication<Pre> && __AIsOperation<CallBack>
+        requires __AIsPredicate<Pre> && __AIsOperation<CallBack>
     void SkipTick(Pre&& pre, CallBack&& callback) {
         if (!_CheckSkipTick())
             return;
@@ -28,7 +28,7 @@ public:
         };
     }
     template <typename Pre>
-        requires __AIsPredication<Pre>
+        requires __AIsPredicate<Pre>
     void SkipTick(Pre&& pre) {
         SkipTick(std::forward<Pre>(pre), [] {});
     }

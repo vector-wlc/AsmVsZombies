@@ -28,7 +28,7 @@ public:
         : _time(time) {}
 
     template <typename Func>
-        requires __AIsPredication<Func>
+        requires __AIsPredicate<Func>
     __AWait(Func&& func)
         : _time(ATime(-1, -1))
         , _predication(std::forward<Func>(func)) {}
@@ -58,7 +58,7 @@ struct __ACoNodiscard ACoroutine {
             return time;
         }
         template <typename Func>
-            requires __AIsPredication<Func>
+            requires __AIsPredicate<Func>
         __AWait await_transform(Func&& func) {
             return std::forward<Func>(func);
         }
@@ -96,7 +96,7 @@ inline __ACoHandleManager __aCoHandleManager;
 using ACoroutineOp = std::function<ACoroutine()>;
 
 template <typename T>
-concept __AIsCoroutineOp = std::is_convertible_v<T, ACoroutineOp> && __ACheckRet<T, ACoroutine>;
+concept __AIsCoroutineOp = std::is_invocable_r_v<ACoroutine, T>;
 
 // 判断此类型是协程函数或者普通函数
 template <typename T>

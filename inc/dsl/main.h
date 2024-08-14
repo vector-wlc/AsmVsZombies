@@ -1,7 +1,7 @@
 #ifndef __DSL_MAIN_H__
 #define __DSL_MAIN_H__
 
-#include "avz.h"
+#include "../avz.h"
 
 class __ANoDiscardTimeline ASequence {
 private:
