@@ -51,12 +51,15 @@ protected:
     virtual void _EnterFight() override;
 };
 
-class AIceFiller : public ATickRunnerWithNoStart {
+class AIceFiller : public ATickRunnerWithNoStart,
+                   public AOrderedEnterFightHook<-1> {
     __ADeleteCopyAndMove(AIceFiller);
 
 protected:
     std::vector<AGrid> _fillIceGridVec;
+    std::vector<AGrid> _tempIceGridVec;
     std::vector<int> _iceSeedIdxVec;
+    int _seedType;
     int _coffeeSeedIdx;
     void _Run();
 
@@ -94,6 +97,18 @@ public:
     void MoveToListBottom(int row, int col);
     void MoveToListBottom(const std::vector<AGrid>& lst);
 
+    // 设置临时存冰位
+    // 临时存冰位的放置和使用优先级都高于永久存冰位置，但是临时存冰位使用一次后就会从列表中移除
+    void SetTempPositions(const std::vector<AGrid>& lst) {
+        _tempIceGridVec = lst;
+    }
+
+    // 设置临时存冰位
+    // 临时存冰位的放置和使用优先级都高于永久存冰位置，但是临时存冰位使用一次后就会从列表中移除
+    void AddTempPosition(int row, int col) {
+        _tempIceGridVec.emplace_back(row, col);
+    }
+
     // 线程开始工作
     // *** 使用示例：
     // Start({{3,4},{5,6}})-----在{3，4}，{5，6}位置存冰
@@ -102,7 +117,11 @@ public:
     // 使用咖啡豆函数
     // *** 使用示例：
     // Coffee()-----自动使用执行次序低的存冰位
+    // Coffee(3, 1)-----使用第3行第1列的存冰，若不存在则等效于 Coffee()
     void Coffee();
+    void Coffee(int row, int col);
+
+    virtual void _EnterFight() override;
 };
 
 class APlantFixer : public ATickRunnerWithNoStart {

@@ -70,23 +70,30 @@ void AItemCollector::_Run() {
 //  IceFiller
 ////////////////////////////////////////
 
+void AIceFiller::_EnterFight() {
+    _tempIceGridVec.clear();
+    _iceSeedIdxVec.clear();
+    if (int iceSeedIdx = AGetSeedIndex(AICE_SHROOM); iceSeedIdx != -1)
+        _iceSeedIdxVec.push_back(iceSeedIdx);
+    if (int iceSeedIdx = AGetSeedIndex(AM_ICE_SHROOM); iceSeedIdx != -1)
+        _iceSeedIdxVec.push_back(iceSeedIdx);
+    _seedType = AICE_SHROOM;
+    _coffeeSeedIdx = AGetSeedIndex(ACOFFEE_BEAN);
+}
+
 void AIceFiller::SetIceSeedList(const std::vector<int>& lst) {
-    // 未运行即进行检查是否为冰卡
-    for (const auto& seedType : lst) {
-        if (seedType != AICE_SHROOM && seedType != AM_ICE_SHROOM) {
-            aLogger->Error("resetIceSeedList : 您填写的参数为 {}, "
-                           "然而此函数只接受植物类型为寒冰菇或模仿寒冰菇的参数",
-                seedType);
+    _iceSeedIdxVec.clear();
+    _seedType = lst[0] % AM_PEASHOOTER;
+    for (auto seed : lst) {
+        if (seed % AM_PEASHOOTER != _seedType) {
+            aLogger->Error("SetIceSeedList : 请确保您选择的卡片类型相同");
             return;
         }
     }
-
-    _iceSeedIdxVec.clear();
-    int iceIdx = 0;
-    for (const auto& seedType : lst) {
-        iceIdx = AGetSeedIndex(AICE_SHROOM, seedType / AM_PEASHOOTER);
+    for (auto seedType : lst) {
+        int iceIdx = AGetSeedIndex(seedType);
         if (iceIdx == -1) {
-            aLogger->Error("resetIceSeedList : 您没有选择对应的冰卡");
+            aLogger->Error("SetIceSeedList : 您没有选择对应的卡片");
             continue;
         }
         _iceSeedIdxVec.push_back(iceIdx);
@@ -118,62 +125,73 @@ void AIceFiller::MoveToListBottom(int row, int col) {
 }
 
 void AIceFiller::Start(const std::vector<AGrid>& lst) {
-    _iceSeedIdxVec.clear();
-    int iceSeedIdx = AGetSeedIndex(AICE_SHROOM);
-    if (iceSeedIdx != -1)
-        _iceSeedIdxVec.push_back(iceSeedIdx);
-    iceSeedIdx = AGetSeedIndex(AICE_SHROOM, true);
-    if (iceSeedIdx != -1)
-        _iceSeedIdxVec.push_back(iceSeedIdx);
-    _coffeeSeedIdx = AGetSeedIndex(ACOFFEE_BEAN);
+    if (aFieldInfo.isNight) {
+        aLogger->Error("AIceFiller 无法在夜间场地使用");
+        return;
+    }
+    if (_iceSeedIdxVec.empty()) {
+        aLogger->Error("AIceFiller 未找到寒冰菇卡片");
+        return;
+    }
+    if (_coffeeSeedIdx == -1) {
+        aLogger->Error("AIceFiller 未找到咖啡豆卡片");
+        return;
+    }
     _fillIceGridVec = lst;
     ATickRunnerWithNoStart::_Start([this]() { _Run(); }, ONLY_FIGHT);
 }
 
 void AIceFiller::_Run() {
-    ASeed* seed = nullptr;
-    auto iceSeedIdxIter = _iceSeedIdxVec.begin();
-    for (; iceSeedIdxIter != _iceSeedIdxVec.end(); ++iceSeedIdxIter) {
-        auto tmpSeed = AGetMainObject()->SeedArray() + *iceSeedIdxIter;
-        if (AIsSeedUsable(tmpSeed)) {
-            seed = tmpSeed;
-            break;
-        }
-    }
-    if (seed == nullptr)
-        return;
-
-    for (auto fillIceGridIter = _fillIceGridVec.begin();
-         fillIceGridIter != _fillIceGridVec.end();
-         ++fillIceGridIter) {
-        if (AAsm::GetPlantRejectType(AICE_SHROOM, fillIceGridIter->row - 1, fillIceGridIter->col - 1) != AAsm::NIL)
+    std::vector<AGrid> grids = _tempIceGridVec;
+    grids.insert(grids.end(), _fillIceGridVec.begin(), _fillIceGridVec.end());
+    auto seedIt = _iceSeedIdxVec.begin();
+    for (auto grid : grids) {
+        if (AAsm::GetPlantRejectType(AICE_SHROOM, grid.row - 1, grid.col - 1) != AAsm::NIL)
             continue;
-        ACard(*iceSeedIdxIter + 1, fillIceGridIter->row,
-            fillIceGridIter->col);
-        ++fillIceGridIter;
-        break;
+        while (seedIt != _iceSeedIdxVec.end() && !AIsSeedUsable(AGetMainObject()->SeedArray() + *seedIt))
+            ++seedIt;
+        if (seedIt == _iceSeedIdxVec.end())
+            break;
+        ACard(*seedIt + 1, grid.row, grid.col);
+        ++seedIt;
     }
 }
 
-void AIceFiller::Coffee() {
-    if (_coffeeSeedIdx == -1) {
-        aLogger->Error("你没有选择咖啡豆卡片!");
+void AIceFiller::Coffee(int row, int col) {
+    if (_tempIceGridVec.empty() && _fillIceGridVec.empty()) {
+        aLogger->Error("AIceFiller : 存冰列表还未设置");
         return;
     }
-    if (_fillIceGridVec.empty()) {
-        aLogger->Error("你还未为自动存冰对象初始化存冰列表");
-        return;
+    AGrid icePos = {0, 0};
+    if (row != 0 && AGetPlantPtr(row, col, _seedType))
+        icePos = {row, col};
+    auto icePtrs = AGetPlantPtrs(_tempIceGridVec, _seedType);
+    for (int i = _tempIceGridVec.size() - 1; i >= 0; --i) {
+        if (icePos.row != 0)
+            break;
+        if (icePtrs[i] != nullptr) {
+            icePos = _tempIceGridVec[i];
+            _tempIceGridVec.erase(_tempIceGridVec.begin() + i);
+            break;
+        }
     }
-    auto icePlantIdxVec = AGetPlantIndices(_fillIceGridVec, AICE_SHROOM);
+    icePtrs = AGetPlantPtrs(_fillIceGridVec, _seedType);
     for (int i = _fillIceGridVec.size() - 1; i >= 0; --i) {
-        if (icePlantIdxVec[i] < 0)
-            continue;
-        AAsm::ReleaseMouse();
-        ACard(_coffeeSeedIdx + 1, _fillIceGridVec[i].row, _fillIceGridVec[i].col);
-        AAsm::ReleaseMouse();
-        return;
+        if (icePos.row != 0)
+            break;
+        if (icePtrs[i] != nullptr)
+            icePos = _fillIceGridVec[i];
     }
-    aLogger->Error("Coffee : 未找到可用的存冰");
+    if (icePos.row != 0) {
+        AAsm::ReleaseMouse();
+        ACard(_coffeeSeedIdx + 1, icePos.row, icePos.col);
+        AAsm::ReleaseMouse();
+    } else
+        aLogger->Error("Coffee : 未找到可用的存冰");
+}
+
+void AIceFiller::Coffee() {
+    Coffee(0, 0);
 }
 
 /////////////////////////////////////////////////
