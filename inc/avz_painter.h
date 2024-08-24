@@ -116,7 +116,6 @@ public:
     static bool AsmDraw();
     static void DrawEveryTick();
 
-    bool IsOk();
     void ClearFont();
     std::list<DrawInfo> drawInfoQueue;
     std::list<std::pair<ACursor, int>> cursorQueue;

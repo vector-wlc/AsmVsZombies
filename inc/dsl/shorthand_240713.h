@@ -740,7 +740,7 @@ inline void ASelectCards(const std::string& str, int selectInterval = 17) {
     ASelectCards(str, {}, selectInterval);
 }
 
-inline void ASetZombies(const std::string& str, ASetZombieMode method = ASetZombieMode::INTERNAL) {
+inline void ASetZombies(const std::string& str, ASetZombieMode method = ASetZombieMode::AVERAGE) {
     static const std::unordered_set<char32_t> separators {' ', ',', ';', U'　', U'，', U'；'};
     static const std::unordered_map<char32_t, int> zombieAbbr {
         {U'普', AZOMBIE},

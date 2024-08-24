@@ -149,20 +149,9 @@ void __ABasicPainter::ClearFont() {
     textureDict.clear();
 }
 
-bool __ABasicPainter::IsOk() {
-    static int recordClock = 0;
-    static bool isOk = false;
-    int gameClock = AGetMainObject()->GlobalClock();
-    if (gameClock != recordClock) { // 一帧刷新一次
-        recordClock = gameClock;
-        isOk = Refresh();
-    }
-    return isOk;
-}
-
 void __ABasicPainter::DrawEveryTick() {
     for (auto painter : GetPainterSet()) {
-        if (!painter->IsOk())
+        if (!painter->Refresh())
             return;
 
         // 更新存在时间

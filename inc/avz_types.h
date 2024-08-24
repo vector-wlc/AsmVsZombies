@@ -17,7 +17,7 @@ using AOperation = ARetVoidFunc;
 using AKey = uint32_t;
 
 template <typename T>
-concept __AIsOperation = std::is_invocable_v<T>;
+concept __AIsOperation = std::is_invocable_v<T> && std::is_void_v<std::invoke_result_t<T>>;
 
 template <typename T>
 concept __AIsPredicate = std::is_invocable_r_v<bool, T>;
