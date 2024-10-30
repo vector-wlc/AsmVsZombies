@@ -23,14 +23,11 @@ int AGetSeedIndex(int type, bool imitator) {
         type -= AM_PEASHOOTER;
         imitator = true;
     }
-    auto seed = AGetMainObject()->SeedArray();
-    int cnt = seed->Count();
-    for (int index = 0; index < cnt; ++index, ++seed) {
-        if (imitator) {
-            if (seed->Type() == 48 && seed->ImitatorType() == type)
-                return index;
-        } else if (seed->Type() == type)
-            return index;
+    for (auto& seed : ABasicFilter<ASeed>()) {
+        if (imitator && seed.Type() != AIMITATOR)
+            continue;
+        if ((imitator ? seed.ImitatorType() : seed.Type()) == type)
+            return &seed - AGetMainObject()->SeedArray();
     }
     return -1;
 }
@@ -67,24 +64,16 @@ APlant* AGetPlantPtr(int row, int col, int type) {
 }
 
 void AGetPlantIndices(const std::vector<AGrid>& lstIn, int type, std::vector<int>& indexsOut) {
-    auto plant = AGetMainObject()->PlantArray();
     indexsOut.assign(lstIn.size(), -1);
-    AGrid grid;
-
-    for (int index = 0; index < AGetMainObject()->PlantCountMax();
-         ++index, ++plant) {
-        if (plant->IsCrushed() || plant->IsDisappeared())
-            continue;
-        grid.row = plant->Row() + 1;
-        grid.col = plant->Col() + 1;
-
+    for (auto& plant : aAlivePlantFilter) {
+        AGrid grid{plant.Row() + 1, plant.Col() + 1};
         auto itVec = __AFindSameEle<AGrid>(lstIn, grid);
         if (itVec.empty())
             continue;
-        int plantType = plant->Type();
+        int plantType = plant.Type();
         if (plantType == type)
             for (const auto& ele : itVec)
-                indexsOut[ele - lstIn.begin()] = index;
+                indexsOut[ele - lstIn.begin()] = plant.Index();
         else if (type != APUMPKIN && type != AFLOWER_POT && type != ALILY_PAD && type != ACOFFEE_BEAN && plantType != APUMPKIN && plantType != AFLOWER_POT && plantType != ALILY_PAD && plantType != ACOFFEE_BEAN)
             for (const auto& ele : itVec)
                 indexsOut[ele - lstIn.begin()] = -2;
@@ -143,17 +132,12 @@ std::vector<AGrid> AGetGraves() {
 
 void ASetPlantActiveTime(APlantType plantType, int delayTime) {
     AConnect(ANowDelayTime(delayTime - 10), [=]() {
-        // 这里不做植物类型检测
-        auto plant = AGetMainObject()->PlantArray();
-        for (int index = 0; index < AGetMainObject()->PlantCountMax();
-             ++index, ++plant) {
-            if (!plant->IsDisappeared() && !plant->IsCrushed() && plant->Type() == plantType && plant->State() == 2) {
-                if (std::abs(plant->ExplodeCountdown() - 10) <= 3)
-                    plant->ExplodeCountdown() = 10;
-                else
-                    aLogger->Error("ASetPlantActiveTime 不允许修改的生效时间超过 3cs");
-                return;
-            }
+        for (auto& plant : AObjSelector(&APlant::Type, plantType, &APlant::State, 2)) {
+            if (std::abs(plant.ExplodeCountdown() - 10) <= 3)
+                plant.ExplodeCountdown() = 10;
+            else
+                aLogger->Error("ASetPlantActiveTime 不允许修改的生效时间超过 3cs");
+            return;
         }
     });
 }
@@ -407,17 +391,17 @@ __ANodiscard int AGetCobRecoverTime(APlant* cob) {
         aLogger->Error("AGetCobRecoverTime 参数值不合法");
         return INT_MIN;
     }
-    auto animationMemory = AGetPvzBase()->AnimationMain()->AnimationOffset()->AnimationArray() + cob->AnimationCode();
+    auto animation = cob->AnimationPtr();
 
     switch (cob->State()) {
     case 35:
         return 125 + cob->StateCountdown();
     case 36:
-        return int(125 * (1 - animationMemory->CirculationRate()) + 0.5) + 1;
+        return int(125 * (1 - animation->CirculationRate()) + 0.5) + 1;
     case 37:
         return 0;
     case 38:
-        return 3125 + int(350 * (1 - animationMemory->CirculationRate()) + 0.5);
+        return 3125 + int(350 * (1 - animation->CirculationRate()) + 0.5);
     default:
         return INT_MIN;
     }

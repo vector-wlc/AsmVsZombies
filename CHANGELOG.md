@@ -1,5 +1,10 @@
 ## 更新日志
 
+AvZ Nightly
+
+* `APlant` 和 `AZombie` 增加成员函数 `AnimationCode()` 和 `AnimationPtr()`
+* `APlant`、`AZombie` 等容器对象增加成员函数 `Index()`、`Rank()` 和 `Id()`
+
 AvZ 2.8.1 2024_08_16
 
 * 增加 `AObjSelector`

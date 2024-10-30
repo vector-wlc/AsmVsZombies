@@ -195,7 +195,7 @@ void __AOpQueueManager::_BeforeScript() {
 
 void __AOpQueueManager::_EnterFight() {
     UpdateRefreshTime();
-    startTime = ANowTime();
+    startTime = ANowTime(false);
 }
 
 void __AOpQueueManager::_ExitFight() {

@@ -40,23 +40,19 @@ void AItemCollector::_Run() {
         AGetMainObject()->MouseAttribution()->Type() != 0)
         return;
 
-    auto item = AGetMainObject()->ItemArray();
-    int total = AGetMainObject()->ItemTotal();
-    int collectIdx = -1;
-    for (int index = 0; index < total; ++index, ++item) {
-        int type = item->Type();
-        if (item->IsCollected() || item->IsDisappeared() || !_types[item->Type()])
+    AItem* collectItem = nullptr;
+    for (auto& item : aAliveItemFilter) {
+        if (!_types[item.Type()])
             continue;
-        collectIdx = index;
-        if (ARangeIn(type, {4, 5, 6})) // 优先采集阳光
+        collectItem = &item;
+        if (ARangeIn(item.Type(), {4, 5, 6})) // 优先采集阳光
             break;
     }
-    if (collectIdx == -1) // 没有要收集的物品
+    if (!collectItem) // 没有要收集的物品
         return;
 
-    item = AGetMainObject()->ItemArray() + collectIdx;
-    float itemX = item->Abscissa();
-    float itemY = item->Ordinate();
+    float itemX = collectItem->Abscissa();
+    float itemY = collectItem->Ordinate();
     if (itemX >= 0.0 && itemY >= 70) {
         AAsm::ReleaseMouse();
         int x = static_cast<int>(itemX + 30);
@@ -224,16 +220,8 @@ void APlantFixer::MoveToListBottom(int row, int col) {
 
 void APlantFixer::AutoSetList() {
     _gridLst.clear();
-    auto plant = AGetMainObject()->PlantArray();
-    int plantCntMax = AGetMainObject()->PlantCountMax();
-    AGrid grid;
-    for (int index = 0; index < plantCntMax; ++index, ++plant) {
-        if (!plant->IsCrushed() && !plant->IsDisappeared() && plant->Type() == _plantType) {
-            grid.col = plant->Col() + 1;
-            grid.row = plant->Row() + 1;
-            _gridLst.push_back(grid);
-        }
-    }
+    for (auto &plant : AObjSelector(&APlant::Type, _plantType))
+        _gridLst.push_back({plant.Row() + 1, plant.Col() + 1});
 }
 
 void APlantFixer::_UseSeed(int seed_index, int row, float col,

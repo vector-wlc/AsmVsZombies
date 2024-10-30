@@ -3,6 +3,6 @@ AlignTrailingComments: true
 Cpp11BracedListStyle: true
 
 BreakBeforeBraces: Attach
-PackConstructorInitializers: NextLineOnly
+#PackConstructorInitializers: NextLineOnly
 SpaceInEmptyBlock: false
 #RemoveBracesLLVM: true

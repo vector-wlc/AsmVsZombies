@@ -152,15 +152,8 @@ void ACobManager::SetList(const std::vector<AGrid>& lst) {
 void ACobManager::AutoSetList() {
     _gridVec.clear();
     _next = 0;
-    AGrid cobGrid = {0, 0};
-    auto PlantArray = AGetMainObject()->PlantArray();
-    for (int index = 0; index < AGetMainObject()->PlantCountMax(); ++index) {
-        if (!PlantArray[index].IsCrushed() && !PlantArray[index].IsDisappeared()
-            && PlantArray[index].Type() == ACOB_CANNON) {
-            cobGrid = {PlantArray[index].Row() + 1, PlantArray[index].Col() + 1};
-            _gridVec.push_back(cobGrid);
-        }
-    }
+    for (auto& cob : AObjSelector(&APlant::Type, ACOB_CANNON))
+        _gridVec.push_back({cob.Row() + 1, cob.Col() + 1});
     // 对得到的炮的位置进行排序
     std::sort(_gridVec.begin(), _gridVec.end());
     // 得到对应的炮的序号
