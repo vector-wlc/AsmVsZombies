@@ -2,7 +2,7 @@
  * @Coding: utf-8
  * @Author: vector-wlc
  * @Date: 2021-09-25 19:12:51
- * @Description: 
+ * @Description:
 -->
 # 阻塞再探
 
@@ -46,8 +46,7 @@ void AScript()
 }
 ```
 
-
-```
+```plain
 [1, -2147483648][INFO]
 =================================
 脚本开始运行
@@ -59,12 +58,12 @@ void AScript()
 ```
 
 我相信大家应该能看懂脚本都写的是啥意思，咱们主要看运行结果，
-可以发现所有语句都在正确的时间点执行了，Func1() 和 Func2() 
+可以发现所有语句都在正确的时间点执行了，Func1() 和 Func2()
 是互不干扰的，这一点可以从日志的打印时间点看出来，因此，
 **Func1() 和 Func2() 是并行执行的，他们的表现就像线程一样**，
 理解这点十分重要，那么下面的代码，可以想一下运行结果是啥
 
-```
+```C++
 #include <avz.h>
 
 ALogger<AConsole> console;
@@ -86,7 +85,8 @@ void AScript()
 ```
 
 运行结果是：
-```
+
+```plain
 [1, -2147483648][INFO]
 =================================
 脚本开始运行
@@ -190,6 +190,7 @@ void AScript()
     });
 }
 ```
+
 请注意这个 AConnect 函数右边可是 `[]() -> ACoroutine` 一定要写成这样，不然没法
 使用 co_await，可以看到使用连接和阻塞的结合，再也没有了嵌套调用，
 代码的可读性一下就变高了，上述 for 循环尝试了三次，如果这三次尝试不用阻塞，
@@ -197,7 +198,7 @@ void AScript()
 
 咱们再举一个例子，就是实现卡片好了立即使用卡片这个功能，如果不使用阻塞，就是接下来这种写法，
 你需要注意很多的细节，比如为啥要用动态内存申请? (`std::make_shared<ATickRunner>()`)，
-为啥这里不能用全局的 ATickRunner 对象? 为啥不能用局部的 ATickRunner 对象? 
+为啥这里不能用全局的 ATickRunner 对象? 为啥不能用局部的 ATickRunner 对象?
 这里就不解释了，因为涉及到的知识点比较多，而且解释这个东西不是本节的重点。
 
 ```C++
@@ -248,6 +249,7 @@ void RecoverCard(APlantType plant, int row, float col)
 后面跟的是啥玩意，
 
 co_await 是可以跟两个东西的
+
 * ATime(x, y) : 意思为等到时间点到达 (x, y) 时释放阻塞
 * bool Functor() : 意思是当这个 Functor 返回 true 的时候释放阻塞
 

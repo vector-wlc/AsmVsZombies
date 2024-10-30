@@ -3,7 +3,7 @@
 std::optional<int> __AOpQueueManager::_GetNextWaveCountdown() {
     auto mo = AGetMainObject();
     int wave = mo->Wave();
-    if (wave == AGetMainObject()->TotalWave()) {
+    if (wave == mo->TotalWave()) {
         int countdown = mo->LevelEndCountdown();
         return countdown > 0 ? std::make_optional(countdown) : std::nullopt;
     }
@@ -29,11 +29,20 @@ void __AOpQueueManager::_CalculateRefreshTime(int startWave) {
 void __AOpQueueManager::_RecordRefresh(int wave, int refreshTime) {
     if (queues[wave].memRefreshTime == refreshTime)
         return;
+    if (queues[wave].memRefreshTime != __AOperationQueue::UNINIT) {
+        static int lastWarnTime = -100;
+        if (AGetMainObject()->GameClock() - lastWarnTime >= 100) {
+            lastWarnTime = AGetMainObject()->GameClock();
+            aLogger->Warning("时间换算出现 {}cs 的不一致；是否开启了暂停刷新修改？", refreshTime - queues[wave].memRefreshTime);
+        }
+        return;
+    }
     queues[wave].memRefreshTime = queues[wave].calRefreshTime = refreshTime;
     if (wave > 1 && queues[wave - 1].memRefreshTime != __AOperationQueue::UNINIT) {
         int waveLength = queues[wave].memRefreshTime - queues[wave - 1].memRefreshTime;
+        if (queues[wave - 1].waveLength == -1)
+            aLogger->Info("下一波即将刷新，第 {} 波的波长为 {}", wave - 1, waveLength);
         queues[wave - 1].waveLength = waveLength;
-        aLogger->Info("下一波即将刷新，第 {} 波的波长为 {}", wave - 1, waveLength);
     }
     _CalculateRefreshTime(wave);
 }

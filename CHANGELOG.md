@@ -1,9 +1,10 @@
 ## 更新日志
 
-AvZ Nightly
+AvZ 2.8.2 2024_10_30
 
 * `APlant` 和 `AZombie` 增加成员函数 `AnimationCode()` 和 `AnimationPtr()`
 * `APlant`、`AZombie` 等容器对象增加成员函数 `Index()`、`Rank()` 和 `Id()`
+* 添加实验性功能 `__AProfiler`
 
 AvZ 2.8.1 2024_08_16
 

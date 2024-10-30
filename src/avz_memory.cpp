@@ -150,6 +150,9 @@ void AUpdateZombiesPreview() {
 }
 
 void ASetZombies(const std::vector<int>& zombieType, ASetZombieMode mode) {
+    if (AGetPvzBase()->GameUi() == 3)
+        aLogger->Warning("正在战斗模式下重设出怪；ASetZombies 应该在选卡前调用");
+
     std::vector<int> zombieTypeVec;
     bool isHasBungee = false;
 

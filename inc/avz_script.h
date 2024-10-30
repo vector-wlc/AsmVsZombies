@@ -2,6 +2,32 @@
 #define __AVZ_SCRIPT_H__
 
 #include "avz_asm.h"
+#include "avz_state_hook.h"
+
+class __AProfiler : public AOrderedEnterFightHook<-32768> {
+protected:
+    void _EnterFight() override {
+        avzTime.clear();
+        pvzTime.clear();
+    }
+
+public:
+    // AvZ 每帧的运行时间，单位为秒
+    std::vector<double> avzTime;
+    // PvZ 每帧的运行时间，单位为秒
+    std::vector<double> pvzTime;
+
+    static double CurrentTime() {
+        static double scale = [] {
+            LARGE_INTEGER ret;
+            QueryPerformanceFrequency(&ret);
+            return 1.0 / ret.QuadPart;
+        }();
+        LARGE_INTEGER ret;
+        QueryPerformanceCounter(&ret);
+        return ret.QuadPart * scale;
+    }
+} inline __aProfiler;
 
 class __AScriptManager {
 public:

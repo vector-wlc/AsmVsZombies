@@ -109,6 +109,11 @@ void __AScriptManager::RunScript() {
 
 void __AScriptManager::RunTotal() {
     constexpr auto stopWorkingStr = " || AvZ has stopped working !!!";
+    static double lastCallTime, lastFinishTime;
+
+    lastCallTime = __AProfiler::CurrentTime();
+    if (!__aProfiler.avzTime.empty())
+        __aProfiler.pvzTime.push_back(lastCallTime - lastFinishTime);
 
     try {
         if (willBeExit) {
@@ -166,6 +171,9 @@ void __AScriptManager::RunTotal() {
         AMsgBox::Show(std::string("The script triggered an unknown exception. ") + stopWorkingStr);
         willBeExit = true;
     }
+
+    lastFinishTime = __AProfiler::CurrentTime();
+    __aProfiler.avzTime.push_back(lastFinishTime - lastCallTime);
 }
 
 void __AScriptManager::ScriptHook() {
