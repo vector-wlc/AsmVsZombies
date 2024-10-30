@@ -167,6 +167,10 @@ public:
     }
 };
 
+__ANodiscard inline APvzBase* AGetPvzBase() {
+    return *(APvzBase**)0x6a9ec0;
+}
+
 // 当前游戏信息和对象
 struct AMainObject : public APvzStruct {
     __ADeleteCopyAndMove(AMainObject);
@@ -397,6 +401,50 @@ public:
     }
 };
 
+__ANodiscard inline AMainObject* AGetMainObject() {
+    return AGetPvzBase()->MainObject();
+}
+
+// 动画主要属性
+struct AAnimationMain : public APvzStruct {
+    __ADeleteCopyAndMove(AAnimationMain);
+
+public:
+    // 动画偏移
+    __ANodiscard AAnimationOffset* AnimationOffset() noexcept {
+        return MPtr<AAnimationOffset>(0x8);
+    }
+};
+
+// 动画偏移属性
+struct AAnimationOffset : public APvzStruct {
+    __ADeleteCopyAndMove(AAnimationOffset);
+
+public:
+    // 动画内存数组
+    __ANodiscard AAnimation* AnimationArray() noexcept {
+        return MPtr<AAnimation>(0x0);
+    }
+};
+
+// 动画属性
+struct AAnimation : public APvzStruct {
+    __ADeleteCopyAndMove(AAnimation);
+
+protected:
+    uint8_t _data[0xa0];
+
+public:
+    // 动画循环率
+    __ANodiscard float& CirculationRate() noexcept {
+        return MRef<float>(0x4);
+    }
+};
+
+__ANodiscard inline AAnimation* AGetAnimationArray() {
+    return AGetPvzBase()->AnimationMain()->AnimationOffset()->AnimationArray();
+}
+
 // 植物内存属性
 struct APlant : public APvzStruct {
     __ADeleteCopyAndMove(APlant);
@@ -524,9 +572,29 @@ public:
         return MRef<bool>(0x143);
     }
 
-    // 动作编号
+    // 动画编号
     __ANodiscard uint16_t& AnimationCode() noexcept {
         return MRef<uint16_t>(0x94);
+    }
+
+    // 动画对象指针
+    __ANodiscard AAnimation* AnimationPtr() noexcept {
+        return AGetAnimationArray() + AnimationCode();
+    }
+
+    // 对象的编号（栈位）
+    __ANodiscard uint16_t& Index() noexcept {
+        return MRef<uint16_t>(sizeof(_data) - 4);
+    }
+
+    // 对象的序列号
+    __ANodiscard uint16_t& Rank() noexcept {
+        return MRef<uint16_t>(sizeof(_data) - 2);
+    }
+
+    // 对象的 ID
+    __ANodiscard uint32_t& Id() noexcept {
+        return MRef<uint32_t>(sizeof(_data) - 4);
     }
 };
 
@@ -595,7 +663,6 @@ public:
 
     // 返回选卡界面僵尸站立状态
     // 为-2/-3时静止,-4时向上(对于选卡界面的僵尸)
-
     __ANodiscard int& StandState() noexcept {
         return MRef<int>(0x6c);
     }
@@ -685,6 +752,31 @@ public:
     // 蘑菇倒计时
     __ANodiscard int& HurtHeight() noexcept {
         return MRef<int>(0x98);
+    }
+
+    // 动画编号
+    __ANodiscard uint16_t& AnimationCode() noexcept {
+        return MRef<uint16_t>(0x118);
+    }
+
+    // 动画对象指针
+    __ANodiscard AAnimation* AnimationPtr() noexcept {
+        return AGetAnimationArray() + AnimationCode();
+    }
+
+    // 对象的编号（栈位）
+    __ANodiscard uint16_t& Index() noexcept {
+        return MRef<uint16_t>(sizeof(_data) - 4);
+    }
+
+    // 对象的序列号
+    __ANodiscard uint16_t& Rank() noexcept {
+        return MRef<uint16_t>(sizeof(_data) - 2);
+    }
+
+    // 对象的 ID
+    __ANodiscard uint32_t& Id() noexcept {
+        return MRef<uint32_t>(sizeof(_data) - 4);
     }
 };
 
@@ -787,6 +879,21 @@ public:
     __ANodiscard int& Type() noexcept {
         return MRef<int>(0x58);
     }
+
+    // 对象的编号（栈位）
+    __ANodiscard uint16_t& Index() noexcept {
+        return MRef<uint16_t>(sizeof(_data) - 8);
+    }
+
+    // 对象的序列号
+    __ANodiscard uint16_t& Rank() noexcept {
+        return MRef<uint16_t>(sizeof(_data) - 6);
+    }
+
+    // 对象的 ID
+    __ANodiscard uint32_t& Id() noexcept {
+        return MRef<uint32_t>(sizeof(_data) - 8);
+    }
 };
 
 // 场地物品属性
@@ -821,41 +928,20 @@ public:
     __ANodiscard int& Value() noexcept {
         return MRef<int>(0x18);
     }
-};
 
-// 动画主要属性
-struct AAnimationMain : public APvzStruct {
-    __ADeleteCopyAndMove(AAnimationMain);
-
-public:
-    // 动画偏移
-    __ANodiscard AAnimationOffset* AnimationOffset() noexcept {
-        return MPtr<AAnimationOffset>(0x8);
+    // 对象的编号（栈位）
+    __ANodiscard uint16_t& Index() noexcept {
+        return MRef<uint16_t>(sizeof(_data) - 4);
     }
-};
 
-// 动画偏移属性
-struct AAnimationOffset : public APvzStruct {
-    __ADeleteCopyAndMove(AAnimationOffset);
-
-public:
-    // 动画内存数组
-    __ANodiscard AAnimation* AnimationArray() noexcept {
-        return MPtr<AAnimation>(0x0);
+    // 对象的序列号
+    __ANodiscard uint16_t& Rank() noexcept {
+        return MRef<uint16_t>(sizeof(_data) - 2);
     }
-};
 
-// 动画属性
-struct AAnimation : public APvzStruct {
-    __ADeleteCopyAndMove(AAnimation);
-
-protected:
-    uint8_t _data[0xa0];
-
-public:
-    // 动画循环率
-    __ANodiscard float& CirculationRate() noexcept {
-        return MRef<float>(0x4);
+    // 对象的 ID
+    __ANodiscard uint32_t& Id() noexcept {
+        return MRef<uint32_t>(sizeof(_data) - 4);
     }
 };
 

@@ -3,18 +3,6 @@
 
 #include "avz_state_hook.h"
 
-__ANodiscard inline APvzBase* AGetPvzBase() {
-    return *(APvzBase**)0x6a9ec0;
-}
-
-__ANodiscard inline AMainObject* AGetMainObject() {
-    return AGetPvzBase()->MainObject();
-}
-
-__ANodiscard inline AAnimation* AGetAnimationArray() {
-    return AGetPvzBase()->AnimationMain()->AnimationOffset()->AnimationArray();
-}
-
 // 返回鼠标所在行
 __ANodiscard int AMouseRow();
 

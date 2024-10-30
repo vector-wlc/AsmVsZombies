@@ -26,6 +26,7 @@ extern ACobManager aCobManager;
 extern AAliveFilter<AZombie> aAliveZombieFilter;
 extern AAliveFilter<APlant> aAlivePlantFilter;
 extern AAliveFilter<ASeed> aAliveSeedFilter;
+extern AAliveFilter<AItem> aAliveItemFilter;
 extern AAliveFilter<APlaceItem> aAlivePlaceItemFilter;
 extern APainter aPainter;
 
