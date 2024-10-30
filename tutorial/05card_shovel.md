@@ -2,14 +2,16 @@
  * @Coding: utf-8
  * @Author: vector-wlc
  * @Date: 2021-09-25 15:51:50
- * @Description: 
+ * @Description:
 -->
 # 卡片相关
 
+## 选卡
 
-## 卡片操作
+在 AvZ 中，选卡承担了一个特殊作用：它会使 `AScript()`（或 `ACoScript()`）阻塞到战斗开始时。
+换句话说，`ASelectCards()` 前的代码发生在选卡界面，`ASelectCards()` 后的代码发生在战斗界面。因此，大部分 AvZ 操作都应该写在 `ASelectCards()` 之后。
+一个重要的例外是 `ASetZombies()`，它涉及到更新选卡界面的僵尸预览。在战斗界面运行这个函数虽然也不会出错，但会导致选卡界面显示的僵尸种类和实际出的僵尸不匹配。
 
-首先是选卡函数
 ```C++
 ASelectCards({
     AICE_SHROOM,   // 寒冰菇
@@ -23,10 +25,7 @@ ASelectCards({
     APUMPKIN,      // 南瓜头
     APUFF_SHROOM,  // 小喷菇
 });
-```
-emmm， 这个选卡函数没什么好说的，我相信你应该一看就懂，他还有以下几种调用方式
 
-```C++
 // 选卡间隔更改为 1cs 以增加选卡速度
 ASelectCards({
     AICE_SHROOM,   // 寒冰菇
@@ -39,42 +38,33 @@ ASelectCards({
     ABLOVER,       // 三叶草
     APUMPKIN,      // 南瓜头
     APUFF_SHROOM,  // 小喷菇
-}, 1);  
+}, 1);
 
 // 将选卡间隔更改为 0cs 以进行极速选卡，注意 0 为特殊值，效果为瞬间跳到战斗界面
+// 如果指定的卡片数少于卡槽数，剩余的卡槽会被随机填充
 ASelectCards({
     AICE_SHROOM,   // 寒冰菇
     AM_ICE_SHROOM, // 模仿寒冰菇
     ACOFFEE_BEAN,  // 咖啡豆
     ADOOM_SHROOM,  // 毁灭菇
     ALILY_PAD,     // 荷叶
-    ASQUASH,       // 倭瓜
-    ACHERRY_BOMB,  // 樱桃炸弹
-    ABLOVER,       // 三叶草
-    APUMPKIN,      // 南瓜头
-    APUFF_SHROOM,  // 小喷菇
-}, 0); 
-
-// 将选卡间隔更改为 0cs 以进行极速选卡，注意 0 为特殊值，效果为瞬间跳到战斗界面，
-// 然后剩下的九个卡槽会被随机填充
-ASelectCards({
-    AICE_SHROOM,   // 寒冰菇
-}, 0, true); 
+}, 0);
 ```
 
-然后是用卡函数
+## 用卡
+
 本框架的卡片操作十分简单，共有以下五种调用方式
 ```C++
 // 根据卡片名称用卡
 
 // 将荷叶放在三行四列
-ACard(ALILY_PAD, 3, 4); 
+ACard(ALILY_PAD, 3, 4);
 
 // 将荷叶放在三行四列，将倭瓜放在三行四列
-ACard({{ALILY_PAD, 3, 4}, {ASQUASH, 3, 4}}); 
+ACard({{ALILY_PAD, 3, 4}, {ASQUASH, 3, 4}});
 
 // 优先将荷叶放在二行三列，如果不能种，则放在二行四列
-ACard(ALILY_PAD, {{3, 4}, {2, 4}}); 
+ACard(ALILY_PAD, {{3, 4}, {2, 4}});
 
 // 根据卡片所在卡槽位置用卡
 
@@ -82,7 +72,7 @@ ACard(ALILY_PAD, {{3, 4}, {2, 4}});
 ACard(1, 2, 3);
 
 // 优先将第一张卡片放在二行三列，如果不能种，则放在二行四列
-ACard(1, {{2, 3}, {2, 4}}); 
+ACard(1, {{2, 3}, {2, 4}});
 
 // 将荷叶，毁灭菇，咖啡豆，南瓜头放在二行三列
 ACard({AHY_16, AHMG_15, AKFD_35, ANGT_30}, 2, 3);
@@ -102,7 +92,7 @@ ACard({AHY_16, AHMG_15, AKFD_35, ANGT_30}, {{3, 2}, {3, 3}, {3, 4}});
 ```C++
 auto plant = ACard(ALILY_PAD, 3, 4);
 if(plant != nullptr){ // 首先需要检查返回值是否有效
-    plant->Row(); // 得到种下的植物所处行，其值为 2，因为 pvz 是从 0 开始数的 
+    plant->Row(); // 得到种下的植物所处行，其值为 2，因为 pvz 是从 0 开始数的
     plant->Type(); // 得到种下的植物类型，这个肯定是荷叶
     plant->Hp(); // 得到种下的植物血量
 }
@@ -113,11 +103,12 @@ if(plant != nullptr){ // 首先需要检查返回值是否有效
 如果你看不懂上面的代码，没关系，慢慢就会懂了，不用急。
 
 ## 修正植物生效函数
+
 由于 PvZ 序号大小的影响，植物的生效倒计时会发生 1cs 的波动，为了解决这个问题，本框架 提供了设定植物生效时间的功能。
 
 **请不要滥用此功能，这可能会破坏游戏规则**
 
-`ASetPlantActiveTime` 函数参数的意义是将指定类型的植物的生效时间设置为调用此函数时刻的 `参数cs` 之后，例如 
+`ASetPlantActiveTime` 函数参数的意义是将指定类型的植物的生效时间设置为调用此函数时刻的 `参数cs` 之后，例如
 
 ```C++
 // 修正寒冰菇生效时间点到此刻的 298cs 后
@@ -125,15 +116,37 @@ ACard({{AICE_SHROOM, 1, 1}, {ACOFFEE_BEAN, 1, 1}});
 ASetPlantActiveTime(AICE_SHROOM, 298);
 ```
 
+## 铲除函数
+
+铲除操作由函数 AShovel 实现
+
+```C++
+// 铲除4行6列的植物,如果植物有南瓜保护默认优先铲除被保护植物
+AShovel(4, 6);
+
+// 铲除3行6列，4行6列的植物
+AShovel({{3, 6}, {4, 6}});
+
+// 铲除4行6列的植物,如果植物有南瓜保护优先铲除南瓜
+AShovel(4, 6, true);
+
+// 铲除4行6列的小喷菇，若该位置没有小喷菇则不铲除
+AShovel(4, 6, APUFF_SHROOM);
+
+// 铲除4行6列的咖啡豆（注意：此时 AShovel(4, 6); 铲除的是蘑菇）
+AShovel(4, 6, ACOFFEE_BEAN);
+```
+
 ## 移除植物函数
 
-由于铲除本身的机制，用于键控中会带来一系列不确定的副作用，
+在 AvZ 中，铲除是通过鼠标点击实现的。因此在极其罕见的情形（如果真的出现了，欢迎上报给开发者）下可能失效。
 因此本框架提供一个更稳定的函数 `ARemovePlant`，该函数
 优先删除 非 南瓜、花盆、荷叶、咖啡豆的植物， 如果需要优先删除以上四种植物，需要在第三个参数上指定
 
 副作用：当使用此函数移除香蒲时，不会在移除位置上补放荷叶等
 
 使用示例如下:
+
 ```C++
 // 删除位于 (1, 2) 的植物，优先删除非 南瓜、花盆、荷叶、咖啡豆
 ARemovePlant(1, 2);
@@ -145,31 +158,11 @@ ARemovePlant(1, 2, APUMPKIN);
 ARemovePlant(1, 2, {APUMPKIN, AFLOWER_POT});
 ```
 
-
-
-## 铲除函数 [不推荐使用]
-
-铲除操作由函数 AShovel 实现
-
-```C++
-// 铲除4行6列的植物,如果植物有南瓜保护默认优先铲除被保护植物
-AShovel(4, 6);
-
-// 铲除4行6列的植物,如果植物有南瓜保护优先铲除南瓜
-AShovel(4, 6, true);
-
-// 铲除3行6列，4行6列的植物
-AShovel({{3, 6},{4, 6}});
-```
-
-
 [目录](./0catalogue.md)
-
 
 ## 附录
 
 ```C++
-
 // 植物类型
 enum APlantType {
     APEASHOOTER = 0, // 豌豆射手
@@ -359,5 +352,4 @@ constexpr APlantType AM_DS_36 = AM_GARLIC;           // 大蒜
 constexpr APlantType AM_YZBHS_37 = AM_UMBRELLA_LEAF; // 叶子保护伞
 constexpr APlantType AM_JZH_38 = AM_MARIGOLD;        // 金盏花
 constexpr APlantType AM_XGTS_39 = AM_MELON_PULT;     // 西瓜投手
-
 ```
