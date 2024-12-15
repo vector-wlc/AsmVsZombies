@@ -278,14 +278,14 @@ void AReplay::StartRecord(int interval, int64_t startIdx) {
     }
     _state = RECORDING;
     _tickInfos.clear();
-    _tickRunner.Start([this] { _RecordTick(); }, false);
+    _tickRunner.Start([this] { _RecordTick(); }, ATickRunner::ONLY_FIGHT);
     _infoTickRunner.Start([this] {
         if (!_isShowInfo || __aGameControllor.isSkipTick())
             return;
         std::string msg = std::format("AReplay : 共录制 [{}-{}] 帧", _startIdx, _endIdx);
         _painter.Draw(AText(msg, _showPosX, _showPosY));
     },
-        true);
+        ATickRunner::PAINT);
 }
 
 void AReplay::SetInfoPos(int x, int y) {
@@ -335,8 +335,10 @@ bool AReplay::ShowOneTick(int64_t tick) {
     return false;
 }
 
-bool AReplay::_PreparePack() {
-    int packIdx = ((_playIdx + _maxSaveCnt) % _maxSaveCnt) / _packTickCnt;
+bool AReplay::_PreparePack(int64_t tick) {
+    if (tick < _startIdx || tick >= _endIdx)
+        return false;
+    int packIdx = ((tick + _maxSaveCnt) % _maxSaveCnt) / _packTickCnt;
     if (_lastPackIdx == packIdx)
         return true;
     _lastPackIdx = packIdx;
@@ -406,19 +408,26 @@ void AReplay::_PlayTick() {
     if (_isInterpolate && !isPlay) { // 如果插帧
         _ShowTickInfo();
         AAsm::GameTotalLoop();
+        // 回放模式下，僵尸刷新被禁用，因此倒计时不会更新
+        // 这就会导致 UpdateRefreshTime 时间混乱
+        // 因此手动更新倒计时
+        AGetMainObject()->RefreshCountdown() -= 1;
     }
     if (!isPlay)
         return;
     AAsm::GameTotalLoop();
+    AGetMainObject()->RefreshCountdown() -= 1;
     // 开启了压缩功能需要预先对压缩包里的内容解压
     // 并且销毁之前解压出来的内容
+    int64_t tmpPlayIdx = _playIdx + 1;
     if (_compressor != nullptr) {
-        if (!_PreparePack())
+        if (!_PreparePack(tmpPlayIdx)){
+            Pause();
             return;
+        }
     }
-    int tmpPlayIdx = _playIdx + 1;
     if (!ShowOneTick(tmpPlayIdx))
-        _tickRunner.Pause();
+        Pause();
 }
 
 void AReplay::_ShowTickInfo() {
@@ -491,7 +500,10 @@ void AReplay::StartPlay(int interval, int64_t startIdx) {
     _state = PLAYING;
     if (interval > 0)
         _playInterval = interval;
-    _playIdx = _startIdx + startIdx;
+
+    // 这里 - 1 是为了修复 _PlayTick 函数中 int tmpPlayIdx = _playIdx + 1;
+    // 导致的第一帧不播放的 bug
+    _playIdx = _startIdx + startIdx - 1;
 
     _tickRunner.Start([this] {
         if (!AGameIsPaused())
@@ -502,15 +514,18 @@ void AReplay::StartPlay(int interval, int64_t startIdx) {
     _infoTickRunner.Start([this] {
         if (!_isShowInfo)
             return;
-        std::string str = std::to_string(_playIdx);
+        std::string str = std::to_string(_playIdx + 1);
         if (_endIdx != INT64_MAX)
             str += "/" + std::to_string(_endIdx);
         _painter.Draw(AText("AReplay : 播放第 " + std::move(str) + " 帧", _showPosX, _showPosY));
     },
-        ATickRunner::GLOBAL);
+        ATickRunner::PAINT);
 }
 
 void AReplay::Pause() {
+    if (_state == PLAYING) {
+        __aig.isReplayPaused = true;
+    }
     _tickRunner.Pause();
 }
 
@@ -519,12 +534,16 @@ bool AReplay::IsPaused() {
 }
 
 void AReplay::GoOn() {
-    if (_state != RECORDING)
+    if (_state != RECORDING){
         _ClearDatFiles();
+        // 重置 _lastPackIdx 以让压缩对象将一个包中的存档全部解压出来
+        _lastPackIdx = INT_MIN;
+    }
     // 高级暂停状态下，不调用一次 _RecordTick 就丢帧了
     if (AGetPvzBase()->GameUi() == 3 && _state == RECORDING
         && __aGameControllor.isAdvancedPaused)
         _RecordTick();
+    __aig.isReplayPaused = false;
     _tickRunner.GoOn();
 }
 
@@ -534,6 +553,7 @@ void AReplay::Stop() {
         _CompressTailFiles();
     } else if (_state == PLAYING) {
         _LoadPvzState();
+        __aig.isReplayPaused = false;
     }
     _ClearAllFiles();
     _state = REST;

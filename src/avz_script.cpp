@@ -13,6 +13,7 @@ void __AScriptManager::GlobalInit() {
     __aig.tickManagers[ATickRunner::AFTER_INJECT].SetRunMode(ATickRunner::AFTER_INJECT);
     __aig.tickManagers[ATickRunner::ONLY_FIGHT].SetRunMode(ATickRunner::ONLY_FIGHT);
     __aig.tickManagers[ATickRunner::GLOBAL].SetRunMode(ATickRunner::GLOBAL);
+    __aig.tickManagers[ATickRunner::PAINT].SetRunMode(ATickRunner::PAINT);
 }
 
 bool __AScriptManager::MemoryInit() {

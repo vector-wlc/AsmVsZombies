@@ -38,6 +38,9 @@ std::string __ATickManager::_GetInfoStr(int priority, std::size_t idx) {
     case ATickRunner::AFTER_INJECT:
         mode = "AFTER_INJECT";
         break;
+    case ATickRunner::PAINT:
+        mode = "PAINT";
+        break;
     default:
         mode = "UNKNOWN";
     }

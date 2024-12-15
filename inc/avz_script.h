@@ -9,6 +9,7 @@ protected:
     void _EnterFight() override {
         avzTime.clear();
         pvzTime.clear();
+        paintTime.clear();
     }
 
 public:
@@ -16,6 +17,8 @@ public:
     std::vector<double> avzTime;
     // PvZ 每帧的运行时间，单位为秒
     std::vector<double> pvzTime;
+    // AvZ 每帧的绘制时间，单位为秒
+    std::vector<double> paintTime;
 
     static double CurrentTime() {
         static double scale = [] {

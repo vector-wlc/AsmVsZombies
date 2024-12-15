@@ -7,6 +7,8 @@
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
+#include <queue>
+#include <variant>
 
 struct __AGeoVertex {
     float __x, __y, __z, __rhw;
@@ -15,11 +17,11 @@ struct __AGeoVertex {
     __AGeoVertex()
         : __x(0.0f), __y(0.0f), __z(0.0f), __rhw(0.0f), __color(0) {}
 
-    __AGeoVertex(float x, float y, DWORD color)
-        : __x(x), __y(y), __z(0.0f), __rhw(1.0f), __color(color) {}
+    __AGeoVertex(float x, float y, float z, DWORD color)
+        : __x(x), __y(y), __z(z), __rhw(1.0f), __color(color) {}
 
-    __AGeoVertex(int x, int y, DWORD color)
-        : __x((float)x), __y((float)y), __z(0.0f), __rhw(1.0f), __color(color) {}
+    __AGeoVertex(int x, int y, float z, DWORD color)
+        : __x((float)x), __y((float)y), __z(z), __rhw(1.0f), __color(color) {}
 };
 
 struct __ATexVertex {
@@ -30,11 +32,11 @@ struct __ATexVertex {
     __ATexVertex()
         : __x(0.0f), __y(0.0f), __z(0.0f), __rhw(0.0f), __color(0), __spec(0), __u(0), __v(0) {}
 
-    __ATexVertex(float x, float y, DWORD color, float u, float v)
-        : __x(x), __y(y), __z(0.0f), __rhw(1.0f), __color(color), __spec(0), __u(u), __v(v) {}
+    __ATexVertex(float x, float y, float z,  DWORD color, float u, float v)
+        : __x(x), __y(y), __z(z), __rhw(1.0f), __color(color), __spec(0), __u(u), __v(v) {}
 
-    __ATexVertex(int x, int y, DWORD color, float u, float v)
-        : __x((float)x), __y((float)y), __z(0.0f), __rhw(1.0f), __color(color), __spec(0), __u(u), __v(v) {}
+    __ATexVertex(int x, int y, float z, DWORD color, float u, float v)
+        : __x((float)x), __y((float)y), __z(z), __rhw(1.0f), __color(color), __spec(0), __u(u), __v(v) {}
 };
 
 struct __AD3dInfo {
@@ -78,7 +80,7 @@ public:
     __ATexture(wchar_t chr, __ATextInfo* _textInfo);
     __ATexture(__ACursorInfo* cursorInfo);
 
-    void Draw(DWORD color, int x, int y) const;
+    void Draw(DWORD color, int x, int y, float layer) const;
 
     IDirectDrawSurface7* CreateTextureSurface(int theWidth, int theHeight);
 
@@ -90,18 +92,35 @@ protected:
     void _CopyBitsToSurface(DWORD* src, DDSURFACEDESC2& dst, __ACursorInfo* cursorInfo);
 };
 
-class __ABasicPainter : public AOrderedBeforeScriptHook<-32768>,
+class __ABasicPainter : public AOrderedBeforeScriptHook<-32767>,
                         public AOrderedExitFightHook<32767>,
-                        public AOrderedAfterInjectHook<-32768> {
+                        public AOrderedAfterInjectHook<-32767> {
     __ADeleteCopyAndMove(__ABasicPainter);
 
 public:
-    struct DrawInfo {
+    enum DrawType {
+        RECT,
+        TEXT,
+        CURSOR,
+    };
+
+    struct RectInfo {
         ARect rect;
-        std::vector<std::wstring> textVec;
-        DWORD rectColor;
-        DWORD textColor;
+        DWORD color;
+    };
+
+    struct TextInfo {
+        std::vector<std::wstring> lines;
+        DWORD color;
+        int x;
+        int y;
+    };
+
+    struct DrawInfo {
+        DrawType type;
+        std::variant<RectInfo, TextInfo, ACursor> var;
         int duration;
+        float layer;
     };
 
     __ABasicPainter() {
@@ -115,19 +134,20 @@ public:
     // Hook
     static bool AsmDraw();
     static void DrawEveryTick();
+    static void UpdatePaintTime(); 
 
     void ClearFont();
-    std::list<DrawInfo> drawInfoQueue;
-    std::list<std::pair<ACursor, int>> cursorQueue;
+    std::list<DrawInfo> multiTickQueue;
+    std::deque<DrawInfo> singleTickQueue;
     std::unordered_map<wchar_t, std::shared_ptr<__ATexture>> textureDict;
     static std::vector<std::vector<int>> posDict;
 
-    void DrawRect(int x, int y, int w, int h, DWORD color);
-    void DrawStr(const std::wstring& text, int x, int y, DWORD color);
-    static void DrawCursor(int x, int y, int type); // 0: 普通的 1: 手
+    void DrawRect(int x, int y, int w, int h, DWORD color, float layer);
+    void DrawStr(const std::wstring& text, int x, int y, DWORD color, float layer);
+    void Draw(const DrawInfo& info);
+    static void DrawCursor(int x, int y, int type, float layer); // 0: 普通的 1: 手
     __ATextInfo* GetTextNeedInfo();
-    bool Refresh();
-    bool IsOpen3dAcceleration();
+    static bool IsOpen3dAcceleration();
 
     static std::unordered_set<__ABasicPainter*>& GetPainterSet() {
         static std::unordered_set<__ABasicPainter*> painters;
@@ -145,6 +165,7 @@ protected:
     virtual void _BeforeScript() override;
     virtual void _ExitFight() override;
     virtual void _AfterInject() override;
+
 };
 
 class APainter {
@@ -188,6 +209,7 @@ public:
     // 绘制函数
     // 第一个参数指的是绘制什么: 文本还是矩形
     // 第二个参数指的是绘制的持续时间
+    // 第三个参数是图层，类型: float，有效范围为 [0, 1]
     // 绘制文本
     // ***使用示例
     // Draw(AText("hello", 100, 100)) ------ 在游戏画面(100, 100) 处绘制 hello
@@ -196,9 +218,9 @@ public:
     // ***使用示例
     // Draw(ARect(100, 100, 200, 200)) ------ 在游戏画面(100, 100) 处绘制宽高为 (200, 200) 的矩形, 默认显示 1cs
     // Draw(ARect(100, 100, 200, 200), 100) ------ 在游戏画面(100, 100) 处绘制宽高为 (200, 200) 的矩形, 显示 100cs
-    void Draw(const ARect& rect, int duration = 1);
-    void Draw(const AText& posText, int duration = 1);
-    void Draw(const ACursor& cursor, int duration = 1);
+    void Draw(const ARect& rect, int duration = 1, float layer = 0.0f);
+    void Draw(const AText& posText, int duration = 1, float layer = 0.0f);
+    void Draw(const ACursor& cursor, int duration = 1, float layer = 0.0f);
 
     // 设定队列最大容量
     // 这个容量是为了防止内存泄露的
@@ -212,6 +234,13 @@ protected:
     DWORD _rectColor = AArgb(0xaf, 0, 0, 0);
     __ABasicPainter _basicPainter;
     std::size_t _maxQueueSize = 1e4;
+};
+
+class ATickPainter {
+    __ADeleteCopyAndMove(ATickPainter);
+
+public:
+
 };
 
 #endif

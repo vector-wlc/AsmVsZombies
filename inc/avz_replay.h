@@ -200,7 +200,7 @@ protected:
     void _RecordTick();
     void _PlayTick();
     void _ShowTickInfo();
-    bool _PreparePack();
+    bool _PreparePack(int64_t tick);
     void _CompressTailFiles();
     void _ClearDatFiles();
     void _ClearAllFiles();
