@@ -136,6 +136,11 @@ public:
         return MPtr<AAnimationMain>(0x820);
     }
 
+    // 关卡序号
+    __ANodiscard int& LevelId() noexcept {
+        return MRef<int>(0x7f8);
+    }
+
     // 游戏界面
     // 1 - 主界面
     // 2 - 选卡界面
@@ -545,6 +550,11 @@ public:
     // 蘑菇倒计时
     __ANodiscard int& MushroomCountdown() noexcept {
         return MRef<int>(0x130);
+    }
+
+    // 蹦极抓住的状态 (0没被抓住,1被抓住,2抱走)
+    __ANodiscard int& BungeeState() noexcept {
+        return MRef<int>(0x134);
     }
 
     // 受伤判定宽度

@@ -369,8 +369,7 @@ int AAsm::GridToOrdinate(int row, int col) {
 }
 
 AZombie* AAsm::PutZombie(int row, int col, AZombieType type) {
-    auto zombieArray = AGetMainObject()->ZombieArray();
-    auto num = AGetMainObject()->ZombieNext();
+    auto ret = AGetMainObject()->ZombieArray() + AGetMainObject()->ZombieNext();
     asm volatile(
         "movl %[row], %%eax;"
         "pushl %[col];"
@@ -383,15 +382,14 @@ AZombie* AAsm::PutZombie(int row, int col, AZombieType type) {
         :
         : [row] "rm"(row), [col] "rm"(col), [index] "rm"(int(type))
         : ASaveAllRegister);
-    return zombieArray + num;
+    return ret;
 }
 
 APlant* AAsm::PutPlant(int row, int col, APlantType type) {
     if (type == AIMITATOR)
         return nullptr; // 不可能出现这种情况
 
-    auto plantArray = AGetMainObject()->PlantArray();
-    auto num = AGetMainObject()->PlantNext();
+    auto ret = AGetMainObject()->PlantArray() + AGetMainObject()->PlantNext();
 
     int imitatorType = -1;
     if (type >= AM_PEASHOOTER) {
@@ -412,7 +410,7 @@ APlant* AAsm::PutPlant(int row, int col, APlantType type) {
         : [imitatorType] "rm"(imitatorType), [type] "rm"(type), [row] "rm"(row), [col] "rm"(col)
         : ASaveAllRegister);
 
-    return plantArray + num;
+    return ret;
 }
 
 void AAsm::RemovePlant(APlant* plant) {
@@ -711,9 +709,8 @@ void AAsm::LoadGame(const std::string& file) {
 }
 
 void AAsm::SaveGame(const std::string& file) {
-    for (auto&& zombie : AAliveFilter<AZombie>())
-        if ((zombie.FixationCountdown() != 0 || zombie.FreezeCountdown() != 0)
-            && zombie.Type() == AXC_15 && zombie.State() == 15)
+    for (auto&& zombie : AObjSelector(&AZombie::Type, AJACK_IN_THE_BOX_ZOMBIE, &AZombie::State, 15))
+        if (zombie.FixationCountdown() != 0 || zombie.FreezeCountdown() != 0)
             zombie.MRef<bool>(0x104) = zombie.MRef<bool>(0xba);
     uint8_t pvzStr[28] = {0};
     void* tmpPtr = &pvzStr;

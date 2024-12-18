@@ -1,7 +1,6 @@
 #ifndef __AVZ_ITERATOR_H__
 #define __AVZ_ITERATOR_H__
 
-#include <iterator>
 #include "avz_global.h"
 #include "avz_memory.h"
 
@@ -22,7 +21,7 @@ struct __AFilterTrait<APlant> {
     }
 
     __ANodiscard static bool IsAlive(APlant* ptr) {
-        return !ptr->IsDisappeared() && !ptr->IsCrushed();
+        return !ptr->IsDisappeared() && !ptr->IsCrushed() && ptr->BungeeState() != 2 && (ptr->Type() != ASQUASH || ptr->State() != 7);
     }
 };
 
@@ -37,7 +36,7 @@ struct __AFilterTrait<AZombie> {
     }
 
     __ANodiscard static bool IsAlive(AZombie* ptr) {
-        return !ptr->IsDisappeared() && !ptr->IsDead();
+        return !ptr->IsDisappeared() && !ptr->IsDead() && ptr->AtWave() >= 0;
     }
 };
 
@@ -252,10 +251,14 @@ struct __AObjSelectorArgPack {
     template <typename Pred>
     __AObjSelectorArgPack(Lhs (T::*prop)(), Pred pred, Rhs value)
         requires std::is_invocable_r_v<bool, Pred, Lhs, Rhs>
-        : prop(prop), pred(pred), value(value) {}
+        : prop(prop)
+        , pred(pred)
+        , value(value) {}
 
     __AObjSelectorArgPack(Lhs (T::*prop)(), Rhs value)
-        : prop(prop), pred(std::equal_to()), value(value) {}
+        : prop(prop)
+        , pred(std::equal_to())
+        , value(value) {}
 
     bool operator()(T* obj) {
         return std::invoke(pred, std::invoke(prop, obj), value);

@@ -7,8 +7,7 @@ APainter _rectPainter;
 // 保存原本的机器码
 uint16_t __AGameControllor::_oriAsm = 0;
 
-__AGameControllor::__AGameControllor()
-{
+__AGameControllor::__AGameControllor() {
     // 保存原本的机器码
     _oriAsm = AMRef<uint16_t>(_UPDATE_ASM_ADDR_BEGIN);
 
@@ -20,8 +19,7 @@ __AGameControllor::__AGameControllor()
     _rectPainter.SetRectColor(_rectColor);
 }
 
-bool __AGameControllor::_CheckSkipTick()
-{
+bool __AGameControllor::_CheckSkipTick() {
     if (isAdvancedPaused) {
         aLogger->Error("开启高级暂停或者暂停时不能启用跳帧");
         return false;
@@ -34,8 +32,8 @@ bool __AGameControllor::_CheckSkipTick()
 
     return true;
 }
-void __AGameControllor::SkipTick(int wave, int time)
-{
+
+void __AGameControllor::SkipTick(int wave, int time) {
     SkipTick([=]() {
         int nowTime = ANowTime(wave);
         if (nowTime == __AOperationQueue::UNINIT || nowTime < time) { // 时间未到达
@@ -48,8 +46,7 @@ void __AGameControllor::SkipTick(int wave, int time)
     });
 }
 
-void __AGameControllor::SetAdvancedPause(bool isAdvancedPaused, bool isPlaySound, DWORD rectColor)
-{
+void __AGameControllor::SetAdvancedPause(bool isAdvancedPaused, bool isPlaySound, DWORD rectColor) {
     if (this->isAdvancedPaused == isAdvancedPaused) {
         return;
     }
@@ -67,40 +64,30 @@ void __AGameControllor::SetAdvancedPause(bool isAdvancedPaused, bool isPlaySound
     _rectPainter.SetRectColor(rectColor);
 }
 
-void __AGameControllor::SetUpdateWindow(bool isUpdateWindow)
-{
+void __AGameControllor::SetUpdateWindow(bool isUpdateWindow) {
     this->isUpdateWindow = isUpdateWindow;
 }
 
-void __AGameControllor::UpdateAdvancedPause()
-{
+void __AGameControllor::UpdateAdvancedPause() {
     _rectPainter.Draw(ARect(0, 0, _pvzWidth, _pvzHeight));
     AAsm::UpdateCursorObjectAndPreview();
-    AGetMainObject()->GlobalClock() -= 1;
-    AGetPvzBase()->MjClock() -= 1;
-    int gameIdx = AGetPvzBase()->MRef<int>(0x7f8); // 关卡序号
-    if (gameIdx >= AAsm::PUZZLE_I_ZOMBIE_1
-        && gameIdx <= AAsm::PUZZLE_I_ZOMBIE_ENDLESS) {
+    --AGetMainObject()->GlobalClock();
+    --AGetPvzBase()->MjClock();
+    int levelId = AGetPvzBase()->LevelId(); // 关卡序号
+    if (AAsm::PUZZLE_I_ZOMBIE_1 <= levelId && levelId <= AAsm::PUZZLE_I_ZOMBIE_ENDLESS) {
         // 刷新卡片数组
         AAsm::RefreshAllSeedPackets();
-        auto zombieBegin = AGetMainObject()->ZombieArray();
-        auto zombieEnd = zombieBegin + AGetMainObject()->ZombieTotal();
-
         // 因为 IZE 模式的僵尸渲染位置有问题，
         // 所以需要更新僵尸位置
-        for (auto zombie = zombieBegin; zombie != zombieEnd; ++zombie) {
-            if (zombie->IsDead() || zombie->IsDisappeared()) {
-                continue;
-            }
-            zombie->MRef<int>(0x8) = zombie->Abscissa();
-            zombie->MRef<int>(0xC) = zombie->Ordinate();
+        for (auto& zombie : aAliveZombieFilter) {
+            zombie.MRef<int>(0x8) = zombie.Abscissa();
+            zombie.MRef<int>(0xC) = zombie.Ordinate();
         }
     }
 }
 
-void __AGameControllor::_ExitFight()
-{
-    isSkipTick = []() -> bool {
+void __AGameControllor::_ExitFight() {
+    isSkipTick = [] {
         return false;
     };
     // 恢复原函数调用

@@ -39,7 +39,7 @@ __ANodiscard APlant* AGetPlantPtr(int row, int col, int type = -1);
 // 参数2：填写指定类型
 // 参数3：得到对象序列，此函数按照位置的顺序填写对象序列
 // *** 注意：如果没有植物填写-1，如果有植物但是不是指定类型，会填写-2
-void AGetPlantIndices(const std::vector<AGrid>& lstIn, int type, std::vector<int>& indexsOut);
+void AGetPlantIndices(const std::vector<AGrid>& lstIn, int type, std::vector<int>& indicesOut);
 __ANodiscard std::vector<int> AGetPlantIndices(const std::vector<AGrid>& lst, int type);
 
 // 得到一组指定位置的植物的对象指针

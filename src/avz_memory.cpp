@@ -38,21 +38,19 @@ ASeed* AGetSeedPtr(int type, bool imitator) {
 }
 
 int AGetPlantIndex(int row, int col, int type) {
-    auto plant = AGetMainObject()->PlantArray();
-    int plantCntMax = AGetMainObject()->PlantCountMax();
-    for (int i = 0; i < plantCntMax; ++i, ++plant) {
-        if ((!plant->IsDisappeared()) && (!plant->IsCrushed()) && (plant->Row() + 1 == row) && (plant->Col() + 1 == col)) {
-            int plantType = plant->Type();
-            if (type == -1) {
-                // 如果植物存在	且不为南瓜花盆荷叶咖啡豆
-                if ((plantType != APUMPKIN) && (plantType != AFLOWER_POT) && (plantType != ALILY_PAD) && (plantType != ACOFFEE_BEAN))
-                    return i; // 返回植物的对象序列
-            } else {
-                if (plantType == type)
-                    return i;
-                else if (type != APUMPKIN && type != AFLOWER_POT && type != ALILY_PAD && type != ACOFFEE_BEAN && plantType != APUMPKIN && plantType != AFLOWER_POT && plantType != ALILY_PAD && plantType != ACOFFEE_BEAN)
-                    return -2;
-            }
+    for (auto& plant : AObjSelector(&APlant::Row, row - 1, &APlant::Col, col - 1)) {
+        if (plant.Type() == ASQUASH && plant.State() >= 5)
+            continue;
+        int plantType = plant.Type();
+        if (type == -1) {
+            // 如果植物存在	且不为南瓜花盆荷叶咖啡豆
+            if ((plantType != APUMPKIN) && (plantType != AFLOWER_POT) && (plantType != ALILY_PAD) && (plantType != ACOFFEE_BEAN))
+                return plant.Index(); // 返回植物的对象序列
+        } else {
+            if (plantType == type)
+                return plant.Index();
+            else if (type != APUMPKIN && type != AFLOWER_POT && type != ALILY_PAD && type != ACOFFEE_BEAN && plantType != APUMPKIN && plantType != AFLOWER_POT && plantType != ALILY_PAD && plantType != ACOFFEE_BEAN)
+                return -2;
         }
     }
     return -1; // 没有符合要求的植物返回 -1
@@ -63,9 +61,11 @@ APlant* AGetPlantPtr(int row, int col, int type) {
     return idx < 0 ? nullptr : AGetMainObject()->PlantArray() + idx;
 }
 
-void AGetPlantIndices(const std::vector<AGrid>& lstIn, int type, std::vector<int>& indexsOut) {
-    indexsOut.assign(lstIn.size(), -1);
+void AGetPlantIndices(const std::vector<AGrid>& lstIn, int type, std::vector<int>& indicesOut) {
+    indicesOut.assign(lstIn.size(), -1);
     for (auto& plant : aAlivePlantFilter) {
+        if (plant.Type() == ASQUASH && plant.State() >= 5)
+            continue;
         AGrid grid{plant.Row() + 1, plant.Col() + 1};
         auto itVec = __AFindSameEle<AGrid>(lstIn, grid);
         if (itVec.empty())
@@ -73,24 +73,24 @@ void AGetPlantIndices(const std::vector<AGrid>& lstIn, int type, std::vector<int
         int plantType = plant.Type();
         if (plantType == type)
             for (const auto& ele : itVec)
-                indexsOut[ele - lstIn.begin()] = plant.Index();
+                indicesOut[ele - lstIn.begin()] = plant.Index();
         else if (type != APUMPKIN && type != AFLOWER_POT && type != ALILY_PAD && type != ACOFFEE_BEAN && plantType != APUMPKIN && plantType != AFLOWER_POT && plantType != ALILY_PAD && plantType != ACOFFEE_BEAN)
             for (const auto& ele : itVec)
-                indexsOut[ele - lstIn.begin()] = -2;
+                indicesOut[ele - lstIn.begin()] = -2;
     }
 }
 
 std::vector<int> AGetPlantIndices(const std::vector<AGrid>& lst, int type) {
-    std::vector<int> indexs;
-    AGetPlantIndices(lst, type, indexs);
-    return indexs;
+    std::vector<int> indices;
+    AGetPlantIndices(lst, type, indices);
+    return indices;
 }
 
 void AGetPlantPtrs(const std::vector<AGrid>& lstIn, int type, std::vector<APlant*>& ptrsOut) {
     auto plantArray = AGetMainObject()->PlantArray();
-    auto indexs = AGetPlantIndices(lstIn, type);
+    auto indices = AGetPlantIndices(lstIn, type);
     ptrsOut.clear();
-    for (auto&& index : indexs)
+    for (auto&& index : indices)
         ptrsOut.push_back(index < 0 ? nullptr : plantArray + index);
 }
 
@@ -101,32 +101,16 @@ std::vector<APlant*> AGetPlantPtrs(const std::vector<AGrid>& lst, int type) {
 }
 
 bool AIsZombieExist(int type, int row) {
-    auto zombie = AGetMainObject()->ZombieArray();
-    int zombieCntMax = AGetMainObject()->ZombieTotal();
-    for (int i = 0; i < zombieCntMax; ++i, ++zombie) {
-        if (zombie->IsExist() && !zombie->IsDead()) {
-            if (type < 0 && row < 0) {
-                return true;
-            } else if (type >= 0 && row >= 0) {
-                if (zombie->Row() == row - 1 && zombie->Type() == type)
-                    return true;
-            } else if (type < 0 && row >= 0) {
-                if (zombie->Row() == row - 1)
-                    return true;
-            } else { // if (type >= 0 && row < 0)
-                if (zombie->Type() == type)
-                    return true;
-            }
-        }
-    }
+    for (auto& zombie : aAliveZombieFilter)
+        if ((type < 0 || zombie.Type() == type) && (row <= 0 || zombie.Row() == row - 1))
+            return true;
     return false;
 }
 
 std::vector<AGrid> AGetGraves() {
     std::vector<AGrid> graves;
-    for (auto& item : aAlivePlaceItemFilter)
-        if (item.Type() == APlaceItemType::GRAVESTONE)
-            graves.push_back({item.Row() + 1, item.Col() + 1});
+    for (auto& item : AObjSelector(&APlaceItem::Type, APlaceItemType::GRAVESTONE))
+        graves.push_back({item.Row() + 1, item.Col() + 1});
     return graves;
 }
 
@@ -322,14 +306,10 @@ ARemovePlantPos::ARemovePlantPos(int row, float col, const std::vector<int>& typ
     : row(row), col(col), types(types) {}
 
 void ARemovePlant(int row, float col, const std::vector<int>& priority) {
-    int tmpCol = int(col + 0.5);
-    int plantTotal = AGetMainObject()->PlantTotal();
-    auto plantArray = AGetMainObject()->PlantArray();
     std::vector<APlant*> plantVec;
-
-    for (int i = 0; i < plantTotal; ++i)
-        if (!plantArray[i].IsCrushed() && !plantArray[i].IsDisappeared() && plantArray[i].Row() == row - 1 && plantArray[i].Col() == tmpCol - 1)
-            plantVec.push_back(&plantArray[i]);
+    for (auto& plant : AObjSelector(&APlant::Row, row - 1, &APlant::Col, int(col + 0.5) - 1))
+        if (plant.Type() != ASQUASH || plant.State() <= 4)
+            plantVec.push_back(&plant);
 
     for (auto priType : priority) {
         for (auto plant : plantVec) {

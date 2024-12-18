@@ -112,22 +112,13 @@ void __ACardManager::_EnterFight() {
     if (AGetPvzBase()->GameUi() != 3)
         return;
 
-    auto seed = AGetMainObject()->SeedArray();
-    int seedCount = seed->Count();
-    int seedType;
-    std::pair<int, int> seedInfo;
-    for (int i = 0; i < seedCount; ++i, ++seed) {
-        seedType = seed->Type();
-        // 如果是模仿者卡片
+    for (auto& seed : ABasicFilter<ASeed>()) {
+        int seedType = seed.Type(), index = &seed - AGetMainObject()->SeedArray();
         if (seedType == AIMITATOR) {
-            seedType = seed->ImitatorType();
-            seedInfo.first = seedType + AM_PEASHOOTER;
-            seedInfo.second = i;
-        } else { // if(seed_info != 48)
-            seedInfo.first = seedType;
-            seedInfo.second = i;
-        }
-        _cardNameToIndexMap.insert(seedInfo);
+            seedType = seed.ImitatorType();
+            _cardNameToIndexMap.emplace(seedType + AM_PEASHOOTER, index);
+        } else
+            _cardNameToIndexMap.emplace(seedType, index);
     }
 }
 
