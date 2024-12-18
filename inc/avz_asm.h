@@ -4,7 +4,7 @@
 #include "avz_pvz_struct.h"
 #include "avz_types.h"
 
-#define ASaveAllRegister "esp", "ebp", "eax", "ebx", "ecx", "edx", "esi", "edi"
+#define ASaveAllRegister "esp", "eax", "ebx", "ecx", "edx", "esi", "edi"
 
 // 使用汇编代码调用 PvZ 游戏内部的函数
 class AAsm {
@@ -256,18 +256,6 @@ public:
     __ADeprecated() static void* SaveToMemory();
     __ADeprecated() static void LoadFromMemory(void*& p);
     __ADeprecated() static void FreeMemory(void*& p);
-
-protected:
-    static void _ClickScene();
-    static void _Click();
-    static void _MouseClick();
-    static void _ShootPao();
-    static void _PlantCard();
-    static void _ShovelPlant();
-    static void _ChooseCard();
-    static void _ChooseImitatorCard();
-    static void _GetPlantRejectType();
-    static void _RemovePlant();
 };
 
 #endif

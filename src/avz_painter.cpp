@@ -294,42 +294,34 @@ bool __ABasicPainter::AsmDraw() {
     if (__AD3dInfo::device != nullptr) {
         __AD3dInfo::device->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, 0xff000000, 0.0f, 0L);
     }
-    // aLogger->Debug("AsmDraw {}", AGetMainObject()->GameClock());
-    static int __x = 0;
-    __asm__ __volatile__(
-        "pushal;"
-        "movl 0x6A9EC0, %%ecx;"
-        "movl $0x54C650, %%edx;"
-        "calll *%%edx;"
-        "movl %%eax, %[__x];"
-        "popal;"
-        : [__x] "=rm"(__x)
-        :
-        :);
 
-    if (__x) {
+    // aLogger->Debug("AsmDraw {}", AGetMainObject()->GameClock());
+    int ret;
+    asm volatile(
+        "movl 0x6a9ec0, %%ecx;"
+        "movl $0x54c650, %%edx;"
+        "call *%%edx;"
+        "movl %%eax, %[ret];"
+        : [ret] "=rm"(ret)
+        :
+        : "esp", "eax", "ecx", "edx");
+
+    if (ret) {
         // aLogger->Debug("DrawEveryTick {}", AGetMainObject()->GameClock());
         DrawEveryTick();
-        __asm__ __volatile__(
-            "pushal;"
+        asm volatile(
             "pushl $0;"
-            "movl 0x6A9EC0, %%ecx;"
-            "movl $0X54BAE0, %%edx;"
-            "calll *%%edx;"
-            "popal;"
+            "movl 0x6a9ec0, %%ecx;"
+            "movl $0x54bae0, %%edx;"
+            "call *%%edx;"
             :
             :
-            :);
+            : "esp", "eax", "ecx", "edx");
     }
 
-    __asm__ __volatile__(
-        "movl %[__x], %%eax;"
-        :
-        : [__x] "rm"(__x)
-        :);
     lastFinishTime = __AProfiler::CurrentTime();
     __aProfiler.paintTime.push_back(lastFinishTime - lastCallTime);
-    return __x;
+    return ret;
 }
 
 void __ABasicPainter::DrawRect(int x, int y, int w, int h, DWORD color, float layer) {
