@@ -1,8 +1,8 @@
 # 更新日志
 
-AvZ 2.8.3
+AvZ 2.8.3 2025_02_25
 
-* TBD
+* 修复了 APainter 绘制对象溢出的问题
 * 优化了植物/僵尸是否存活的判定: `AAliveFilter<APlant>` 不再包含已被蹦极抱走的植物和已生效的窝瓜；`AAliveFilter<AZombie>` 不再包含选卡界面的僵尸
 
 AvZ 2.8.2 2024_10_30

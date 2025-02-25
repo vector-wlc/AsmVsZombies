@@ -30,11 +30,13 @@ void __AOpQueueManager::_RecordRefresh(int wave, int refreshTime) {
     if (queues[wave].memRefreshTime == refreshTime)
         return;
     if (queues[wave].memRefreshTime != __AOperationQueue::UNINIT) {
+        /*
         static int lastWarnTime = -100;
         if (AGetMainObject()->GameClock() - lastWarnTime >= 100) {
             lastWarnTime = AGetMainObject()->GameClock();
             aLogger->Warning("时间换算出现 {}cs 的不一致；是否开启了暂停刷新修改？", refreshTime - queues[wave].memRefreshTime);
         }
+        */
         return;
     }
     queues[wave].memRefreshTime = queues[wave].calRefreshTime = refreshTime;
