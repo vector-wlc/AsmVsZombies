@@ -229,6 +229,9 @@ int ANowWave(bool allowNegativeTime) {
 }
 
 int ANowTime(int wave) {
+    if (AGetPvzBase()->GameUi() != 3) {
+        return __AOperationQueue::UNINIT;
+    }
     if (!__aOpQueueManager.isInitialized)
         return __AOperationQueue::UNINIT;
     if (wave < 0 || wave >= __aOpQueueManager.queues.size()) {

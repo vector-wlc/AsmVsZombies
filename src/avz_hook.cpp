@@ -6,6 +6,7 @@ extern "C" __declspec(dllexport) void __cdecl __AScriptHook() {
 
 void __AInstallHook() {
     DWORD temp;
+    // 54BACD 地址 call 了这个虚函数
     VirtualProtect((void*)0x400000, 0x35E000, PAGE_EXECUTE_READWRITE, &temp);
     *(uint32_t*)0x667bc0 = (uint32_t)&__AScriptHook;
 }

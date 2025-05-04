@@ -1,5 +1,6 @@
-#include <filesystem>
+
 #include "libavz.h"
+#include <filesystem>
 
 namespace fs = std::filesystem;
 
@@ -294,6 +295,7 @@ void AReplay::SetInfoPos(int x, int y) {
 }
 
 bool AReplay::ShowOneTick(int64_t tick) {
+
     if (AGetPvzBase()->GameUi() != 3) {
         aLogger->Error("ShowOneTick : AReplay 只能在战斗界面使用");
         return false;
@@ -304,6 +306,9 @@ bool AReplay::ShowOneTick(int64_t tick) {
     }
     if (tick < _startIdx || tick >= _endIdx)
         return false;
+
+    // 显示一帧的时候，首先打开信息显示
+    _infoTickRunner.GoOn();
 
     // 对于播放模式，此函数会将播放的帧位设置为当前要显示的帧
     // 对于记录模式，此函数会将下一个记录的帧位设置为当前要显示的帧
@@ -421,7 +426,7 @@ void AReplay::_PlayTick() {
     // 并且销毁之前解压出来的内容
     int64_t tmpPlayIdx = _playIdx + 1;
     if (_compressor != nullptr) {
-        if (!_PreparePack(tmpPlayIdx)){
+        if (!_PreparePack(tmpPlayIdx)) {
             Pause();
             return;
         }
@@ -518,14 +523,15 @@ void AReplay::StartPlay(int interval, int64_t startIdx) {
         if (_endIdx != INT64_MAX)
             str += "/" + std::to_string(_endIdx);
         _painter.Draw(AText("AReplay : 播放第 " + std::move(str) + " 帧", _showPosX, _showPosY));
+        // 如果检测到是暂停状态，那么显示一帧之后就暂停
+        // 防止重复绘制
+        if (IsPaused())
+            _infoTickRunner.Pause();
     },
         ATickRunner::PAINT);
 }
 
 void AReplay::Pause() {
-    if (_state == PLAYING) {
-        __aig.isReplayPaused = true;
-    }
     _tickRunner.Pause();
 }
 
@@ -534,7 +540,7 @@ bool AReplay::IsPaused() {
 }
 
 void AReplay::GoOn() {
-    if (_state != RECORDING){
+    if (_state != RECORDING) {
         _ClearDatFiles();
         // 重置 _lastPackIdx 以让压缩对象将一个包中的存档全部解压出来
         _lastPackIdx = INT_MIN;
@@ -543,8 +549,8 @@ void AReplay::GoOn() {
     if (AGetPvzBase()->GameUi() == 3 && _state == RECORDING
         && __aGameControllor.isAdvancedPaused)
         _RecordTick();
-    __aig.isReplayPaused = false;
     _tickRunner.GoOn();
+    _infoTickRunner.GoOn();
 }
 
 void AReplay::Stop() {
@@ -553,7 +559,6 @@ void AReplay::Stop() {
         _CompressTailFiles();
     } else if (_state == PLAYING) {
         _LoadPvzState();
-        __aig.isReplayPaused = false;
     }
     _ClearAllFiles();
     _state = REST;

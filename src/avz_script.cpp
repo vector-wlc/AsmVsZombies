@@ -71,21 +71,34 @@ void __AScriptManager::LoadScript() {
 void __AScriptManager::RunScript() {
     int gameUi = AGetPvzBase()->GameUi();
 
-    if (gameUi == 2 || !__aGameControllor.isUpdateWindow) {
+    // 如果在非战斗界面还检测到开启了不更新窗口
+    // 那么直接强制开启更新窗口
+    // 不然在 UpdateApp 函数中会检测当前游戏是否进行了刷新
+    // 如果没有进行刷新就会一直死循环跳不出去
+    if (gameUi != 3 && !__aGameControllor.isUpdateWindow) {
+        ASetUpdateWindow(true);
+    }
+
+    // 如果在选卡界面或者在战斗界面开启了不刷新窗口
+    // 则执行全局运行帧
+    if (gameUi == 2
+        || ((gameUi == 3) && !__aGameControllor.isUpdateWindow)) {
         __aig.tickManagers[ATickRunner::GLOBAL].RunQueue();
         return;
     }
 
+    // 下面的代码只能在战斗界面运行
     if (gameUi != 3)
         return;
 
+    // 开启了高级暂停之后
+    // AvZ 战斗逻辑的代码均不能执行
+    // 这里只会执行刷新高级暂停界面的函数
     if (__aGameControllor.isAdvancedPaused) {
         __aig.tickManagers[ATickRunner::GLOBAL].RunQueue();
         __aGameControllor.UpdateAdvancedPause();
         return;
     }
-
-    // 下面的代码只能在战斗界面运行
 
     auto mainObject = AGetMainObject();
 

@@ -283,15 +283,11 @@ void __ABasicPainter::_AfterInject() {
 }
 
 bool __ABasicPainter::AsmDraw() {
-    if (__aig.isReplayPaused) {
-        return false;
-    }
-
     static double lastCallTime, lastFinishTime;
     lastCallTime = __AProfiler::CurrentTime();
 
     // 如果要改动这段代码请咨询零度
-    if (__AD3dInfo::device != nullptr) {
+    if (__AD3dInfo::device != nullptr && __aGameControllor.isUpdateWindow) {
         __AD3dInfo::device->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, 0xff000000, 0.0f, 0L);
     }
 
@@ -318,6 +314,12 @@ bool __ABasicPainter::AsmDraw() {
             :
             : "esp", "eax", "ecx", "edx");
     }
+
+    __asm__ __volatile__(
+        "movl %[ret], %%eax;"
+        :
+        : [ret] "rm"(ret)
+        :);
 
     lastFinishTime = __AProfiler::CurrentTime();
     __aProfiler.paintTime.push_back(lastFinishTime - lastCallTime);

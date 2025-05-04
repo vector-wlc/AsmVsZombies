@@ -109,10 +109,6 @@ struct __AInternalGlobal {
         static std::vector<AOperation> _;
         return _;
     }
-    // 这里有一个 Painter 类和 Replay 类的耦合
-    // 目的是为了防止 Replay 暂停播放的时候画面变灰
-    // 目前没想到更好的解决方案
-    bool isReplayPaused = false;
 };
 
 extern __AInternalGlobal __aig;
