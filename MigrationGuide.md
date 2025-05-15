@@ -7,7 +7,7 @@
 
 # 版本迁移文档
 
-## Nightly
+## 2.8.3 250225
 
 1. `AAliveFilter<APlant>` 不再包含已被蹦极抱走的植物和已生效的窝瓜；`AAliveFilter<AZombie>` 不再包含选卡界面的僵尸。
 如果确实需要遍历这些对象，请使用 `ABasicFilter`

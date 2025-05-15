@@ -655,9 +655,14 @@ inline void AAverageSpawn(const std::set<int>& types = {}) {
         for (int type = 0; type < 33; ++type) {
             if (ARangeIn(type, {ADUCKY_TUBE_ZOMBIE, ASNORKEL_ZOMBIE, ADOLPHIN_RIDER_ZOMBIE}))
                 rows[type] = {2, 3};
-            else if (aFieldInfo.nRows == 5 && type == ADANCING_ZOMBIE)
-                rows[type] = {1, 2, 3};
-            else if (aFieldInfo.hasPool && type == ABALLOON_ZOMBIE && ANowWave() > 5)
+            else if (type == ADANCING_ZOMBIE) {
+                if (!aFieldInfo.hasPool)
+                    rows[type] = aFieldInfo.nRows == 5 ? std::vector{1, 2, 3} : std::vector{1, 2, 3, 4};
+                else if (AGetMainObject()->Scene() == 8) // AQE
+                    rows[type] = {1, 4};
+                else
+                    rows[type] = default_rows;
+            } else if (aFieldInfo.hasPool && type == ABALLOON_ZOMBIE && ANowWave() > 5)
                 rows[type] = {0, 1, 2, 3, 4, 5};
             else
                 rows[type] = default_rows;

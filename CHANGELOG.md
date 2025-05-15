@@ -1,5 +1,12 @@
 # 更新日志
 
+AvZ 2.8.4 2025_05_15
+
+* 修复了切换全屏时 APainter 导致崩溃的问题
+* `AAverageSpawn` 支持特殊场地
+* 修复了 `AReplay` 和 `AConnect(AKey)` 的一些问题
+* `AAverageSpawn` 支持 AQE 场景
+
 AvZ 2.8.3 2025_02_25
 
 * 修复了 APainter 绘制对象溢出的问题
