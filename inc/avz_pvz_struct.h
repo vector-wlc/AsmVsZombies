@@ -562,7 +562,7 @@ public:
         return MRef<int>(0x10);
     }
 
-    // 蘑菇倒计时
+    // 受伤判定高度
     __ANodiscard int& HurtHeight() noexcept {
         return MRef<int>(0x14);
     }
@@ -759,7 +759,7 @@ public:
         return MRef<int>(0x94);
     }
 
-    // 蘑菇倒计时
+    // 受伤判定高度
     __ANodiscard int& HurtHeight() noexcept {
         return MRef<int>(0x98);
     }
