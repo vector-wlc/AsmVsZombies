@@ -1,5 +1,15 @@
 # 更新日志
 
+AvZ 2.8.5 2025_07_11
+
+* 修复了 `AFodder` 默认会将墓碑吞噬者放入垫材列表的问题
+* `AIceFiller` 支持优先使用 HP 最少的存冰
+* 修正了 `ASetWaveZombies` 的行为
+* `ASetZombies` 和 `ASetWaveZombies` 支持以字符串形式传入僵尸类型
+* 修复了 `AWave` 无法包含第 0 波的问题
+* `Shovel` 和 `Card` 支持行缩写
+* `Card` 支持以模板参数传入延迟，表示延迟一段时间后铲除
+
 AvZ 2.8.4 2025_05_15
 
 * 修复了切换全屏时 APainter 导致崩溃的问题

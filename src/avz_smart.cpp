@@ -158,32 +158,41 @@ void AIceFiller::Coffee(int row, int col) {
         aLogger->Error("AIceFiller : 存冰列表还未设置");
         return;
     }
-    AGrid icePos = {0, 0};
-    if (row != 0 && AGetPlantPtr(row, col, _seedType))
-        icePos = {row, col};
+
+    // 尝试使用临时存冰
+    APlant* ice = AGetPlantPtr(row, col, _seedType);
     auto icePtrs = AGetPlantPtrs(_tempIceGridVec, _seedType);
     for (int i = _tempIceGridVec.size() - 1; i >= 0; --i) {
-        if (icePos.row != 0)
+        if (ice != nullptr)
             break;
         if (icePtrs[i] != nullptr) {
-            icePos = _tempIceGridVec[i];
+            ice = icePtrs[i];
             _tempIceGridVec.erase(_tempIceGridVec.begin() + i);
-            break;
         }
     }
-    icePtrs = AGetPlantPtrs(_fillIceGridVec, _seedType);
-    for (int i = _fillIceGridVec.size() - 1; i >= 0; --i) {
-        if (icePos.row != 0)
-            break;
-        if (icePtrs[i] != nullptr)
-            icePos = _fillIceGridVec[i];
+
+    // 尝试使用存冰列表
+    if (ice == nullptr) {
+        icePtrs = AGetPlantPtrs(_fillIceGridVec, _seedType);
+        for (int i = _fillIceGridVec.size() - 1; i >= 0; --i) {
+            if (icePtrs[i] == nullptr)
+                continue;
+            if (_priorityMode == GRID) {
+                ice = icePtrs[i];
+                break;
+            }
+            if (_priorityMode == HP && (ice == nullptr || icePtrs[i]->Hp() < ice->Hp()))
+                ice = icePtrs[i];
+        }
     }
-    if (icePos.row != 0) {
-        AAsm::ReleaseMouse();
-        ACard(_coffeeSeedIdx + 1, icePos.row, icePos.col);
-        AAsm::ReleaseMouse();
-    } else
+
+    if (ice == nullptr) {
         aLogger->Error("Coffee : 未找到可用的存冰");
+        return;
+    }
+    AAsm::ReleaseMouse();
+    ACard(_coffeeSeedIdx + 1, ice->Row() + 1, ice->Col() + 1);
+    AAsm::ReleaseMouse();
 }
 
 void AIceFiller::Coffee() {

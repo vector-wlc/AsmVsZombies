@@ -81,7 +81,6 @@ void ASetPlantActiveTime(APlantType plantType, int delayTime);
 // 设置冰卡精准生效
 // *** 注意巨人的投掷时间为 105 210
 // *** 注意此函数不允许大幅度修正生效时间，如果修改的时间与真实值超过 2cs，则会报错
-// 之前的 Ice3 由于作者比较脑瘫, 整错了一秒, 这里进行修正
 // *** 使用示例：
 // AIce3(298) --------- 修正寒冰菇生效时间点至当前时刻的 298cs 后
 inline void AIce3(int delayTime) {
@@ -92,6 +91,7 @@ enum class ASetZombieMode {
     AVERAGE,  // 极限出怪，平均填充出怪列表
     INTERNAL, // 自然出怪，调用游戏内置出怪函数
 };
+
 // 设置出怪
 // 参数命名规则：与英文原版图鉴名称一致
 // *** 使用示例：
@@ -131,11 +131,10 @@ enum class ASetZombieMode {
 // });
 // 设置出怪类型为：铁桶 冰车 并且两种僵尸的比例为 1：2
 void ASetZombies(const std::vector<int>& zombieType, ASetZombieMode mode = ASetZombieMode::AVERAGE);
+void ASetZombies(std::string_view str, ASetZombieMode mode = ASetZombieMode::AVERAGE);
 
-inline void ASetZombies(std::initializer_list<int> zombieType, ASetZombieMode mode = ASetZombieMode::AVERAGE) {
-    ASetZombies(std::vector<int>(zombieType), mode);
-}
-
+// 设置指定波次的出怪
+// 注意：该函数不会对传入的列表做任何检查
 // 参数命名规则：与英文原版图鉴名称一致
 // *** 使用示例：
 // ASetWaveZombies(1, {
@@ -159,6 +158,7 @@ inline void ASetZombies(std::initializer_list<int> zombieType, ASetZombieMode mo
 // });
 // 设置第一波出怪类型为：铁桶 冰车 并且两种僵尸的比例为 1：2
 void ASetWaveZombies(int wave, const std::vector<int>& zombieType);
+void ASetWaveZombies(int wave, std::string_view str);
 
 // 随机生成出怪类型，可以指定必出和不出的僵尸类型
 // 该函数不会生成游戏内不可能出现的出怪类型组合；错误的指定会导致报错

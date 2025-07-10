@@ -45,28 +45,6 @@ struct std::formatter<char32_t> : std::formatter<std::string> {
 // RangeIn(wave, {1,2,3})------如果波数在 1 2 3 范围里返回 true
 __ANodiscard bool ARangeIn(int num, const std::vector<int>& lst);
 
-// 寻找 vector 中相同的元素，返回其迭代器
-template <typename Ele>
-__ANodiscard auto __AFindSameEle(const std::vector<Ele>& container, const Ele& ele_) {
-    std::vector<decltype(container.begin())> result;
-    for (auto it = container.begin(); it != container.end(); ++it)
-        if ((*it) == ele_)
-            result.push_back(it);
-
-    return result;
-}
-
-// 寻找 vector 中相同的元素，返回其迭代器
-template <typename Ele>
-__ANodiscard auto __AFindSameEle(std::vector<Ele>& container, const Ele& ele_) {
-    std::vector<decltype(container.begin())> result;
-    for (auto it = container.begin(); it != container.end(); ++it)
-        if ((*it) == ele_)
-            result.push_back(it);
-
-    return result;
-}
-
 template <typename T>
 __ANodiscard std::vector<T> __AErase(const std::vector<T>& vec, const std::vector<T>& targets) {
     std::vector<T> result;

@@ -54,6 +54,12 @@ protected:
 class AIceFiller : public ATickRunnerWithNoStart,
                    public AOrderedEnterFightHook<-1> {
     __ADeleteCopyAndMove(AIceFiller);
+public:
+    // 优先按格子使用还是优先按 HP 使用
+    enum PriorityMode {
+        GRID,
+        HP,
+    };
 
 protected:
     std::vector<AGrid> _fillIceGridVec;
@@ -61,6 +67,7 @@ protected:
     std::vector<int> _iceSeedIdxVec;
     int _seedType;
     int _coffeeSeedIdx;
+    PriorityMode _priorityMode = GRID;
     void _Run();
 
 public:
@@ -81,6 +88,13 @@ public:
 
     const std::vector<AGrid>& GetList() const {
         return _fillIceGridVec;
+    }
+
+    // 设置存冰位的优先级模式
+    // GRID: 按格子优先级使用存冰位
+    // HP: 按植物血量优先级使用存冰位
+    void SetPriorityMode(PriorityMode mode) {
+        _priorityMode = mode;
     }
 
     // 删除一个或多个存冰位

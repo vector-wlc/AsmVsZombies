@@ -88,6 +88,24 @@ inline ATimeline RP(int cobRow, int cobCol, int row, float col) {
         };
 }
 
+inline std::vector<APosition> __ParseRow(const std::vector<APosition>& positions) {
+    std::vector<APosition> ret;
+    for (auto [row, col] : positions) {
+        for (char r : std::to_string(row)) {
+            if (r < '1' || r > '0' + aFieldInfo.nRows) {
+                aLogger->Error(std::format("ParseRow: 输入的行数 {} 不合法", row));
+                return {};
+            }
+            ret.push_back({r - '0', col});
+        }
+    }
+    return ret;
+}
+
+inline std::vector<APosition> __ParseRow(int row, float col) {
+    return __ParseRow({{row, col}});
+}
+
 enum AFirePolicy {
     INSTANT_FIRE,
     RECOVER_FIRE
@@ -103,26 +121,20 @@ P(slope, 2, 9, flat, 4, 9) // 同上
 */
 template <AFirePolicy policy = INSTANT_FIRE>
 inline ATimeline P(ACobManager& cm, int row, float col) {
-    std::vector<int> rows;
-    for (char r : std::to_string(row)) {
-        if (r < '1' || r > '0' + aFieldInfo.nRows) {
-            aLogger->Error(std::format("P: 输入的行数 {} 不合法", row));
-            return {};
-        }
-        rows.push_back(r - '0');
-    }
     ATimeline ret;
-    for (int row : rows) {
+    for (auto pos : __ParseRow(row, col)) {
+        int r = pos.row;
+        float c = pos.col;
         ATimeOffset offset;
         if (aFieldInfo.isRoof)
             offset = -387;
         else
-            offset = (aFieldInfo.rowType[row] == ARowType::POOL ? -378 : -373);
+            offset = (aFieldInfo.rowType[r] == ARowType::POOL ? -378 : -373);
         ret &= At(offset)[=, &cm] {
             if constexpr (policy == INSTANT_FIRE)
-                aFieldInfo.isRoof ? cm.RoofFire(row, col) : cm.Fire(row, col);
+                aFieldInfo.isRoof ? cm.RoofFire(r, c) : cm.Fire(r, c);
             else
-                aFieldInfo.isRoof ? cm.RecoverRoofFire(row, col) : cm.RecoverFire(row, col);
+                aFieldInfo.isRoof ? cm.RecoverRoofFire(r, c) : cm.RecoverFire(r, c);
         };
     }
     return ret;
@@ -170,26 +182,26 @@ inline ATimeline DD(float col) {
     return P(aFieldInfo.nRows == 5 ? 14 : 15, col) + delay;
 }
 
-inline APlant* __CardInstant(APlantType seed, int row, float col) {
-    int seed_ = seed % AM_PEASHOOTER;
-    if (AAsm::GetPlantRejectType(seed_, row - 1, int(col - 0.5)) == AAsm::NEEDS_POT)
-        ACard(AFLOWER_POT, row, col);
-    if (AAsm::GetPlantRejectType(seed_, row - 1, int(col - 0.5)) == AAsm::NOT_ON_WATER)
-        ACard(ALILY_PAD, row, col);
-    return ACard(seed, row, col);
-}
-
-inline APlant* __CardInstant(APlantType seed, const std::vector<APosition>& positions) {
-    int seed_ = seed % AM_PEASHOOTER;
-    for (auto [row, col] : positions) {
-        int rejectType = AAsm::GetPlantRejectType(seed_, row - 1, int(col - 0.5));
+inline APlant* __CardInstant(APlantType seed, const std::vector<APosition>& positions, int delay = 0) {
+    for (auto pos : positions) {
+        int row = pos.row;
+        float col = pos.col;
+        int rejectType = AAsm::GetPlantRejectType(seed % AM_PEASHOOTER, row - 1, int(col - 0.5));
         if (!ARangeIn(rejectType, {AAsm::NIL, AAsm::NEEDS_POT, AAsm::NOT_ON_WATER}))
             continue;
+        APlant* container = nullptr;
         if (rejectType == AAsm::NEEDS_POT)
-            ACard(AFLOWER_POT, row, col);
-        if (rejectType == AAsm::NOT_ON_WATER)
-            ACard(ALILY_PAD, row, col);
-        return ACard(seed, row, col);
+            container = ACard(AFLOWER_POT, row, col);
+        else if (rejectType == AAsm::NOT_ON_WATER)
+            container = ACard(ALILY_PAD, row, col);
+        APlant* plant = ACard(seed, row, col);
+        if (delay > 0 && (container || plant))
+            At(now + delay) Do {
+                if (plant)
+                    AShovel(row, col, seed);
+                if (container)
+                    AShovel(row, col, container->Type());
+            };
     }
     return nullptr;
 }
@@ -198,36 +210,41 @@ inline APlant* __CardInstant(APlantType seed, const std::vector<APosition>& posi
 Card(ASPIKEWEED, 1, 9) // 在 1-9 种地刺
 Card 与 ACard 用法相同，但 Card 会自动补种荷叶和花盆
 */
+template <ATimeOffset delay = 0>
 inline ATimeline Card(APlantType seed, int row, float col) {
     return Do {
-        __CardInstant(seed, row, col);
+        __CardInstant(seed, __ParseRow(row, col), delay.time);
     };
 }
 
+template <ATimeOffset delay = 0>
 inline ATimeline Card(const std::vector<ACardName>& cards) {
     return Do {
         for (auto [seed, row, col] : cards)
-            __CardInstant(seed, row, col);
+            __CardInstant(seed, __ParseRow(row, col), delay.time);
     };
 }
 
+template <ATimeOffset delay = 0>
 inline ATimeline Card(const std::vector<APlantType>& seeds, int row, float col) {
     std::vector<ACardName> cards;
     for (auto seed : seeds)
         cards.push_back({seed, row, col});
-    return Card(cards);
+    return Card<delay>(cards);
 }
 
+template <ATimeOffset delay = 0>
 inline ATimeline Card(APlantType seed, const std::vector<APosition>& positions) {
     return Do {
-        __CardInstant(seed, positions);
+        __CardInstant(seed, __ParseRow(positions), delay.time);
     };
 }
 
+template <ATimeOffset delay = 0>
 inline ATimeline Card(const std::vector<APlantType>& seeds, const std::vector<APosition>& positions) {
     return Do {
         for (auto seed : seeds)
-            __CardInstant(seed, positions);
+            __CardInstant(seed, __ParseRow(positions), delay.time);
     };
 }
 
@@ -237,19 +254,23 @@ Shovel(1, 9, APUMPKIN) // 铲 1-9 的南瓜（没有则不铲除）
 */
 inline ATimeline Shovel(int row, int col, int targetType = -1) {
     return Do {
-        AShovel(row, col, targetType);
+        for (auto [r, c] : __ParseRow(row, col))
+            AShovel(r, c, targetType);
     };
 }
 
 inline ATimeline Shovel(int row, int col, bool pumpkin) {
     return Do {
-        AShovel(row, col, pumpkin);
+        for (auto [r, c] : __ParseRow(row, col))
+            AShovel(r, c, pumpkin);
     };
 }
 
 inline ATimeline Shovel(const std::vector<AShovelPosition>& positions) {
     return Do {
-        AShovel(positions);
+        for (auto [row, col, type] : positions)
+            for (auto [r, c] : __ParseRow(row, col))
+                AShovel(r, c, type);
     };
 }
 
@@ -278,14 +299,15 @@ inline ATimeline __UseMushroomDay(APlantType type, int row, float col, bool tryI
     APlantType imitatorType = APlantType(type + AM_PEASHOOTER);
     if (!tryImitator)
         return At(-299_cs) Do {
-            __CardInstant(type, row, col);
+            if (!AGetPlantPtr(row, col, type))
+                __CardInstant(type, {{row, col}});
             ACard(ACOFFEE_BEAN, row, col);
             ASetPlantActiveTime(type, 299);
         };
     else
         return At(-619_cs) Do {
             if (AIsSeedUsable(imitatorType)) {
-                __CardInstant(imitatorType, row, col);
+                __CardInstant(imitatorType, {{row, col}});
                 ASetPlantActiveTime(type, 619);
                 At(now + 320_cs) Card(ACOFFEE_BEAN, row, col);
             } else
@@ -300,7 +322,7 @@ inline ATimeline __UseMushroomNight(APlantType type, int row, float col, bool tr
     else
         return At(-420_cs) Do {
             if (AIsSeedUsable(imitatorType)) {
-                __CardInstant(imitatorType, row, col);
+                __CardInstant(imitatorType, {{row, col}});
                 ASetPlantActiveTime(type, 420);
             } else
                 At(now + 420_cs) __UseMushroomNight(type, row, col, false);
@@ -531,7 +553,7 @@ public:
         std::vector<std::pair<int, int>> candidates;
         for (auto& seed : ABasicFilter<ASeed>()) {
             int seedType = (seed.Type() == AIMITATOR ? seed.ImitatorType() : seed.Type());
-            if (ARangeIn(seedType, {ALILY_PAD, ACOFFEE_BEAN}))
+            if (ARangeIn(seedType, {AGRAVE_BUSTER, ALILY_PAD, ACOFFEE_BEAN}))
                 continue;
             int cd = AMRef<int>(0x69f2c4 + 0x24 * seedType);
             int cost = AMRef<int>(0x69f2c0 + 0x24 * seedType);
@@ -743,53 +765,6 @@ inline void ASelectCards(const std::string& str, std::initializer_list<int> lst,
 
 inline void ASelectCards(const std::string& str, int selectInterval = 17) {
     ASelectCards(str, {}, selectInterval);
-}
-
-inline void ASetZombies(const std::string& str, ASetZombieMode method = ASetZombieMode::AVERAGE) {
-    static const std::unordered_set<char32_t> separators {' ', ',', ';', U'　', U'，', U'；'};
-    static const std::unordered_map<char32_t, int> zombieAbbr {
-        {U'普', AZOMBIE},
-        {U'旗', AFLAG_ZOMBIE},
-        {U'障', ACONEHEAD_ZOMBIE},
-        {U'杆', APOLE_VAULTING_ZOMBIE},
-        {U'桶', ABUCKETHEAD_ZOMBIE},
-        {U'报', ANEWSPAPER_ZOMBIE},
-        {U'门', ASCREEN_DOOR_ZOMBIE},
-        {U'橄', AFOOTBALL_ZOMBIE},
-        {U'舞', ADANCING_ZOMBIE},
-        {U'潜', ASNORKEL_ZOMBIE},
-        {U'车', AZOMBONI},
-        {U'橇', AZOMBIE_BOBSLED_TEAM},
-        {U'豚', ADOLPHIN_RIDER_ZOMBIE},
-        {U'丑', AJACK_IN_THE_BOX_ZOMBIE},
-        {U'气', ABALLOON_ZOMBIE},
-        {U'矿', ADIGGER_ZOMBIE},
-        {U'跳', APOGO_ZOMBIE},
-        {U'雪', AZOMBIE_YETI},
-        {U'偷', ABUNGEE_ZOMBIE},
-        {U'梯', ALADDER_ZOMBIE},
-        {U'篮', ACATAPULT_ZOMBIE},
-        {U'白', AGARGANTUAR},
-        {U'博', ADR_ZOMBOSS},
-        {U'豌', APEASHOOTER_ZOMBIE},
-        {U'坚', AWALL_NUT_ZOMBIE},
-        {U'辣', AJALAPENO_ZOMBIE},
-        {U'枪', AGATLING_PEA_ZOMBIE},
-        {U'窝', ASQUASH_ZOMBIE},
-        {U'高', ATALL_NUT_ZOMBIE},
-        {U'红', AGIGA_GARGANTUAR},
-    };
-
-    std::vector<int> lst;
-    for (auto ch : AStrToU32str(str)) {
-        if (separators.contains(ch))
-            continue;
-        else if (zombieAbbr.contains(ch))
-            lst.push_back(zombieAbbr.at(ch));
-        else
-            aLogger->Error("ASetZombies: 未知的僵尸缩写 {}", ch);
-    }
-    ASetZombies(lst, method);
 }
 
 #endif

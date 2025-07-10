@@ -62,21 +62,24 @@ APlant* AGetPlantPtr(int row, int col, int type) {
 }
 
 void AGetPlantIndices(const std::vector<AGrid>& lstIn, int type, std::vector<int>& indicesOut) {
+    std::map<AGrid, std::vector<int>> gridToIndices;
+    for (size_t i = 0; i < lstIn.size(); ++i)
+        gridToIndices[lstIn[i]].push_back(i);
+
     indicesOut.assign(lstIn.size(), -1);
     for (auto& plant : aAlivePlantFilter) {
         if (plant.Type() == ASQUASH && plant.State() >= 5)
             continue;
         AGrid grid{plant.Row() + 1, plant.Col() + 1};
-        auto itVec = __AFindSameEle<AGrid>(lstIn, grid);
-        if (itVec.empty())
+        if (!gridToIndices.contains(grid))
             continue;
         int plantType = plant.Type();
         if (plantType == type)
-            for (const auto& ele : itVec)
-                indicesOut[ele - lstIn.begin()] = plant.Index();
+            for (auto idx : gridToIndices[grid])
+                indicesOut[idx] = plant.Index();
         else if (type != APUMPKIN && type != AFLOWER_POT && type != ALILY_PAD && type != ACOFFEE_BEAN && plantType != APUMPKIN && plantType != AFLOWER_POT && plantType != ALILY_PAD && plantType != ACOFFEE_BEAN)
-            for (const auto& ele : itVec)
-                indicesOut[ele - lstIn.begin()] = -2;
+            for (auto idx : gridToIndices[grid])
+                indicesOut[idx] = -2;
     }
 }
 
@@ -133,6 +136,55 @@ void AUpdateZombiesPreview() {
     AGetMainObject()->SelectCardUi_m()->IsCreatZombie() = false;
 }
 
+namespace {
+std::vector<int> AParseZombieTypeString(std::string_view str) {
+    static const std::unordered_set<char32_t> separators {' ', ',', ';', U'　', U'，', U'；'};
+    static const std::unordered_map<char32_t, int> zombieAbbr {
+        {U'普', AZOMBIE},
+        {U'旗', AFLAG_ZOMBIE},
+        {U'障', ACONEHEAD_ZOMBIE},
+        {U'杆', APOLE_VAULTING_ZOMBIE},
+        {U'桶', ABUCKETHEAD_ZOMBIE},
+        {U'报', ANEWSPAPER_ZOMBIE},
+        {U'门', ASCREEN_DOOR_ZOMBIE},
+        {U'橄', AFOOTBALL_ZOMBIE},
+        {U'舞', ADANCING_ZOMBIE},
+        {U'潜', ASNORKEL_ZOMBIE},
+        {U'车', AZOMBONI},
+        {U'橇', AZOMBIE_BOBSLED_TEAM},
+        {U'豚', ADOLPHIN_RIDER_ZOMBIE},
+        {U'丑', AJACK_IN_THE_BOX_ZOMBIE},
+        {U'气', ABALLOON_ZOMBIE},
+        {U'矿', ADIGGER_ZOMBIE},
+        {U'跳', APOGO_ZOMBIE},
+        {U'雪', AZOMBIE_YETI},
+        {U'偷', ABUNGEE_ZOMBIE},
+        {U'梯', ALADDER_ZOMBIE},
+        {U'篮', ACATAPULT_ZOMBIE},
+        {U'白', AGARGANTUAR},
+        {U'博', ADR_ZOMBOSS},
+        {U'豌', APEASHOOTER_ZOMBIE},
+        {U'坚', AWALL_NUT_ZOMBIE},
+        {U'辣', AJALAPENO_ZOMBIE},
+        {U'枪', AGATLING_PEA_ZOMBIE},
+        {U'窝', ASQUASH_ZOMBIE},
+        {U'高', ATALL_NUT_ZOMBIE},
+        {U'红', AGIGA_GARGANTUAR},
+    };
+
+    std::vector<int> lst;
+    for (auto ch : AStrToU32str(std::string(str))) {
+        if (separators.contains(ch))
+            continue;
+        else if (zombieAbbr.contains(ch))
+            lst.push_back(zombieAbbr.at(ch));
+        else
+            aLogger->Error("ASetZombies: 未知的僵尸缩写 {}", ch);
+    }
+    return lst;
+}
+}
+
 void ASetZombies(const std::vector<int>& zombieType, ASetZombieMode mode) {
     if (AGetPvzBase()->GameUi() == 3)
         aLogger->Warning("正在战斗模式下重设出怪；ASetZombies 应该在选卡前调用");
@@ -180,29 +232,18 @@ void ASetZombies(const std::vector<int>& zombieType, ASetZombieMode mode) {
         AUpdateZombiesPreview();
 }
 
+void ASetZombies(std::string_view str, ASetZombieMode mode) {
+    ASetZombies(AParseZombieTypeString(str), mode);
+}
+
 void ASetWaveZombies(int wave, const std::vector<int>& zombieType) {
-    std::vector<int> zombieTypeVec;
-    bool isHasBungee = false;
-    for (const auto& type : zombieType) {
-        if (type == ABJ_20)
-            isHasBungee = wave % 10 == 0; // 大波才能出蹦极
-        // 做一些处理，出怪生成不应大量含有 旗帜 舞伴 雪橇小队 雪人 蹦极 小鬼
-        if (!ARangeIn(type, {AQZ_1, ABW_9, AXQ_13, AXR_19, ABJ_20, AXG_24}))
-            zombieTypeVec.push_back(type);
-    }
     auto zombieList = AGetMainObject()->ZombieList() + (wave - 1) * 50;
     for (int idx = 0; idx < 50; ++idx)
-        zombieList[idx] = zombieTypeVec[idx % zombieTypeVec.size()];
-    int totaNum = AGetMainObject()->TotalWave() * 50;
-    // 生成旗帜
-    for (int idx = 9 * 50; idx < totaNum; idx += 10 * 50)
-        zombieList[idx] = AQZ_1;
-    if (isHasBungee) {
-        // 生成蹦极
-        for (int idx = 9 * 50; idx < totaNum; idx += 10 * 50)
-            for (auto index : {idx + 1, idx + 2, idx + 3, idx + 4})
-                zombieList[index] = ABJ_20;
-    }
+        zombieList[idx] = zombieType[idx % zombieType.size()];
+}
+
+void ASetWaveZombies(int wave, std::string_view str) {
+    ASetWaveZombies(wave, AParseZombieTypeString(str));
 }
 
 std::vector<int> ACreateRandomTypeList(const std::vector<int>& required, const std::vector<int>& banned) {

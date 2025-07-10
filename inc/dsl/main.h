@@ -41,8 +41,8 @@ public:
         int _phase;
 
         void _Forward() {
-            for (; _it != _end && *_it <= 0; ++_it)
-                _phase = -*_it;
+            for (; _it != _end && *_it < 0; ++_it)
+                _phase = -*_it - 1;
         }
 
         Iterator(std::vector<int>::const_iterator begin, std::vector<int>::const_iterator end)
@@ -103,12 +103,12 @@ public:
     }
 
     AWave operator%(int phase) const {
-        if (!_waves.empty() && _waves[0] <= 0) {
+        if (!_waves.empty() && _waves[0] < 0) {
             AWave ret = *this;
-            ret._waves[0] = 1 - phase;
+            ret._waves[0] = -phase;
             return ret;
         } else
-            return AWave(1 - phase, *this);
+            return AWave(-phase, *this);
     }
 
     friend AWave operator,(AWave lhs, const AWave& rhs) {
