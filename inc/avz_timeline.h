@@ -104,6 +104,17 @@ public:
         return *this;
     }
 
+    // 获取当前时间轴的最早偏移量
+    // 如果时间轴为空，则返回 0
+    ATimeOffset GetMinOffset() const {
+        if (_entries.empty())
+            return 0;
+        ATimeOffset minOffset = _entries[0].offset;
+        for (auto& entry : _entries)
+            minOffset = std::min(minOffset, entry.offset);
+        return minOffset;
+    }
+
     friend std::vector<ATimeConnectHandle> AConnect(const ATime& time, const ATimeline& timeline) {
         std::vector<ATimeConnectHandle> handles;
         for (auto&& entry : timeline._entries) {

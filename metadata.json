@@ -1,4 +1,4 @@
 {
-    "version": 250711,
+    "version": 250823,
     "compileOptions": "-m32 -static -std=c++2b -fexperimental-library -Werror=return-type -Werror=unused-result __CUSTOM_ARGS__ \"__FILE_NAME__\" -isystem \"__AVZ_DIR__/inc\" -lavz -lgdi32 -ldbghelp -L \"__AVZ_DIR__/bin\" -shared -o \"bin/libavz.dll\""
 }

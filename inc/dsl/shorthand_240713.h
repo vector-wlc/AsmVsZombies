@@ -30,6 +30,15 @@ inline ATimeline Trig(bool force = false) {
 
 #define TrigAt(...) (__VA_ARGS__) <<= Trig() & (__ADSLCastHelper)
 
+// Repeat(op, times, interval) // 重复执行 op，间隔 interval，执行 times 次
+// Repeat(PP(), 3, 1000) 等效于 {At(0) PP(), At(1000) PP(), At(2000) PP()}
+inline ATimeline Repeat(ATimeline op, int times, ATimeOffset interval) {
+    ATimeline result;
+    for (int i = 0; i < times; ++i)
+        result &= op + i * interval;
+    return result;
+}
+
 class ARoofCobManager : public ACobManager {
 protected:
     std::vector<int> _columns;
@@ -661,51 +670,136 @@ inline AFodder::Constraint AbscIn(int l, int r) {
     };
 }
 
+inline std::vector<int> __GetPossibleRows(int type) {
+    std::vector<int> lands, pools, all;
+    for (int i = 0; i < aFieldInfo.nRows; ++i) {
+        all.push_back(i);
+        if (aFieldInfo.rowType[i + 1] == ARowType::POOL)
+            pools.push_back(i);
+        else
+            lands.push_back(i);
+    }
+    if (pools.empty())
+        pools.push_back(5); // 对于无水路的场地，第 6 行视作水路
+    if (ARangeIn(type, {ASNORKEL_ZOMBIE, ADOLPHIN_RIDER_ZOMBIE}))
+        // 水路僵尸只能出现在泳池
+        return pools;
+    else if (type == ADANCING_ZOMBIE) {
+        if (aFieldInfo.hasPool && aFieldInfo.rowHeight == 85)
+            // 对于 PE/FE，舞王可以出现在所有陆地行
+            return lands;
+        else {
+            // 对于其他场地，舞王可以出现在非边路的陆地行
+            std::vector<int> ret;
+            for (int row : lands)
+                if (row != 0 && row != aFieldInfo.nRows - 1)
+                    ret.push_back(row);
+            return ret;
+        }
+    } else if (aFieldInfo.hasPool && ANowWave(false) > 5 &&
+        ARangeIn(type, {AZOMBIE, ACONEHEAD_ZOMBIE, ABUCKETHEAD_ZOMBIE, ABALLOON_ZOMBIE}))
+        // 对于泳池场地，普僵三人组和气球僵尸在第 6 波后可以出现在所有行
+        return {0, 1, 2, 3, 4, 5};
+    else
+        return lands;
+}
+
+inline void __MoveZombie(AZombie* zombie, int newRow) {
+    int row = zombie->Row();
+    zombie->Row() = newRow;
+    zombie->Ordinate() += aFieldInfo.rowHeight * (newRow - row);
+    zombie->MRef<int>(0x20) += 10000 * (newRow - row);
+}
+
+/*
+确保指定类型的僵尸存在于指定行
+对蹦极僵尸无效；对普僵三人组使用可能导致救生圈僵尸出现在陆地行，或水路的普僵三人组无救生圈
+用法：
+// 确保 w9 和 w19 的 1 路和 2 路各出至少一只白眼和一只红眼
+OnWave(9, 19) EnsureExist({AGARANTUAR, AGIGA_GARGANTUAR}, {1, 2});
+*/
+inline ATimeline EnsureExist(const std::set<int>& types, const std::vector<int>& rows) {
+    return Do {
+        int cnt[33] = {};
+        for (auto& z : AObjSelector(&AZombie::ExistTime, 0)) {
+            int type = z.Type();
+            if (type == ABUNGEE_ZOMBIE || !types.contains(type))
+                continue;
+            if (cnt[type] >= rows.size())
+                continue;
+            __MoveZombie(&z, rows[cnt[type]++] - 1);
+        }
+        for (int type : types)
+            if (cnt[type] < rows.size()) {
+                aLogger->Warning("EnsureExist: 僵尸类型 {} 数量不足", type);
+                break;
+            }
+    };
+}
+
+inline ATimeline EnsureExist(int type, const std::vector<int>& rows) {
+    return EnsureExist(std::set<int>{type}, rows);
+}
+
+/*
+确保指定类型的僵尸不存在于指定行
+对蹦极僵尸无效；对普僵三人组使用可能导致救生圈僵尸出现在陆地行，或水路的普僵三人组无救生圈
+用法：
+// 确保 w9 和 w19 的 1 路和 2 路不出白眼和红眼
+OnWave(9, 19) EnsureAbsent({AGARANTUAR, AGIGA_GARGANTUAR}, {1, 2});
+*/
+inline ATimeline EnsureAbsent(const std::set<int>& types, const std::vector<int>& rows) {
+    return Do {
+        std::set<int> absentRows(rows.begin(), rows.end());
+        std::map<int, std::vector<int>> allowedRows;
+        for (int type : types) {
+            allowedRows[type] = {};
+            for (int row : __GetPossibleRows(type))
+                if (!absentRows.contains(row + 1))
+                    allowedRows[type].push_back(row);
+            if (allowedRows[type].empty()) {
+                aLogger->Error("EnsureAbsent: 僵尸类型 {} 没有可选的行", type);
+                return;
+            }
+        }
+        for (auto& z : AObjSelector(&AZombie::ExistTime, 0)) {
+            int type = z.Type();
+            if (type == ABUNGEE_ZOMBIE || !types.contains(type))
+                continue;
+            if (absentRows.contains(z.Row() + 1))
+                __MoveZombie(&z, aRandom.Choice(allowedRows[type]));
+        }
+    };
+}
+
+inline ATimeline EnsureAbsent(int type, const std::vector<int>& rows) {
+    return EnsureAbsent(std::set<int>{type}, rows);
+}
+
 /*
 代码来自 crescendo/avz-more
 平均分配指定类型的僵尸到各行；默认对所有类型的僵尸生效
 这个函数是即时生效的
 */
 inline void AAverageSpawn(const std::set<int>& types = {}) {
-    std::vector<int> default_rows;
-    for (int i = 0; i < aFieldInfo.nRows; ++i)
-        if (aFieldInfo.rowType[i + 1] == ARowType::LAND)
-            default_rows.push_back(i);
-    OnWave(1_20)[=] {
+    std::vector<int> waves;
+    for (int wave = 1; wave <= AGetMainObject()->TotalWave(); ++wave)
+        waves.push_back(wave);
+    OnWave(waves) Do {
         std::vector<int> rows[33];
-        int cur[33];
+        int cnt[33];
         for (int type = 0; type < 33; ++type) {
-            if (ARangeIn(type, {ADUCKY_TUBE_ZOMBIE, ASNORKEL_ZOMBIE, ADOLPHIN_RIDER_ZOMBIE}))
-                rows[type] = {2, 3};
-            else if (type == ADANCING_ZOMBIE) {
-                if (!aFieldInfo.hasPool)
-                    rows[type] = aFieldInfo.nRows == 5 ? std::vector{1, 2, 3} : std::vector{1, 2, 3, 4};
-                else if (AGetMainObject()->Scene() == 8) // AQE
-                    rows[type] = {1, 4};
-                else
-                    rows[type] = default_rows;
-            } else if (aFieldInfo.hasPool && type == ABALLOON_ZOMBIE && ANowWave() > 5)
-                rows[type] = {0, 1, 2, 3, 4, 5};
-            else
-                rows[type] = default_rows;
+            rows[type] = __GetPossibleRows(type);
             std::ranges::shuffle(rows[type], aRandom.GetEngine());
-            cur[type] = 0;
+            cnt[type] = 0;
         }
-        for (auto& z : aAliveZombieFilter) {
-            if (z.ExistTime() != 0)
-                continue;
+        for (auto& z : AObjSelector(&AZombie::ExistTime, 0)) {
             int type = z.Type();
             if (type == ABUNGEE_ZOMBIE)
                 continue;
             if (!types.empty() && !types.contains(type))
                 continue;
-            if (ARangeIn(type, {AZOMBIE, ACONEHEAD_ZOMBIE, ABUCKETHEAD_ZOMBIE}) && aFieldInfo.rowType[z.Row() + 1] == ARowType::POOL)
-                type = ADUCKY_TUBE_ZOMBIE;
-            int row = z.Row(), newRow = rows[type][cur[type]];
-            z.Row() = newRow;
-            z.Ordinate() += aFieldInfo.rowHeight * (newRow - row);
-            z.MRef<int>(0x20) += 10000 * (newRow - row);
-            cur[type] = (cur[type] + 1) % rows[type].size();
+            __MoveZombie(&z, rows[type][cnt[type]++ % rows[type].size()]);
         }
     };
 }

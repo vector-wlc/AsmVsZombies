@@ -1,5 +1,10 @@
 # 更新日志
 
+AvZ 2.8.6 2025_08_23
+
+* DSL Shorthand 增加 `Repeat` 函数，用于以指定间隔重复执行某个 `ATimeline`
+* DSL Shorthand 增加 `EnsureExist` 和 `EnsureAbsent` 函数，用于确保某类僵尸在/不在某些行出现
+
 AvZ 2.8.5 2025_07_11
 
 * 修复了 `AFodder` 默认会将墓碑吞噬者放入垫材列表的问题
