@@ -2,7 +2,7 @@
  * @Coding: utf-8
  * @Author: vector-wlc
  * @Date: 2021-09-25 23:08:31
- * @Description: 
+ * @Description:
 -->
 
 # 目录
@@ -29,6 +29,8 @@
 * [时间管理: 连接](./07connect_time.md)
 
 * [炮管理类——初步](./08cob_manager_1.md)
+
+* [时间体系](./08time.md)
 
 * [第一个键控脚本](./09first_tas_script.md)
 

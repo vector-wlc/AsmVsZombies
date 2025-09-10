@@ -2,7 +2,7 @@
  * @Coding: utf-8
  * @Author: vector-wlc
  * @Date: 2022-11-19 22:57:13
- * @Description: 
+ * @Description:
 -->
 # 日志功能
 
@@ -70,20 +70,14 @@ msgBoxLogger.Error("Error");     // 不显示
 接着咱们介绍一下如何设置日志对象的输入格式
 
 ```C++
-// 格式化字符串默认为 #
-// 这里需要注意的是，由于日志对象内部实现使用了 C++20 的 std::format，因此 {} 是万能的格式化字符串
-consoleLogger.Info("时间是:#", 5);  // 输出结果: [1, -2147483648][INFO] 时间是:5
-// 将格式化字符串默认 # 变为 {}
-consoleLogger.SetPattern("{}");
-consoleLogger.Info("时间是:#", 5);  // 输出结果: [1, -2147483648][INFO] 时间是:#
+// 参数格式与 C++20 的 std::format 相同
 consoleLogger.Info("时间是:{}", 5);  // 输出结果: [1, -2147483648][INFO] 时间是:5
+consoleLogger.Info("成功率:{:.2f}%", 100.0/3);  // 输出结果: [1, -2147483648][INFO] 成功率:33.33%
 
-// 设置日志头部格式 
-// 头部时间格式有四个重要字符分别是，pattern (格式化字符)，wave, time, level
-// 真正使用的时候需要将 pattern 和其他三个组合起来
-// 例如如果格式化字符是 {} 那么 "{}wave" 将会被替换为日志输出时游戏的波数
-consoleLogger.SetHeaderStyle("({}level)({}wave, {}time)");
-consoleLogger.Info("时间是:{}", 5); // 输出结果是: (INFO)(1, -2147483648) 时间是:5
+// 设置日志头部格式
+// 头部时间格式有四个变量，分别是 flag, wave, time, level
+consoleLogger.SetHeaderStyle("[{level}] ({flag}f, {wave}, {time})");
+consoleLogger.Info("时间是:{}", 5); // 输出结果是: [INFO] (2000f, 1, -2147483648) 时间是:5
 
 // 将头部设置为空
 consoleLogger.SetHeaderStyle("");
@@ -101,7 +95,7 @@ ALogger<AConsole> consoleLogger;         // 这个日志对象呈现日志的方
 void AScript()
 {
     // 将框架内部 INFO WARNING ERROR 等级的日志全部输出
-    consoleLogger.SetLevel({ALogLevel::INFO, ALogLevel::WARNING, ALogLevel::ERROR}); 
+    consoleLogger.SetLevel({ALogLevel::INFO, ALogLevel::WARNING, ALogLevel::ERROR});
     // 设置框架内部日志对象为自己想要的对象
     ASetInternalLogger(consoleLogger);
 }

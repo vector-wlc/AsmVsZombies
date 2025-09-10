@@ -1,7 +1,8 @@
-.cache/
-.vscode/
-bin/
-build/
-MinGW/
-scripts/
-tutorial/draft/
+/.cache/
+/.vscode/
+/bin/
+/build/
+/docs/
+/MinGW/
+/scripts/
+/tutorial/draft/

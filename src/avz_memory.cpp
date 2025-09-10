@@ -186,6 +186,11 @@ std::vector<int> AParseZombieTypeString(std::string_view str) {
 }
 
 void ASetZombies(const std::vector<int>& zombieType, ASetZombieMode mode) {
+    if (zombieType.empty()) {
+        aLogger->Error("ASetZombies: 出怪类型列表不能为空");
+        return;
+    }
+
     if (AGetPvzBase()->GameUi() == 3)
         aLogger->Warning("正在战斗模式下重设出怪；ASetZombies 应该在选卡前调用");
 
@@ -237,9 +242,24 @@ void ASetZombies(std::string_view str, ASetZombieMode mode) {
 }
 
 void ASetWaveZombies(int wave, const std::vector<int>& zombieType) {
+    if (wave < 1 || wave > AGetMainObject()->TotalWave()) {
+        aLogger->Error("ASetWaveZombies: 波次应在 1~{} 之间", AGetMainObject()->TotalWave());
+        return;
+    }
+    if (zombieType.empty()) {
+        aLogger->Error("ASetWaveZombies: 出怪类型列表不能为空");
+        return;
+    }
+
     auto zombieList = AGetMainObject()->ZombieList() + (wave - 1) * 50;
-    for (int idx = 0; idx < 50; ++idx)
-        zombieList[idx] = zombieType[idx % zombieType.size()];
+    int offset = 0;
+
+    // 生成旗帜
+    if (wave % 10 == 0)
+        zombieList[offset++] = AQZ_1;
+
+    for (int idx = 0; idx + offset < 50; ++idx)
+        zombieList[idx + offset] = zombieType[idx % zombieType.size()];
 }
 
 void ASetWaveZombies(int wave, std::string_view str) {
