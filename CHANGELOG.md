@@ -1,5 +1,9 @@
 # 更新日志
 
+AvZ Nightly
+
+* 增加 `AProjectile` 类，用于读取子弹
+
 AvZ 2.8.6 2025_08_23
 
 * DSL Shorthand 增加 `Repeat` 函数，用于以指定间隔重复执行某个 `ATimeline`

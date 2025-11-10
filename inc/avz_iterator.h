@@ -85,6 +85,21 @@ struct __AFilterTrait<APlaceItem> {
     }
 };
 
+template <>
+struct __AFilterTrait<AProjectile> {
+    __ANodiscard static AProjectile* GetBegin() {
+        return AGetMainObject()->ProjectileArray();
+    }
+
+    __ANodiscard static AProjectile* GetEnd() {
+        return AGetMainObject()->ProjectileArray() + AGetMainObject()->ProjectileTotal();
+    }
+
+    __ANodiscard static bool IsAlive(AProjectile* ptr) {
+        return !ptr->IsDisappeared();
+    }
+};
+
 template <typename T>
 class AFilterIterator {
 protected:

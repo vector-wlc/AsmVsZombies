@@ -6,3 +6,7 @@ BreakBeforeBraces: Attach
 #PackConstructorInitializers: NextLineOnly
 SpaceInEmptyBlock: false
 #RemoveBracesLLVM: true
+Macros:
+- At(x)=_=
+- Do=[]
+- CoDo=[]

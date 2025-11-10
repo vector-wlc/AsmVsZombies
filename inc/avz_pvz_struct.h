@@ -13,6 +13,7 @@ struct AZombie;          // 僵尸
 struct ASeed;            // 种子（卡片）
 struct AItem;            // 收集物
 struct APlaceItem;       // 场地物品
+struct AProjectile;      // 子弹
 struct AMouseWindow;     // 鼠标窗口
 struct ATopMouseWindow;  // 顶层鼠标窗口
 struct ALetsRockBtn;     // lets_rock 按钮
@@ -290,6 +291,21 @@ public:
     // 场地物品内存数组大小
     __ANodiscard int& PlaceItemTotal() noexcept {
         return MRef<int>(0x120);
+    }
+
+    // 子弹内存数组
+    __ANodiscard AProjectile* ProjectileArray() noexcept {
+        return MPtr<AProjectile>(0xc8);
+    }
+
+    // 子弹内存数组大小
+    __ANodiscard int& ProjectileCountMax() noexcept {
+        return MRef<int>(0xcc);
+    }
+
+    // 子弹内存数组大小
+    __ANodiscard int& ProjectileTotal() noexcept {
+        return MRef<int>(0xcc);
     }
 
     // 游戏是否暂停
@@ -937,6 +953,56 @@ public:
     // 墓碑冒出的量；弹坑消失倒计时；脑子血量；钉耙消失倒计时
     __ANodiscard int& Value() noexcept {
         return MRef<int>(0x18);
+    }
+
+    // 对象的编号（栈位）
+    __ANodiscard uint16_t& Index() noexcept {
+        return MRef<uint16_t>(sizeof(_data) - 4);
+    }
+
+    // 对象的序列号
+    __ANodiscard uint16_t& Rank() noexcept {
+        return MRef<uint16_t>(sizeof(_data) - 2);
+    }
+
+    // 对象的 ID
+    __ANodiscard uint32_t& Id() noexcept {
+        return MRef<uint32_t>(sizeof(_data) - 4);
+    }
+};
+
+// 子弹
+struct AProjectile : public APvzStruct {
+    __ADeleteCopyAndMove(AProjectile);
+
+protected:
+    uint8_t _data[0x94];
+
+public:
+    // 子弹是否消失
+    __ANodiscard const bool& IsDisappeared() noexcept {
+        return MRef<bool>(0x50);
+    }
+
+    // 子弹类型
+    // 11 - 炮弹
+    __ANodiscard int& Type() noexcept {
+        return MRef<int>(0x5c);
+    }
+
+    // 子弹存在时间
+    __ANodiscard int& ExistTime() noexcept {
+        return MRef<int>(0x60);
+    }
+
+    // 炮弹落点横坐标
+    __ANodiscard int CobTargetAbscissa() noexcept {
+        return int(MRef<float>(0x80) + 87.5f);
+    }
+
+    // 炮弹落点行
+    __ANodiscard int& CobTargetRow() noexcept {
+        return MRef<int>(0x84);
     }
 
     // 对象的编号（栈位）

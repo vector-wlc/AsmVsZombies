@@ -211,6 +211,8 @@ inline APlant* __CardInstant(APlantType seed, const std::vector<APosition>& posi
                 if (container)
                     AShovel(row, col, container->Type());
             };
+        if (plant)
+            return plant;
     }
     return nullptr;
 }

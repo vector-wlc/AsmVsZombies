@@ -1,7 +1,7 @@
 #ifndef __LIBAVZ_H__
 #define __LIBAVZ_H__
 
-#define __AVZ_VERSION__ 250823
+#define __AVZ_VERSION__ 251110
 
 #include "avz_asm.h"
 #include "avz_card.h"
