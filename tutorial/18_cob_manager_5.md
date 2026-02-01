@@ -158,4 +158,4 @@ for (auto&& [ptr, recoverTime] : lst) {
 
 炮序排布的方法有很多，而且并没有绝对的好坏。上面的内容只是基于作者的个人观点，有不同意见欢迎讨论。
 
-[目录](./0catalogue.md)
+[目录](./00_catalogue.md)

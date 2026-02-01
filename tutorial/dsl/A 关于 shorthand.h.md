@@ -15,5 +15,5 @@
 复制 `inc/dsl/shorthand_[最新版本].h`，并粘贴到同一目录下，新文件随便取一个名字（比如 `my_shorthand.h`）。在新文件里进行你想要的修改，使用时把 `#include <dsl/shorthand.h>` 改为 `#include <dsl/my_shorthand.h>` 即可。
 
 
-[目录](../0catalogue.md)
+[目录](../00_catalogue.md)
 

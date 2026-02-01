@@ -158,7 +158,7 @@ ARemovePlant(1, 2, APUMPKIN);
 ARemovePlant(1, 2, {APUMPKIN, AFLOWER_POT});
 ```
 
-[目录](./0catalogue.md)
+[目录](./00_catalogue.md)
 
 ## 附录
 

@@ -48,4 +48,4 @@ tickRunner.Start(UseBlover, ATickRunner::AFTER_INJECT); // 在注入之后的每
 例如你觉得本框架自带的选卡函数不好的时候，就可以选择在全局方式下运行，对没错，只有在全局方式下运行，你才能选卡，是不是？
 当然，还可能有其他作用，但是目前还不知道，反正他有一个这样的功能，你知道就行。
 
-[目录](./0catalogue.md)
+[目录](./00_catalogue.md)
