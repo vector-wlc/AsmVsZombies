@@ -8,7 +8,7 @@ AvZ 操作精度为理论上的绝对精准，使用这套框架将再也不用�
 
 ## 使用
 
-请转到教程的目录：[GitLab](https://gitlab.com/vector-wlc/AsmVsZombies/blob/master/tutorial/0catalogue.md) / [GitHub](https://github.com/vector-wlc/AsmVsZombies/blob/master/tutorial/0catalogue.md) / [Gitee](https://gitee.com/vector-wlc/AsmVsZombies/blob/master/tutorial/0catalogue.md)
+请转到教程的目录：[GitLab](https://gitlab.com/vector-wlc/AsmVsZombies/blob/master/tutorial/00_catalogue.md) / [GitHub](https://github.com/vector-wlc/AsmVsZombies/blob/master/tutorial/00_catalogue.md) / [Gitee](https://gitee.com/vector-wlc/AsmVsZombies/blob/master/tutorial/00_catalogue.md)
 
 ## 友情链接
 

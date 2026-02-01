@@ -146,7 +146,7 @@ void ASetWavelength(const std::vector<ATime>& lst, const ARunOrder& runOrder = A
 void AAssumeWavelength(const std::vector<ATime>& lst, const ARunOrder& runOrder = ARunOrder(0));
 ```
 
-[目录](./0catalogue.md)
+[目录](./00_catalogue.md)
 
 ## 附录
 

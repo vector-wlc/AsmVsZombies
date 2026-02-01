@@ -43,4 +43,4 @@ aCobManager.FixLatest();
 `FixLatest` 将会修补 `Fire` 刚刚发射出去的炮，此函数不用填写任何参数，直接调用即可，**但是其只支持原地铲种**，原因后续再进行介绍。
 
 
-[目录](./0catalogue.md)
+[目录](./00_catalogue.md)

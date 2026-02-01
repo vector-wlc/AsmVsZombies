@@ -20,4 +20,4 @@
 
 见 [天台十炮连接脚本](./scripts/tian_tai_10/tian_tai_10.cpp)
 
-[目录](./0catalogue.md)
+[目录](./00_catalogue.md)
