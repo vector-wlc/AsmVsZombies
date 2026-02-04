@@ -357,11 +357,22 @@ inline ATimeline N(const std::vector<APosition>& positions, bool tryImitator = f
     if (tryImitator)
         offset -= 320_cs;
     return At(offset) Do {
+        std::vector<AGrid> grids;
+        std::transform(positions.begin(), positions.end(), std::back_inserter(grids),
+            [](auto&& pos) { return AGrid(pos); });
+        auto doomPtrs = AGetPlantPtrs(grids, ADOOM_SHROOM);
+        for (auto ptr : doomPtrs) {
+            if (ptr) {
+                // 已经种了毁灭菇
+                At(now - offset) N(ptr->Row() + 1, ptr->Col() + 1);
+                return;
+            }
+        }
         for (auto [row, col] : positions) {
             if (ARangeIn(AAsm::GetPlantRejectType(ADOOM_SHROOM, row - 1, col - 1),
                     {AAsm::NIL, AAsm::NOT_ON_WATER, AAsm::NEEDS_POT})) {
                 At(now - offset) N(row, col, tryImitator);
-                break;
+                return;
             }
         }
     };

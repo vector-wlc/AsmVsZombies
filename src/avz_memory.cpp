@@ -47,7 +47,7 @@ int AGetPlantIndex(int row, int col, int type) {
             if ((plantType != APUMPKIN) && (plantType != AFLOWER_POT) && (plantType != ALILY_PAD) && (plantType != ACOFFEE_BEAN))
                 return plant.Index(); // 返回植物的对象序列
         } else {
-            if (plantType == type)
+            if (type == -2 || plantType == type)
                 return plant.Index();
             else if (type != APUMPKIN && type != AFLOWER_POT && type != ALILY_PAD && type != ACOFFEE_BEAN && plantType != APUMPKIN && plantType != AFLOWER_POT && plantType != ALILY_PAD && plantType != ACOFFEE_BEAN)
                 return -2;
@@ -74,7 +74,7 @@ void AGetPlantIndices(const std::vector<AGrid>& lstIn, int type, std::vector<int
         if (!gridToIndices.contains(grid))
             continue;
         int plantType = plant.Type();
-        if (plantType == type)
+        if (type == -2 || plantType == type)
             for (auto idx : gridToIndices[grid])
                 indicesOut[idx] = plant.Index();
         else if (type != APUMPKIN && type != AFLOWER_POT && type != ALILY_PAD && type != ACOFFEE_BEAN && plantType != APUMPKIN && plantType != AFLOWER_POT && plantType != ALILY_PAD && plantType != ACOFFEE_BEAN)
@@ -326,6 +326,10 @@ std::vector<int> ACreateRandomTypeList(const std::vector<int>& required, const s
         if (type >= 0)
             typeList.push_back(type);
     return typeList;
+}
+
+std::vector<int> ACreateRandomTypeList(std::string_view required, std::string_view banned) {
+    return ACreateRandomTypeList(AParseZombieTypeString(required), AParseZombieTypeString(banned));
 }
 
 bool* AGetZombieTypeList() {

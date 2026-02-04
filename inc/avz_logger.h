@@ -83,7 +83,7 @@ protected:
         _Replace(formatStr, _pattern, "{}");
         std::string message;
         try {
-            message = std::vformat(formatStr + _suffix, std::make_format_args(std::forward<decltype(args)>(args)...));
+            message = std::vformat(formatStr + _suffix, std::make_format_args(args...));
         } catch (const std::format_error& e) {
             message = "格式化错误: " + std::string(e.what());
         }
@@ -168,21 +168,20 @@ public:
     // *** 使用示例:
     // SetRemainTime(100) ------- 将显示持续时间改为 100
     void SetRemainTime(int remainTime) {
-        _remainTime = std::clamp(remainTime, 0, INT_MAX);
+        _remainTime = std::max(remainTime, 0);
     }
 
     // 设定显示持续时间
     // *** 使用示例:
     // SetPos(50, 100) ------- 将显示位置更改为 (50, 100) [最大为 800, 600]
     void SetPos(int x, int y) {
-        _pixelDisplay.x = std::clamp(x, 0, 800);
-        _pixelDisplay.y = std::clamp(y, 0, 600);
+        _pixelDisplay = {x, y};
     }
 
     // 设置平滑过渡速度
     // 默认值为 3
     void SetTransitSpeed(int speed) {
-        _transitSpeed = std::clamp(speed, 1, INT_MAX);
+        _transitSpeed = std::max(speed, 1);
     }
 
 protected:

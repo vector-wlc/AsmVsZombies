@@ -290,8 +290,8 @@ void AReplay::StartRecord(int interval, int64_t startIdx) {
 }
 
 void AReplay::SetInfoPos(int x, int y) {
-    _showPosX = std::clamp(x, 0, 800);
-    _showPosY = std::clamp(y, 0, 600);
+    _showPosX = x;
+    _showPosY = y;
 }
 
 bool AReplay::ShowOneTick(int64_t tick) {

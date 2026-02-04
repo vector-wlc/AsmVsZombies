@@ -43,29 +43,6 @@ protected:
         }                                                                                  \
     };
 
-struct APosition {
-    int row;
-    float col;
-
-    APosition() = default;
-
-    APosition(int row, float col)
-        : row(row), col(col) {}
-
-    bool operator==(const APosition&) const = default;
-    auto operator<=>(const APosition&) const = default;
-};
-
-__AImplementHash(APosition)
-
-template <>
-struct std::formatter<APosition> : std::formatter<std::string> {
-    auto format(APosition pos, auto& ctx) const {
-        std::string result = std::format("({}, {})", pos.row, int(pos.col * 80.0 + 1e-3) / 80.0);
-        return formatter<std::string>::format(result, ctx);
-    }
-};
-
 struct AGrid {
     int row;
     int col;
@@ -77,10 +54,6 @@ struct AGrid {
 
     bool operator==(const AGrid&) const = default;
     auto operator<=>(const AGrid&) const = default;
-
-    operator APosition() const {
-        return APosition(row, col);
-    }
 };
 
 __AImplementHash(AGrid)
@@ -89,6 +62,36 @@ template <>
 struct std::formatter<AGrid> : std::formatter<std::string> {
     auto format(AGrid grid, auto& ctx) const {
         std::string result = std::format("({}, {})", grid.row, grid.col);
+        return formatter<std::string>::format(result, ctx);
+    }
+};
+
+struct APosition {
+    int row;
+    float col;
+
+    APosition() = default;
+
+    APosition(int row, float col)
+        : row(row), col(col) {}
+
+    APosition(AGrid grid)
+        : row(grid.row), col(grid.col) {}
+
+    bool operator==(const APosition&) const = default;
+    auto operator<=>(const APosition&) const = default;
+
+    explicit operator AGrid() const {
+        return AGrid(row, int(col + 0.5f));
+    }
+};
+
+__AImplementHash(APosition)
+
+template <>
+struct std::formatter<APosition> : std::formatter<std::string> {
+    auto format(APosition pos, auto& ctx) const {
+        std::string result = std::format("({}, {})", pos.row, int(pos.col * 80.0 + 1e-3) / 80.0);
         return formatter<std::string>::format(result, ctx);
     }
 };
@@ -449,6 +452,104 @@ constexpr APlantType AM_YZBHS_37 = AM_UMBRELLA_LEAF; // 叶子保护伞
 constexpr APlantType AM_JZH_38 = AM_MARIGOLD;        // 金盏花
 constexpr APlantType AM_XGTS_39 = AM_MELON_PULT;     // 西瓜投手
 
+template <>
+struct std::formatter<APlantType> {
+    struct PlantNameInfo {
+        std::string_view name[2][2];
+    } static constexpr PLANT_DATA[] = {
+        {{{"豌豆射手", "豌豆"}, {"Peashooter", "Pea"}}},
+        {{{"向日葵", "小向"}, {"Sunflower", "Sun"}}},
+        {{{"樱桃炸弹", "樱桃"}, {"Cherry Bomb", "Cherry"}}},
+        {{{"坚果", "坚果"}, {"Wall-nut", "Nut"}}},
+        {{{"土豆地雷", "土豆"}, {"Potato Mine", "Mine"}}},
+        {{{"寒冰射手", "冰豆"}, {"Snow Pea", "Snow"}}},
+        {{{"大嘴花", "大嘴"}, {"Chomper", "Chomp"}}},
+        {{{"双发射手", "双发"}, {"Repeater", "Rep"}}},
+        {{{"小喷菇", "小喷"}, {"Puff-shroom", "Puff"}}},
+        {{{"阳光菇", "阳光"}, {"Sun-shroom", "Sun"}}},
+        {{{"大喷菇", "大喷"}, {"Fume-shroom", "Fume"}}},
+        {{{"墓碑吞噬者", "墓碑"}, {"Grave Buster", "Grave"}}},
+        {{{"魅惑菇", "魅惑"}, {"Hypno-shroom", "Hypno"}}},
+        {{{"胆小菇", "胆小"}, {"Scaredy-shroom", "Scaredy"}}},
+        {{{"寒冰菇", "冰菇"}, {"Ice-shroom", "Ice"}}},
+        {{{"毁灭菇", "核弹"}, {"Doom-shroom", "Doom"}}},
+        {{{"荷叶", "荷叶"}, {"Lily Pad", "Lily"}}},
+        {{{"倭瓜", "倭瓜"}, {"Squash", "Squash"}}},
+        {{{"三发射手", "三发"}, {"Threepeater", "Three"}}},
+        {{{"缠绕海藻", "海藻"}, {"Tangle Kelp", "Kelp"}}},
+        {{{"火爆辣椒", "辣椒"}, {"Jalapeno", "Jala"}}},
+        {{{"地刺", "地刺"}, {"Spikeweed", "Spike"}}},
+        {{{"火炬树桩", "火炬"}, {"Torchwood", "Torch"}}},
+        {{{"高坚果", "高坚"}, {"Tall-nut", "Tall"}}},
+        {{{"水兵菇", "水兵"}, {"Sea-shroom", "Sea"}}},
+        {{{"路灯花", "路灯"}, {"Plantern", "Plantern"}}},
+        {{{"仙人掌", "仙人掌"}, {"Cactus", "Cactus"}}},
+        {{{"三叶草", "三叶"}, {"Blover", "Blover"}}},
+        {{{"裂荚射手", "裂荚"}, {"Split Pea", "Split"}}},
+        {{{"杨桃", "杨桃"}, {"Starfruit", "Star"}}},
+        {{{"南瓜头", "南瓜"}, {"Pumpkin", "Pump"}}},
+        {{{"磁力菇", "磁力"}, {"Magnet-shroom", "Magnet"}}},
+        {{{"卷心菜投手", "卷心菜"}, {"Cabbage-pult", "Cabbage"}}},
+        {{{"花盆", "花盆"}, {"Flower Pot", "Pot"}}},
+        {{{"玉米投手", "玉米"}, {"Kernel-pult", "Kernel"}}},
+        {{{"咖啡豆", "咖啡"}, {"Coffee Bean", "Coffee"}}},
+        {{{"大蒜", "大蒜"}, {"Garlic", "Garlic"}}},
+        {{{"叶子保护伞", "伞叶"}, {"Umbrella Leaf", "Leaf"}}},
+        {{{"金盏花", "金盏花"}, {"Marigold", "Gold"}}},
+        {{{"西瓜投手", "西瓜"}, {"Melon-pult", "Melon"}}},
+        {{{"机枪射手", "机枪"}, {"Gatling Pea", "Gatling"}}},
+        {{{"双子向日葵", "双花"}, {"Twin Sunflower", "Twin"}}},
+        {{{"忧郁菇", "曾"}, {"Gloom-shroom", "Gloom"}}},
+        {{{"香蒲", "猫"}, {"Cattail", "Cat"}}},
+        {{{"冰西瓜投手", "冰瓜"}, {"Winter Melon", "Winter"}}},
+        {{{"吸金磁", "吸金"}, {"Gold Magnet", "Gold"}}},
+        {{{"地刺王", "刺王"}, {"Spikerock", "Rock"}}},
+        {{{"玉米加农炮", "炮"}, {"Cob Cannon", "Cob"}}},
+        {{{"模仿者", "模仿"}, {"Imitater", "Im"}}},
+        {{{"未知", "未知"}, {"Unknown", "Unknown"}}},
+    };
+    enum Language { CN, EN, EN_UPPER } lang = CN;
+    enum Length { LONG, SHORT } len = LONG;
+
+    constexpr auto parse(auto& ctx) {
+        auto it = ctx.begin();
+        for (; it != ctx.end() && *it != '}'; it++) {
+            switch (*it) {
+                case 'e': lang = EN; break;
+                case 'E': lang = EN_UPPER; break;
+                case 'z': lang = CN; break;
+                case 's': len = SHORT; break;
+                case 'l': len = LONG; break;
+            }
+        }
+        return it;
+    }
+
+    auto format(APlantType p, auto& ctx) const {
+        bool isImitator = (p >= AIMITATOR);
+        int idx = isImitator ? (p - AIMITATOR) : p;
+        if (idx < 0 || idx >= 50) {
+            idx = 49; // 未知
+        }
+        const PlantNameInfo& info = PLANT_DATA[idx];
+        std::string result;
+        if (isImitator) {
+            switch (lang) {
+                case CN: result += (len == SHORT ? "白" : "模仿"); break;
+                case EN: result += (len == SHORT ? "Im " : "Imitater "); break;
+                case EN_UPPER: result += (len == SHORT ? "IM " : "IMITATER "); break;
+            }
+        }
+        result += info.name[lang == EN_UPPER ? EN : lang][len];
+        if (lang == EN_UPPER) {
+            for (auto& ch : result) {
+                ch = std::toupper(ch);
+            }
+        }
+        return std::format_to(ctx.out(), "{}", result);
+    }
+};
+
 enum AZombieType {
     AZOMBIE = 0,             // 普僵
     AFLAG_ZOMBIE,            // 旗帜
@@ -512,6 +613,80 @@ constexpr AZombieType ABY_23 = AGARGANTUAR;             // 白眼
 constexpr AZombieType AXG_24 = AIMP;                    // 小鬼
 constexpr AZombieType AJB_25 = ADR_ZOMBOSS;             // 僵博
 constexpr AZombieType AHY_32 = AGIGA_GARGANTUAR;        // 红眼
+
+template <>
+struct std::formatter<AZombieType> {
+    struct ZombieNameInfo {
+        std::string_view name[2][3];
+    } static constexpr ZOMBIE_DATA[] = {
+        {{{"普僵", "普僵", "普"}, {"Zombie", "Regular", "Reg"}}},
+        {{{"旗帜僵尸", "旗帜", "旗"}, {"Flag Zombie", "Flag", "Flag"}}},
+        {{{"路障僵尸", "路障", "障"}, {"Conehead Zombie", "Conehead", "Cone"}}},
+        {{{"撑杆僵尸", "撑杆", "杆"}, {"Pole Vaulting Zombie", "Pole Vaulting", "Pole"}}},
+        {{{"铁桶僵尸", "铁桶", "桶"}, {"Buckethead Zombie", "Buckethead", "Bucket"}}},
+        {{{"读报僵尸", "读报", "报"}, {"Newspaper Zombie", "Newspaper", "Paper"}}},
+        {{{"铁门僵尸", "铁门", "门"}, {"Screen Door Zombie", "Screen Door", "Door"}}},
+        {{{"橄榄球僵尸", "橄榄", "橄"}, {"Football Zombie", "Football", "Foot"}}},
+        {{{"舞王僵尸", "舞王", "舞"}, {"Dancing Zombie", "Dancing", "Dance"}}},
+        {{{"伴舞僵尸", "伴舞", "伴"}, {"Backup Dancer", "Backup", "Back"}}},
+        {{{"鸭子救生圈僵尸", "鸭子", "鸭"}, {"Ducky Tube Zombie", "Ducky Tube", "Duck"}}},
+        {{{"潜水僵尸", "潜水", "潜"}, {"Snorkel Zombie", "Snorkel", "Snork"}}},
+        {{{"冰车僵尸", "冰车", "车"}, {"Zomboni", "Zomboni", "Zomboni"}}},
+        {{{"雪橇僵尸小队", "雪橇", "橇"}, {"Zombie Bobsled Team", "Bobsled", "Sled"}}},
+        {{{"海豚僵尸", "海豚", "豚"}, {"Dolphin Rider Zombie", "Dolphin Rider", "Dolphin"}}},
+        {{{"小丑僵尸", "小丑", "丑"}, {"Jack-in-the-Box Zombie", "Jack-in-the-Box", "Jack"}}},
+        {{{"气球僵尸", "气球", "气"}, {"Balloon Zombie", "Balloon", "Ball"}}},
+        {{{"矿工僵尸", "矿工", "矿"}, {"Digger Zombie", "Digger", "Dig"}}},
+        {{{"跳跳僵尸", "跳跳", "跳"}, {"Pogo Zombie", "Pogo", "Pogo"}}},
+        {{{"雪人僵尸", "雪人", "雪"}, {"Zombie Yeti", "Yeti", "Yeti"}}},
+        {{{"蹦极僵尸", "蹦极", "偷"}, {"Bungee Zombie", "Bungee", "Bungee"}}},
+        {{{"扶梯僵尸", "扶梯", "梯"}, {"Ladder Zombie", "Ladder", "Ladder"}}},
+        {{{"投篮僵尸", "投篮", "篮"}, {"Catapult Zombie", "Catapult", "Cat"}}},
+        {{{"巨人僵尸", "白眼", "白"}, {"Gargantuar", "Gargantuar", "Garg"}}},
+        {{{"小鬼僵尸", "小鬼", "鬼"}, {"Imp", "Imp", "Imp"}}},
+        {{{"僵王博士", "僵王", "博"}, {"Dr. Zomboss", "Zomboss", "Boss"}}},
+        {{{"豌豆僵尸", "豌豆", "豌"}, {"Peashooter Zombie", "Peashooter Zombie", "Pea"}}},
+        {{{"坚果僵尸", "坚果", "坚"}, {"Wall-nut Zombie", "Wall-nut Zombie", "Nut"}}},
+        {{{"辣椒僵尸", "辣椒", "辣"}, {"Jalapeno Zombie", "Jalapeno Zombie", "Jala"}}},
+        {{{"机枪僵尸", "机枪", "机"}, {"Gatling Pea Zombie", "Gatling Pea Zombie", "Gat"}}},
+        {{{"倭瓜僵尸", "倭瓜", "倭"}, {"Squash Zombie", "Squash Zombie", "Squash"}}},
+        {{{"高坚果僵尸", "高坚", "高"}, {"Tall-nut Zombie", "Tall-nut Zombie", "Tall"}}},
+        {{{"红眼巨人僵尸", "红眼", "红"}, {"Giga-Gargantuar", "Giga-Gargantuar", "Giga"}}},
+        {{{"未知", "未知", "未知"}, {"Unknown", "Unknown", "Unknown"}}},
+    };
+    enum Language { CN, EN, EN_UPPER } lang = CN;
+    enum Length { LONG, MED, SHORT } len = MED;
+
+    constexpr auto parse(auto& ctx) {
+        auto it = ctx.begin();
+        for (; it != ctx.end() && *it != '}'; it++) {
+            switch (*it) {
+                case 'z': lang = CN; break;
+                case 'e': lang = EN; break;
+                case 'E': lang = EN_UPPER; break;
+                case 'l': len = LONG; break;
+                case 's': len = SHORT; break;
+            }
+        }
+        return it;
+    }
+
+    auto format(AZombieType z, auto& ctx) const {
+        int idx = z;
+        if (idx < 0 || idx >= 34) {
+            idx = 33; // 未知
+        }
+        const ZombieNameInfo& info = ZOMBIE_DATA[idx];
+        std::string result;
+        result = info.name[lang == EN_UPPER ? EN : lang][len];
+        if (lang == EN_UPPER) {
+            for (auto& ch : result) {
+                ch = std::toupper(ch);
+            }
+        }
+        return std::format_to(ctx.out(), "{}", result);
+    }
+};
 
 namespace APlaceItemType {
 constexpr int GRAVESTONE = 1;

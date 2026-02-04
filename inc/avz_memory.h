@@ -21,14 +21,14 @@ __ANodiscard int AGetSeedIndex(int type, bool imitator = false);
 __ANodiscard ASeed* AGetSeedPtr(int type, bool imitator = false);
 
 // 得到指定位置和类型的植物对象序列
-// 当参数type为默认值-1时该函数无视南瓜花盆荷叶咖啡豆
+// 当参数type为默认值-1时该函数无视南瓜花盆荷叶咖啡豆；type为-2时只要有植物即可
 // *** 使用示例：
 // GetPlantIndex(3, 4)---------如果三行四列有除南瓜花盆荷叶咖啡豆之外的植物时，返回该植物的对象序列，否则返回-1
 // GetPlantIndex(3, 4, 47)-----如果三行四列有春哥，返回其对象序列，如果有其他植物，返回-2，否则返回-1
 __ANodiscard int AGetPlantIndex(int row, int col, int type = -1);
 
 // 得到指定位置和类型的植物对象指针
-// 当参数type为默认值-1时该函数无视南瓜花盆荷叶咖啡豆
+// 当参数type为默认值-1时该函数无视南瓜花盆荷叶咖啡豆；type为-2时只要有植物即可
 // *** 使用示例：
 // GetPlantIndex(3, 4)---------如果三行四列有除南瓜花盆荷叶咖啡豆之外的植物时，返回该植物的指针，否则返回 nullptr
 // GetPlantIndex(3, 4, 47)-----如果三行四列有春哥，返回该春哥的指针，否则返回 nullptr
@@ -166,6 +166,7 @@ void ASetWaveZombies(int wave, std::string_view str);
 // auto typeList = ACreateRandomTypeList({AGIGA_GARGANTUAR, AGARGANTUAR}, {ABUCKETHEAD_ZOMBIE});
 // ASetZombies(typeList, ASetZombieMode::INTERNAL);
 __ANodiscard std::vector<int> ACreateRandomTypeList(const std::vector<int>& required = {}, const std::vector<int>& banned = {});
+__ANodiscard std::vector<int> ACreateRandomTypeList(std::string_view required = "", std::string_view banned = "");
 
 // *** 使用示例：
 // 检查当前出怪中是否有红眼：

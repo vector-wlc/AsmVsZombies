@@ -278,6 +278,11 @@ public:
         return MRef<int>(0xe8);
     }
 
+    // 收集物数量上限
+    __ANodiscard int& ItemLimit() noexcept {
+        return MRef<int>(0xec);
+    }
+
     // 场地物品内存数组
     __ANodiscard APlaceItem* PlaceItemArray() noexcept {
         return MPtr<APlaceItem>(0x11c);
@@ -293,6 +298,11 @@ public:
         return MRef<int>(0x120);
     }
 
+    // 场地物品数量上限
+    __ANodiscard int& PlaceItemLimit() noexcept {
+        return MRef<int>(0x124);
+    }
+
     // 子弹内存数组
     __ANodiscard AProjectile* ProjectileArray() noexcept {
         return MPtr<AProjectile>(0xc8);
@@ -306,6 +316,11 @@ public:
     // 子弹内存数组大小
     __ANodiscard int& ProjectileTotal() noexcept {
         return MRef<int>(0xcc);
+    }
+
+    // 子弹数量上限
+    __ANodiscard int& ProjectileLimit() noexcept {
+        return MRef<int>(0xd0);
     }
 
     // 游戏是否暂停
@@ -446,7 +461,41 @@ public:
     __ANodiscard AAnimation* AnimationArray() noexcept {
         return MPtr<AAnimation>(0x0);
     }
+
+    // 动画数组大小
+    __ANodiscard int& AnimationCountMax() noexcept {
+        return MRef<int>(0x4);
+    }
+
+    // 动画数组大小
+    __ANodiscard int& AnimationTotal() noexcept {
+        return MRef<int>(0x4);
+    }
+
+    // 动画数量上限
+    __ANodiscard int& AnimationLimit() noexcept {
+        return MRef<int>(0x8);
+    }
+
+    // 下一个动画的编号
+    __ANodiscard int& AnimationNext() noexcept {
+        return MRef<int>(0xc);
+    }
+
+    // 当前动画的数量
+    __ANodiscard int& AnimationCount() noexcept {
+        return MRef<int>(0x10);
+    }
+
+    // 最后一个动画的编号
+    __ANodiscard int& AnimationLast() noexcept {
+        return MRef<int>(0x14);
+    }
 };
+
+__ANodiscard inline AAnimation* AGetAnimationArray() {
+    return AGetPvzBase()->AnimationMain()->AnimationOffset()->AnimationArray();
+}
 
 // 动画属性
 struct AAnimation : public APvzStruct {
@@ -460,11 +509,33 @@ public:
     __ANodiscard float& CirculationRate() noexcept {
         return MRef<float>(0x4);
     }
-};
 
-__ANodiscard inline AAnimation* AGetAnimationArray() {
-    return AGetPvzBase()->AnimationMain()->AnimationOffset()->AnimationArray();
-}
+    // 对象的编号（栈位）
+    __ANodiscard uint16_t& Index() noexcept {
+        return MRef<uint16_t>(sizeof(_data) - 4);
+    }
+
+    // 对象的序列号
+    __ANodiscard uint16_t& Rank() noexcept {
+        return MRef<uint16_t>(sizeof(_data) - 2);
+    }
+
+    // 对象的 ID
+    __ANodiscard uint32_t& Id() noexcept {
+        return MRef<uint32_t>(sizeof(_data) - 4);
+    }
+
+    // 通过 ID 获取对象指针，当 ID 无效（对象已被回收）时返回 nullptr
+    // 仍需检查非 nullptr 返回值指向的对象是否存活
+    __ANodiscard static AAnimation* FromId(uint32_t id) noexcept {
+        AAnimationOffset* animOffset = AGetPvzBase()->AnimationMain()->AnimationOffset();
+        uint16_t index = id & 0xffff;
+        if (id == 0 || index >= animOffset->AnimationLimit())
+            return nullptr;
+        AAnimation* anim = animOffset->AnimationArray() + index;
+        return anim->Id() == id ? anim : nullptr;
+    }
+};
 
 // 植物内存属性
 struct APlant : public APvzStruct {
@@ -621,6 +692,17 @@ public:
     // 对象的 ID
     __ANodiscard uint32_t& Id() noexcept {
         return MRef<uint32_t>(sizeof(_data) - 4);
+    }
+
+    // 通过 ID 获取对象指针，当 ID 无效（对象已被回收）时返回 nullptr
+    // 仍需检查非 nullptr 返回值指向的对象是否存活
+    __ANodiscard static APlant* FromId(uint32_t id) noexcept {
+        AMainObject* mainObj = AGetMainObject();
+        uint16_t index = id & 0xffff;
+        if (id == 0 || index >= mainObj->PlantLimit())
+            return nullptr;
+        APlant* plant = mainObj->PlantArray() + index;
+        return plant->Id() == id ? plant : nullptr;
     }
 };
 
@@ -804,6 +886,17 @@ public:
     __ANodiscard uint32_t& Id() noexcept {
         return MRef<uint32_t>(sizeof(_data) - 4);
     }
+
+    // 通过 ID 获取对象指针，当 ID 无效（对象已被回收）时返回 nullptr
+    // 仍需检查非 nullptr 返回值指向的对象是否存活
+    __ANodiscard static AZombie* FromId(uint32_t id) noexcept {
+        AMainObject* mainObj = AGetMainObject();
+        uint16_t index = id & 0xffff;
+        if (id == 0 || index >= mainObj->ZombieLimit())
+            return nullptr;
+        AZombie* zombie = mainObj->ZombieArray() + index;
+        return zombie->Id() == id ? zombie : nullptr;
+    }
 };
 
 // 种子 / 卡牌 属性
@@ -920,6 +1013,17 @@ public:
     __ANodiscard uint32_t& Id() noexcept {
         return MRef<uint32_t>(sizeof(_data) - 8);
     }
+
+    // 通过 ID 获取对象指针，当 ID 无效（对象已被回收）时返回 nullptr
+    // 仍需检查非 nullptr 返回值指向的对象是否存活
+    __ANodiscard static AItem* FromId(uint32_t id) noexcept {
+        AMainObject* mainObj = AGetMainObject();
+        uint16_t index = id & 0xffff;
+        if (id == 0 || index >= mainObj->ItemLimit())
+            return nullptr;
+        AItem* item = mainObj->ItemArray() + index;
+        return item->Id() == id ? item : nullptr;
+    }
 };
 
 // 场地物品属性
@@ -968,6 +1072,17 @@ public:
     // 对象的 ID
     __ANodiscard uint32_t& Id() noexcept {
         return MRef<uint32_t>(sizeof(_data) - 4);
+    }
+
+    // 通过 ID 获取对象指针，当 ID 无效（对象已被回收）时返回 nullptr
+    // 仍需检查非 nullptr 返回值指向的对象是否存活
+    __ANodiscard static APlaceItem* FromId(uint32_t id) noexcept {
+        AMainObject* mainObj = AGetMainObject();
+        uint16_t index = id & 0xffff;
+        if (id == 0 || index >= mainObj->PlaceItemLimit())
+            return nullptr;
+        APlaceItem* placeItem = mainObj->PlaceItemArray() + index;
+        return placeItem->Id() == id ? placeItem : nullptr;
     }
 };
 
@@ -1018,6 +1133,17 @@ public:
     // 对象的 ID
     __ANodiscard uint32_t& Id() noexcept {
         return MRef<uint32_t>(sizeof(_data) - 4);
+    }
+
+    // 通过 ID 获取对象指针，当 ID 无效（对象已被回收）时返回 nullptr
+    // 仍需检查非 nullptr 返回值指向的对象是否存活
+    __ANodiscard static AProjectile* FromId(uint32_t id) noexcept {
+        AMainObject* mainObj = AGetMainObject();
+        uint16_t index = id & 0xffff;
+        if (id == 0 || index >= mainObj->ProjectileLimit())
+            return nullptr;
+        AProjectile* projectile = mainObj->ProjectileArray() + index;
+        return projectile->Id() == id ? projectile : nullptr;
     }
 };
 

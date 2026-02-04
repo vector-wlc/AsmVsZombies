@@ -1,8 +1,14 @@
 # 更新日志
 
-AvZ Nightly
+AvZ 2.8.7 2026_02_04
 
 * 增加 `AProjectile` 类，用于读取子弹
+* `APlant` 和 `AZombie` 等类增加 `FromId(uint32_t id)` 静态函数，用于跨帧追踪对象
+* `AGetPlantIndex` 和 `AGetPlantPtr` 支持传入 `type = -2`，表示获取所有类型的植物
+* `ALogger` 支持打印 `APlantType` 和 `AZombieType` 类型
+* 修复了形如 `At(time) 1_cs + op` 的表达式解析错误的问题
+* 修复了 `N` 不会检测已有毁灭菇的问题
+* `ACreateRandomTypeList` 支持以字符串形式传入僵尸类型
 
 AvZ 2.8.6 2025_08_23
 

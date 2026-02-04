@@ -314,6 +314,22 @@ public:
             return timeline + *offset;
         return {};
     }
+
+    ATimeline operator+(const ATimeline& timeline) const {
+        if (auto offset = std::get_if<ATimeOffset>(&_value))
+            return timeline + *offset;
+        else if (auto timeline2 = std::get_if<ATimeline>(&_value))
+            return *timeline2 + timeline;
+        return {};
+    }
+
+    __ADSLCastHelper operator+(const ATimeOffset& offset) const {
+        if (auto offset2 = std::get_if<ATimeOffset>(&_value))
+            return __ADSLCastHelper(*offset2 + offset);
+        else if (auto timeline = std::get_if<ATimeline>(&_value))
+            return __ADSLCastHelper(*timeline + offset);
+        return __ADSLCastHelper{};
+    }
 };
 
 #define At(...) (__VA_ARGS__) <<= (__ADSLCastHelper)
