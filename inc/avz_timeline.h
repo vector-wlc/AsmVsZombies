@@ -115,6 +115,30 @@ public:
         return minOffset;
     }
 
+    template <typename Func>
+    std::vector<std::pair<ATimeOffset, Func>> ExtractOperations() const {
+        std::vector<std::pair<ATimeOffset, Func>> ops;
+        for (auto& entry : _entries) {
+            if (auto action = std::get_if<AOperation>(&entry.action)) {
+                if (auto op = action->target<Func>())
+                    ops.emplace_back(entry.offset, *op);
+            }
+        }
+        return ops;
+    }
+
+    template <typename Func>
+    std::vector<std::pair<ATimeOffset, Func>> ExtractHooks() const {
+        std::vector<std::pair<ATimeOffset, Func>> hooks;
+        for (auto& entry : _entries) {
+            if (auto hook = std::get_if<TimelineHook>(&entry.action)) {
+                if (auto h = hook->template target<Func>())
+                    hooks.emplace_back(entry.offset, *h);
+            }
+        }
+        return hooks;
+    }
+
     friend std::vector<ATimeConnectHandle> AConnect(const ATime& time, const ATimeline& timeline) {
         std::vector<ATimeConnectHandle> handles;
         for (auto&& entry : timeline._entries) {

@@ -40,9 +40,9 @@ void __AOpQueueManager::_RecordRefresh(int wave, int refreshTime) {
         return;
     }
     queues[wave].memRefreshTime = queues[wave].calRefreshTime = refreshTime;
-    if (wave > 1 && queues[wave - 1].memRefreshTime != __AOperationQueue::UNINIT) {
+    if (wave > 0 && queues[wave - 1].memRefreshTime != __AOperationQueue::UNINIT) {
         int waveLength = queues[wave].memRefreshTime - queues[wave - 1].memRefreshTime;
-        if (queues[wave - 1].waveLength == -1)
+        if (wave > 1)
             aLogger->Info("下一波即将刷新，第 {} 波的波长为 {}", wave - 1, waveLength);
         queues[wave - 1].waveLength = waveLength;
     }
@@ -129,6 +129,7 @@ void __AOpQueueManager::AssumeWavelength(const std::vector<ATime>& lst) {
         if (!_CheckWavelength(time))
             continue;
         queues[time.wave].waveLength = time.time;
+        queues[time.wave].isAssumed = true;
         _CalculateRefreshTime(time.wave);
         AConnect(ATime(time.wave + 1, -200), [=, this] {
             _CheckAssumeWavelength(time.wave);
@@ -190,8 +191,10 @@ void __AOpQueueManager::_CheckAssumeWavelength(int wave) {
 
     if (!errorMsg.empty()) { // str 不为空说明有错误
         // 将已经设置的 calRefreshTime 设置回 UNINIT
-        for (int w = wave + 1; w <= totalWave + 1; ++w)
+        for (int w = wave + 1; w <= totalWave + 1; ++w) {
             queues[w].calRefreshTime = __AOperationQueue::UNINIT;
+            queues[w].isAssumed = false;
+        }
         aLogger->Error("AssumeWavelength : 您第 {} 波假定的波长为 {}, {}", wave, currentQueue.waveLength, errorMsg);
     }
 }

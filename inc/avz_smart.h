@@ -78,6 +78,9 @@ public:
     // SetIceSeedList({AICE_SHROOM}) ------ 只使用原版冰
     // SetIceSeedList({AM_ICE_SHROOM, AICE_SHROOM}) ----- 优先使用模仿冰，再使用原版冰
     void SetIceSeedList(const std::vector<int>& lst);
+    APlantType GetIceSeedType() const {
+        return APlantType(_seedType);
+    }
 
     // 重置存冰位置
     // *** 使用示例：

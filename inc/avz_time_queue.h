@@ -18,23 +18,13 @@ struct __ABoolOperation {
         : operation(std::move(operation)) {}
 };
 
-struct __ATimeOperation {
-    AOperation operation;
-    ATime time;
-
-    __ATimeOperation(const AOperation& operation, const ATime& time)
-        : operation(operation), time(time) {}
-
-    __ATimeOperation(AOperation&& operation, const ATime& time)
-        : operation(std::move(operation)), time(time) {}
-};
-
 struct __AOperationQueue {
     using RunOrderQueue = std::multimap<int, __ABoolOperation>;
     constexpr static int UNINIT = INT_MIN;
     RunOrderQueue queue;
     int calRefreshTime = UNINIT; // 计算得到的刷新时间，操作队列都用此时间
     int memRefreshTime = UNINIT; // 通过读内存得到的真实刷新时间，用于检查用户设定的波长是否正确
+    bool isAssumed = false;
     int waveLength = -1;
 };
 
@@ -53,6 +43,32 @@ public:
     void SetWavelength(const std::vector<ATime>& lst);
     void AssumeWavelength(const std::vector<ATime>& lst);
     void RunOperation();
+    template <typename Func>
+    std::vector<std::pair<ATime, Func>> ExtractOperations() const {
+        std::vector<std::pair<ATime, Func>> ret;
+        for (int wave = 0; wave <= totalWave + 1; ++wave) {
+            for (const auto& [time, op] : queues[wave].queue) {
+                if (op.isStopped)
+                    continue;
+                if (auto func = op.operation.target<Func>())
+                    ret.emplace_back(ATime(wave, time), *func);
+            }
+        }
+        return ret;
+    }
+    template <typename Func>
+    std::vector<std::pair<ATime, Func>> ExtractOperations(int wave) const {
+        std::vector<std::pair<ATime, Func>> ret;
+        if (wave < 0 || wave >= queues.size())
+            return ret;
+        for (const auto& [time, op] : queues[wave].queue) {
+            if (op.isStopped)
+                continue;
+            if (auto func = op.operation.target<Func>())
+                ret.emplace_back(ATime(wave, time), *func);
+        }
+        return ret;
+    }
 
 protected:
     static std::optional<int> _GetNextWaveCountdown();

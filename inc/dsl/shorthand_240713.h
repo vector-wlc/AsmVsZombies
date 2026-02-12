@@ -79,22 +79,53 @@ public:
     }
 } inline slope(1, 2, 3, 4, 5, 6, 7, 8), flat(8, 7, 6, 5, 4, 3, 2, 1);
 
+namespace AFunctors {
+struct Cob {
+    bool isRoof;
+    bool isRecover;
+    std::variant<std::reference_wrapper<ACobManager>, AGrid> cobUsed;
+    APosition targetPos;
+
+    void operator()() const {
+        if (auto cobPos = std::get_if<AGrid>(&cobUsed)) {
+            if (isRoof)
+                ACobManager::RawRoofFire(cobPos->row, cobPos->col, targetPos.row, targetPos.col);
+            else
+                ACobManager::RawFire(cobPos->row, cobPos->col, targetPos.row, targetPos.col);
+        } else if (auto cobManagerRef = std::get_if<std::reference_wrapper<ACobManager>>(&cobUsed)) {
+            auto& cm = cobManagerRef->get();
+            auto [row, col] = targetPos;
+            if (isRoof) {
+                isRecover ? cm.RecoverRoofFire(row, col) : cm.RoofFire(row, col);
+            } else {
+                isRecover ? cm.RecoverFire(row, col) : cm.Fire(row, col);
+            }
+        }
+    }
+
+    // 根据场地类型返回 373cs / 376cs / 387cs 的偏移
+    ATimeOffset GetEffectOffset() const {
+        if (aFieldInfo.isRoof)
+            return 387_cs;
+        else if (aFieldInfo.rowType[targetPos.row] == ARowType::POOL)
+            return 378_cs;
+        else
+            return 373_cs;
+    }
+};
+} // namespace AFunctors
+
 /*
 RP(1, 1, 3, 9) // 发射炮尾位于 1-1 的炮，落点为 3-9
 */
 inline ATimeline RP(int cobRow, int cobCol, int row, float col) {
-    if (aFieldInfo.isRoof)
-        return At(-387_cs) Do {
-            ACobManager::RawRoofFire(cobRow, cobCol, row, col);
-        };
-    else if (aFieldInfo.rowType[row] == ARowType::POOL)
-        return At(-378_cs) Do {
-            ACobManager::RawFire(cobRow, cobCol, row, col);
-        };
-    else
-        return At(-373_cs) Do {
-            ACobManager::RawFire(cobRow, cobCol, row, col);
-        };
+    auto op = AFunctors::Cob{
+        .isRoof = true,
+        .isRecover = false,
+        .cobUsed = AGrid{cobRow, cobCol},
+        .targetPos = {row, col},
+    };
+    return At(-op.GetEffectOffset()) op;
 }
 
 inline std::vector<APosition> __ParseRow(const std::vector<APosition>& positions) {
@@ -132,19 +163,13 @@ template <AFirePolicy policy = INSTANT_FIRE>
 inline ATimeline P(ACobManager& cm, int row, float col) {
     ATimeline ret;
     for (auto pos : __ParseRow(row, col)) {
-        int r = pos.row;
-        float c = pos.col;
-        ATimeOffset offset;
-        if (aFieldInfo.isRoof)
-            offset = -387;
-        else
-            offset = (aFieldInfo.rowType[r] == ARowType::POOL ? -378 : -373);
-        ret &= At(offset)[=, &cm] {
-            if constexpr (policy == INSTANT_FIRE)
-                aFieldInfo.isRoof ? cm.RoofFire(r, c) : cm.Fire(r, c);
-            else
-                aFieldInfo.isRoof ? cm.RecoverRoofFire(r, c) : cm.RecoverFire(r, c);
+        auto op = AFunctors::Cob{
+            .isRoof = aFieldInfo.isRoof,
+            .isRecover = policy == RECOVER_FIRE,
+            .cobUsed = std::ref(cm),
+            .targetPos = pos,
         };
+        ret &= At(-op.GetEffectOffset()) op;
     }
     return ret;
 }
@@ -191,31 +216,43 @@ inline ATimeline DD(float col) {
     return P(aFieldInfo.nRows == 5 ? 14 : 15, col) + delay;
 }
 
-inline APlant* __CardInstant(APlantType seed, const std::vector<APosition>& positions, int delay = 0) {
-    for (auto pos : positions) {
-        int row = pos.row;
-        float col = pos.col;
-        int rejectType = AAsm::GetPlantRejectType(seed % AM_PEASHOOTER, row - 1, int(col - 0.5));
-        if (!ARangeIn(rejectType, {AAsm::NIL, AAsm::NEEDS_POT, AAsm::NOT_ON_WATER}))
-            continue;
-        APlant* container = nullptr;
-        if (rejectType == AAsm::NEEDS_POT)
-            container = ACard(AFLOWER_POT, row, col);
-        else if (rejectType == AAsm::NOT_ON_WATER)
-            container = ACard(ALILY_PAD, row, col);
-        APlant* plant = ACard(seed, row, col);
-        if (delay > 0 && (container || plant))
-            At(now + delay) Do {
-                if (plant)
-                    AShovel(row, col, seed);
-                if (container)
-                    AShovel(row, col, container->Type());
-            };
-        if (plant)
-            return plant;
+namespace AFunctors {
+struct Card {
+    APlantType seed;
+    std::vector<APosition> positions;
+    int delay = 0;
+    ATimeOffset effectOffset = 0_cs;
+
+    void operator()() const {
+        for (auto pos : positions) {
+            int row = pos.row;
+            float col = pos.col;
+            int rejectType = AAsm::GetPlantRejectType(seed % AM_PEASHOOTER, row - 1, int(col - 0.5));
+            if (!ARangeIn(rejectType, {AAsm::NIL, AAsm::NEEDS_POT, AAsm::NOT_ON_WATER}))
+                continue;
+            APlant* container = nullptr;
+            if (rejectType == AAsm::NEEDS_POT)
+                container = ACard(AFLOWER_POT, row, col);
+            else if (rejectType == AAsm::NOT_ON_WATER)
+                container = ACard(ALILY_PAD, row, col);
+            APlant* plant = ACard(seed, row, col);
+            if (delay > 0 && (container || plant))
+                At(now + delay) Do {
+                    if (plant)
+                        AShovel(row, col, seed);
+                    if (container)
+                        AShovel(row, col, container->Type());
+                };
+            if (plant)
+                return;
+        }
     }
-    return nullptr;
-}
+
+    ATimeOffset GetEffectOffset() const {
+        return effectOffset;
+    }
+};
+} // namespace AFunctors
 
 /*
 Card(ASPIKEWEED, 1, 9) // 在 1-9 种地刺
@@ -223,17 +260,19 @@ Card 与 ACard 用法相同，但 Card 会自动补种荷叶和花盆
 */
 template <ATimeOffset delay = 0>
 inline ATimeline Card(APlantType seed, int row, float col) {
-    return Do {
-        __CardInstant(seed, __ParseRow(row, col), delay.time);
+    return AFunctors::Card{
+        .seed = seed,
+        .positions = __ParseRow(row, col),
+        .delay = delay.time,
     };
 }
 
 template <ATimeOffset delay = 0>
 inline ATimeline Card(const std::vector<ACardName>& cards) {
-    return Do {
-        for (auto [seed, row, col] : cards)
-            __CardInstant(seed, __ParseRow(row, col), delay.time);
-    };
+    ATimeline ret;
+    for (auto [seed, row, col] : cards)
+        ret &= Card<delay>(seed, row, col);
+    return ret;
 }
 
 template <ATimeOffset delay = 0>
@@ -246,17 +285,19 @@ inline ATimeline Card(const std::vector<APlantType>& seeds, int row, float col) 
 
 template <ATimeOffset delay = 0>
 inline ATimeline Card(APlantType seed, const std::vector<APosition>& positions) {
-    return Do {
-        __CardInstant(seed, __ParseRow(positions), delay.time);
+    return AFunctors::Card{
+        .seed = seed,
+        .positions = __ParseRow(positions),
+        .delay = delay.time,
     };
 }
 
 template <ATimeOffset delay = 0>
 inline ATimeline Card(const std::vector<APlantType>& seeds, const std::vector<APosition>& positions) {
-    return Do {
-        for (auto seed : seeds)
-            __CardInstant(seed, __ParseRow(positions), delay.time);
-    };
+    ATimeline ret;
+    for (auto seed : seeds)
+        ret &= Card<delay>(seed, positions);
+    return ret;
 }
 
 /*
@@ -289,56 +330,117 @@ inline ATimeline Shovel(const std::vector<AShovelPosition>& positions) {
 A(2, 9) // 在 2-9 使用樱桃（与 Card 相比附加了 -100cs 的偏移，相当于以生效时间为基准；下同）
 */
 inline ATimeline A(int row, float col) {
-    return At(-100_cs) Card(ACHERRY_BOMB, row, col);
+    return At(-100_cs) AFunctors::Card{
+        .seed = ACHERRY_BOMB,
+        .positions = __ParseRow(row, col),
+        .delay = 0,
+        .effectOffset = 100_cs,
+    };
 }
 
 /*
 J(2, 9) // 使用辣椒
 */
 inline ATimeline J(int row, float col) {
-    return At(-100_cs) Card(AJALAPENO, row, col);
+    return At(-100_cs) AFunctors::Card{
+        .seed = AJALAPENO,
+        .positions = __ParseRow(row, col),
+        .delay = 0,
+        .effectOffset = 100_cs,
+    };
 }
 
 /*
 W(2, 9) // 使用窝瓜
 */
 inline ATimeline W(int row, float col) {
-    return At(-182_cs) Card(ASQUASH, row, col);
+    return At(-182_cs) AFunctors::Card{
+        .seed = AWALL_NUT,
+        .positions = __ParseRow(row, col),
+        .delay = 0,
+        .effectOffset = 182_cs,
+    };
 }
 
-inline ATimeline __UseMushroomDay(APlantType type, int row, float col, bool tryImitator) {
-    APlantType imitatorType = APlantType(type + AM_PEASHOOTER);
-    if (!tryImitator)
-        return At(-299_cs) Do {
-            if (!AGetPlantPtr(row, col, type))
-                __CardInstant(type, {{row, col}});
-            ACard(ACOFFEE_BEAN, row, col);
-            ASetPlantActiveTime(type, 299);
-        };
-    else
-        return At(-619_cs) Do {
-            if (AIsSeedUsable(imitatorType)) {
-                __CardInstant(imitatorType, {{row, col}});
-                ASetPlantActiveTime(type, 619);
-                At(now + 320_cs) Card(ACOFFEE_BEAN, row, col);
-            } else
-                At(now + 619_cs) __UseMushroomDay(type, row, col, false);
-        };
-}
+namespace AFunctors {
+struct UseMushroom {
+    APlantType seed;
+    std::vector<APosition> positions;
+    bool tryImitator;
 
-inline ATimeline __UseMushroomNight(APlantType type, int row, float col, bool tryImitator) {
-    APlantType imitatorType = APlantType(type + AM_PEASHOOTER);
-    if (!tryImitator)
-        return At(-100_cs) Card(type, row, col);
-    else
-        return At(-420_cs) Do {
-            if (AIsSeedUsable(imitatorType)) {
-                __CardInstant(imitatorType, {{row, col}});
-                ASetPlantActiveTime(type, 420);
-            } else
-                At(now + 420_cs) __UseMushroomNight(type, row, col, false);
+    void _Day() const {
+        std::vector<AGrid> grids;
+        std::transform(positions.begin(), positions.end(), std::back_inserter(grids),
+            [](auto&& pos) { return AGrid(pos); });
+        auto plantPtrs = AGetPlantPtrs(grids, seed);
+        std::optional<APosition> pos;
+        for (auto ptr : plantPtrs) {
+            if (!ptr)
+                continue;
+            pos = APosition(ptr->Row() + 1, ptr->Col() + 1);
+            break;
+        }
+        for (auto [row, col] : positions) {
+            if (pos.has_value())
+                break;
+            if (ARangeIn(AAsm::GetPlantRejectType(ADOOM_SHROOM, row - 1, col - 1),
+                    {AAsm::NIL, AAsm::NOT_ON_WATER, AAsm::NEEDS_POT})) {
+                pos = APosition(row, col);
+                APlantType imitatorType = APlantType(seed + AM_PEASHOOTER);
+                if (tryImitator && AIsSeedUsable(imitatorType))
+                    AFunctors::Card{imitatorType, {{row, col}}}();
+                else
+                    At(now + (tryImitator ? 320_cs : 0)) AFunctors::Card{seed, {{row, col}}};
+            }
+        }
+        if (!pos.has_value())
+            return;
+        At(now + (tryImitator ? 320_cs : 0)) AFunctors::Card{
+            .seed = ACOFFEE_BEAN,
+            .positions = {{pos.value()}},
+            .delay = 0,
+            .effectOffset = 299_cs,
         };
-}
+        ASetPlantActiveTime(seed, GetEffectOffset().time);
+    }
+
+    void _Night() const {
+        for (auto [row, col] : positions) {
+            if (ARangeIn(AAsm::GetPlantRejectType(ADOOM_SHROOM, row - 1, col - 1),
+                    {AAsm::NIL, AAsm::NOT_ON_WATER, AAsm::NEEDS_POT})) {
+                APlantType imitatorType = APlantType(seed + AM_PEASHOOTER);
+                if (tryImitator && AIsSeedUsable(imitatorType)) {
+                    AFunctors::Card{imitatorType, {{row, col}}}();
+                    ASetPlantActiveTime(seed, GetEffectOffset().time);
+                } else
+                    At(now + (tryImitator ? 320_cs : 0)) AFunctors::Card{seed, {{row, col}}};
+                return;
+            }
+        }
+    }
+
+    void operator()() const {
+        aFieldInfo.isNight ? _Night() : _Day();
+    }
+
+    ATimeOffset GetEffectOffset() const {
+        return (tryImitator ? 320_cs : 0) + (aFieldInfo.isNight ? 299_cs : 100_cs);
+    }
+};
+
+struct CallIceFiller {
+    AIceFiller& if_;
+
+    void operator()() const {
+        if_.Coffee();
+        ASetPlantActiveTime(if_.GetIceSeedType(), GetEffectOffset().time);
+    }
+
+    ATimeOffset GetEffectOffset() const {
+        return 299_cs;
+    }
+};
+} // namespace AFunctors
 
 /*
 N(2, 9) // 使用毁灭菇（自动使用咖啡豆，自动校正生效时间；下同）
@@ -346,36 +448,21 @@ N(3, 9, true) // 优先使用模仿者卡片，其次使用原版卡片
 N({{3, 8}, {3, 9}, {4, 9}}) // 从位置列表中挑选第一个可用位置使用
 */
 inline ATimeline N(int row, float col, bool tryImitator = false) {
-    if (aFieldInfo.isNight)
-        return __UseMushroomNight(ADOOM_SHROOM, row, col, tryImitator);
-    else
-        return __UseMushroomDay(ADOOM_SHROOM, row, col, tryImitator);
+    auto op = AFunctors::UseMushroom{
+        .seed = ADOOM_SHROOM,
+        .positions = __ParseRow(row, col),
+        .tryImitator = tryImitator,
+    };
+    return At(-op.GetEffectOffset()) op;
 }
 
 inline ATimeline N(const std::vector<APosition>& positions, bool tryImitator = false) {
-    ATimeOffset offset = aFieldInfo.isNight ? -100_cs : -299_cs;
-    if (tryImitator)
-        offset -= 320_cs;
-    return At(offset) Do {
-        std::vector<AGrid> grids;
-        std::transform(positions.begin(), positions.end(), std::back_inserter(grids),
-            [](auto&& pos) { return AGrid(pos); });
-        auto doomPtrs = AGetPlantPtrs(grids, ADOOM_SHROOM);
-        for (auto ptr : doomPtrs) {
-            if (ptr) {
-                // 已经种了毁灭菇
-                At(now - offset) N(ptr->Row() + 1, ptr->Col() + 1);
-                return;
-            }
-        }
-        for (auto [row, col] : positions) {
-            if (ARangeIn(AAsm::GetPlantRejectType(ADOOM_SHROOM, row - 1, col - 1),
-                    {AAsm::NIL, AAsm::NOT_ON_WATER, AAsm::NEEDS_POT})) {
-                At(now - offset) N(row, col, tryImitator);
-                return;
-            }
-        }
+    auto op = AFunctors::UseMushroom{
+        .seed = ADOOM_SHROOM,
+        .positions = __ParseRow(positions),
+        .tryImitator = tryImitator,
     };
+    return At(-op.GetEffectOffset()) op;
 }
 
 /*
@@ -384,10 +471,12 @@ I(1, 1, false) // 只尝试使用原版卡片
 I() // 仅限白天：使用 aIceFiller 中的存冰
 */
 inline ATimeline I(int row, float col, bool tryImitator = true) {
-    if (aFieldInfo.isNight)
-        return __UseMushroomNight(AICE_SHROOM, row, col, tryImitator);
-    else
-        return __UseMushroomDay(AICE_SHROOM, row, col, tryImitator);
+    auto op = AFunctors::UseMushroom{
+        .seed = AICE_SHROOM,
+        .positions = __ParseRow(row, col),
+        .tryImitator = tryImitator,
+    };
+    return At(-op.GetEffectOffset()) op;
 }
 
 inline ATimeline I(AIceFiller& if_ = aIceFiller) {
@@ -395,11 +484,13 @@ inline ATimeline I(AIceFiller& if_ = aIceFiller) {
         aLogger->Error("I: 需要指定放置寒冰菇的位置");
         return {};
     }
-    return At(-299_cs)[=, &if_] {
-        if_.Coffee();
-        ASetPlantActiveTime(AICE_SHROOM, 299);
-    };
+    auto op = AFunctors::CallIceFiller{if_};
+    return At(-op.GetEffectOffset()) op;
 }
+
+namespace AFunctors {
+struct Fodder;
+} // namespace AFunctors
 
 /*
 C.SetCards({APUFF_SHROOM, AM_PUFF_SHROOM}); // 设置使用的垫材；不设置时默认为所有 751cs 冷却的植物按阳光从低到高排序（这个函数是即时生效的）
@@ -411,6 +502,8 @@ C.TriggerBy(ADANCING_ZOMBIE & CURR_WAVE, AGIGA_GARGANTUAR & PREV_WAVES)(40) // �
 C.TriggerBy(ALADDER_ZOMBIE, AJACK_IN_THE_BOX_ZOMBIE & XIn(600, 700))(266) // 只在有梯子或横坐标位于 600~700 之间的小丑的行放置垫材
 */
 class AFodder : protected AStateHook {
+    friend AFunctors::Fodder;
+
 protected:
     std::vector<APlantType> _seeds;
     bool _manuallyInitialized = false;
@@ -513,31 +606,8 @@ public:
             : _fodder(fodder), _constraints(constraints) {
         }
 
-        std::set<int> _GetTriggeredRows() const {
-            std::set<int> triggeredRows;
-            for (auto& zombie : aAliveZombieFilter) {
-                if (triggeredRows.contains(zombie.Row() + 1))
-                    continue;
-                for (auto& constraint : _constraints)
-                    if (constraint(&zombie)) {
-                        triggeredRows.insert(zombie.Row() + 1);
-                        break;
-                    }
-            }
-            return triggeredRows;
-        }
-
     public:
-        ATimeline operator()(int removalDelay, const std::vector<APosition>& positions) const {
-            return [=, *this, positions = _ParseRow(positions)] {
-                std::set<int> triggeredRows = _GetTriggeredRows();
-                std::vector<APosition> triggeredPositions;
-                for (auto [row, col] : positions)
-                    if (triggeredRows.contains(row))
-                        triggeredPositions.push_back({row, col});
-                _fodder->_Fodder(removalDelay, triggeredPositions);
-            };
-        }
+        ATimeline operator()(int removalDelay, const std::vector<APosition>& positions) const;
 
         ATimeline operator()(int removalDelay, APosition position) const {
             return operator()(removalDelay, std::vector<APosition> {position});
@@ -632,9 +702,7 @@ public:
         return cnt;
     }
 
-    ATimeline operator()(int removalDelay, const std::vector<APosition>& positions) const {
-        return [=, this, positions = _ParseRow(positions)] { _Fodder(removalDelay, positions); };
-    }
+    ATimeline operator()(int removalDelay, const std::vector<APosition>& positions) const;
 
     ATimeline operator()(int removalDelay, APosition position) const {
         return operator()(removalDelay, std::vector<APosition> {position});
@@ -681,6 +749,63 @@ inline AFodder::Constraint AbscIn(int l, int r) {
     return [=](AZombie* zombie) {
         return l <= int(zombie->Abscissa()) && int(zombie->Abscissa()) <= r;
     };
+}
+
+namespace AFunctors {
+struct Fodder {
+    const AFodder& self;
+    int removalDelay;
+    std::vector<APosition> positions;
+    std::vector<AFodder::Constraint> constraints;
+
+    void operator()() const {
+        std::set<int> triggeredRows;
+        if (!constraints.empty()) {
+            for (auto& zombie : aAliveZombieFilter) {
+                if (triggeredRows.contains(zombie.Row() + 1))
+                    continue;
+                bool triggered = false;
+                for (auto& constraint : constraints) {
+                    if (constraint(&zombie)) {
+                        triggered = true;
+                        break;
+                    }
+                }
+                if (triggered)
+                    triggeredRows.insert(zombie.Row() + 1);
+            }
+        }
+        std::vector<APosition> triggeredPositions;
+        for (auto [row, col] : positions)
+            if (constraints.empty() || triggeredRows.contains(row))
+                triggeredPositions.push_back({row, col});
+        self._Fodder(removalDelay, triggeredPositions);
+    }
+
+    ATimeOffset GetEffectOffset() const {
+        return 0_cs;
+    }
+};
+} // namespace AFunctors
+
+inline ATimeline AFodder::operator()(int removalDelay, const std::vector<APosition>& positions) const {
+    auto op = AFunctors::Fodder{
+        .self = *this,
+        .removalDelay = removalDelay,
+        .positions = _ParseRow(positions),
+        .constraints = {},
+    };
+    return op;
+}
+
+inline ATimeline AFodder::TriggerByProxy::operator()(int removalDelay, const std::vector<APosition>& positions) const {
+    auto op = AFunctors::Fodder{
+        .self = *_fodder,
+        .removalDelay = removalDelay,
+        .positions = _ParseRow(positions),
+        .constraints = _constraints,
+    };
+    return op;
 }
 
 inline std::vector<int> __GetPossibleRows(int type) {

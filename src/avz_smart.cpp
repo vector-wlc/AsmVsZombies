@@ -78,6 +78,10 @@ void AIceFiller::_EnterFight() {
 }
 
 void AIceFiller::SetIceSeedList(const std::vector<int>& lst) {
+    if (lst.empty()) {
+        aLogger->Error("SetIceSeedList : 卡片列表不能为空");
+        return;
+    }
     _iceSeedIdxVec.clear();
     _seedType = lst[0] % AM_PEASHOOTER;
     for (auto seed : lst) {
