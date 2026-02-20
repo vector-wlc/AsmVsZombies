@@ -38,7 +38,7 @@ public:
     bool SelectWindow();
     bool IsValid();
     DWORD InjectDLL(PCWSTR);
-    DWORD EjectDLL(const std::string& dllName);
-    void ManageDLL();
+    DWORD EjectDLL(const std::string& dllPath);
+    void ManageDLL(const std::string& dllPath);
     void Write(uintptr_t addr, size_t len, uint8_t* data);
 };

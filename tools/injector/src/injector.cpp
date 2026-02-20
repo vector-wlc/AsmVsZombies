@@ -177,19 +177,19 @@ void Process::_RemoveAllInjectedDll() {
     }
 }
 
-void Process::ManageDLL() {
+void Process::ManageDLL(const std::string& dllPath) {
     DWORD pid;
     GetWindowThreadProcessId(_selHwnd, &pid);
     auto libavzInjectPath = fs::path(L"bin/libavz_inject_" + std::to_wstring((uintptr_t)pid) + L".dll");
     EjectDLL(libavzInjectPath.string());
     _RemoveAllInjectedDll();
     libavzInjectPath = fs::absolute(libavzInjectPath);
-    auto libavzPath = fs::path(L"bin/libavz.dll");
+    auto libavzPath = fs::path(dllPath);
     if (!fs::exists(libavzPath)) {
         MessageBoxW(NULL, L"未检测到 libavz.dll, 请检查您编写的脚本是否有语法错误？", L"Error", MB_ICONERROR);
         return;
     }
-    fs::rename(libavzPath, libavzInjectPath);
+    fs::copy(libavzPath, libavzInjectPath, fs::copy_options::overwrite_existing);
 
     if (!InjectDLL(libavzInjectPath.c_str())) {
         MessageBoxW(NULL, L"libavz.dll 注入失败，失败可能原因如下\n 1. 计算机开启了杀软，此行为被杀软拦截 \n 2. 脚本有语法错误，编译器无法生成动态库文件 \n 3. 本框架 项目路径需要管理员权限才可以进行文件的生成和复制", L"Error", MB_ICONERROR);
