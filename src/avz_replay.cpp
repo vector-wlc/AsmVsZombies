@@ -1,4 +1,3 @@
-
 #include "libavz.h"
 #include <filesystem>
 
@@ -413,6 +412,11 @@ void AReplay::_PlayTick() {
     if (_isInterpolate && !isPlay) { // 如果插帧
         _ShowTickInfo();
         AAsm::GameTotalLoop();
+        // 运行完成Loop之后，如果发现已经不在战斗界面，就退出
+        if (AGetPvzBase()->GameUi() != 3) {
+            Stop();
+            return;
+        }
         // 回放模式下，僵尸刷新被禁用，因此倒计时不会更新
         // 这就会导致 UpdateRefreshTime 时间混乱
         // 因此手动更新倒计时
@@ -421,6 +425,10 @@ void AReplay::_PlayTick() {
     if (!isPlay)
         return;
     AAsm::GameTotalLoop();
+    if (AGetPvzBase()->GameUi() != 3) {
+        Stop();
+        return;
+    }
     AGetMainObject()->RefreshCountdown() -= 1;
     // 开启了压缩功能需要预先对压缩包里的内容解压
     // 并且销毁之前解压出来的内容

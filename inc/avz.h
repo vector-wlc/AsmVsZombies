@@ -16,7 +16,7 @@ void AScript();
     class : public A##FuncName##Hook {                      \
         protected :                                         \
             virtual void _##FuncName() override __VA_ARGS__ \
-    } __AConCat(__aStateHook, __COUNTER__);
+    } inline __AConCat(__aStateHook, __COUNTER__);
 
 #define AOnBeforeScript(...) AAddStateHook(BeforeScript, { __VA_ARGS__; })
 #define AOnAfterScript(...) AAddStateHook(AfterScript, { __VA_ARGS__; })

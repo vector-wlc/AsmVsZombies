@@ -1,7 +1,11 @@
 #ifndef __LIBAVZ_H__
 #define __LIBAVZ_H__
 
-#define __AVZ_VERSION__ 260212
+#define __AVZ_VERSION__ 260224
+
+#ifndef __SCRIPT__
+#define __SCRIPT__ "" // To make LSP happy
+#endif
 
 #include "avz_asm.h"
 #include "avz_card.h"

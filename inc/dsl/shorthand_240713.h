@@ -355,7 +355,7 @@ W(2, 9) // 使用窝瓜
 */
 inline ATimeline W(int row, float col) {
     return At(-182_cs) AFunctors::Card{
-        .seed = AWALL_NUT,
+        .seed = ASQUASH,
         .positions = __ParseRow(row, col),
         .delay = 0,
         .effectOffset = 182_cs,
@@ -424,7 +424,7 @@ struct UseMushroom {
     }
 
     ATimeOffset GetEffectOffset() const {
-        return (tryImitator ? 320_cs : 0) + (aFieldInfo.isNight ? 299_cs : 100_cs);
+        return (tryImitator ? 320_cs : 0) + (aFieldInfo.isNight ? 100_cs : 299_cs);
     }
 };
 
@@ -451,7 +451,7 @@ inline ATimeline N(int row, float col, bool tryImitator = false) {
     auto op = AFunctors::UseMushroom{
         .seed = ADOOM_SHROOM,
         .positions = __ParseRow(row, col),
-        .tryImitator = tryImitator,
+        .tryImitator = tryImitator && AGetSeedPtr(AM_DOOM_SHROOM) != nullptr,
     };
     return At(-op.GetEffectOffset()) op;
 }
@@ -460,7 +460,7 @@ inline ATimeline N(const std::vector<APosition>& positions, bool tryImitator = f
     auto op = AFunctors::UseMushroom{
         .seed = ADOOM_SHROOM,
         .positions = __ParseRow(positions),
-        .tryImitator = tryImitator,
+        .tryImitator = tryImitator && AGetSeedPtr(AM_DOOM_SHROOM) != nullptr,
     };
     return At(-op.GetEffectOffset()) op;
 }
@@ -474,7 +474,7 @@ inline ATimeline I(int row, float col, bool tryImitator = true) {
     auto op = AFunctors::UseMushroom{
         .seed = AICE_SHROOM,
         .positions = __ParseRow(row, col),
-        .tryImitator = tryImitator,
+        .tryImitator = tryImitator && AGetSeedPtr(AM_ICE_SHROOM) != nullptr,
     };
     return At(-op.GetEffectOffset()) op;
 }

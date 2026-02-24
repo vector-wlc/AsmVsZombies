@@ -37,7 +37,13 @@ inline void CheckCobCD() {
     }
 }
 
-void ExportSeml() {
+/*
+根据脚本导出 seml 文件。
+该功能无法支持阻塞脚本、动态插入操作、非 DSL 算子等情形，导出结果仅供参考。
+已知的问题包括：
+- 若用卡选择了多个位置，导出的 seml 固定使用第一个位置
+*/
+inline void ExportSeml() {
     struct WaveEntry {
         std::vector<int> iceTimes;
         int waveLength;
@@ -48,8 +54,8 @@ void ExportSeml() {
             AFunctors::Fodder
         >>> operations;
     };
-    WaveEntry waves[20];
-    for (int wave = 1; wave <= 19; ++wave) {
+    WaveEntry waves[21];
+    for (int wave = 1; wave <= 20; ++wave) {
         for (const auto& [time, op] : __aOpQueueManager.ExtractOperations<AFunctors::Cob>(wave)) {
             if (!op.isRecover)
                 waves[wave].operations.emplace_back((time + op.GetEffectOffset()).time, op);
@@ -69,7 +75,14 @@ void ExportSeml() {
         for (const auto& [time, op] : __aOpQueueManager.ExtractOperations<AFunctors::CallIceFiller>(wave)) {
             waves[wave].iceTimes.push_back((time + op.GetEffectOffset()).time);
         }
-        waves[wave].waveLength = (wave % 10 != 9) ? __aOpQueueManager.queues[wave].waveLength : 5245;
+        if (wave % 10 == 9)
+            waves[wave].waveLength = 5245;
+        else if (wave == 20)
+            waves[wave].waveLength = 5999;
+        else if (__aOpQueueManager.queues[wave].waveLength > 0)
+            waves[wave].waveLength = __aOpQueueManager.queues[wave].waveLength;
+        else
+            waves[wave].waveLength = 9999;
     }
 
     std::string outFilename = __SCRIPT__;
@@ -92,8 +105,9 @@ void ExportSeml() {
         fout << (isFirst ? ':' : ' ') << row << col;
         isFirst = false;
     }
-    fout << "\nrepeat:1000\n";
-    for (int wave = 1; wave <= 19; ++wave) {
+    fout << "\navzTime:true\n";
+    fout << "repeat:1000\n";
+    for (int wave = 1; wave <= 20; ++wave) {
         fout << "\nw" << wave;
         auto& entry = waves[wave];
         std::sort(entry.iceTimes.begin(), entry.iceTimes.end());
@@ -108,6 +122,10 @@ void ExportSeml() {
                     fout << std::format("N {} {} {}\n", time, op->positions[0].row, op->positions[0].col);
                 else if (op->seed == ACHERRY_BOMB)
                     fout << std::format("A {} {} {}\n", time, op->positions[0].row, op->positions[0].col);
+                else if (op->seed == AJALAPENO)
+                    fout << std::format("J {} {} {}\n", time, op->positions[0].row, op->positions[0].col);
+                else if (op->seed == ASQUASH)
+                    fout << std::format("W {} {} {}\n", time, op->positions[0].row, op->positions[0].col);
             } else if (auto op = std::get_if<AFunctors::UseMushroom>(&op_)) {
                 if (op->seed == ADOOM_SHROOM)
                     fout << std::format("N {} {} {}\n", time, op->positions[0].row, op->positions[0].col);

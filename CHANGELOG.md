@@ -1,5 +1,11 @@
 # 更新日志
 
+AvZ 2.9.0 2026_02_24
+
+* `injector` 支持传入命令行参数
+* 操作队列及 `ATimeline` 支持提取特定类型的 functor
+* 添加实验性功能：在基于 DSL Shorthand 的脚本中 `#include <dsl/verifier.h>` 后会在战斗开始时自动验证脚本的炮复用，并导出 SEML
+
 AvZ 2.8.7 2026_02_04
 
 * 增加 `AProjectile` 类，用于读取子弹
