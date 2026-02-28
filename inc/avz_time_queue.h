@@ -4,6 +4,7 @@
 #include "avz_global.h"
 #include "avz_logger.h"
 #include "avz_memory.h"
+#include "avz_coroutine.h"
 #include <map>
 #include <optional>
 
@@ -44,31 +45,17 @@ public:
     void AssumeWavelength(const std::vector<ATime>& lst);
     void RunOperation();
     template <typename Func>
-    std::vector<std::pair<ATime, Func>> ExtractOperations() const {
-        std::vector<std::pair<ATime, Func>> ret;
-        for (int wave = 0; wave <= totalWave + 1; ++wave) {
-            for (const auto& [time, op] : queues[wave].queue) {
-                if (op.isStopped)
-                    continue;
-                if (auto func = op.operation.target<Func>())
-                    ret.emplace_back(ATime(wave, time), *func);
-            }
-        }
-        return ret;
-    }
+    requires __AIsOperation<Func>
+    std::vector<std::pair<ATime, Func>> ExtractOperations() const;
     template <typename Func>
-    std::vector<std::pair<ATime, Func>> ExtractOperations(int wave) const {
-        std::vector<std::pair<ATime, Func>> ret;
-        if (wave < 0 || wave >= queues.size())
-            return ret;
-        for (const auto& [time, op] : queues[wave].queue) {
-            if (op.isStopped)
-                continue;
-            if (auto func = op.operation.target<Func>())
-                ret.emplace_back(ATime(wave, time), *func);
-        }
-        return ret;
-    }
+    requires __AIsCoroutineOp<Func>
+    std::vector<std::pair<ATime, Func>> ExtractOperations() const;
+    template <typename Func>
+    requires __AIsOperation<Func>
+    std::vector<std::pair<ATime, Func>> ExtractOperations(int wave) const;
+    template <typename Func>
+    requires __AIsCoroutineOp<Func>
+    std::vector<std::pair<ATime, Func>> ExtractOperations(int wave) const;
 
 protected:
     static std::optional<int> _GetNextWaveCountdown();
@@ -122,6 +109,78 @@ inline void AAssumeWavelength(const std::vector<ATime>& lst) {
 
 inline void AAssumeWavelength(int wave, int waveLength) {
     __aOpQueueManager.AssumeWavelength({{wave, waveLength}});
+}
+
+template <typename Func>
+requires __AIsOperation<Func>
+std::vector<std::pair<ATime, Func>> __AOpQueueManager::ExtractOperations() const {
+    std::vector<std::pair<ATime, Func>> ret;
+    for (int wave = 0; wave <= totalWave + 1; ++wave) {
+        for (const auto& [time, op] : queues[wave].queue) {
+            if (op.isStopped)
+                continue;
+            if (auto func = op.operation.target<Func>())
+                ret.emplace_back(ATime(wave, time), *func);
+            else if (auto coFunc = op.operation.target<ACoFunctor>()) {
+                if (auto func = coFunc->_functor->target<Func>())
+                    ret.emplace_back(ATime(wave, time), *func);
+            }
+        }
+    }
+    return ret;
+}
+
+template <typename Func>
+requires __AIsCoroutineOp<Func>
+std::vector<std::pair<ATime, Func>> __AOpQueueManager::ExtractOperations() const {
+    std::vector<std::pair<ATime, Func>> ret;
+    for (int wave = 0; wave <= totalWave + 1; ++wave) {
+        for (const auto& [time, op] : queues[wave].queue) {
+            if (op.isStopped)
+                continue;
+            if (auto coFunc = op.operation.target<ACoFunctor>()) {
+                if (auto func = coFunc->_functor->target<Func>())
+                    ret.emplace_back(ATime(wave, time), *func);
+            }
+        }
+    }
+    return ret;
+}
+
+template <typename Func>
+requires __AIsOperation<Func>
+std::vector<std::pair<ATime, Func>> __AOpQueueManager::ExtractOperations(int wave) const {
+    std::vector<std::pair<ATime, Func>> ret;
+    if (wave < 0 || wave >= queues.size())
+        return ret;
+    for (const auto& [time, op] : queues[wave].queue) {
+        if (op.isStopped)
+            continue;
+        if (auto func = op.operation.target<Func>())
+            ret.emplace_back(ATime(wave, time), *func);
+        else if (auto coFunc = op.operation.target<ACoFunctor>()) {
+            if (auto func = coFunc->_functor->target<Func>())
+                ret.emplace_back(ATime(wave, time), *func);
+        }
+    }
+    return ret;
+}
+
+template <typename Func>
+requires __AIsCoroutineOp<Func>
+std::vector<std::pair<ATime, Func>> __AOpQueueManager::ExtractOperations(int wave) const {
+    std::vector<std::pair<ATime, Func>> ret;
+    if (wave < 0 || wave >= queues.size())
+        return ret;
+    for (const auto& [time, op] : queues[wave].queue) {
+        if (op.isStopped)
+            continue;
+        if (auto coFunc = op.operation.target<ACoFunctor>()) {
+            if (auto func = coFunc->_functor->target<Func>())
+                ret.emplace_back(ATime(wave, time), *func);
+        }
+    }
+    return ret;
 }
 
 #endif

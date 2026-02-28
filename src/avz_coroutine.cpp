@@ -52,6 +52,14 @@ void __AWait::await_suspend(std::coroutine_handle<> handle) {
     }
 }
 
+__AWait ACoroutine::promise_type::await_transform(int delayTime) {
+    return ANowDelayTime(delayTime);
+}
+
+ACoroutine::promise_type::~promise_type() {
+    aLogger->Info("协程退出");
+}
+
 void ACoFunctor::operator()() {
     if (_functor == nullptr)
         return;

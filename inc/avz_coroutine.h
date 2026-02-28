@@ -2,7 +2,6 @@
 #define __AVZ_COROUTINE_H__
 
 #include "avz_state_hook.h"
-#include "avz_time_queue.h"
 #include <coroutine>
 #include <unordered_set>
 
@@ -51,9 +50,7 @@ struct __ACoNodiscard ACoroutine {
 #undef __ACoNodiscard
     struct promise_type {
         std::shared_ptr<std::function<ACoroutine()>> ptr;
-        __AWait await_transform(int delayTime) {
-            return ANowDelayTime(delayTime);
-        }
+        __AWait await_transform(int delayTime);
         __AWait await_transform(const ATime& time) {
             return time;
         }
@@ -73,9 +70,7 @@ struct __ACoNodiscard ACoroutine {
         }
         void unhandled_exception() {}
         void return_void() {}
-        ~promise_type() {
-            aLogger->Info("协程退出");
-        }
+        ~promise_type();
     };
 
     ACoroutine(std::coroutine_handle<promise_type> handle)
@@ -130,7 +125,6 @@ public:
 
     void operator()();
 
-protected:
     std::shared_ptr<ACoroutineOp> _functor = nullptr;
 };
 

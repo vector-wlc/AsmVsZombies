@@ -116,7 +116,8 @@ public:
     }
 
     template <typename Func>
-    std::vector<std::pair<ATimeOffset, Func>> ExtractOperations() const {
+    requires __AIsOperation<Func>
+    std::vector<std::pair<ATimeOffset, Func>> ExtractEntries() const {
         std::vector<std::pair<ATimeOffset, Func>> ops;
         for (auto& entry : _entries) {
             if (auto action = std::get_if<AOperation>(&entry.action)) {
@@ -128,11 +129,27 @@ public:
     }
 
     template <typename Func>
-    std::vector<std::pair<ATimeOffset, Func>> ExtractHooks() const {
+    requires __AIsCoroutineOp<Func>
+    std::vector<std::pair<ATimeOffset, Func>> ExtractEntries() const {
+        std::vector<std::pair<ATimeOffset, Func>> ops;
+        for (auto& entry : _entries) {
+            if (auto action = std::get_if<AOperation>(&entry.action)) {
+                if (auto op = action->target<ACoFunctor>()) {
+                    if (auto func = op->_functor->target<Func>())
+                        ops.emplace_back(entry.offset, *func);
+                }
+            }
+        }
+        return ops;
+    }
+
+    template <typename Func>
+    requires __AIsTimelineHook<Func>
+    std::vector<std::pair<ATimeOffset, Func>> ExtractEntries() const {
         std::vector<std::pair<ATimeOffset, Func>> hooks;
         for (auto& entry : _entries) {
             if (auto hook = std::get_if<TimelineHook>(&entry.action)) {
-                if (auto h = hook->template target<Func>())
+                if (auto h = hook->target<Func>())
                     hooks.emplace_back(entry.offset, *h);
             }
         }

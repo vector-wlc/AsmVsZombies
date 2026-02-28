@@ -1,7 +1,7 @@
 #ifndef __AVZ_CONNECTOR_H__
 #define __AVZ_CONNECTOR_H__
 
-#include "avz_coroutine.h"
+#include "avz_time_queue.h"
 #include "avz_tick_runner.h"
 
 class ATimeConnectHandle {
