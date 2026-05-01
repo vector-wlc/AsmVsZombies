@@ -91,7 +91,7 @@ __AImplementHash(APosition)
 template <>
 struct std::formatter<APosition> : std::formatter<std::string> {
     auto format(APosition pos, auto& ctx) const {
-        std::string result = std::format("({}, {})", pos.row, int(pos.col * 80.0 + 1e-3) / 80.0);
+        std::string result = std::format("({}, {})", pos.row, int(pos.col * 80.0 + 0.5) / 80.0);
         return formatter<std::string>::format(result, ctx);
     }
 };

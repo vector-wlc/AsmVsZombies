@@ -1,7 +1,7 @@
 #ifndef __LIBAVZ_H__
 #define __LIBAVZ_H__
 
-#define __AVZ_VERSION__ 260224
+#define __AVZ_VERSION__ 260501
 
 #ifndef __SCRIPT__
 #define __SCRIPT__ "" // To make LSP happy

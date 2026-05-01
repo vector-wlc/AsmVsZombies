@@ -46,7 +46,7 @@ void AShovel(const std::vector<AShovelPosition>& lst) {
 // 将格子转换成坐标
 void AGridToCoordinate(int row, float col, int& x, int& y) {
     int tCol = std::clamp(int(col + 0.5), 1, 10);
-    x = int(col * 80.0 + 1e-3);
+    x = int(col * 80.0 + 0.5);
     y = AAsm::GridToOrdinate(row - 1, tCol - 1) + 40;
     if (row <= 0 || x < 0 || x >= 800 || y < 0 || y >= 600)
         aLogger->Error("您输入的格子位置参数: {} 已溢出, 已帮您自动调整为边界值", APosition(row, col));

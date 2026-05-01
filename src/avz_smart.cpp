@@ -36,8 +36,10 @@ void AItemCollector::Start() {
 }
 
 void AItemCollector::_Run() {
-    if (AGetMainObject()->GameClock() % _timeInterval != 0 || //
-        AGetMainObject()->MouseAttribution()->Type() != 0)
+    if (AGetMainObject()->GameClock() % _timeInterval != 0)
+        return;
+    int mouseItem = AGetMainObject()->MouseAttribution()->Type();
+    if (mouseItem != 0 && mouseItem != 7) // 7 = 锤子
         return;
 
     AItem* collectItem = nullptr;
@@ -58,7 +60,8 @@ void AItemCollector::_Run() {
         int x = static_cast<int>(itemX + 30);
         int y = static_cast<int>(itemY + 30);
         ALeftClick(x, y);
-        AAsm::ReleaseMouse();
+        if (AGetMainObject()) // 以防 LeftClick 意外退出战斗界面
+            AAsm::ReleaseMouse();
     }
 }
 
